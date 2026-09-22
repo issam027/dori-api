@@ -1,0 +1,512 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+// 3.2 dori_site
+// -----------------------------------------------------------------------------
+model Site {
+  siteId         Int       @id @default(autoincrement()) @map("site_id")
+  siteName       String    @map("site_name") @db.VarChar(255)
+  siteLocation   String?   @map("site_location") @db.VarChar(255)
+  siteLogoUrl    String?   @map("site_logo_url") @db.Text
+  siteType       String    @default("public") @map("site_type") @db.VarChar(50)
+  timezone       String    @default("Africa/Tunis") @map("timezone") @db.VarChar(64)
+  defaultCurrency String   @default("TND") @map("default_currency") @db.Char(3)
+  isActive       Boolean   @default(true) @map("is_active")
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  // Valeurs par défaut RDV (héritées par les queues)
+  defaultAppointmentsEnabled     Boolean   @default(false) @map("default_appointments_enabled")
+  defaultAppointmentSlotDuration Int       @default(15) @map("default_appointment_slot_duration")
+  defaultSlotCapacity            Int       @default(1) @map("default_slot_capacity")
+  defaultWorkingHoursStart       String    @default("08:00") @map("default_working_hours_start") @db.VarChar(8)
+  defaultWorkingHoursEnd         String    @default("17:00") @map("default_working_hours_end") @db.VarChar(8)
+  defaultBreakStart              String?   @default("12:00") @map("default_break_start") @db.VarChar(8)
+  defaultBreakEnd                String?   @default("14:00") @map("default_break_end") @db.VarChar(8)
+  defaultLateToleranceMinutes    Int       @default(60) @map("default_late_tolerance_minutes")
+
+  // Valeurs par défaut score priorité (héritées)
+  defaultBaseWeightWalkin        Decimal   @default(0) @map("default_base_weight_walkin") @db.Decimal(10, 2)
+  defaultBaseWeightAppointment   Decimal   @default(60) @map("default_base_weight_appointment") @db.Decimal(10, 2)
+  defaultEscalationRateWalkin    Decimal   @default(1) @map("default_escalation_rate_walkin") @db.Decimal(10, 2)
+  defaultEscalationRateAppointment Decimal @default(1) @map("default_escalation_rate_appointment") @db.Decimal(10, 2)
+
+  // Clôture quotidienne (héritée)
+  defaultCarryOverWaiting        Boolean   @default(false) @map("default_carry_over_waiting")
+  defaultDailyResetMode          String    @default("close_all") @map("default_daily_reset_mode") @db.VarChar(20)
+  defaultDailyResetTime          String    @default("03:00") @map("default_daily_reset_time") @db.VarChar(8)
+
+  defaultLocale                  String    @default("fr") @map("default_locale") @db.VarChar(10)
+  createdAt                      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  queues      Queue[]
+  userSites   UserSite[]
+
+  @@map("dori_site")
+}
+
+// -----------------------------------------------------------------------------
+// 3.3 dori_site_queue_thread
+// -----------------------------------------------------------------------------
+model Queue {
+  queueId           Int       @id @default(autoincrement()) @map("queue_id")
+  queueCode         String    @map("queue_code") @db.VarChar(10)
+  siteId            Int       @map("site_id")
+  queueName         String?   @map("queue_name") @db.VarChar(50)
+  isActive          Boolean   @default(true) @map("is_active")
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(6)
+  averageWaitTime   Int       @default(10) @map("average_wait_time")
+  threadCount       Int       @default(1) @map("thread_count")
+
+  // Surcharges RDV (NULL = hérite du site)
+  appointmentsEnabled     Boolean?  @map("appointments_enabled")
+  appointmentSlotDuration Int?      @map("appointment_slot_duration")
+  slotCapacity            Int?      @map("slot_capacity")
+  workingHoursStart       String?   @map("working_hours_start") @db.VarChar(8)
+  workingHoursEnd         String?   @map("working_hours_end") @db.VarChar(8)
+  breakStart              String?   @map("break_start") @db.VarChar(8)
+  breakEnd                String?   @map("break_end") @db.VarChar(8)
+  lateToleranceMinutes    Int?      @map("late_tolerance_minutes")
+
+  // Surcharges Priorité (NULL = hérite)
+  baseWeightWalkin        Decimal?  @map("base_weight_walkin") @db.Decimal(10, 2)
+  baseWeightAppointment   Decimal?  @map("base_weight_appointment") @db.Decimal(10, 2)
+  escalationRateWalkin    Decimal?  @map("escalation_rate_walkin") @db.Decimal(10, 2)
+  escalationRateAppointment Decimal? @map("escalation_rate_appointment") @db.Decimal(10, 2)
+
+  // Surcharges Clôture quotidienne (NULL = hérite)
+  carryOverWaiting        Boolean?  @map("carry_over_waiting")
+  dailyResetMode          String?   @map("daily_reset_mode") @db.VarChar(20)
+  dailyResetTime          String?   @map("daily_reset_time") @db.VarChar(8)
+
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  site            Site                 @relation(fields: [siteId], references: [siteId], onUpdate: Restrict, onDelete: Restrict)
+  queueTiers      QueueServiceTier[]
+  sessions        QueueSession[]
+  customers       Customer[]
+  counters        QueueCounter[]
+  userQueues      UserQueue[]
+
+  @@unique([queueCode, siteId], name: "uk_queue_code_site")
+  @@index([siteId], name: "idx_queue_site")
+  @@map("dori_site_queue_thread")
+}
+
+// -----------------------------------------------------------------------------
+// 3.4 dori_person
+// -----------------------------------------------------------------------------
+model Person {
+  personId           Int       @id @default(autoincrement()) @map("person_id")
+  firstName          String?   @map("first_name") @db.VarChar(50)
+  lastName           String?   @map("last_name") @db.VarChar(50)
+  email              String?   @map("email") @db.VarChar(255)
+  phoneNumber        String?   @map("phone_number") @db.VarChar(20)
+  birthDate          DateTime? @map("birth_date") @db.Date
+  languagePreference String    @default("fr") @map("language_preference") @db.VarChar(10)
+  isActive           Boolean   @default(true) @map("is_active")
+  deletedAt          DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  notes              PersonNote[]
+  customers          Customer[]
+
+  @@index([lastName, firstName], name: "idx_person_name")
+  @@map("dori_person")
+}
+
+// -----------------------------------------------------------------------------
+// 3.5 dori_person_note
+// -----------------------------------------------------------------------------
+model PersonNote {
+  noteId          Int       @id @default(autoincrement()) @map("note_id")
+  personId        Int       @map("person_id")
+  content         String    @map("content") @db.Text
+  createdByUserId Int       @map("created_by_user_id")
+  updatedByUserId Int?      @map("updated_by_user_id")
+  isActive        Boolean   @default(true) @map("is_active")
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  person          Person    @relation(fields: [personId], references: [personId], onUpdate: Restrict, onDelete: Restrict)
+  createdByUser   User      @relation("NoteCreatedBy", fields: [createdByUserId], references: [userId], onUpdate: Restrict, onDelete: Restrict)
+  updatedByUser   User?     @relation("NoteUpdatedBy", fields: [updatedByUserId], references: [userId], onUpdate: Restrict, onDelete: Restrict)
+
+  @@index([personId], name: "idx_person_note_person")
+  @@map("dori_person_note")
+}
+
+// -----------------------------------------------------------------------------
+// 3.6 dori_service_tier
+// -----------------------------------------------------------------------------
+model ServiceTier {
+  tierId      Int       @id @default(autoincrement()) @map("tier_id")
+  tierCode    String    @unique(map: "uk_tier_code") @map("tier_code") @db.VarChar(20)
+  tierName    String    @map("tier_name") @db.VarChar(50)
+  description String?   @map("description") @db.Text
+  isSystem    Boolean   @default(false) @map("is_system")
+  isActive    Boolean   @default(true) @map("is_active")
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  queueTiers  QueueServiceTier[]
+
+  @@map("dori_service_tier")
+}
+
+// -----------------------------------------------------------------------------
+// 3.7 dori_queue_service_tier
+// -----------------------------------------------------------------------------
+model QueueServiceTier {
+  queueId      Int       @map("queue_id")
+  tierId       Int       @map("tier_id")
+  price        Decimal   @default(0) @map("price") @db.Decimal(10, 3)
+  currency     String    @default("TND") @map("currency") @db.Char(3)
+  displayOrder Int       @default(0) @map("display_order")
+  isActive     Boolean   @default(true) @map("is_active")
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  queue              Queue                     @relation(fields: [queueId], references: [queueId], onUpdate: Restrict, onDelete: Restrict)
+  tier               ServiceTier               @relation(fields: [tierId], references: [tierId], onUpdate: Restrict, onDelete: Restrict)
+  notificationRules  TierNotificationRule[]
+  customers          Customer[]
+
+  @@id([queueId, tierId])
+  @@map("dori_queue_service_tier")
+}
+
+// -----------------------------------------------------------------------------
+// 3.8 dori_tier_notification_rule
+// -----------------------------------------------------------------------------
+model TierNotificationRule {
+  ruleId              Int       @id @default(autoincrement()) @map("rule_id")
+  queueId             Int       @map("queue_id")
+  tierId              Int       @map("tier_id")
+  notificationType    String    @map("notification_type") @db.VarChar(20)
+  channel             String    @map("channel") @db.VarChar(20)
+  thresholdPosition   Int?      @map("threshold_position")
+  includeTrackingLink Boolean   @default(false) @map("include_tracking_link")
+  thresholdMinutes    Int?      @map("threshold_minutes")
+  isActive            Boolean   @default(true) @map("is_active")
+  deletedAt           DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  queueTier     QueueServiceTier   @relation(fields: [queueId, tierId], references: [queueId, tierId], onUpdate: Restrict, onDelete: Restrict)
+  notifications Notification[]
+
+  @@unique([queueId, tierId, notificationType, channel], name: "uk_rule_unique")
+  @@map("dori_tier_notification_rule")
+}
+
+// -----------------------------------------------------------------------------
+// 3.9 dori_queue_session (guichet)
+// -----------------------------------------------------------------------------
+model QueueSession {
+  sessionId       Int       @id @default(autoincrement()) @map("session_id")
+  queueId         Int       @map("queue_id")
+  userId          Int       @map("user_id")
+  threadNumber    Int?      @map("thread_number")
+  mode            String    @default("active") @map("mode") @db.VarChar(20)
+  connectedAt     DateTime  @default(now()) @map("connected_at") @db.Timestamptz(6)
+  lastSeenAt      DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  disconnectedAt  DateTime? @map("disconnected_at") @db.Timestamptz(6)
+  closureReason   String?   @map("closure_reason") @db.VarChar(20)
+  closedByUserId  Int?      @map("closed_by_user_id")
+
+  // Relations
+  queue           Queue      @relation(fields: [queueId], references: [queueId], onUpdate: Restrict, onDelete: Restrict)
+  user            User       @relation("SessionUser", fields: [userId], references: [userId], onUpdate: Restrict, onDelete: Restrict)
+  closedByUser    User?      @relation("SessionClosedBy", fields: [closedByUserId], references: [userId], onUpdate: Restrict, onDelete: Restrict)
+  customers       Customer[]
+
+  @@map("dori_queue_session")
+}
+
+// -----------------------------------------------------------------------------
+// 3.10 dori_customer (inscription / registration)
+// -----------------------------------------------------------------------------
+model Customer {
+  customerId                          Int       @id @default(autoincrement()) @map("customer_id")
+  personId                            Int       @map("person_id")
+  queueId                             Int       @map("queue_id")
+  tierId                              Int       @map("tier_id")
+  businessDate                        DateTime  @map("business_date") @db.Date
+  ticketNumber                        String    @map("ticket_number") @db.VarChar(16)
+
+  // Rendez-vous
+  entryType                           String    @default("walkin") @map("entry_type") @db.VarChar(20)
+  scheduledTime                       DateTime? @map("scheduled_time") @db.Timestamptz(6)
+  checkedInAt                         DateTime? @map("checked_in_at") @db.Timestamptz(6)
+  appointmentStatus                   String    @default("n/a") @map("appointment_status") @db.VarChar(20)
+  priorityReferenceTime               DateTime  @map("priority_reference_time") @db.Timestamptz(6)
+
+  // Statut de traitement en file
+  status                              String    @default("waiting") @map("status") @db.VarChar(20)
+  currentSessionId                    Int?      @map("current_session_id")
+  calledAt                            DateTime? @map("called_at") @db.Timestamptz(6)
+  servedAt                            DateTime? @map("served_at") @db.Timestamptz(6)
+  closedAt                            DateTime? @map("closed_at") @db.Timestamptz(6)
+  carriedOverFromDate                 DateTime? @map("carried_over_from_date") @db.Date
+
+  registrationTrackingToken           String    @default(uuid()) @map("registration_tracking_token") @db.Uuid
+  registrationTrackingTokenValidUntil DateTime  @map("registration_tracking_token_valid_until") @db.Timestamptz(6)
+
+  languagePreference                  String?   @map("language_preference") @db.VarChar(10)
+  createdByUserId                     Int?      @map("created_by_user_id")
+  isActive                            Boolean   @default(true) @map("is_active")
+  deletedAt                           DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt                           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  person          Person            @relation(fields: [personId], references: [personId], onUpdate: Restrict, onDelete: Restrict)
+  queue           Queue             @relation(fields: [queueId], references: [queueId], onUpdate: Restrict, onDelete: Restrict)
+  queueTier       QueueServiceTier  @relation(fields: [queueId, tierId], references: [queueId, tierId], onUpdate: Restrict, onDelete: Restrict)
+  currentSession  QueueSession?     @relation(fields: [currentSessionId], references: [sessionId], onUpdate: Restrict, onDelete: Restrict)
+  createdByUser   User?             @relation("CustomerCreatedBy", fields: [createdByUserId], references: [userId], onUpdate: Restrict, onDelete: Restrict)
+  notifications   Notification[]
+
+  @@unique([queueId, businessDate, ticketNumber], name: "uk_customer_ticket")
+  @@unique([registrationTrackingToken], name: "idx_customer_registration_tracking_token")
+  @@index([queueId, businessDate, status], name: "idx_customer_queue_day_status")
+  @@index([priorityReferenceTime], name: "idx_customer_priority_ref")
+  @@index([personId], name: "idx_customer_person")
+  @@index([currentSessionId], name: "idx_customer_session")
+  @@map("dori_customer")
+}
+
+// -----------------------------------------------------------------------------
+// 3.11 dori_queue_counter
+// -----------------------------------------------------------------------------
+model QueueCounter {
+  queueId      Int      @map("queue_id")
+  businessDate DateTime @map("business_date") @db.Date
+  lastNumber   Int      @default(0) @map("last_number")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  queue        Queue    @relation(fields: [queueId], references: [queueId], onUpdate: Restrict, onDelete: Restrict)
+
+  @@id([queueId, businessDate])
+  @@map("dori_queue_counter")
+}
+
+// -----------------------------------------------------------------------------
+// 3.12 dori_notification
+// -----------------------------------------------------------------------------
+model Notification {
+  notificationId     Int       @id @default(autoincrement()) @map("notification_id")
+  customerId         Int       @map("customer_id")
+  ruleId             Int?      @map("rule_id")
+  channel            String    @map("channel") @db.VarChar(20)
+  notificationType   String    @map("notification_type") @db.VarChar(20)
+  locale             String    @map("locale") @db.VarChar(10)
+  recipient          String    @map("recipient") @db.VarChar(255)
+  notificationContent String?  @map("notification_content") @db.Text
+  notificationStatus String    @default("pending") @map("notification_status") @db.VarChar(20)
+  providerMessageId  String?   @map("provider_message_id") @db.VarChar(128)
+  failureReason      String?   @map("failure_reason") @db.Text
+  attemptCount       Int       @default(0) @map("attempt_count")
+  sentAt             DateTime? @map("sent_at") @db.Timestamptz(6)
+  deliveredAt        DateTime? @map("delivered_at") @db.Timestamptz(6)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  customer           Customer              @relation(fields: [customerId], references: [customerId], onUpdate: Restrict, onDelete: Restrict)
+  rule               TierNotificationRule? @relation(fields: [ruleId], references: [ruleId], onUpdate: Restrict, onDelete: Restrict)
+
+  @@index([providerMessageId], name: "idx_notification_provider_msg")
+  @@index([customerId], name: "idx_notification_customer")
+  @@map("dori_notification")
+}
+
+// -----------------------------------------------------------------------------
+// 3.13 dori_translation & dori_translation_version
+// -----------------------------------------------------------------------------
+model Translation {
+  translationId  Int       @id @default(autoincrement()) @map("translation_id")
+  translationKey String    @map("translation_key") @db.VarChar(150)
+  category       String    @default("ihm") @map("category") @db.VarChar(20)
+  locale         String    @map("locale") @db.VarChar(10)
+  content        String    @map("content") @db.Text
+  expectedParams String[]  @map("expected_params")
+  isActive       Boolean   @default(true) @map("is_active")
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([translationKey, locale], name: "uk_translation_key_locale")
+  @@index([category, locale, translationKey], name: "idx_translation_lookup")
+  @@map("dori_translation")
+}
+
+model TranslationVersion {
+  category  String   @id @map("category") @db.VarChar(20)
+  version   Int      @default(1) @map("version")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("dori_translation_version")
+}
+
+// -----------------------------------------------------------------------------
+// 3.14 Utilisateurs, rôles et permissions (RBAC)
+// -----------------------------------------------------------------------------
+model User {
+  userId             Int       @id @default(autoincrement()) @map("user_id")
+  username           String    @unique(map: "uk_user_username") @map("username") @db.VarChar(50)
+  email              String?   @map("email") @db.VarChar(255)
+  passwordHash       String    @map("password_hash") @db.VarChar(255)
+  userType           String    @default("human") @map("user_type") @db.VarChar(20)
+  isActive           Boolean   @default(true) @map("is_active")
+  deletedAt          DateTime? @map("deleted_at") @db.Timestamptz(6)
+  languagePreference String    @default("fr") @map("language_preference") @db.VarChar(10)
+  lastLogin          DateTime? @map("last_login") @db.Timestamptz(6)
+  failedAttempts     Int       @default(0) @map("failed_attempts")
+  lockedUntil        DateTime? @map("locked_until") @db.Timestamptz(6)
+  passwordChangedAt  DateTime? @map("password_changed_at") @db.Timestamptz(6)
+  mustChangePassword Boolean   @default(false) @map("must_change_password")
+  createdByUserId    Int?      @map("created_by_user_id")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  createdByUser      User?          @relation("UserCreatedBy", fields: [createdByUserId], references: [userId], onUpdate: Restrict, onDelete: Restrict)
+  createdUsers       User[]         @relation("UserCreatedBy")
+  userRoles          UserRole[]
+  userSites          UserSite[]
+  userQueues         UserQueue[]
+  userSessions       UserSession[]
+  queueSessions      QueueSession[] @relation("SessionUser")
+  closedSessions     QueueSession[] @relation("SessionClosedBy")
+  createdNotes       PersonNote[]   @relation("NoteCreatedBy")
+  updatedNotes       PersonNote[]   @relation("NoteUpdatedBy")
+  createdCustomers   Customer[]     @relation("CustomerCreatedBy")
+
+  @@index([isActive, lockedUntil], name: "idx_user_status")
+  @@map("dori_user")
+}
+
+model Role {
+  roleId      Int       @id @default(autoincrement()) @map("role_id")
+  roleName    String    @unique(map: "uk_role_name") @map("role_name") @db.VarChar(50)
+  rank        Int       @map("rank")
+  description String?   @map("description") @db.Text
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+
+  @@map("dori_role")
+}
+
+model Permission {
+  permissionId   Int       @id @default(autoincrement()) @map("permission_id")
+  permissionName String    @unique(map: "uk_permission_name") @map("permission_name") @db.VarChar(100)
+  description    String?   @map("description") @db.Text
+  isActive       Boolean   @default(true) @map("is_active")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  rolePermissions RolePermission[]
+
+  @@map("dori_permission")
+}
+
+model RolePermission {
+  roleId       Int        @map("role_id")
+  permissionId Int        @map("permission_id")
+  assignedAt   DateTime   @default(now()) @map("assigned_at") @db.Timestamptz(6)
+
+  // Relations
+  role         Role       @relation(fields: [roleId], references: [roleId], onUpdate: Restrict, onDelete: Restrict)
+  permission   Permission @relation(fields: [permissionId], references: [permissionId], onUpdate: Restrict, onDelete: Restrict)
+
+  @@id([roleId, permissionId])
+  @@map("dori_role_permission")
+}
+
+model UserRole {
+  userId     Int      @map("user_id")
+  roleId     Int      @map("role_id")
+  assignedAt DateTime @default(now()) @map("assigned_at") @db.Timestamptz(6)
+
+  // Relations
+  user       User     @relation(fields: [userId], references: [userId], onUpdate: Restrict, onDelete: Restrict)
+  role       Role     @relation(fields: [roleId], references: [roleId], onUpdate: Restrict, onDelete: Restrict)
+
+  @@id([userId, roleId])
+  @@map("dori_user_role")
+}
+
+model UserSite {
+  userId     Int      @map("user_id")
+  siteId     Int      @map("site_id")
+  assignedAt DateTime @default(now()) @map("assigned_at") @db.Timestamptz(6)
+
+  // Relations
+  user       User     @relation(fields: [userId], references: [userId], onUpdate: Restrict, onDelete: Restrict)
+  site       Site     @relation(fields: [siteId], references: [siteId], onUpdate: Restrict, onDelete: Restrict)
+
+  @@id([userId, siteId])
+  @@index([userId], name: "idx_user_site_user")
+  @@map("dori_user_site")
+}
+
+model UserQueue {
+  userId     Int      @map("user_id")
+  queueId    Int      @map("queue_id")
+  assignedAt DateTime @default(now()) @map("assigned_at") @db.Timestamptz(6)
+
+  // Relations
+  user       User     @relation(fields: [userId], references: [userId], onUpdate: Restrict, onDelete: Restrict)
+  queue      Queue    @relation(fields: [queueId], references: [queueId], onUpdate: Restrict, onDelete: Restrict)
+
+  @@id([userId, queueId])
+  @@index([userId], name: "idx_user_queue_user")
+  @@map("dori_user_queue")
+}
+
+// -----------------------------------------------------------------------------
+// 3.15 dori_user_session
+// -----------------------------------------------------------------------------
+model UserSession {
+  sessionId        Int       @id @default(autoincrement()) @map("session_id")
+  userId           Int       @map("user_id")
+  refreshTokenHash String    @unique(map: "uk_session_refresh_token") @map("refresh_token_hash") @db.VarChar(255)
+  issuedAt         DateTime  @default(now()) @map("issued_at") @db.Timestamptz(6)
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(6)
+  revokedReason    String?   @map("revoked_reason") @db.VarChar(30)
+  userAgent        String?   @map("user_agent") @db.VarChar(255)
+  ipAddress        String?   @map("ip_address") @db.VarChar(45)
+
+  // Relations
+  user             User      @relation(fields: [userId], references: [userId], onUpdate: Restrict, onDelete: Restrict)
+
+  @@map("dori_user_session")
+}

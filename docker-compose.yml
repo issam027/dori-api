@@ -1,0 +1,109 @@
+services:
+  # Base de données relationnelle PostgreSQL 16
+  postgres:
+    image: postgres:16-alpine
+    container_name: dori_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dori_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dori_password}
+      POSTGRES_DB: ${POSTGRES_DB:-dori_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - dori_pgdata:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dori_user} -d ${POSTGRES_DB:-dori_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dori_network
+
+  # Cache en mémoire & files de tâches Redis 7
+  redis:
+    image: redis:7-alpine
+    container_name: dori_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - dori_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dori_network
+
+  # API REST & Serveur WebSocket (NestJS)
+  dori-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dori_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      API_PREFIX: api/v1
+      DATABASE_URL: postgresql://${POSTGRES_USER:-dori_user}:${POSTGRES_PASSWORD:-dori_password}@postgres:5432/${POSTGRES_DB:-dori_db}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-super_secret_jwt_key_dori_v3_change_in_production_min32chars}
+      JWT_EXPIRES_IN: 3600s
+      REFRESH_TOKEN_EXPIRES_DAYS: 7
+      TRACKING_BASE_URL: ${TRACKING_BASE_URL:-https://suivi.dori.tn}
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - dori_network
+
+  # Worker asynchrone (BullMQ : notifications, clôture quotidienne, expiration RDV)
+  dori-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dori_worker
+    restart: unless-stopped
+    command: ["node", "dist/src/workers/worker.main"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      dori-api:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-dori_user}:${POSTGRES_PASSWORD:-dori_password}@postgres:5432/${POSTGRES_DB:-dori_db}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-super_secret_jwt_key_dori_v3_change_in_production_min32chars}
+      TRACKING_BASE_URL: ${TRACKING_BASE_URL:-https://suivi.dori.tn}
+      SMS_PROVIDER: ${SMS_PROVIDER:-mock}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-mock}
+    networks:
+      - dori_network
+
+volumes:
+  dori_pgdata:
+  dori_redisdata:
+
+networks:
+  dori_network:
+    driver: bridge
