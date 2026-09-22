@@ -53,10 +53,17 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
+
   SwaggerModule.setup('api/docs', app, document, {
     customSiteTitle: 'DORI-TN V3 — API Docs',
+    // CDN avec la version exacte : 5.32.13
+    customCssUrl:
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.32.13/swagger-ui.min.css',
+    customJs: [
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.32.13/swagger-ui-bundle.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.32.13/swagger-ui-standalone-preset.min.js',
+    ],
     swaggerOptions: {
-      // Affiche les URLs de téléchargement dans le bandeau Swagger UI
       urls: [
         { url: '/api/docs-json', name: 'JSON' },
         { url: '/api/docs-yaml', name: 'YAML' },
@@ -64,7 +71,6 @@ async function bootstrap() {
       displayRequestDuration: true,
       persistAuthorization: true,
     },
-    // Injecte un lien de téléchargement YAML en haut de la page
     customCss: `
       .swagger-ui .topbar-wrapper::after {
         content: '';
@@ -77,7 +83,6 @@ async function bootstrap() {
       }
     `,
     customfavIcon: '',
-    customJs: '',
     jsonDocumentUrl: 'api/docs-json',
     yamlDocumentUrl: 'api/docs-yaml',
   });
