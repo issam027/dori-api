@@ -11,7 +11,20 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // 1. Sécurité HTTP (§7.3, §8.3)
-  app.use(helmet());
+  //    CSP configurée pour autoriser cdnjs.cloudflare.com (Swagger UI)
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: [`'self'`],
+          scriptSrc: [`'self'`, `'unsafe-inline'`, 'https://cdnjs.cloudflare.com'],
+          styleSrc: [`'self'`, `'unsafe-inline'`, 'https://cdnjs.cloudflare.com'],
+          imgSrc: [`'self'`, 'data:', 'https://cdnjs.cloudflare.com'],
+          fontSrc: [`'self'`, 'https://cdnjs.cloudflare.com'],
+        },
+      },
+    }),
+  );
 
   const corsOrigins = process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
