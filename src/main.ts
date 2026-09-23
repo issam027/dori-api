@@ -11,7 +11,18 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // 1. Sécurité HTTP (§7.3, §8.3)
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+          'script-src': ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+          'style-src': ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+          'img-src': ["'self'", 'data:', 'https://cdn.jsdelivr.net'],
+        },
+      },
+    }),
+  );
 
   const corsOrigins = process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
@@ -56,7 +67,6 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document, {
     customSiteTitle: 'DORI V3 — API Docs',
     swaggerOptions: {
-      // Affiche les URLs de téléchargement dans le bandeau Swagger UI
       urls: [
         { url: '/api/docs-json', name: 'JSON' },
         { url: '/api/docs-yaml', name: 'YAML' },
@@ -64,7 +74,6 @@ async function bootstrap() {
       displayRequestDuration: true,
       persistAuthorization: true,
     },
-    // Injecte un lien de téléchargement YAML en haut de la page
     customCss: `
       .swagger-ui .topbar-wrapper::after {
         content: '';
@@ -76,8 +85,12 @@ async function bootstrap() {
         align-items: center;
       }
     `,
-    customfavIcon: '',
-    customJs: '',
+    customCssUrl: 'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.min.css',
+    customJs: [
+      'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js',
+      'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-standalone-preset.js',
+    ],
+    customfavIcon: 'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/favicon-32x32.png',
     jsonDocumentUrl: 'api/docs-json',
     yamlDocumentUrl: 'api/docs-yaml',
   });
