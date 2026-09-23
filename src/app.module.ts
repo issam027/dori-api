@@ -33,7 +33,6 @@ import { WorkersModule } from './workers/workers.module';
     DatabaseModule,
     RbacModule,
     RealtimeModule,
-    SwaggerRedirectController,
     AuthModule,
     SitesModule,
     QueuesModule,
@@ -48,6 +47,7 @@ import { WorkersModule } from './workers/workers.module';
     HealthModule,
     WorkersModule,
   ],
+  controllers: [SwaggerRedirectController],
   providers: [
     {
       provide: APP_GUARD,
