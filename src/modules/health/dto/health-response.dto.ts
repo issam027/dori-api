@@ -6,6 +6,13 @@ export class HealthServicesStatusDto {
 
   @ApiProperty({ example: 'up', description: "Statut du serveur d'API NestJS" })
   api!: string;
+
+  @ApiProperty({
+    example: 'up',
+    enum: ['up', 'down', 'not_configured'],
+    description: "Statut de disponibilité du frontend (portail DORI)",
+  })
+  frontend!: string;
 }
 
 export class HealthResponseDto {
