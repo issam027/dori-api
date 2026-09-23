@@ -1,4 +1,4 @@
-# Multi-stage Dockerfile for DORI V3 Backend
+# Multi-stage Dockerfile for DORI Backend
 FROM node:22-alpine AS builder
 
 WORKDIR /app

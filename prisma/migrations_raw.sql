@@ -1,5 +1,5 @@
 -- =============================================================================
--- Triggers et Contraintes Additionnelles DORI V3 (PostgreSQL)
+-- Triggers et Contraintes Additionnelles DORI (PostgreSQL)
 -- =============================================================================
 
 -- 1. Trigger automatique de mise à jour de updated_at (§3.17)

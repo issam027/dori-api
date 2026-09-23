@@ -11,7 +11,7 @@ async function bootstrap() {
   const notifService = app.get(NotificationWorkerService);
   const expiryService = app.get(AppointmentExpiryService);
 
-  logger.log('Workers DORI V3 démarrés (Notification & Expiry)');
+  logger.log('Workers DORI démarrés (Notification & Expiry)');
 
   // Boucle de consommation des notifications (toutes les 5 secondes)
   setInterval(async () => {

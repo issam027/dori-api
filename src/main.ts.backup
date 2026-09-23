@@ -44,9 +44,9 @@ async function bootstrap() {
 
   // 5. Documentation OpenAPI 3 / Swagger (§7.1)
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('DORI V3 — API Documentation')
+    .setTitle('DORI — API Documentation')
     .setDescription(
-      "Spécification fonctionnelle et technique du système de gestion de files d'attente et de rendez-vous DORI V3.",
+      "Spécification fonctionnelle et technique du système de gestion de files d'attente et de rendez-vous DORI.",
     )
     .setVersion('3.0.0')
     .addBearerAuth()
@@ -54,7 +54,7 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document, {
-    customSiteTitle: 'DORI V3 — API Docs',
+    customSiteTitle: 'DORI — API Docs',
     swaggerOptions: {
       // Affiche les URLs de téléchargement dans le bandeau Swagger UI
       urls: [
@@ -84,7 +84,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  logger.log(`Serveur DORI V3 démarré sur http://localhost:${port}/${apiPrefix}`);
+  logger.log(`Serveur DORI démarré sur http://localhost:${port}/${apiPrefix}`);
   logger.log(`Documentation Swagger disponible sur http://localhost:${port}/api/docs`);
 }
 
