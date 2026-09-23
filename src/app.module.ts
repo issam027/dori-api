@@ -7,6 +7,8 @@ import { JwtAuthGuard } from './core/auth/jwt-auth.guard';
 import { DatabaseModule } from './core/database/database.module';
 import { RbacModule } from './core/rbac/rbac.module';
 import { RealtimeModule } from './core/realtime/realtime.module';
+import { SwaggerRedirectController } from './core/swagger/swagger-redirect.controller';
+
 
 // Business modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -31,6 +33,7 @@ import { WorkersModule } from './workers/workers.module';
     DatabaseModule,
     RbacModule,
     RealtimeModule,
+    SwaggerRedirectController,
     AuthModule,
     SitesModule,
     QueuesModule,
