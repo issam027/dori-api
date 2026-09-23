@@ -1,5 +1,5 @@
 import { NestFactory, Reflector } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, RequestMethod } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
@@ -38,8 +38,9 @@ async function bootstrap() {
 
   // 2. Préfixe d'API versionné (§5.1)
   const apiPrefix = process.env.API_PREFIX || 'api/v1';
-  app.setGlobalPrefix(apiPrefix);
-
+  app.setGlobalPrefix(apiPrefix, {
+    exclude: [{ path: '/', method: RequestMethod.GET }],
+  });
   // 3. Validation globale stricte (§7.3)
   app.useGlobalPipes(
     new ValidationPipe({
