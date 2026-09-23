@@ -2,7 +2,7 @@ import { HttpException } from '@nestjs/common';
 import { ErrorCode, ERROR_CATALOG } from './error-codes.enum';
 
 /**
- * Exception métier typée pour DORI-TN V3
+ * Exception métier typée pour DORI V3
  */
 export class AppException extends HttpException {
   public readonly code: ErrorCode;

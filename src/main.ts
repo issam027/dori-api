@@ -11,20 +11,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // 1. Sécurité HTTP (§7.3, §8.3)
-  //    CSP configurée pour autoriser cdnjs.cloudflare.com (Swagger UI)
-  app.use(
-    helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: [`'self'`],
-          scriptSrc: [`'self'`, `'unsafe-inline'`, 'https://cdnjs.cloudflare.com'],
-          styleSrc: [`'self'`, `'unsafe-inline'`, 'https://cdnjs.cloudflare.com'],
-          imgSrc: [`'self'`, 'data:', 'https://cdnjs.cloudflare.com'],
-          fontSrc: [`'self'`, 'https://cdnjs.cloudflare.com'],
-        },
-      },
-    }),
-  );
+  app.use(helmet());
 
   const corsOrigins = process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
@@ -57,26 +44,19 @@ async function bootstrap() {
 
   // 5. Documentation OpenAPI 3 / Swagger (§7.1)
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('DORI-TN V3 — API Documentation')
+    .setTitle('DORI V3 — API Documentation')
     .setDescription(
-      "Spécification fonctionnelle et technique du système de gestion de files d'attente et de rendez-vous DORI-TN V3.",
+      "Spécification fonctionnelle et technique du système de gestion de files d'attente et de rendez-vous DORI V3.",
     )
     .setVersion('3.0.0')
     .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-
   SwaggerModule.setup('api/docs', app, document, {
-    customSiteTitle: 'DORI-TN V3 — API Docs',
-    // CDN avec la version exacte : 5.32.13
-    customCssUrl:
-      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.32.13/swagger-ui.min.css',
-    customJs: [
-      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.32.13/swagger-ui-bundle.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.32.13/swagger-ui-standalone-preset.min.js',
-    ],
+    customSiteTitle: 'DORI V3 — API Docs',
     swaggerOptions: {
+      // Affiche les URLs de téléchargement dans le bandeau Swagger UI
       urls: [
         { url: '/api/docs-json', name: 'JSON' },
         { url: '/api/docs-yaml', name: 'YAML' },
@@ -84,6 +64,7 @@ async function bootstrap() {
       displayRequestDuration: true,
       persistAuthorization: true,
     },
+    // Injecte un lien de téléchargement YAML en haut de la page
     customCss: `
       .swagger-ui .topbar-wrapper::after {
         content: '';
@@ -96,14 +77,15 @@ async function bootstrap() {
       }
     `,
     customfavIcon: '',
+    customJs: '',
     jsonDocumentUrl: 'api/docs-json',
     yamlDocumentUrl: 'api/docs-yaml',
   });
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  logger.log(`🚀 Serveur DORI-TN V3 démarré sur http://localhost:${port}/${apiPrefix}`);
-  logger.log(`📚 Documentation Swagger disponible sur http://localhost:${port}/api/docs`);
+  logger.log(`Serveur DORI V3 démarré sur http://localhost:${port}/${apiPrefix}`);
+  logger.log(`Documentation Swagger disponible sur http://localhost:${port}/api/docs`);
 }
 
 bootstrap();

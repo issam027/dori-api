@@ -13,7 +13,7 @@ export class TranslationBundleResponseDto {
   @ApiProperty({
     example: {
       'button.submit': 'Valider',
-      'label.welcome': 'Bienvenue chez DORI-TN',
+      'label.welcome': 'Bienvenue chez DORI',
     },
     description: 'Dictionnaire clé/valeur des traductions',
   })

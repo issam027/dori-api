@@ -4,7 +4,7 @@ import * as argon2 from 'argon2';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Début du seed DORI-TN V3...');
+  console.log('🌱 Début du seed DORI V3...');
 
   // 1. Permissions (§4.9)
   const permissions = [
@@ -245,15 +245,15 @@ async function main() {
       create: { userId: rootUser.userId, roleId: rootRole.roleId },
     });
 
-    console.log(`✅ Utilisateur root créé/vérifié (username: root)`);
+    console.log(`Utilisateur root créé/vérifié (username: root)`);
   }
 
-  console.log('🎉 Seed DORI-TN V3 terminé avec succès !');
+  console.log('Seed DORI V3 terminé avec succès !');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Erreur lors du seed:', e);
+    console.error('Erreur lors du seed:', e);
     process.exit(1);
   })
   .finally(async () => {

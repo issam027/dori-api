@@ -1,9 +1,8 @@
 {
-  
-  "name": "dori-tn-server",
+  "name": "dori-server",
   "version": "1.0.0",
-  "description": "DORI-TN V3 — Système de gestion de files d'attente et de rendez-vous",
-  "author": "Dori-tn Team",
+  "description": "DORI V3 — Système de gestion de files d'attente et de rendez-vous",
+  "author": "Dori Team",
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
