@@ -32,7 +32,9 @@ import {
 } from './dto/service-tier.dto';
 import {
   ServiceTierDetailDto,
+  PaginatedServiceTierResponseDto,
   QueueTierDetailDto,
+  PaginatedQueueTierResponseDto,
   NotificationRuleDetailDto,
   TierDeleteResponseDto,
 } from './dto/tier-response.dto';
@@ -55,7 +57,7 @@ export class ServiceTiersController {
     description:
       'Retourne tous les forfaits disponibles au catalogue (Gratuit, Standard, Premium...).',
   })
-  @ApiDoriOkResponse([ServiceTierDetailDto], 'Liste des forfaits du catalogue')
+  @ApiDoriOkResponse(PaginatedServiceTierResponseDto, 'Liste paginée des forfaits du catalogue')
   async findTiers(
     @Query() pagination: PaginationDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -135,7 +137,7 @@ export class ServiceTiersController {
       'Retourne la liste des forfaits configurés pour cette file avec leurs tarifs locaux.',
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse([QueueTierDetailDto], 'Liste des forfaits de la file')
+  @ApiDoriOkResponse(PaginatedQueueTierResponseDto, 'Liste paginée des forfaits de la file')
   async getQueueTiers(
     @Param('queueId', ParseIntPipe) queueId: number,
     @CurrentUser() user: AuthenticatedUser,

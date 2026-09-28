@@ -182,7 +182,10 @@ export class AuthService {
 
   async logout(userOrId: AuthenticatedUser | number, refreshToken?: string) {
     const userId = typeof userOrId === 'number' ? userOrId : userOrId.userId;
+    const sessionId =
+      typeof userOrId === 'object' ? userOrId.sessionId : undefined;
     const now = this.clockService.now();
+
     if (refreshToken) {
       const tokenHash = this.hashToken(refreshToken);
       await this.dataSource.query(
@@ -190,6 +193,15 @@ export class AuthService {
          SET revoked_at = $1, revoked_reason = 'logout'
          WHERE refresh_token_hash = $2 AND revoked_at IS NULL`,
         [now, tokenHash],
+      );
+    } else if (sessionId) {
+      // SEC-02 & SEC-03 : Cibler la session spécifique liée au JWT porteur
+      // Évite de révoquer toutes les sessions si aucun refreshToken n'est transmis (mobile / SPA)
+      await this.dataSource.query(
+        `UPDATE dori_user_session
+         SET revoked_at = $1, revoked_reason = 'logout'
+         WHERE session_id = $2 AND revoked_at IS NULL`,
+        [now, sessionId],
       );
     } else {
       await this.dataSource.query(
@@ -325,16 +337,7 @@ export class AuthService {
     userAgent?: string,
   ) {
     const jti = uuidv4();
-    const payload: JwtPayload = {
-      sub: user.user_id,
-      username: user.username,
-      roles,
-      permissions,
-      userType: user.user_type,
-      jti,
-    };
 
-    const accessToken = this.jwtService.sign(payload);
     const rawRefreshToken = `${uuidv4()}-${crypto.randomBytes(32).toString('hex')}`;
     const refreshTokenHash = this.hashToken(rawRefreshToken);
 
@@ -345,10 +348,12 @@ export class AuthService {
       now.getTime() + expiresDays * 24 * 60 * 60 * 1000,
     );
 
-    await this.dataSource.query(
+    // SEC-02 : récupérer le session_id créé pour le lier au payload JWT
+    const inserted = await this.dataSource.query(
       `INSERT INTO dori_user_session
        (user_id, refresh_token_hash, issued_at, expires_at, user_agent, ip_address)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING session_id`,
       [
         user.user_id,
         refreshTokenHash,
@@ -358,6 +363,21 @@ export class AuthService {
         ipAddress || null,
       ],
     );
+
+    const sessionId: string = inserted[0].session_id;
+
+    // SEC-02 : inclure sid (session UUID) dans le payload pour la vérification unitaire
+    const payload: JwtPayload = {
+      sub: user.user_id,
+      username: user.username,
+      roles,
+      permissions,
+      userType: user.user_type,
+      jti,
+      sid: sessionId,
+    };
+
+    const accessToken = this.jwtService.sign(payload);
 
     return {
       accessToken,

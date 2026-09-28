@@ -14,11 +14,16 @@ export class QueuesService {
     private readonly dataSource: DataSource,
     private readonly scopeService: ScopeService,
     private readonly clockService: ClockService,
-  ) {}
+  ) { }
 
   async findQueues(filter: QueueFilterDto, user: AuthenticatedUser) {
     const scope = await this.scopeService.getUserScope(user);
-    const { pageSize, offset, sortField, sortOrder } = filter.getParams();
+    const { pageSize, offset, sortOrder } = filter.getParams();
+    // VAL-01 : allowlist des colonnes autorisées pour dori_site_queue_thread (alias q)
+    const sortField = filter.getSafeSortField(
+      ['q.queue_id', 'q.queue_name', 'q.queue_code', 'q.created_at', 'q.updated_at', 's.site_name'],
+      'q.created_at',
+    );
 
     let query = `
       SELECT q.*, s.site_name, s.timezone, s.default_currency
@@ -62,7 +67,7 @@ export class QueuesService {
     );
     const total = countRes[0]?.total || 0;
 
-    query += ` ORDER BY q.${sortField === 'id' ? 'queue_id' : sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`;
+    query += ` ORDER BY ${sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`;
     const items = await this.dataSource.query(query, params);
 
     return filter.createResponse(items, total);
@@ -533,7 +538,12 @@ export class QueuesService {
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkQueueAccess(user, queueId);
-    const { pageSize, offset, sortField, sortOrder } = pagination.getParams();
+    const { pageSize, offset, sortOrder } = pagination.getParams();
+    // VAL-01 : allowlist pour le JOIN dori_user_queue / dori_user
+    const sortField = pagination.getSafeSortField(
+      ['u.user_id', 'u.username', 'u.email', 'uq.assigned_at'],
+      'uq.assigned_at',
+    );
 
     const query = `
       SELECT u.user_id, u.username, u.email, u.user_type, uq.assigned_at

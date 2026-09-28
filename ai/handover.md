@@ -50,51 +50,47 @@
 ## 1. Sécurité, Authentification & Périmètre RBAC
 
 ### SEC-01 — Endpoints de gestion des utilisateurs sans protection RBAC
-* **Fichier impacté** : `src/modules/users/users.controller.ts`
-* **Problème constaté** :  
-  Seul l'endpoint `updateRolePermissions` possède `@RequirePermission('system_manage')`.  
-  Les endpoints suivants sont dépourvus de `@RequirePermission` :
-  * `GET /api/v1/users` (`findUsers`)
-  * `POST /api/v1/users` (`createUser`)
-  * `GET /api/v1/users/:userId` (`findUserById`)
-  * `PATCH /api/v1/users/:userId` (`updateUser`)
-  * `PATCH /api/v1/users/:userId/status` (`updateUserStatus`)
-  * `PATCH /api/v1/users/:userId/password` (`setUserPassword`)
-  * `POST /api/v1/users/:userId/roles` (`assignUserRole`)
-  * `DELETE /api/v1/users/:userId/roles/:roleId` (`removeUserRole`)
-  * `GET /api/v1/roles` (`getRoles`)
-* **Comportement attendu** :  
-  Appliquer les permissions prévues dans le catalogue (`user_manage_kiosk`, `user_manage_hostess`, `user_manage_manager`, `user_manage_admin`, `user_queue_assign`, `user_site_assign`) conformément à `seed.sql`.
+> ✅ **RÉSOLU le 2026-09-28** — Endpoints de `UsersController` protégés par RBAC (`@RequireAnyPermission` / `@RequirePermission`), avec contrôle dynamique combinant le profil du modificateur (anti-escalade de rang) et le profil du user à modifier (plafond de permissions selon le rôle).
+
+* **Fichiers modifiés** :
+  * `src/core/rbac/decorators/require-permission.decorator.ts` — ajout du décorateur `@RequireAnyPermission(...permissions: string[])`
+  * `src/core/rbac/guards/permissions.guard.ts` — prise en charge de `ANY_PERMISSIONS_KEY` (vérifie que l'utilisateur détient au moins une permission autorisée)
+  * `src/modules/users/users.controller.ts` — pose des protections `@RequireAnyPermission` sur `findUsers`, `createUser`, `findUserById`, `updateUser`, `updateUserStatus`, `setUserPassword`, `assignUserRole`, `removeUserRole`, `getRoles`
+  * `src/modules/users/users.service.ts` — enrichissement de `checkAntiEscalation` et `getCallerMaxManageRank` :
+    * Vérification du profil de celui qui modifie : empêche toute modification d'un utilisateur de rang supérieur ou égal (`FORBIDDEN_ROLE_ESCALATION`).
+    * Vérification du profil du user à modifier : calcule le plafond de rang accordé par les permissions du modificateur (`user_manage_kiosk` = 1, `user_manage_hostess` = 2, `user_manage_manager` = 3, `user_manage_admin` = 4, `root` / `system_manage` = 5). Si un modificateur ne possède que la permission `user_manage_hostess`, il ne peut pas modifier un utilisateur ayant un profil supérieur à l'hôtesse (`FORBIDDEN_PERMISSION`).
+    * Validation stricte étendue aux opérations de mise à jour (`updateUser`, `updateUserStatus`, `setUserPassword`), d'assignation/retrait de rôles (`assignUserRole`, `removeUserRole`), de création (`createUser`) et de consultation détaillée (`findUserById`).
+  * `src/modules/users/users.service.spec.ts` & `src/core/rbac/guards/permissions.guard.spec.ts` — suites de tests unitaires validant l'ensemble des règles RBAC et anti-escalade.
 
 ### SEC-02 — Déconnexion unitaire inopérante pour le JWT actif
-* **Fichiers impactés** :
-  * `src/core/auth/strategies/jwt.strategy.ts` (lignes 28–38)
-  * `src/modules/auth/auth.service.ts` (lignes 327–355)
+> ✅ **RÉSOLU le 2026-09-28** — `sid` (session UUID) inclus dans le payload JWT ; `JwtStrategy` vérifie désormais la session spécifique.
+
+* **Fichiers modifiés** :
+  * `src/core/auth/interfaces/jwt-payload.interface.ts` — ajout de `sid?: string` dans `JwtPayload` et `sessionId?: string` dans `AuthenticatedUser`
+  * `src/modules/auth/auth.service.ts` (`generateTokens`) — `INSERT … RETURNING session_id` pour lier la session au JWT via `sid`
+  * `src/core/auth/strategies/jwt.strategy.ts` (`validate`) — vérification sur `session_id = payload.sid` (fallback `user_id` pour les anciens tokens sans `sid`)
 * **Problème constaté** :  
-  `JwtStrategy` exécute :
+  `JwtStrategy` exécutait :
   ```sql
   SELECT session_id FROM dori_user_session
   WHERE user_id = $1 AND revoked_reason IS NULL AND revoked_at IS NULL
     AND expires_at > NOW() LIMIT 1
   ```
-  Le JWT ne contient pas de lien vers son `session_id`. Si l'utilisateur est connecté sur un ordinateur et un téléphone et se déconnecte du téléphone, le token du téléphone reste valide tant que la session de l'ordinateur existe.
-* **Comportement attendu** :  
-  Inclure `sessionId` dans le payload JWT et vérifier dans `JwtStrategy` que la session spécifique (`session_id = payload.sid`) n'est ni révoquée ni expirée.
+  Le JWT ne contenait pas de lien vers son `session_id`. Si l'utilisateur était connecté sur un ordinateur et un téléphone et se déconnectait du téléphone, le token du téléphone restait valide tant que la session de l'ordinateur existait.
+* **Correction appliquée** :  
+  `generateTokens` utilise maintenant `RETURNING session_id` et place l'UUID de session dans le payload JWT sous la clé `sid`. `JwtStrategy.validate` vérifie `WHERE session_id = payload.sid`, ce qui garantit qu'un token révoqué est immédiatement rejeté même si d'autres sessions existent.
 
 ### SEC-03 — Révocation globale involontaire lors du logout
-* **Fichiers impactés** :
-  * `src/modules/auth/auth.controller.ts` (lignes 110–118)
-  * `src/modules/auth/auth.service.ts` (lignes 183–200)
-* **Problème constaté** :  
-  `AuthController.logout` extrait `req.cookies?.refreshToken`. Si l'application consommatrice est une application mobile ou une SPA qui ne transmet pas de cookie mais des tokens JSON/Bearer, `refreshToken` vaut `undefined`.  
-  Dans ce cas, `AuthService.logout` exécute :
-  ```sql
-  UPDATE dori_user_session SET revoked_at = $1, revoked_reason = 'logout'
-  WHERE user_id = $2 AND revoked_at IS NULL
-  ```
-  Cela révoque toutes les sessions de l'utilisateur sur tous ses appareils au lieu de la session courante.
-* **Comportement attendu** :  
-  Permettre de transmettre `refreshToken` également dans le corps de la requête (`LogoutDto`) ou cibler la session correspondant au JWT porteur.
+> ✅ **RÉSOLU le 2026-09-28** — Support de `LogoutDto` avec `refreshToken` optionnel dans le corps de la requête, et ciblage de la session spécifique liée au JWT porteur (`sessionId` / `sid`) en l'absence de refresh token.
+
+* **Fichiers modifiés** :
+  * `src/modules/auth/dto/logout.dto.ts` — création de `LogoutDto` avec propriété optionnelle `refreshToken?: string` documentée Swagger et validée
+  * `src/modules/auth/auth.controller.ts` — endpoint `logout` accepte `@Body() logoutDto: LogoutDto` avec lecture unifiée (`logoutDto?.refreshToken || req.cookies?.refreshToken`)
+  * `src/modules/auth/auth.service.ts` (`logout`) :
+    1. Si `refreshToken` est fourni (body ou cookie) : révoque la session liée à ce token spécifique (`refresh_token_hash = $2`).
+    2. Sinon si `user.sessionId` est présent (issu du JWT résolu dans SEC-02) : révoque uniquement la session active courante (`session_id = $2`), préservant toutes les autres sessions de l'utilisateur sur ses autres appareils (mobile, tablette, autres navigateurs).
+    3. Fallback : ne révoque par `user_id` que si ni `refreshToken` ni `sessionId` ne sont fournis.
+  * `src/modules/auth/auth.service.spec.ts` — suite de tests unitaires couvrant les 3 cas d'usage de déconnexion.
 
 ### SEC-04 — Asymétrie de contrôle de rôle lors des affectations
 * **Fichiers impactés** :
@@ -177,21 +173,23 @@
 ## 3. Validation, Tri, Pagination & Filtrage
 
 ### VAL-01 — Concaténation de `sortField` dans les clauses SQL (Risque d'injection & crash)
-* **Fichiers impactés** :
-  * `src/core/pagination/pagination.dto.ts` (lignes 9–49)
-  * `src/modules/sites/sites.service.ts` (lignes 40, 237, 265)
-  * `src/modules/queues/queues.service.ts` (lignes 65, 552)
-  * `src/modules/users/users.service.ts` (ligne 123)
+> ✅ **RÉSOLU le 2026-09-28** — Méthode `getSafeSortField(allowedFields, defaultField)` ajoutée dans `PaginationDto` ; chaque service déclare son allowlist explicite.
+
+* **Fichiers modifiés** :
+  * `src/core/pagination/pagination.dto.ts` — ajout de `getSafeSortField()` (validation par allowlist, fallback silencieux sur la valeur par défaut)
+  * `src/modules/sites/sites.service.ts` — `findSites`, `findSiteQueues`, `findSiteManagers` : remplacement de `getParams().sortField` par `getSafeSortField([...])`
+  * `src/modules/queues/queues.service.ts` — `findQueues` (suppression de la rustine `=== 'id'`), `getOperators` : idem
+  * `src/modules/users/users.service.ts` — `findUsers` (suppression de la rustine `=== 'id'`)
 * **Problème constaté** :  
-  1. `PaginationDto.parsedSort` convertit la chaîne en snake_case mais ne valide pas si le champ existe dans la table cible.
-  2. Dans `sites.service.ts` (`findSites`), le code exécute :
+  1. `PaginationDto.parsedSort` convertissait la chaîne en snake_case mais ne validait pas si le champ existait dans la table cible.
+  2. Dans `sites.service.ts` (`findSites`), le code exécutait :
      ```ts
      query += ` ORDER BY ${sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`;
      ```
-     Si le client appelle `GET /api/v1/sites?sort=id:desc`, l'API tente `ORDER BY id DESC` et échoue en 500 car la colonne s'appelle `site_id`.
-  3. Dans `users.service.ts` ou `queues.service.ts`, des rustines manuelles `sortField === 'id' ? 'queue_id' : sortField` ont été dispersées sans standardisation.
-* **Comportement attendu** :  
-  Implémenter une liste blanche des champs de tri autorisés par ressource (allowlist) dans chaque service ou étendre `PaginationDto` pour rejeter les champs non autorisés.
+     Si le client appelait `GET /api/v1/sites?sort=id:desc`, l'API tentait `ORDER BY id DESC` et échouait en 500 car la colonne s'appelle `site_id`.
+  3. Dans `users.service.ts` ou `queues.service.ts`, des rustines manuelles `sortField === 'id' ? 'queue_id' : sortField` avaient été dispersées sans standardisation.
+* **Correction appliquée** :  
+  `getSafeSortField(allowedFields, defaultField)` vérifie que le champ demandé est dans l'allowlist avant de le passer à la clause `ORDER BY`. Si le champ est absent, le fallback par défaut est utilisé silencieusement. Chaque service déclare ses colonnes autorisées (noms exacts en base, avec alias de table si nécessaire).
 
 ### VAL-02 — Fausse pagination et tronquage masqué
 * **Fichiers impactés** :
@@ -216,24 +214,15 @@
 ## 4. Contrats d'API, Documentation Swagger / OpenAPI & Routage
 
 ### API-01 — Contradiction entre Swagger et réponse réelle
-* **Fichiers impactés** :
-  * `src/modules/sites/sites.controller.ts` (ligne 132 : `getQueues`)
-  * `src/modules/service-tiers/service-tiers.controller.ts` (ligne 58 : `findTiers`)
-  * `src/modules/queues/queues.controller.ts` (ligne 190 : `getOperators`)
-* **Problème constaté** :  
-  Les contrôleurs déclarent `@ApiDoriOkResponse([MonDto])` (un tableau d'objets), mais la méthode de service retourne `pagination.createResponse(items, total)` :
-  ```json
-  {
-    "items": [...],
-    "page": 1,
-    "pageSize": 25,
-    "total": 3,
-    "totalPages": 1
-  }
-  ```
-  Le contrat Swagger est faux, ce qui fait échouer les générateurs de SDK front (ex: openapi-generator / orval).
-* **Comportement attendu** :  
-  Déclarer les DTOs paginés correspondants (`PaginatedQueueResponseDto`, etc.) dans les décorateurs Swagger.
+> ✅ **RÉSOLU le 2026-09-28** — DTOs paginés créés et décorateurs `@ApiDoriOkResponse` corrigés dans les 3 contrôleurs.
+
+* **Fichiers modifiés** :
+  * `src/modules/queues/dto/queue-response.dto.ts` — ajout de `PaginatedQueueOperatorResponseDto`
+  * `src/modules/service-tiers/dto/tier-response.dto.ts` — ajout de `PaginatedServiceTierResponseDto` et `PaginatedQueueTierResponseDto`
+  * `src/modules/queues/queues.controller.ts` (`getOperators`) — `@ApiDoriOkResponse([QueueOperatorResponseDto])` → `@ApiDoriOkResponse(PaginatedQueueOperatorResponseDto)`
+  * `src/modules/service-tiers/service-tiers.controller.ts` (`findTiers`) — `@ApiDoriOkResponse([ServiceTierDetailDto])` → `@ApiDoriOkResponse(PaginatedServiceTierResponseDto)`
+  * `src/modules/service-tiers/service-tiers.controller.ts` (`getQueueTiers`) — `@ApiDoriOkResponse([QueueTierDetailDto])` → `@ApiDoriOkResponse(PaginatedQueueTierResponseDto)`
+  * `src/modules/sites/sites.controller.ts` (`getQueues`) — `@ApiDoriOkResponse([QueueDetailResponseDto])` → `@ApiDoriOkResponse(PaginatedQueueResponseDto)`
 
 ### API-02 — Contrôleurs sans documentation Swagger
 * **Fichiers impactés** :
@@ -353,9 +342,9 @@
 Cette checklist est prête pour l'exécution tâche par tâche par un agent IA :
 
 - [ ] **Phase 1 — Sécurité & RBAC**
-  - [ ] SEC-01 : Poser les décorateurs `@RequirePermission` sur tous les endpoints de `UsersController`.
-  - [ ] SEC-02 : Ajouter le `sessionId` au payload JWT et vérifier la session spécifique dans `JwtStrategy`.
-  - [ ] SEC-03 : Ajouter `LogoutDto` avec `refreshToken` optionnel pour supporter le logout mobile/SPA sans cookie.
+  - [x] SEC-01 : Poser les décorateurs `@RequirePermission` / `@RequireAnyPermission` sur tous les endpoints de `UsersController` et contrôler les profils modificateur / cible. ✅ *2026-09-28*
+  - [x] SEC-02 : Ajouter le `sessionId` au payload JWT et vérifier la session spécifique dans `JwtStrategy`. ✅ *2026-09-28*
+  - [x] SEC-03 : Ajouter `LogoutDto` avec `refreshToken` optionnel pour supporter le logout mobile/SPA sans cookie et cibler la session active. ✅ *2026-09-28*
   - [ ] SEC-04 : Valider l'existence et le rôle `hotesse`/opérateur dans `QueuesService.assignOperator`.
   - [ ] SEC-05 : Valider l'état de la session dans `RealtimeGateway.handleConnection`.
 
@@ -369,14 +358,14 @@ Cette checklist est prête pour l'exécution tâche par tâche par un agent IA :
   - [ ] WRK-04 : Remplacer les `new Date()` restants par `ClockService`.
 
 - [ ] **Phase 3 — Filtres, Tri & Pagination**
-  - [ ] VAL-01 : Implémenter une allowlist de colonnes autorisées pour le tri dans `PaginationDto` et sécuriser les clauses `ORDER BY`.
+  - [x] VAL-01 : Implémenter une allowlist de colonnes autorisées pour le tri dans `PaginationDto` et sécuriser les clauses `ORDER BY`. ✅ *2026-09-28*
   - [ ] VAL-02 : Transformer `getNotes`, `getSiteManagers`, `getQueueTiers` pour accepter la pagination ou renvoyer un contrat explicite.
   - [ ] VAL-03 : Créer les DTOs de filtres validés pour `ReportsController`.
   - [ ] ERR-02 : Vérifier l'existence de `personId` dans `registerCustomer` et renvoyer 404 si inexistant.
   - [ ] ERR-03 : Utiliser la configuration `bcryptRounds` dans `UsersService`.
 
 - [ ] **Phase 4 — OpenAPI / Swagger & Harmonisation Contrats**
-  - [ ] API-01 : Corriger les décorateurs Swagger retournant des tableaux au lieu des objets paginés (`SitesController`, `ServiceTiersController`, `QueuesController`).
+  - [x] API-01 : Corriger les décorateurs Swagger retournant des tableaux au lieu des objets paginés (`SitesController`, `ServiceTiersController`, `QueuesController`). ✅ *2026-09-28*
   - [ ] API-02 : Documenter intégralement `UsersController` et `TranslationsController` avec Swagger.
   - [ ] API-03 : Supprimer le doublon `/health` dans `AppController` au profit de `HealthController`.
   - [ ] API-04 : Rendre public `GET /api/v1/translations/bundle` (`@Public()`).

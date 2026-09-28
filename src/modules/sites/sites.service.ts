@@ -18,7 +18,12 @@ export class SitesService {
 
   async findSites(pagination: PaginationDto, user: AuthenticatedUser) {
     const scope = await this.scopeService.getUserScope(user);
-    const { pageSize, offset, sortField, sortOrder } = pagination.getParams();
+    const { pageSize, offset, sortOrder } = pagination.getParams();
+    // VAL-01 : allowlist des colonnes autorisées pour dori_site
+    const sortField = pagination.getSafeSortField(
+      ['site_id', 'site_name', 'site_type', 'created_at', 'updated_at'],
+      'created_at',
+    );
 
     let query = `SELECT * FROM dori_site WHERE is_active = TRUE`;
     const params: any[] = [];
@@ -218,7 +223,12 @@ export class SitesService {
 
     await this.scopeService.checkSiteAccess(user, siteId);
     const scope = await this.scopeService.getUserScope(user);
-    const { pageSize, offset, sortField, sortOrder } = pagination.getParams();
+    const { pageSize, offset, sortOrder } = pagination.getParams();
+    // VAL-01 : allowlist des colonnes autorisées pour dori_site_queue_thread
+    const sortField = pagination.getSafeSortField(
+      ['queue_id', 'queue_name', 'queue_code', 'created_at', 'updated_at'],
+      'created_at',
+    );
 
     let query = `SELECT * FROM dori_site_queue_thread WHERE site_id = $1 AND is_active = TRUE`;
     const params: any[] = [siteId];
@@ -246,7 +256,12 @@ export class SitesService {
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkSiteAccess(user, siteId);
-    const { pageSize, offset, sortField, sortOrder } = pagination.getParams();
+    const { pageSize, offset, sortOrder } = pagination.getParams();
+    // VAL-01 : allowlist pour le JOIN dori_user_site / dori_user
+    const sortField = pagination.getSafeSortField(
+      ['u.user_id', 'u.username', 'u.email', 'us.assigned_at'],
+      'us.assigned_at',
+    );
 
     const query = `
       SELECT u.user_id, u.username, u.email, u.user_type, us.assigned_at

@@ -23,6 +23,23 @@ export class ServiceTierDetailDto {
   isActive: boolean;
 }
 
+export class PaginatedServiceTierResponseDto {
+  @ApiProperty({ type: [ServiceTierDetailDto], description: 'Liste des forfaits' })
+  items: ServiceTierDetailDto[];
+
+  @ApiProperty({ example: 1, description: 'Numéro de page actuelle' })
+  page: number;
+
+  @ApiProperty({ example: 25, description: "Nombre d'éléments par page" })
+  pageSize: number;
+
+  @ApiProperty({ example: 10, description: "Total d'éléments" })
+  total: number;
+
+  @ApiProperty({ example: 1, description: 'Total de pages' })
+  totalPages: number;
+}
+
 export class QueueTierDetailDto {
   @ApiProperty({ example: 1, description: 'ID de la file' })
   queueId: number;
@@ -50,6 +67,23 @@ export class QueueTierDetailDto {
     description: 'Détails du forfait global',
   })
   tier?: ServiceTierDetailDto;
+}
+
+export class PaginatedQueueTierResponseDto {
+  @ApiProperty({ type: [QueueTierDetailDto], description: 'Liste des forfaits de la file' })
+  items: QueueTierDetailDto[];
+
+  @ApiProperty({ example: 1, description: 'Numéro de page actuelle' })
+  page: number;
+
+  @ApiProperty({ example: 25, description: "Nombre d'éléments par page" })
+  pageSize: number;
+
+  @ApiProperty({ example: 10, description: "Total d'éléments" })
+  total: number;
+
+  @ApiProperty({ example: 1, description: 'Total de pages' })
+  totalPages: number;
 }
 
 export class NotificationRuleDetailDto {

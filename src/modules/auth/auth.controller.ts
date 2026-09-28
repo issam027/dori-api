@@ -20,6 +20,7 @@ import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
+import { LogoutDto } from './dto/logout.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import {
   LoginResponseDto,
@@ -104,15 +105,18 @@ export class AuthController {
   @ApiBearerAuth('bearer')
   @ApiOperation({
     summary: 'Déconnexion',
-    description: 'Invalide la session et révoque le refresh token courant.',
+    description:
+      'Invalide la session et révoque le refresh token courant (transmis via cookie, corps de requête ou session liée au JWT porteur).',
   })
+  @ApiBody({ type: LogoutDto, required: false })
   @ApiDoriOkResponse(SimpleMessageResponseDto, 'Session terminée avec succès')
   async logout(
     @CurrentUser() user: AuthenticatedUser,
+    @Body() logoutDto: LogoutDto,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const refreshToken = req.cookies?.refreshToken;
+    const refreshToken = logoutDto?.refreshToken || req.cookies?.refreshToken;
     res.clearCookie('refreshToken');
     return this.authService.logout(user, refreshToken);
   }

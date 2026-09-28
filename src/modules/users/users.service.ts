@@ -24,6 +24,9 @@ export class UsersService {
   ) {}
 
   private async getCallerMaxRank(user: AuthenticatedUser): Promise<number> {
+    if (user.roles?.includes('root')) {
+      return 5;
+    }
     const rolesRes = await this.dataSource.query(
       `SELECT MAX(r.rank) as max_rank
        FROM dori_user_role ur
@@ -35,6 +38,14 @@ export class UsersService {
   }
 
   private async getUserMaxRank(targetUserId: number): Promise<number> {
+    const userRes = await this.dataSource.query(
+      `SELECT user_id, user_type FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL`,
+      [targetUserId],
+    );
+    if (!userRes || userRes.length === 0) {
+      throw new DoriException('USER_NOT_FOUND', { userId: targetUserId });
+    }
+
     const rolesRes = await this.dataSource.query(
       `SELECT MAX(r.rank) as max_rank
        FROM dori_user_role ur
@@ -42,7 +53,48 @@ export class UsersService {
        WHERE ur.user_id = $1`,
       [targetUserId],
     );
-    return Number(rolesRes[0]?.max_rank || 0);
+    const maxRank = Number(rolesRes[0]?.max_rank || 0);
+    if (maxRank > 0) return maxRank;
+
+    if (userRes[0].user_type === 'kiosk') {
+      return 1;
+    }
+    return 0;
+  }
+
+  private async getCallerMaxManageRank(user: AuthenticatedUser): Promise<number> {
+    if (user.roles?.includes('root')) {
+      return 5;
+    }
+
+    const permsRes = await this.dataSource.query(
+      `SELECT DISTINCT p.permission_name
+       FROM dori_user_role ur
+       JOIN dori_role_permission rp ON rp.role_id = ur.role_id
+       JOIN dori_permission p ON p.permission_id = rp.permission_id
+       WHERE ur.user_id = $1 AND p.is_active = TRUE`,
+      [user.userId],
+    );
+
+    const permissions = new Set<string>([
+      ...(user.permissions || []),
+      ...permsRes.map((r: any) => r.permission_name),
+    ]);
+
+    if (permissions.has('system_manage') || permissions.has('user_manage_admin')) {
+      return 4;
+    }
+    if (permissions.has('user_manage_manager')) {
+      return 3;
+    }
+    if (permissions.has('user_manage_hostess')) {
+      return 2;
+    }
+    if (permissions.has('user_manage_kiosk')) {
+      return 1;
+    }
+
+    return 0;
   }
 
   private async checkAntiEscalation(
@@ -55,23 +107,43 @@ export class UsersService {
     }
 
     const callerRank = await this.getCallerMaxRank(caller);
+    const maxManageRank = await this.getCallerMaxManageRank(caller);
+
+    if (maxManageRank === 0) {
+      throw new DoriException('FORBIDDEN_PERMISSION');
+    }
 
     if (targetUserId) {
       const targetRank = await this.getUserMaxRank(targetUserId);
+
+      // Profil du modificateur (anti-escalade de rang) :
+      // On ne peut pas modifier un utilisateur ayant un rang supérieur ou égal au sien
       if (targetRank >= callerRank) {
         throw new DoriException('FORBIDDEN_ROLE_ESCALATION');
+      }
+
+      // Profil du user à modifier :
+      // Si une personne a la permission user_manage_hostess (maxManageRank = 2),
+      // il ne pourra pas modifier un user ayant un profil supérieur à l'hôtesse (targetRank > 2)
+      if (targetRank > maxManageRank) {
+        throw new DoriException('FORBIDDEN_PERMISSION');
       }
     }
 
     if (targetRoleId) {
       const roleRes = await this.dataSource.query(
-        `SELECT rank FROM dori_role WHERE role_id = $1`,
+        `SELECT rank FROM dori_role WHERE role_id = $1 AND is_active = TRUE`,
         [targetRoleId],
       );
       if (roleRes && roleRes.length > 0) {
         const roleRank = Number(roleRes[0].rank);
+
         if (roleRank >= callerRank) {
           throw new DoriException('FORBIDDEN_ROLE_ESCALATION');
+        }
+
+        if (roleRank > maxManageRank) {
+          throw new DoriException('FORBIDDEN_PERMISSION');
         }
       }
     }
@@ -79,7 +151,12 @@ export class UsersService {
 
   async findUsers(filter: UserFilterDto, user: AuthenticatedUser) {
     const scope = await this.scopeService.getUserScope(user);
-    const { pageSize, offset, sortField, sortOrder } = filter.getParams();
+    const { pageSize, offset, sortOrder } = filter.getParams();
+    // VAL-01 : allowlist des colonnes autorisées pour dori_user (alias u)
+    const sortField = filter.getSafeSortField(
+      ['u.user_id', 'u.username', 'u.email', 'u.user_type', 'u.is_active', 'u.last_login', 'u.created_at', 'u.updated_at'],
+      'u.created_at',
+    );
 
     let query = `
       SELECT DISTINCT u.user_id, u.username, u.email, u.user_type, u.is_active,
@@ -120,13 +197,13 @@ export class UsersService {
     );
     const total = countRes[0]?.total || 0;
 
-    query += ` ORDER BY u.${sortField === 'id' ? 'user_id' : sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`;
+    query += ` ORDER BY ${sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`;
     const items = await this.dataSource.query(query, params);
 
     return filter.createResponse(items, total);
   }
 
-  async findUserById(userId: number, _user: AuthenticatedUser) {
+  async findUserById(userId: number, user: AuthenticatedUser) {
     const users = await this.dataSource.query(
       `SELECT user_id, username, email, user_type, is_active, language_preference, last_login, created_at, updated_at
        FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL`,
@@ -135,6 +212,14 @@ export class UsersService {
 
     if (!users || users.length === 0) {
       throw new DoriException('USER_NOT_FOUND', { userId });
+    }
+
+    if (!user.roles?.includes('root') && user.userId !== userId) {
+      const maxManageRank = await this.getCallerMaxManageRank(user);
+      const targetRank = await this.getUserMaxRank(userId);
+      if (targetRank > maxManageRank) {
+        throw new DoriException('FORBIDDEN_PERMISSION');
+      }
     }
 
     const targetUser = users[0];
@@ -177,6 +262,8 @@ export class UsersService {
   async createUser(dto: CreateUserDto, user: AuthenticatedUser) {
     if (dto.roleId) {
       await this.checkAntiEscalation(user, undefined, dto.roleId);
+    } else {
+      await this.checkAntiEscalation(user);
     }
 
     const hash = await bcrypt.hash(dto.password, 12);

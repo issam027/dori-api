@@ -231,6 +231,23 @@ export class QueueOperatorResponseDto {
   isActive: boolean;
 }
 
+export class PaginatedQueueOperatorResponseDto {
+  @ApiProperty({ type: [QueueOperatorResponseDto], description: 'Liste des opérateurs' })
+  items: QueueOperatorResponseDto[];
+
+  @ApiProperty({ example: 1, description: 'Numéro de page actuelle' })
+  page: number;
+
+  @ApiProperty({ example: 25, description: "Nombre d'éléments par page" })
+  pageSize: number;
+
+  @ApiProperty({ example: 10, description: "Total d'éléments" })
+  total: number;
+
+  @ApiProperty({ example: 1, description: 'Total de pages' })
+  totalPages: number;
+}
+
 export class AssignOperatorResponseDto {
   @ApiProperty({ example: true, description: 'Opération réussie' })
   success: boolean;

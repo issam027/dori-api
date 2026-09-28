@@ -31,7 +31,7 @@ import {
   SiteManagerResponseDto,
   AssignManagerResponseDto,
 } from './dto/site-response.dto';
-import { QueueDetailResponseDto } from '../queues/dto/queue-response.dto';
+import { PaginatedQueueResponseDto } from '../queues/dto/queue-response.dto';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
@@ -129,7 +129,7 @@ export class SitesController {
       "Retourne toutes les files d'attente actives rattachées au site.",
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
-  @ApiDoriOkResponse([QueueDetailResponseDto], "Liste des files d'attente du site")
+  @ApiDoriOkResponse(PaginatedQueueResponseDto, "Liste paginée des files d'attente du site")
   async getQueues(
     @Param('siteId', ParseIntPipe) siteId: number,
     @CurrentUser() user: AuthenticatedUser,

@@ -25,7 +25,10 @@ import {
 import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
-import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
+import {
+  RequirePermission,
+  RequireAnyPermission,
+} from '../../core/rbac/decorators/require-permission.decorator';
 
 @ApiTags('Users')
 @ApiBearerAuth('bearer')
@@ -34,6 +37,13 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('users')
+  @RequireAnyPermission(
+    'user_manage_kiosk',
+    'user_manage_hostess',
+    'user_manage_manager',
+    'user_manage_admin',
+    'system_manage',
+  )
   async findUsers(
     @Query() filter: UserFilterDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -42,6 +52,12 @@ export class UsersController {
   }
 
   @Post('users')
+  @RequireAnyPermission(
+    'user_manage_kiosk',
+    'user_manage_hostess',
+    'user_manage_manager',
+    'user_manage_admin',
+  )
   @HttpCode(HttpStatus.CREATED)
   async createUser(
     @Body() dto: CreateUserDto,
@@ -51,6 +67,13 @@ export class UsersController {
   }
 
   @Get('users/:userId')
+  @RequireAnyPermission(
+    'user_manage_kiosk',
+    'user_manage_hostess',
+    'user_manage_manager',
+    'user_manage_admin',
+    'system_manage',
+  )
   async findUserById(
     @Param('userId', ParseIntPipe) userId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -59,6 +82,12 @@ export class UsersController {
   }
 
   @Patch('users/:userId')
+  @RequireAnyPermission(
+    'user_manage_kiosk',
+    'user_manage_hostess',
+    'user_manage_manager',
+    'user_manage_admin',
+  )
   async updateUser(
     @Param('userId', ParseIntPipe) userId: number,
     @Body() dto: UpdateUserDto,
@@ -68,6 +97,12 @@ export class UsersController {
   }
 
   @Patch('users/:userId/status')
+  @RequireAnyPermission(
+    'user_manage_kiosk',
+    'user_manage_hostess',
+    'user_manage_manager',
+    'user_manage_admin',
+  )
   async updateUserStatus(
     @Param('userId', ParseIntPipe) userId: number,
     @Body() dto: UpdateUserStatusDto,
@@ -77,6 +112,12 @@ export class UsersController {
   }
 
   @Patch('users/:userId/password')
+  @RequireAnyPermission(
+    'user_manage_kiosk',
+    'user_manage_hostess',
+    'user_manage_manager',
+    'user_manage_admin',
+  )
   async setUserPassword(
     @Param('userId', ParseIntPipe) userId: number,
     @Body() dto: SetUserPasswordDto,
@@ -86,6 +127,12 @@ export class UsersController {
   }
 
   @Post('users/:userId/roles')
+  @RequireAnyPermission(
+    'user_manage_kiosk',
+    'user_manage_hostess',
+    'user_manage_manager',
+    'user_manage_admin',
+  )
   @HttpCode(HttpStatus.CREATED)
   async assignUserRole(
     @Param('userId', ParseIntPipe) userId: number,
@@ -96,6 +143,12 @@ export class UsersController {
   }
 
   @Delete('users/:userId/roles/:roleId')
+  @RequireAnyPermission(
+    'user_manage_kiosk',
+    'user_manage_hostess',
+    'user_manage_manager',
+    'user_manage_admin',
+  )
   async removeUserRole(
     @Param('userId', ParseIntPipe) userId: number,
     @Param('roleId', ParseIntPipe) roleId: number,
@@ -106,6 +159,13 @@ export class UsersController {
 
   // Roles and Permissions (§5.9)
   @Get('roles')
+  @RequireAnyPermission(
+    'user_manage_kiosk',
+    'user_manage_hostess',
+    'user_manage_manager',
+    'user_manage_admin',
+    'system_manage',
+  )
   async getRoles(@Query() pagination: PaginationDto) {
     return this.usersService.getRoles(pagination);
   }

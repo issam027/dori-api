@@ -61,6 +61,20 @@ export class PaginationDto {
     return { page, pageSize, offset, sortField, sortOrder };
   }
 
+  /**
+   * VAL-01 — Retourne le champ de tri sécurisé via allowlist.
+   * Si le champ demandé n'est pas dans `allowedFields`, on retourne `defaultField`.
+   * Protège contre l'injection SQL et les crashes 500 sur des colonnes inconnues.
+   *
+   * @param allowedFields  Liste blanche des colonnes autorisées (noms exacts en base)
+   * @param defaultField   Colonne utilisée si le champ demandé est absent de l'allowlist
+   */
+  getSafeSortField(allowedFields: string[], defaultField: string): string {
+    const parsed = this.parsedSort();
+    if (!parsed) return defaultField;
+    return allowedFields.includes(parsed.field) ? parsed.field : defaultField;
+  }
+
   createResponse<T>(items: T[], total: number): PaginatedResult<T> {
     const page = Number(this.page) || 1;
     const pageSize = Number(this.pageSize) || 25;

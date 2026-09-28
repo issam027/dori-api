@@ -1,6 +1,9 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { PERMISSIONS_KEY } from '../decorators/require-permission.decorator';
+import {
+  PERMISSIONS_KEY,
+  ANY_PERMISSIONS_KEY,
+} from '../decorators/require-permission.decorator';
 import { AuthenticatedUser } from '../../auth/interfaces/jwt-payload.interface';
 import { DoriException } from '../../errors/dori.exception';
 
@@ -13,8 +16,16 @@ export class PermissionsGuard implements CanActivate {
       PERMISSIONS_KEY,
       [context.getHandler(), context.getClass()],
     );
+    const requiredAnyPermissions = this.reflector.getAllAndOverride<string[]>(
+      ANY_PERMISSIONS_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
-    if (!requiredPermissions || requiredPermissions.length === 0) {
+    const hasRequired = requiredPermissions && requiredPermissions.length > 0;
+    const hasRequiredAny =
+      requiredAnyPermissions && requiredAnyPermissions.length > 0;
+
+    if (!hasRequired && !hasRequiredAny) {
       return true;
     }
 
@@ -32,12 +43,23 @@ export class PermissionsGuard implements CanActivate {
     }
 
     const userPermissions = new Set(user.permissions || []);
-    const hasAll = requiredPermissions.every((perm) =>
-      userPermissions.has(perm),
-    );
 
-    if (!hasAll) {
-      throw new DoriException('FORBIDDEN_PERMISSION');
+    if (hasRequired) {
+      const hasAll = requiredPermissions.every((perm) =>
+        userPermissions.has(perm),
+      );
+      if (!hasAll) {
+        throw new DoriException('FORBIDDEN_PERMISSION');
+      }
+    }
+
+    if (hasRequiredAny) {
+      const hasAny = requiredAnyPermissions.some((perm) =>
+        userPermissions.has(perm),
+      );
+      if (!hasAny) {
+        throw new DoriException('FORBIDDEN_PERMISSION');
+      }
     }
 
     return true;

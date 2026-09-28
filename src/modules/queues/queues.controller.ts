@@ -36,6 +36,7 @@ import {
   QueueDeleteResponseDto,
   QueueResetResponseDto,
   QueueOperatorResponseDto,
+  PaginatedQueueOperatorResponseDto,
   AssignOperatorResponseDto,
 } from './dto/queue-response.dto';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
@@ -187,7 +188,7 @@ export class QueuesController {
       'Retourne la liste des utilisateurs autorisés à opérer sur cette file.',
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse([QueueOperatorResponseDto], 'Liste des opérateurs assignés')
+  @ApiDoriOkResponse(PaginatedQueueOperatorResponseDto, 'Liste paginée des opérateurs assignés')
   async getOperators(
     @Param('queueId', ParseIntPipe) queueId: number,
     @Query() pagination: PaginationDto,
