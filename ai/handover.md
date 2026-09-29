@@ -228,18 +228,25 @@
   * `src/modules/sites/sites.controller.ts` (`getQueues`) — `@ApiDoriOkResponse([QueueDetailResponseDto])` → `@ApiDoriOkResponse(PaginatedQueueResponseDto)`
 
 ### API-02 — Contrôleurs sans documentation Swagger
-* **Fichiers impactés** :
-  * `src/modules/users/users.controller.ts`
-  * `src/modules/translations/translations.controller.ts`
+> ✅ **RÉSOLU le 2026-09-29** — Documentation Swagger exhaustive ajoutée sur l'ensemble des routes de `UsersController` et `TranslationsController`, avec création des DTOs de réponse dédiés conformes au format d'enveloppe `StandardResponse<T>`.
+
+* **Fichiers créés** :
+  * `src/modules/users/dto/user-response.dto.ts` — DTOs de réponse Swagger pour les utilisateurs et rôles (`UserListItemDto`, `PaginatedUserResponseDto`, `UserDetailResponseDto`, `CreateUserResponseDto`, `UpdateUserResponseDto`, `UpdateUserStatusResponseDto`, `SetUserPasswordResponseDto`, `AssignUserRoleResponseDto`, `RemoveUserRoleResponseDto`, `RoleDetailResponseDto`, `PaginatedRoleResponseDto`, `UpdateRolePermissionsResponseDto`).
+  * `src/modules/translations/dto/translation-response.dto.ts` — DTOs de réponse Swagger pour les traductions (`TranslationDetailDto`, `PaginatedTranslationResponseDto`, `TranslationBundleResponseDto`, `DeleteTranslationResponseDto`).
+* **Fichiers modifiés** :
+  * `src/modules/users/users.controller.ts` — Ajout des décorateurs `@ApiOperation`, `@ApiParam`, `@ApiDoriOkResponse`, `@ApiDoriCreatedResponse` sur les 11 routes du contrôleur.
+  * `src/modules/translations/translations.controller.ts` — Ajout des décorateurs `@ApiOperation`, `@ApiParam`, `@ApiDoriOkResponse`, `@ApiDoriCreatedResponse` sur les 5 routes du contrôleur.
 * **Problème constaté** :  
   Aucun endpoint de ces deux contrôleurs n'a d'annotations `@ApiOperation`, `@ApiParam`, `@ApiDoriOkResponse` ou `@ApiDoriCreatedResponse`.
 * **Comportement attendu** :  
   Ajouter la documentation Swagger complète pour homogénéiser avec les autres modules (`sites`, `queues`, `registrations`).
 
 ### API-03 — Doublon d'endpoints Health Check
-* **Fichiers impactés** :
-  * `src/app.controller.ts` (`GET /health`)
-  * `src/core/health/health.controller.ts` (`GET /api/v1/health`)
+> ✅ **RÉSOLU le 2026-09-29** — Endpoint de santé unifié sur `HealthController` (`/api/v1/health`). Le doublon dans `AppController` a été remplacé par une redirection permanente HTTP 301 vers `/api/v1/health`.
+
+* **Fichiers modifiés** :
+  * `src/app.controller.ts` — Remplacement du handler doublon renvoyant un simple `{ status: 'ok' }` par une redirection permanente (`@Redirect('/api/v1/health', HttpStatus.MOVED_PERMANENTLY)`) documentée avec Swagger.
+  * `src/app.controller.spec.ts` — Ajout du test unitaire validant la redirection de `getHealth` vers `/api/v1/health`.
 * **Problème constaté** :  
   Deux endpoints de santé concurrents coexistent dans l'application, l'un sans préfixe d'API renvoyant un simple `{ status: 'ok' }`, l'autre complet avec statut DB et mémoire sous `/api/v1/health`.
 * **Comportement attendu** :  
@@ -253,7 +260,10 @@
   Ajouter `@Public()` sur `getBundle`.
 
 ### API-05 — Paramètre obligatoire déclaré optionnel dans Swagger
-* **Fichier impacté** : `src/modules/queue-engine/queue-engine.controller.ts` (lignes 51–56)
+> ✅ **RÉSOLU le 2026-09-29** — Paramètre `:siteId` déclaré avec `required: true` sur `@ApiParam` dans `QueueEngineController`.
+
+* **Fichier modifé** :
+  * `src/modules/queue-engine/queue-engine.controller.ts` (lignes 51–56) — Correction de `required: true` pour le paramètre `:siteId` de `@Get('sites/:siteId/next-preview')`.
 * **Problème constaté** :  
   Pour `@Get('sites/:siteId/next-preview')`, Swagger déclare `@ApiParam({ name: 'siteId', required: false })`. Or, `:siteId` dans le chemin est obligatoire et le `ParseIntPipe` génère une erreur 400 s'il n'est pas fourni.
 * **Comportement attendu** :  
@@ -264,10 +274,17 @@
 ## 5. Gestion des Erreurs & Formats de Réponse
 
 ### ERR-01 — Format divergent pour l'erreur `VALIDATION_ERROR`
-* **Fichiers impactés** :
-  * `src/core/errors/global-exception.filter.ts` (lignes 48–54)
-  * `src/modules/registrations/registrations.service.ts` (lignes 49, 123, 416, 474)
-  * `src/modules/queue-engine/queue-engine.service.ts` (lignes 121, 135)
+> ✅ **RÉSOLU le 2026-09-29** — Signature et comportement de `DoriException` et `GlobalExceptionFilter` standardisés pour garantir que les erreurs de validation ont toujours leurs détails dans `data.errors` (`data: { errors: [...] }`), que l'erreur provienne de `ValidationPipe` ou d'un rejet métier manuel.
+
+* **Fichier créé** :
+  * `src/core/errors/dori.exception.spec.ts` — Tests unitaires validant la standardisation du format d'enveloppe pour `VALIDATION_ERROR`.
+* **Fichiers modifiés** :
+  * `src/core/errors/dori.exception.ts` — Normalisation automatique des paramètres lors d'une `VALIDATION_ERROR` pour toujours peupler `data: { errors: string[] }` et vider `translationParams`.
+  * `src/core/errors/global-exception.filter.ts` — Garantie supplémentaire de formatage uniforme dans le filtre global si une exception `VALIDATION_ERROR` n'a pas encore la structure `data.errors`.
+  * `src/modules/registrations/registrations.service.ts` (lignes 49, 123, 416, 474) — Levée explicite avec `{ errors: [...] }` dans le payload de données.
+  * `src/modules/queue-engine/queue-engine.service.ts` (lignes 121, 135) — Levée explicite avec `{ errors: [...] }` dans le payload de données.
+  * `src/modules/service-tiers/service-tiers.service.ts` (lignes 312, 322) — Levée explicite avec `{ errors: [...] }` dans le payload de données.
+  * `src/modules/notifications/notifications.service.ts` (ligne 120) — Levée explicite avec `{ errors: [...] }` dans le payload de données.
 * **Problème constaté** :  
   * Rejet par le `ValidationPipe` (class-validator) :
     ```json
@@ -290,9 +307,11 @@
   Vérifier l'existence de la personne et lever `PERSON_NOT_FOUND` (404).
 
 ### ERR-03 — Hachage de mot de passe non uniforme
-* **Fichiers impactés** :
-  * `src/modules/users/users.service.ts` (ligne 182 : coût 12 en dur)
-  * `src/modules/auth/auth.service.ts` (ligne 264 : coût lu via `ConfigService`)
+> ✅ **RÉSOLU le 2026-09-29** — `ConfigService` injecté dans `UsersService` pour lire dynamiquement la valeur configurée de `security.bcryptRounds` (avec repli sur 12), uniformisant le coût de hachage avec `AuthService`.
+
+* **Fichiers modifiés** :
+  * `src/modules/users/users.service.ts` — Injection de `ConfigService` dans le constructeur et utilisation dynamique de `security.bcryptRounds` dans `createUser` et `setUserPassword`.
+  * `src/modules/users/users.service.spec.ts` — Ajout du mock `ConfigService` dans la suite de tests unitaires.
 * **Comportement attendu** :  
   Injecter et utiliser systématiquement la valeur configurée dans `ConfigService` (`security.bcryptRounds`).
 
@@ -365,13 +384,15 @@ Cette checklist est prête pour l'exécution tâche par tâche par un agent IA :
   - [x] VAL-01 : Implémenter une allowlist de colonnes autorisées pour le tri dans `PaginationDto` et sécuriser les clauses `ORDER BY`. ✅ *2026-09-28*
   - [ ] VAL-02 : Transformer `getNotes`, `getSiteManagers`, `getQueueTiers` pour accepter la pagination ou renvoyer un contrat explicite.
   - [ ] VAL-03 : Créer les DTOs de filtres validés pour `ReportsController`.
+  - [x] ERR-01 : Standardiser le format de l'erreur `VALIDATION_ERROR` pour toujours peupler `data.errors`. ✅ *2026-09-29*
   - [ ] ERR-02 : Vérifier l'existence de `personId` dans `registerCustomer` et renvoyer 404 si inexistant.
-  - [ ] ERR-03 : Utiliser la configuration `bcryptRounds` dans `UsersService`.
+  - [x] ERR-03 : Utiliser la configuration `bcryptRounds` dans `UsersService`. ✅ *2026-09-29*
 
 - [ ] **Phase 4 — OpenAPI / Swagger & Harmonisation Contrats**
   - [x] API-01 : Corriger les décorateurs Swagger retournant des tableaux au lieu des objets paginés (`SitesController`, `ServiceTiersController`, `QueuesController`). ✅ *2026-09-28*
-  - [ ] API-02 : Documenter intégralement `UsersController` et `TranslationsController` avec Swagger.
-  - [ ] API-03 : Supprimer le doublon `/health` dans `AppController` au profit de `HealthController`.
+  - [x] API-02 : Documenter intégralement `UsersController` et `TranslationsController` avec Swagger. ✅ *2026-09-29*
+  - [x] API-03 : Supprimer le doublon `/health` dans `AppController` au profit de `HealthController` (redirection HTTP 301). ✅ *2026-09-29*
   - [ ] API-04 : Rendre public `GET /api/v1/translations/bundle` (`@Public()`).
-  - [ ] API-05 : Corriger `required: true` sur le paramètre `:siteId` dans `QueueEngineController`.
+  - [x] API-05 : Corriger `required: true` sur le paramètre `:siteId` dans `QueueEngineController`. ✅ *2026-09-29*
   - [x] DAT-05 : Créer les endpoints et méthodes de soft-delete pour `User` et `Person`, et cascader `Queue`. ✅ *2026-09-29*
+

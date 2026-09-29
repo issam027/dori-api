@@ -13,7 +13,16 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+} from '@nestjs/swagger';
+import {
+  ApiDoriOkResponse,
+  ApiDoriCreatedResponse,
+} from '../../core/swagger/api-dori-response.decorator';
 import { Response } from 'express';
 import { TranslationsService } from './translations.service';
 import {
@@ -22,6 +31,12 @@ import {
   TranslationFilterDto,
   BundleQueryDto,
 } from './dto/translation.dto';
+import {
+  TranslationBundleResponseDto,
+  PaginatedTranslationResponseDto,
+  TranslationDetailDto,
+  DeleteTranslationResponseDto,
+} from './dto/translation-response.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
@@ -33,6 +48,12 @@ export class TranslationsController {
   constructor(private readonly translationsService: TranslationsService) {}
 
   @Get('bundle')
+  @ApiOperation({
+    summary: 'Obtenir le bundle de traductions',
+    description:
+      'Retourne le dictionnaire de traductions pour une locale et une catégorie données avec support du cache HTTP via ETag.',
+  })
+  @ApiDoriOkResponse(TranslationBundleResponseDto, 'Bundle de traductions')
   async getBundle(
     @Query() query: BundleQueryDto,
     @Headers('if-none-match') ifNoneMatch: string,
@@ -52,6 +73,15 @@ export class TranslationsController {
 
   @Get()
   @RequirePermission('translation_manage')
+  @ApiOperation({
+    summary: 'Lister les traductions',
+    description:
+      'Retourne la liste paginée des traductions enregistrées selon les filtres spécifiés.',
+  })
+  @ApiDoriOkResponse(
+    PaginatedTranslationResponseDto,
+    'Liste paginée des traductions',
+  )
   async findTranslations(@Query() filter: TranslationFilterDto) {
     return this.translationsService.findTranslations(filter);
   }
@@ -59,6 +89,15 @@ export class TranslationsController {
   @Post()
   @RequirePermission('translation_manage')
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Créer ou mettre à jour une traduction',
+    description:
+      'Enregistre une nouvelle traduction pour une clé et une locale données, avec validation des placeholders de gabarit.',
+  })
+  @ApiDoriCreatedResponse(
+    TranslationDetailDto,
+    'Traduction enregistrée avec succès',
+  )
   async createTranslation(
     @Body() dto: CreateTranslationDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -68,6 +107,17 @@ export class TranslationsController {
 
   @Patch(':translationId')
   @RequirePermission('translation_manage')
+  @ApiOperation({
+    summary: 'Mettre à jour une traduction',
+    description:
+      'Met à jour le contenu ou le statut actif d’une traduction existante.',
+  })
+  @ApiParam({
+    name: 'translationId',
+    type: Number,
+    description: 'ID de la traduction',
+  })
+  @ApiDoriOkResponse(TranslationDetailDto, 'Traduction mise à jour avec succès')
   async updateTranslation(
     @Param('translationId', ParseIntPipe) translationId: number,
     @Body() dto: UpdateTranslationDto,
@@ -78,6 +128,20 @@ export class TranslationsController {
 
   @Delete(':translationId')
   @RequirePermission('translation_manage')
+  @ApiOperation({
+    summary: 'Supprimer une traduction',
+    description:
+      'Désactive et supprime logiquement une traduction (soft-delete).',
+  })
+  @ApiParam({
+    name: 'translationId',
+    type: Number,
+    description: 'ID de la traduction',
+  })
+  @ApiDoriOkResponse(
+    DeleteTranslationResponseDto,
+    'Traduction supprimée avec succès',
+  )
   async deleteTranslation(
     @Param('translationId', ParseIntPipe) translationId: number,
     @CurrentUser() user: AuthenticatedUser,

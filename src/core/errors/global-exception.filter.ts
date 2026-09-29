@@ -21,6 +21,27 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof DoriException) {
       const body = exception.getResponse() as Record<string, unknown>;
+      if (
+        body.code === 'VALIDATION_ERROR' &&
+        (!body.data ||
+          (typeof body.data === 'object' && !('errors' in (body.data as object))))
+      ) {
+        const tParams =
+          (body.translationParams as Record<string, unknown>) || {};
+        if (tParams.errors) {
+          body.data = {
+            errors: Array.isArray(tParams.errors)
+              ? tParams.errors
+              : [tParams.errors],
+          };
+          delete tParams.errors;
+        } else if (tParams.message) {
+          body.data = { errors: [String(tParams.message)] };
+          delete tParams.message;
+        } else {
+          body.data = { errors: [] };
+        }
+      }
       return response.status(exception.getStatus()).json(body);
     }
 

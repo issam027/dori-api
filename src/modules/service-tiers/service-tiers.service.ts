@@ -309,9 +309,11 @@ export class ServiceTiersService {
       dto.thresholdPosition == null &&
       dto.thresholdMinutes == null
     ) {
-      throw new DoriException('VALIDATION_ERROR', {
-        message: 'Threshold rule requires position or minutes',
-      });
+      throw new DoriException(
+        'VALIDATION_ERROR',
+        {},
+        { errors: ['Threshold rule requires position or minutes'] },
+      );
     }
 
     // Check tracking link invariant (§3.8): tracking link can only be on welcome or trakingLink
@@ -319,9 +321,15 @@ export class ServiceTiersService {
       dto.includeTrackingLink &&
       !['welcome', 'trakingLink'].includes(dto.notificationType)
     ) {
-      throw new DoriException('VALIDATION_ERROR', {
-        message: 'Tracking link allowed only on welcome or trakingLink rules',
-      });
+      throw new DoriException(
+        'VALIDATION_ERROR',
+        {},
+        {
+          errors: [
+            'Tracking link allowed only on welcome or trakingLink rules',
+          ],
+        },
+      );
     }
 
     const res = await this.dataSource.query(

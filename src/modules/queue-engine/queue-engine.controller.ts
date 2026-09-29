@@ -50,9 +50,9 @@ export class QueueEngineController {
   })
   @ApiParam({
     name: 'siteId',
-    required: false,
+    required: true,
     type: Number,
-    description: 'Filtrer par site',
+    description: 'ID du site',
   })
   @ApiQuery({
     name: 'limit',

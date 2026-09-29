@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import { UsersService } from './users.service';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
+import { ConfigService } from '@nestjs/config';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { DoriException } from '../../core/errors/dori.exception';
 
@@ -38,6 +39,15 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
           provide: ClockService,
           useValue: {
             now: jest.fn(() => new Date('2026-09-28T12:00:00Z')),
+          },
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string) => {
+              if (key === 'security.bcryptRounds') return 12;
+              return undefined;
+            }),
           },
         },
       ],

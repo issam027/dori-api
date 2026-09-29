@@ -19,4 +19,11 @@ describe('AppController', () => {
       expect(appController.getHello()).toBe('Hello World!');
     });
   });
+
+  describe('health', () => {
+    it('should redirect to /api/v1/health', () => {
+      expect(appController.getHealth()).toEqual({ url: '/api/v1/health' });
+    });
+  });
 });
+

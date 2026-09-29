@@ -13,6 +13,7 @@ import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
+import { ConfigService } from '@nestjs/config';
 import { DoriException } from '../../core/errors/dori.exception';
 
 @Injectable()
@@ -21,6 +22,7 @@ export class UsersService {
     private readonly dataSource: DataSource,
     private readonly scopeService: ScopeService,
     private readonly clockService: ClockService,
+    private readonly configService: ConfigService,
   ) {}
 
   private async getCallerMaxRank(user: AuthenticatedUser): Promise<number> {
@@ -306,7 +308,9 @@ export class UsersService {
       await this.checkAntiEscalation(user);
     }
 
-    const hash = await bcrypt.hash(dto.password, 12);
+    const saltRounds =
+      this.configService?.get<number>('security.bcryptRounds') || 12;
+    const hash = await bcrypt.hash(dto.password, saltRounds);
     const now = this.clockService.now();
 
     const res = await this.dataSource.query(
@@ -416,7 +420,9 @@ export class UsersService {
     await this.checkAntiEscalation(user, userId);
     await this.findUserById(userId, user);
 
-    const hash = await bcrypt.hash(dto.newPassword, 12);
+    const saltRounds =
+      this.configService?.get<number>('security.bcryptRounds') || 12;
+    const hash = await bcrypt.hash(dto.newPassword, saltRounds);
     const now = this.clockService.now();
 
     await this.dataSource.query(

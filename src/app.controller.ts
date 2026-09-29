@@ -1,5 +1,5 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, HttpStatus, Redirect } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AppService } from './app.service';
 import { Public } from './core/auth/decorators/public.decorator';
 
@@ -17,8 +17,18 @@ export class AppController {
 
   @Public()
   @Get('health')
-  @ApiOperation({ summary: 'Vérification de santé (Health Check)' })
+  @Redirect('/api/v1/health', HttpStatus.MOVED_PERMANENTLY)
+  @ApiOperation({
+    summary: 'Redirection vers le bilan de santé unifié',
+    description:
+      'Redirige de manière permanente (301) vers le point de contrôle de santé complet /api/v1/health',
+  })
+  @ApiResponse({
+    status: HttpStatus.MOVED_PERMANENTLY,
+    description: 'Redirection permanente vers /api/v1/health',
+  })
   getHealth() {
-    return { status: 'ok', timestamp: new Date().toISOString() };
+    return { url: '/api/v1/health' };
   }
 }
+

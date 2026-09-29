@@ -11,8 +11,16 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
-import { ApiDoriOkResponse } from '../../core/swagger/api-dori-response.decorator';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+} from '@nestjs/swagger';
+import {
+  ApiDoriOkResponse,
+  ApiDoriCreatedResponse,
+} from '../../core/swagger/api-dori-response.decorator';
 import { UsersService } from './users.service';
 import {
   CreateUserDto,
@@ -24,6 +32,18 @@ import {
   UserFilterDto,
   UserDeleteResponseDto,
 } from './dto/user.dto';
+import {
+  PaginatedUserResponseDto,
+  UserDetailResponseDto,
+  CreateUserResponseDto,
+  UpdateUserResponseDto,
+  UpdateUserStatusResponseDto,
+  SetUserPasswordResponseDto,
+  AssignUserRoleResponseDto,
+  RemoveUserRoleResponseDto,
+  PaginatedRoleResponseDto,
+  UpdateRolePermissionsResponseDto,
+} from './dto/user-response.dto';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
@@ -36,7 +56,7 @@ import {
 @ApiBearerAuth('bearer')
 @Controller('api/v1')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   @Get('users')
   @RequireAnyPermission(
@@ -48,6 +68,12 @@ export class UsersController {
     'session_operate',
     'queue_view',
   )
+  @ApiOperation({
+    summary: 'Lister les utilisateurs',
+    description:
+      'Retourne la liste paginée des utilisateurs selon le périmètre et les droits du compte appelant.',
+  })
+  @ApiDoriOkResponse(PaginatedUserResponseDto, 'Liste paginée des utilisateurs')
   async findUsers(
     @Query() filter: UserFilterDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -63,6 +89,12 @@ export class UsersController {
     'user_manage_admin',
   )
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Créer un utilisateur',
+    description:
+      'Crée un nouvel utilisateur (humain ou borne interactive) et lui assigne optionnellement un rôle initial.',
+  })
+  @ApiDoriCreatedResponse(CreateUserResponseDto, 'Utilisateur créé avec succès')
   async createUser(
     @Body() dto: CreateUserDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -80,6 +112,17 @@ export class UsersController {
     'session_operate',
     'queue_view',
   )
+  @ApiOperation({
+    summary: 'Obtenir les détails d’un utilisateur',
+    description:
+      'Retourne les informations détaillées d’un utilisateur ainsi que ses rôles, sites et files associés.',
+  })
+  @ApiParam({
+    name: 'userId',
+    type: Number,
+    description: "ID de l'utilisateur",
+  })
+  @ApiDoriOkResponse(UserDetailResponseDto, "Détails de l'utilisateur")
   async findUserById(
     @Param('userId', ParseIntPipe) userId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -94,6 +137,17 @@ export class UsersController {
     'user_manage_manager',
     'user_manage_admin',
   )
+  @ApiOperation({
+    summary: 'Mettre à jour un utilisateur',
+    description:
+      'Met à jour les informations de base d’un compte utilisateur (email, préférence linguistique).',
+  })
+  @ApiParam({
+    name: 'userId',
+    type: Number,
+    description: "ID de l'utilisateur",
+  })
+  @ApiDoriOkResponse(UpdateUserResponseDto, 'Utilisateur mis à jour avec succès')
   async updateUser(
     @Param('userId', ParseIntPipe) userId: number,
     @Body() dto: UpdateUserDto,
@@ -108,6 +162,20 @@ export class UsersController {
     'user_manage_hostess',
     'user_manage_manager',
     'user_manage_admin',
+  )
+  @ApiOperation({
+    summary: 'Activer ou désactiver un utilisateur',
+    description:
+      'Met à jour le statut actif du compte utilisateur. La désactivation révoque immédiatement ses sessions actives.',
+  })
+  @ApiParam({
+    name: 'userId',
+    type: Number,
+    description: "ID de l'utilisateur",
+  })
+  @ApiDoriOkResponse(
+    UpdateUserStatusResponseDto,
+    'Statut de l’utilisateur mis à jour',
   )
   async updateUserStatus(
     @Param('userId', ParseIntPipe) userId: number,
@@ -149,6 +217,20 @@ export class UsersController {
     'user_manage_manager',
     'user_manage_admin',
   )
+  @ApiOperation({
+    summary: 'Définir le mot de passe d’un utilisateur',
+    description:
+      'Réinitialise le mot de passe d’un utilisateur et révoque l’ensemble de ses sessions actives existantes.',
+  })
+  @ApiParam({
+    name: 'userId',
+    type: Number,
+    description: "ID de l'utilisateur",
+  })
+  @ApiDoriOkResponse(
+    SetUserPasswordResponseDto,
+    'Mot de passe mis à jour avec succès',
+  )
   async setUserPassword(
     @Param('userId', ParseIntPipe) userId: number,
     @Body() dto: SetUserPasswordDto,
@@ -165,6 +247,20 @@ export class UsersController {
     'user_manage_admin',
   )
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Assigner un rôle à un utilisateur',
+    description:
+      'Assigne un nouveau rôle à un compte utilisateur dans la limite des prérogatives du compte appelant.',
+  })
+  @ApiParam({
+    name: 'userId',
+    type: Number,
+    description: "ID de l'utilisateur",
+  })
+  @ApiDoriCreatedResponse(
+    AssignUserRoleResponseDto,
+    'Rôle assigné avec succès',
+  )
   async assignUserRole(
     @Param('userId', ParseIntPipe) userId: number,
     @Body() body: AssignUserRoleDto,
@@ -180,6 +276,22 @@ export class UsersController {
     'user_manage_manager',
     'user_manage_admin',
   )
+  @ApiOperation({
+    summary: 'Retirer un rôle à un utilisateur',
+    description:
+      'Retire un rôle précédemment assigné à un compte utilisateur.',
+  })
+  @ApiParam({
+    name: 'userId',
+    type: Number,
+    description: "ID de l'utilisateur",
+  })
+  @ApiParam({
+    name: 'roleId',
+    type: Number,
+    description: 'ID du rôle à retirer',
+  })
+  @ApiDoriOkResponse(RemoveUserRoleResponseDto, 'Rôle retiré avec succès')
   async removeUserRole(
     @Param('userId', ParseIntPipe) userId: number,
     @Param('roleId', ParseIntPipe) roleId: number,
@@ -197,12 +309,32 @@ export class UsersController {
     'user_manage_admin',
     'system_manage',
   )
+  @ApiOperation({
+    summary: 'Lister les rôles',
+    description:
+      'Retourne la liste paginée des rôles système ainsi que leurs permissions associées.',
+  })
+  @ApiDoriOkResponse(PaginatedRoleResponseDto, 'Liste paginée des rôles')
   async getRoles(@Query() pagination: PaginationDto) {
     return this.usersService.getRoles(pagination);
   }
 
   @Patch('roles/:roleId/permissions')
   @RequirePermission('system_manage')
+  @ApiOperation({
+    summary: 'Mettre à jour les permissions d’un rôle',
+    description:
+      'Remplace l’ensemble des permissions attribuées à un rôle donné (réservé aux administrateurs système).',
+  })
+  @ApiParam({
+    name: 'roleId',
+    type: Number,
+    description: 'ID du rôle',
+  })
+  @ApiDoriOkResponse(
+    UpdateRolePermissionsResponseDto,
+    'Permissions du rôle mises à jour',
+  )
   async updateRolePermissions(
     @Param('roleId', ParseIntPipe) roleId: number,
     @Body() dto: UpdateRolePermissionsDto,

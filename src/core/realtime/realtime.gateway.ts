@@ -70,12 +70,49 @@ export class RealtimeGateway
           'change-me-in-production';
         const payload: JwtPayload = this.jwtService.verify(token, { secret });
 
+        // SEC-05 : Vérification de session active et de compte non désactivé
+        if (payload.sid) {
+          // Token post-SEC-02 : vérifier la session spécifique
+          const sessions = await this.dataSource.query(
+            `SELECT s.session_id, u.is_active
+             FROM dori_user_session s
+             JOIN dori_user u ON u.user_id = s.user_id
+             WHERE s.session_id = $1
+               AND s.revoked_at IS NULL
+               AND s.expires_at > NOW()
+               AND u.deleted_at IS NULL`,
+            [payload.sid],
+          );
+          if (!sessions || sessions.length === 0 || !sessions[0].is_active) {
+            this.logger.warn(
+              `WS rejected: session revoked or account disabled (sid=${payload.sid})`,
+            );
+            client.disconnect(true);
+            return;
+          }
+        } else {
+          // Fallback : tokens émis avant SEC-02 (sans sid) — vérifier au moins is_active
+          const users = await this.dataSource.query(
+            `SELECT is_active FROM dori_user
+             WHERE user_id = $1 AND deleted_at IS NULL`,
+            [payload.sub],
+          );
+          if (!users || users.length === 0 || !users[0].is_active) {
+            this.logger.warn(
+              `WS rejected: account disabled or not found (userId=${payload.sub})`,
+            );
+            client.disconnect(true);
+            return;
+          }
+        }
+
         client.user = {
           userId: Number(payload.sub),
           username: payload.username,
           userType: payload.userType,
           roles: payload.roles,
           permissions: payload.permissions,
+          sessionId: payload.sid,
         };
         this.logger.debug(
           `User ${client.user.username} (id: ${client.user.userId}) connected via WS`,

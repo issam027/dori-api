@@ -118,9 +118,11 @@ export class QueueEngineService {
 
     // mode === 'active'
     if (!dto.threadNumber) {
-      throw new DoriException('VALIDATION_ERROR', {
-        message: 'threadNumber is required for active mode',
-      });
+      throw new DoriException(
+        'VALIDATION_ERROR',
+        {},
+        { errors: ['threadNumber is required for active mode'] },
+      );
     }
 
     const queueRes = await this.dataSource.query(
@@ -132,9 +134,15 @@ export class QueueEngineService {
     }
 
     if (dto.threadNumber < 1 || dto.threadNumber > queueRes[0].thread_count) {
-      throw new DoriException('VALIDATION_ERROR', {
-        message: `threadNumber must be between 1 and ${queueRes[0].thread_count}`,
-      });
+      throw new DoriException(
+        'VALIDATION_ERROR',
+        {},
+        {
+          errors: [
+            `threadNumber must be between 1 and ${queueRes[0].thread_count}`,
+          ],
+        },
+      );
     }
 
     // Check if current user already has an active session on this queue (§3.9, §6.9)

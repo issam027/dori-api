@@ -46,9 +46,11 @@ export class RegistrationsService {
     let personId = dto.personId;
     if (!personId) {
       if (!dto.person) {
-        throw new DoriException('VALIDATION_ERROR', {
-          message: 'personId or person object is required',
-        });
+        throw new DoriException(
+          'VALIDATION_ERROR',
+          {},
+          { errors: ['personId or person object is required'] },
+        );
       }
       const createdPerson = await this.personsService.createPerson(
         dto.person,
@@ -120,9 +122,11 @@ export class RegistrationsService {
         throw new DoriException('APPOINTMENTS_DISABLED');
       }
       if (!dto.scheduledTime) {
-        throw new DoriException('VALIDATION_ERROR', {
-          message: 'scheduledTime is required for appointment',
-        });
+        throw new DoriException(
+          'VALIDATION_ERROR',
+          {},
+          { errors: ['scheduledTime is required for appointment'] },
+        );
       }
 
       scheduledTime = new Date(dto.scheduledTime);
@@ -413,9 +417,11 @@ export class RegistrationsService {
     await this.scopeService.checkQueueAccess(user, reg.queue_id);
 
     if (reg.entry_type !== 'appointment') {
-      throw new DoriException('VALIDATION_ERROR', {
-        message: 'Only appointments can be rescheduled',
-      });
+      throw new DoriException(
+        'VALIDATION_ERROR',
+        {},
+        { errors: ['Only appointments can be rescheduled'] },
+      );
     }
 
     if (['served', 'no_show', 'expired', 'cancelled'].includes(reg.status)) {
@@ -471,9 +477,11 @@ export class RegistrationsService {
 
     // Kiosk lookup restricted to today and assigned queues (§5.7, §11.6.3)
     if (!dto.ticketNumber && (!dto.lastName || !dto.scheduledTime)) {
-      throw new DoriException('VALIDATION_ERROR', {
-        message: 'Provide ticketNumber OR (lastName and scheduledTime)',
-      });
+      throw new DoriException(
+        'VALIDATION_ERROR',
+        {},
+        { errors: ['Provide ticketNumber OR (lastName and scheduledTime)'] },
+      );
     }
 
     let query = `

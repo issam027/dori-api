@@ -117,9 +117,15 @@ export class NotificationsService {
       (dto.channel === 'sms' ? customer.phone_number : customer.email);
 
     if (!recipient) {
-      throw new DoriException('VALIDATION_ERROR', {
-        message: `Recipient ${dto.channel} address missing for this customer`,
-      });
+      throw new DoriException(
+        'VALIDATION_ERROR',
+        {},
+        {
+          errors: [
+            `Recipient ${dto.channel} address missing for this customer`,
+          ],
+        },
+      );
     }
 
     const locale = customer.language_preference || customer.person_lang || 'fr';
