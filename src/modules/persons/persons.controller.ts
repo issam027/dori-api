@@ -198,4 +198,23 @@ export class PersonsController {
   ) {
     return this.personsService.deleteNote(personId, noteId, user);
   }
+
+  @Delete(':personId')
+  @RequirePermission('customer_delete')
+  @ApiOperation({
+    summary: 'Supprimer une personne',
+    description: 'Supprime logiquement une personne et ses notes associées.',
+  })
+  @ApiParam({
+    name: 'personId',
+    type: Number,
+    description: 'ID de la personne',
+  })
+  @ApiDoriOkResponse(PersonDeleteResponseDto, 'Personne supprimée avec succès')
+  async deletePerson(
+    @Param('personId', ParseIntPipe) personId: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.personsService.deletePerson(personId, user);
+  }
 }

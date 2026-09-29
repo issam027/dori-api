@@ -49,7 +49,6 @@ export class ScopeService {
         queueIds = queues.map((r: any) => Number(r.queue_id));
       }
     } else {
-      // Hotesse or Kiosk: only explicitly assigned queues in dori_user_queue (§4.10)
       const userQueues = await this.dataSource.query(
         `SELECT uq.queue_id, q.site_id
          FROM dori_user_queue uq
@@ -58,9 +57,15 @@ export class ScopeService {
         [user.userId],
       );
       queueIds = userQueues.map((r: any) => Number(r.queue_id));
-      siteIds = Array.from(
-        new Set(userQueues.map((r: any) => Number(r.site_id))),
+      const queueSiteIds = userQueues.map((r: any) => Number(r.site_id));
+
+      const userDirectSites = await this.dataSource.query(
+        `SELECT site_id FROM dori_user_site WHERE user_id = $1`,
+        [user.userId],
       );
+      const directSiteIds = userDirectSites.map((r: any) => Number(r.site_id));
+
+      siteIds = Array.from(new Set([...queueSiteIds, ...directSiteIds]));
     }
 
     const scope: UserScope = {

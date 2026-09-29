@@ -82,27 +82,29 @@
 
 ### SEC-03 — Révocation globale involontaire lors du logout
 > ✅ **RÉSOLU le 2026-09-28** — Support de `LogoutDto` avec `refreshToken` optionnel dans le corps de la requête, et ciblage de la session spécifique liée au JWT porteur (`sessionId` / `sid`) en l'absence de refresh token.
+>
+> ✅ **COMPLETÉ (BUG2) le 2026-09-29** — Mécanisme de logout entièrement revu : mode session unique, global logout, et force-disconnect hiérarchique.
 
 * **Fichiers modifiés** :
-  * `src/modules/auth/dto/logout.dto.ts` — création de `LogoutDto` avec propriété optionnelle `refreshToken?: string` documentée Swagger et validée
-  * `src/modules/auth/auth.controller.ts` — endpoint `logout` accepte `@Body() logoutDto: LogoutDto` avec lecture unifiée (`logoutDto?.refreshToken || req.cookies?.refreshToken`)
-  * `src/modules/auth/auth.service.ts` (`logout`) :
-    1. Si `refreshToken` est fourni (body ou cookie) : révoque la session liée à ce token spécifique (`refresh_token_hash = $2`).
-    2. Sinon si `user.sessionId` est présent (issu du JWT résolu dans SEC-02) : révoque uniquement la session active courante (`session_id = $2`), préservant toutes les autres sessions de l'utilisateur sur ses autres appareils (mobile, tablette, autres navigateurs).
-    3. Fallback : ne révoque par `user_id` que si ni `refreshToken` ni `sessionId` ne sont fournis.
-  * `src/modules/auth/auth.service.spec.ts` — suite de tests unitaires couvrant les 3 cas d'usage de déconnexion.
+  * `src/modules/auth/dto/logout.dto.ts` — ajout du champ `userId?: number` (optionnel) permettant de cibler un autre utilisateur
+  * `src/modules/auth/auth.controller.ts` — endpoint `logout` passe maintenant le `logoutDto` complet au service
+  * `src/modules/auth/auth.service.ts` (`logout`) — logique révisée en 3 cas :
+    1. **Pas de `userId` dans le body** : révoque uniquement la session courante du caller (`session_id = caller.sessionId`). Cas nominal de déconnexion simple.
+    2. **`userId` == `caller.userId`** : global logout du caller, révoque toutes ses sessions actives (`user_id = caller.userId`, reason `global logout`).
+    3. **`userId` != `caller.userId`** : force-disconnect d'un autre utilisateur :
+       - Vérifie que le caller est `manager`, `admin` ou `root`.
+       - Contrôle hiérarchique : `callerMaxRank > targetMaxRank` (un manager rank 3 ne peut déconnecter que rank < 3 ; un admin rank 4 peut déconnecter jusqu'au rank 3).
+       - Vérifie que l'utilisateur cible existe et est actif.
+       - Révoque toutes les sessions actives de la cible (`reason = 'force_logout'`).
 
 ### SEC-04 — Asymétrie de contrôle de rôle lors des affectations
-* **Fichiers impactés** :
-  * `src/modules/sites/sites.service.ts` (lignes 283–302)
-  * `src/modules/queues/queues.service.ts` (lignes 559–587)
-* **Problème constaté** :  
-  `assignSiteManager` vérifie explicitement que `targetUserId` possède bien le rôle `manager` actif.  
-  En revanche, `assignOperator` dans `queues.service.ts` insère directement dans `dori_user_queue` sans vérifier :
-  1. Si `targetUserId` existe et est actif dans `dori_user`.
-  2. Si `targetUserId` possède le rôle requis (`hotesse` / opérateur).
-* **Comportement attendu** :  
-  Valider l'existence de l'utilisateur et son rôle avant insertion dans `dori_user_queue`.
+> ✅ **RÉSOLU le 2026-09-29** — Vérification d'existence, d'état actif (`is_active = TRUE` et non supprimé) et de rôle requis (`manager` pour site, `hotesse`/`operator` pour file) ajoutée dans `assignSiteManager` et `assignOperator`.
+
+* **Fichiers modifiés** :
+  * `src/modules/sites/sites.service.ts` (`assignSiteManager`) — vérification préalable que `targetUserId` existe et est actif dans `dori_user` avant de vérifier son rôle `manager` actif.
+  * `src/modules/queues/queues.service.ts` (`assignOperator`) — vérification préalable que `targetUserId` existe et est actif dans `dori_user`, puis contrôle que l'utilisateur possède bien le rôle `hotesse` (ou `operator`) actif avant d'insérer dans `dori_user_queue`.
+  * `src/modules/queues/queues.service.spec.ts` — suite de 4 tests unitaires couvrant : utilisateur inexistant (`USER_NOT_FOUND`), compte inactif (`ACCOUNT_LOCKED`), rôle manquant (`FORBIDDEN_ROLE_ESCALATION`), assignation valide.
+  * `src/modules/sites/sites.service.spec.ts` — suite de 4 tests unitaires couvrant : utilisateur inexistant (`USER_NOT_FOUND`), compte inactif (`ACCOUNT_LOCKED`), rôle manquant (`FORBIDDEN_ROLE_ESCALATION`), assignation valide.
 
 ### SEC-05 — Absence de vérification de session active sur WebSocket
 * **Fichier impacté** : `src/core/realtime/realtime.gateway.ts` (lignes 67–84)
@@ -161,12 +163,13 @@
   Homogénéiser : soit adopter les `Repository<T>` TypeORM pour les opérations CRUD simples, soit assumer une couche SQL légère en maintenant des interfaces de typage strictes sur les retours SQL.
 
 ### DAT-05 — Incohérence des suppressions (Soft Delete)
-* **Fichiers impactés** :
-  * `src/modules/users/users.service.ts` (colonne `deleted_at` présente en base, aucune méthode de suppression)
-  * `src/modules/persons/persons.service.ts` (colonne `deleted_at` présente en base, aucune méthode de suppression)
-  * `src/modules/queues/queues.service.ts` (`deleteQueue` ne vérifie pas l'existence et ne cascade pas)
-* **Comportement attendu** :  
-  Fournir des endpoints de désactivation / soft-delete uniformes pour les utilisateurs et les personnes, et vérifier l'existence avant d'appliquer un UPDATE de suppression.
+> ✅ **RÉSOLU le 2026-09-29** — Mise en œuvre d'un cycle de vie de suppression logique (soft-delete) uniforme pour `User`, `Person` et `Queue`, avec vérification préalable d'existence, validation des permissions / hiérarchie anti-escalade, et cascade de désactivation.
+
+* **Fichiers modifiés** :
+  * `src/modules/queues/queues.service.ts` (`deleteQueue`) — vérifie l'existence active via `findQueueById`, applique le soft delete (`is_active = FALSE, deleted_at = now`), cascade la désactivation sur les forfaits de file (`dori_queue_service_tier`) et force la clôture des sessions guichet ouvertes (`dori_queue_session`).
+  * `src/modules/persons/persons.service.ts` & `persons.controller.ts` (`deletePerson`, `DELETE /api/v1/persons/:personId`) — vérifie le scope et l'existence active via `findPersonById`, applique le soft delete (`is_active = FALSE, deleted_at = now`) et cascade la désactivation sur les notes rattachées (`dori_person_note`). Protégé par `@RequirePermission('customer_delete')`.
+  * `src/modules/users/users.service.ts`, `users.controller.ts` & `dto/user.dto.ts` (`deleteUser`, `DELETE /api/v1/users/:userId`, `UserDeleteResponseDto`) — vérifie la hiérarchie anti-escalade (`checkAntiEscalation`) et l'existence active (`findUserById`), applique le soft delete (`is_active = FALSE, deleted_at = now`), révoque immédiatement toutes les sessions actives en base (`dori_user_session`) et invalide le scope. Protégé par `@RequireAnyPermission('user_manage_kiosk', 'user_manage_hostess', 'user_manage_manager', 'user_manage_admin')`.
+  * Suites de tests unitaires dédiées dans `queues.service.spec.ts`, `persons.service.spec.ts` et `users.service.spec.ts`.
 
 ---
 
@@ -345,7 +348,8 @@ Cette checklist est prête pour l'exécution tâche par tâche par un agent IA :
   - [x] SEC-01 : Poser les décorateurs `@RequirePermission` / `@RequireAnyPermission` sur tous les endpoints de `UsersController` et contrôler les profils modificateur / cible. ✅ *2026-09-28*
   - [x] SEC-02 : Ajouter le `sessionId` au payload JWT et vérifier la session spécifique dans `JwtStrategy`. ✅ *2026-09-28*
   - [x] SEC-03 : Ajouter `LogoutDto` avec `refreshToken` optionnel pour supporter le logout mobile/SPA sans cookie et cibler la session active. ✅ *2026-09-28*
-  - [ ] SEC-04 : Valider l'existence et le rôle `hotesse`/opérateur dans `QueuesService.assignOperator`.
+  - [x] SEC-03/BUG2 : Révision complète du mécanisme de logout — session unique (défaut), global logout (userId = soi), force-disconnect hiérarchique (userId = autre, manager/admin/root). ✅ *2026-09-29*
+  - [x] SEC-04 : Valider l'existence et le rôle `hotesse`/opérateur dans `QueuesService.assignOperator` et l'existence dans `SitesService.assignSiteManager`. ✅ *2026-09-29*
   - [ ] SEC-05 : Valider l'état de la session dans `RealtimeGateway.handleConnection`.
 
 - [ ] **Phase 2 — Workers & Robustesse Données**
@@ -370,4 +374,4 @@ Cette checklist est prête pour l'exécution tâche par tâche par un agent IA :
   - [ ] API-03 : Supprimer le doublon `/health` dans `AppController` au profit de `HealthController`.
   - [ ] API-04 : Rendre public `GET /api/v1/translations/bundle` (`@Public()`).
   - [ ] API-05 : Corriger `required: true` sur le paramètre `:siteId` dans `QueueEngineController`.
-  - [ ] DAT-05 : Créer les endpoints et méthodes de soft-delete pour `User` et `Person`.
+  - [x] DAT-05 : Créer les endpoints et méthodes de soft-delete pour `User` et `Person`, et cascader `Queue`. ✅ *2026-09-29*

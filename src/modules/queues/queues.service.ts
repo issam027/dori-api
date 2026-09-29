@@ -313,14 +313,35 @@ export class QueuesService {
 
   async deleteQueue(queueId: number, user: AuthenticatedUser) {
     await this.scopeService.checkQueueAccess(user, queueId);
+    await this.findQueueById(queueId, user);
+
     const now = this.clockService.now();
 
+    // 1. Soft delete de la file d'attente
     await this.dataSource.query(
       `UPDATE dori_site_queue_thread
        SET is_active = FALSE, deleted_at = $1, updated_by_user_id = $2, updated_at = $1
        WHERE queue_id = $3`,
       [now, user.userId, queueId],
     );
+
+    // 2. Cascade de désactivation sur les forfaits associés à cette file
+    await this.dataSource.query(
+      `UPDATE dori_queue_service_tier
+       SET is_active = FALSE, deleted_at = $1, updated_by_user_id = $2, updated_at = $1
+       WHERE queue_id = $3 AND is_active = TRUE`,
+      [now, user.userId, queueId],
+    );
+
+    // 3. Fermeture des sessions guichet actives de la file
+    await this.dataSource.query(
+      `UPDATE dori_queue_session
+       SET disconnected_at = $1, closure_reason = 'forced', closed_by_user_id = $2
+       WHERE queue_id = $3 AND disconnected_at IS NULL`,
+      [now, user.userId, queueId],
+    );
+
+    this.scopeService.clearAllScopeCache();
 
     return { queueId, deleted: true };
   }
@@ -583,6 +604,31 @@ export class QueuesService {
     }
     const siteId = queueSiteRes[0].site_id;
     await this.scopeService.checkSiteAccess(user, siteId);
+
+    // SEC-04 : 1. Vérifier que le targetUser existe et est actif
+    const userRes = await this.dataSource.query(
+      `SELECT user_id, is_active FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL`,
+      [targetUserId],
+    );
+    if (!userRes || userRes.length === 0) {
+      throw new DoriException('USER_NOT_FOUND', { userId: targetUserId });
+    }
+    if (!userRes[0].is_active) {
+      throw new DoriException('ACCOUNT_LOCKED', { userId: targetUserId });
+    }
+
+    // SEC-04 : 2. Vérifier que le targetUser possède bien le rôle 'hotesse' (ou 'operator') actif
+    const operatorRoleRes = await this.dataSource.query(
+      `SELECT ur.user_id
+       FROM dori_user_role ur
+       JOIN dori_role r ON r.role_id = ur.role_id
+       WHERE ur.user_id = $1 AND r.role_name IN ('hotesse', 'operator') AND r.is_active = TRUE
+       LIMIT 1`,
+      [targetUserId],
+    );
+    if (!operatorRoleRes || operatorRoleRes.length === 0) {
+      throw new DoriException('FORBIDDEN_ROLE_ESCALATION');
+    }
 
     const now = this.clockService.now();
     await this.dataSource.query(

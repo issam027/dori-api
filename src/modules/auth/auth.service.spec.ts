@@ -62,27 +62,8 @@ describe('AuthService — SEC-03 Logout Specific Session', () => {
     service = module.get<AuthService>(AuthService);
   });
 
-  it('should revoke only the specific session when refreshToken is provided', async () => {
-    const user: AuthenticatedUser = {
-      userId: 5,
-      username: 'agent1',
-      roles: ['hotesse'],
-      permissions: [],
-      userType: 'human',
-      sessionId: 'session-uuid-1',
-    };
-
-    const result = await service.logout(user, 'sample-refresh-token');
-    expect(result).toEqual({ success: true });
-
-    expect(dataSourceMock.query).toHaveBeenCalledWith(
-      expect.stringContaining('WHERE refresh_token_hash = $2 AND revoked_at IS NULL'),
-      expect.arrayContaining([expect.any(Date), expect.any(String)]),
-    );
-  });
-
-  it('should revoke only the caller session when no refreshToken is provided but sessionId exists (SEC-03)', async () => {
-    const user: AuthenticatedUser = {
+  it('CAS 1 — should revoke only the caller current session when no userId provided', async () => {
+    const caller: AuthenticatedUser = {
       userId: 5,
       username: 'agent1',
       roles: ['hotesse'],
@@ -91,28 +72,76 @@ describe('AuthService — SEC-03 Logout Specific Session', () => {
       sessionId: 'session-uuid-device-1',
     };
 
-    const result = await service.logout(user, undefined);
+    const result = await service.logout(caller, {});
     expect(result).toEqual({ success: true });
 
     expect(dataSourceMock.query).toHaveBeenCalledWith(
       expect.stringContaining('WHERE session_id = $2 AND revoked_at IS NULL'),
       [expect.any(Date), 'session-uuid-device-1'],
     );
-
-    // Verify it did NOT revoke all sessions with WHERE user_id = $2
+    // Must NOT revoke all sessions
     expect(dataSourceMock.query).not.toHaveBeenCalledWith(
       expect.stringContaining('WHERE user_id = $2 AND revoked_at IS NULL'),
       expect.anything(),
     );
   });
 
-  it('should fall back to revoking by userId only when neither refreshToken nor sessionId are provided', async () => {
-    const result = await service.logout(5, undefined);
+  it('CAS 2 — should revoke all caller sessions (global logout) when userId == caller.userId', async () => {
+    const caller: AuthenticatedUser = {
+      userId: 5,
+      username: 'agent1',
+      roles: ['hotesse'],
+      permissions: [],
+      userType: 'human',
+      sessionId: 'session-uuid-device-1',
+    };
+
+    const result = await service.logout(caller, { userId: 5 });
     expect(result).toEqual({ success: true });
 
     expect(dataSourceMock.query).toHaveBeenCalledWith(
-      expect.stringContaining('WHERE user_id = $2 AND revoked_at IS NULL'),
+      expect.stringContaining("revoked_reason = 'global logout'"),
       [expect.any(Date), 5],
+    );
+  });
+
+  it('CAS 3 — should throw FORBIDDEN_PERMISSION when a hotesse tries to force-disconnect another user', async () => {
+    const caller: AuthenticatedUser = {
+      userId: 5,
+      username: 'agent1',
+      roles: ['hotesse'],
+      permissions: [],
+      userType: 'human',
+      sessionId: 'session-uuid-1',
+    };
+
+    await expect(service.logout(caller, { userId: 99 })).rejects.toMatchObject({
+      code: 'FORBIDDEN_PERMISSION',
+    });
+  });
+
+  it('CAS 3 — should force-disconnect a lower-ranked user when caller is a manager', async () => {
+    const caller: AuthenticatedUser = {
+      userId: 10,
+      username: 'manager1',
+      roles: ['manager'],
+      permissions: [],
+      userType: 'human',
+      sessionId: 'session-mgr',
+    };
+
+    // caller rank = 3, target rank = 2 (hotesse)
+    dataSourceMock.query
+      .mockResolvedValueOnce([{ max_rank: 3 }])  // callerRankRes
+      .mockResolvedValueOnce([{ max_rank: 2 }])  // targetRankRes
+      .mockResolvedValueOnce([{ user_id: 20 }]); // targetUsers exists
+
+    const result = await service.logout(caller, { userId: 20 });
+    expect(result).toEqual({ success: true });
+
+    expect(dataSourceMock.query).toHaveBeenCalledWith(
+      expect.stringContaining("revoked_reason = 'force_logout'"),
+      [expect.any(Date), 20],
     );
   });
 });

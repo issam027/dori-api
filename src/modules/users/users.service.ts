@@ -107,25 +107,37 @@ export class UsersService {
     }
 
     const callerRank = await this.getCallerMaxRank(caller);
-    const maxManageRank = await this.getCallerMaxManageRank(caller);
 
-    if (maxManageRank === 0) {
+    // BUG1 : Une hôtesse ne peut rien modifier (ni kiosk, ni tout rôle inférieur à manager)
+    if (callerRank < 3 || caller.roles?.includes('hotesse') || caller.roles?.includes('kiosk')) {
       throw new DoriException('FORBIDDEN_PERMISSION');
     }
 
-    if (targetUserId) {
-      const targetRank = await this.getUserMaxRank(targetUserId);
+    // BUG1 : Plafond des profils modifiables selon le rôle et les permissions de l'appelant
+    // - Un manager (rank 3) peut modifier son user et les users hotesse (2) et kioske (1)
+    // - Les admin (rank 4) peuvent faire ce que le manager peut et aussi modifier les managers (3)
+    let maxManageRank = 2; // hotesse & kiosk par défaut pour manager
+    if (callerRank >= 4 || caller.roles?.includes('admin')) {
+      maxManageRank = 3; // admin peut aussi modifier les managers
+    }
+    const callerMaxManagePerm = await this.getCallerMaxManageRank(caller);
+    if (callerMaxManagePerm > 0 && callerMaxManagePerm < maxManageRank) {
+      maxManageRank = callerMaxManagePerm;
+    }
 
-      // Profil du modificateur (anti-escalade de rang) :
-      // On ne peut pas modifier un utilisateur ayant un rang supérieur ou égal au sien
-      if (targetRank >= callerRank) {
-        throw new DoriException('FORBIDDEN_ROLE_ESCALATION');
+    if (targetUserId) {
+      // Un manager ou admin peut modifier son propre compte
+      if (caller.userId === targetUserId) {
+        return;
       }
 
-      // Profil du user à modifier :
-      // Si une personne a la permission user_manage_hostess (maxManageRank = 2),
-      // il ne pourra pas modifier un user ayant un profil supérieur à l'hôtesse (targetRank > 2)
+      const targetRank = await this.getUserMaxRank(targetUserId);
+
+      // Si le profil cible dépasse le plafond autorisé pour le rôle du modificateur
       if (targetRank > maxManageRank) {
+        if (targetRank >= callerRank) {
+          throw new DoriException('FORBIDDEN_ROLE_ESCALATION');
+        }
         throw new DoriException('FORBIDDEN_PERMISSION');
       }
     }
@@ -138,11 +150,10 @@ export class UsersService {
       if (roleRes && roleRes.length > 0) {
         const roleRank = Number(roleRes[0].rank);
 
-        if (roleRank >= callerRank) {
-          throw new DoriException('FORBIDDEN_ROLE_ESCALATION');
-        }
-
         if (roleRank > maxManageRank) {
+          if (roleRank >= callerRank) {
+            throw new DoriException('FORBIDDEN_ROLE_ESCALATION');
+          }
           throw new DoriException('FORBIDDEN_PERMISSION');
         }
       }
@@ -164,19 +175,22 @@ export class UsersService {
       FROM dori_user u
       LEFT JOIN dori_user_site us ON us.user_id = u.user_id
       LEFT JOIN dori_user_queue uq ON uq.user_id = u.user_id
+      LEFT JOIN dori_site_queue_thread sqt ON sqt.queue_id = uq.queue_id
+      LEFT JOIN dori_user_role ur ON ur.user_id = u.user_id
+      LEFT JOIN dori_role r ON r.role_id = ur.role_id
       WHERE u.deleted_at IS NULL
     `;
     const params: any[] = [];
 
+    // BUG1 : Le listing est compartimenté par "site" auquel le user qui fait appel est affecté.
+    // Il est total pour ce site (hôtesses, managers du site) ainsi que les administrateurs et root.
     if (!scope.isGlobal) {
-      if (user.roles?.includes('manager')) {
-        if (scope.siteIds.length === 0) return filter.createResponse([], 0);
-        params.push(scope.siteIds);
-        query += ` AND us.site_id = ANY($${params.length})`;
+      if (scope.siteIds.length === 0) {
+        query += ` AND r.role_name IN ('admin', 'root')`;
       } else {
-        if (scope.queueIds.length === 0) return filter.createResponse([], 0);
-        params.push(scope.queueIds);
-        query += ` AND uq.queue_id = ANY($${params.length})`;
+        params.push(scope.siteIds);
+        const pIdx = params.length;
+        query += ` AND (us.site_id = ANY($${pIdx}) OR sqt.site_id = ANY($${pIdx}) OR r.role_name IN ('admin', 'root'))`;
       }
     }
 
@@ -204,6 +218,8 @@ export class UsersService {
   }
 
   async findUserById(userId: number, user: AuthenticatedUser) {
+    const scope = await this.scopeService.getUserScope(user);
+
     const users = await this.dataSource.query(
       `SELECT user_id, username, email, user_type, is_active, language_preference, last_login, created_at, updated_at
        FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL`,
@@ -214,11 +230,35 @@ export class UsersService {
       throw new DoriException('USER_NOT_FOUND', { userId });
     }
 
-    if (!user.roles?.includes('root') && user.userId !== userId) {
-      const maxManageRank = await this.getCallerMaxManageRank(user);
-      const targetRank = await this.getUserMaxRank(userId);
-      if (targetRank > maxManageRank) {
-        throw new DoriException('FORBIDDEN_PERMISSION');
+    // BUG1 : Le listing/détail est total : une hôtesse ou un manager peut voir les managers et admins.
+    // Si l'utilisateur n'est pas global et consulte un tiers, on s'assure qu'il est rattaché aux mêmes sites ou admin/root.
+    if (!scope.isGlobal && user.userId !== userId) {
+      if (scope.siteIds.length === 0) {
+        const isAdminOrRoot = await this.dataSource.query(
+          `SELECT 1 FROM dori_user_role ur
+           JOIN dori_role r ON r.role_id = ur.role_id
+           WHERE ur.user_id = $1 AND r.role_name IN ('admin', 'root')
+           LIMIT 1`,
+          [userId],
+        );
+        if (!isAdminOrRoot || isAdminOrRoot.length === 0) {
+          throw new DoriException('USER_NOT_FOUND', { userId });
+        }
+      } else {
+        const inScope = await this.dataSource.query(
+          `SELECT 1 FROM dori_user u
+           LEFT JOIN dori_user_site us ON us.user_id = u.user_id
+           LEFT JOIN dori_user_queue uq ON uq.user_id = u.user_id
+           LEFT JOIN dori_site_queue_thread sqt ON sqt.queue_id = uq.queue_id
+           LEFT JOIN dori_user_role ur ON ur.user_id = u.user_id
+           LEFT JOIN dori_role r ON r.role_id = ur.role_id
+           WHERE u.user_id = $1 AND (us.site_id = ANY($2) OR sqt.site_id = ANY($2) OR r.role_name IN ('admin', 'root'))
+           LIMIT 1`,
+          [userId, scope.siteIds],
+        );
+        if (!inScope || inScope.length === 0) {
+          throw new DoriException('USER_NOT_FOUND', { userId });
+        }
       }
     }
 
@@ -491,5 +531,32 @@ export class UsersService {
 
     this.scopeService.clearAllScopeCache();
     return { roleId, permissionsUpdated: true };
+  }
+
+  async deleteUser(userId: number, user: AuthenticatedUser) {
+    await this.checkAntiEscalation(user, userId);
+    await this.findUserById(userId, user);
+
+    const now = this.clockService.now();
+
+    // 1. Soft delete de l'utilisateur
+    await this.dataSource.query(
+      `UPDATE dori_user
+       SET is_active = FALSE, deleted_at = $1, updated_by_user_id = $2, updated_at = $1
+       WHERE user_id = $3`,
+      [now, user.userId, userId],
+    );
+
+    // 2. Révocation immédiate de toutes les sessions actives (§4.12)
+    await this.dataSource.query(
+      `UPDATE dori_user_session
+       SET revoked_at = $1, revoked_reason = 'account_deleted'
+       WHERE user_id = $2 AND revoked_at IS NULL`,
+      [now, userId],
+    );
+
+    this.scopeService.invalidateUserScope(userId);
+
+    return { userId, deleted: true };
   }
 }

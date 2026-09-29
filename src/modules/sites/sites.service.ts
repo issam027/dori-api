@@ -302,7 +302,19 @@ export class SitesService {
   ) {
     await this.scopeService.checkSiteAccess(user, siteId);
 
-    // Vérifier que le targetUser possède bien le rôle 'manager'
+    // 1. Vérifier que le targetUser existe et est actif
+    const userRes = await this.dataSource.query(
+      `SELECT user_id, is_active FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL`,
+      [targetUserId],
+    );
+    if (!userRes || userRes.length === 0) {
+      throw new DoriException('USER_NOT_FOUND', { userId: targetUserId });
+    }
+    if (!userRes[0].is_active) {
+      throw new DoriException('ACCOUNT_LOCKED', { userId: targetUserId });
+    }
+
+    // 2. Vérifier que le targetUser possède bien le rôle 'manager' actif
     const managerRoleRes = await this.dataSource.query(
       `SELECT ur.user_id
        FROM dori_user_role ur

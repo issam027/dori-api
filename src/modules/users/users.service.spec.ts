@@ -25,7 +25,11 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
         {
           provide: ScopeService,
           useValue: {
-            getUserScope: jest.fn(),
+            getUserScope: jest.fn().mockResolvedValue({
+              isGlobal: true,
+              siteIds: [1],
+              queueIds: [1],
+            }),
             invalidateUserScope: jest.fn(),
             clearAllScopeCache: jest.fn(),
           },
@@ -152,4 +156,172 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
       expect(e.code).toBe('FORBIDDEN_PERMISSION');
     }
   });
+
+  describe('deleteUser (DAT-05)', () => {
+    it('should throw USER_NOT_FOUND when user does not exist or deleted_at IS NOT NULL', async () => {
+      const rootCaller: AuthenticatedUser = {
+        userId: 1,
+        username: 'root_user',
+        roles: ['root'],
+        permissions: ['system_manage'],
+        userType: 'human',
+      };
+
+      dataSourceMock.query.mockImplementation(async (sql: string) => {
+        if (sql.includes('FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL')) {
+          return [];
+        }
+        return [];
+      });
+
+      await expect(service.deleteUser(999, rootCaller)).rejects.toThrow(
+        new DoriException('USER_NOT_FOUND', { userId: 999 }),
+      );
+    });
+
+    it('should soft delete user and revoke all active sessions', async () => {
+      const rootCaller: AuthenticatedUser = {
+        userId: 1,
+        username: 'root_user',
+        roles: ['root'],
+        permissions: ['system_manage'],
+        userType: 'human',
+      };
+
+      const queries: { sql: string; params: any[] }[] = [];
+      dataSourceMock.query.mockImplementation(async (sql: string, params: any[]) => {
+        queries.push({ sql, params });
+        if (sql.includes('FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL')) {
+          return [{ user_id: 25, username: 'operator1', is_active: true }];
+        }
+        return [];
+      });
+
+      const result = await service.deleteUser(25, rootCaller);
+      expect(result).toEqual({ userId: 25, deleted: true });
+
+      const userUpdate = queries.find(
+        (q) => q.sql.includes('UPDATE dori_user') && q.sql.includes('SET is_active = FALSE'),
+      );
+      expect(userUpdate).toBeDefined();
+      expect(userUpdate?.params[2]).toBe(25);
+
+      const sessionUpdate = queries.find(
+        (q) => q.sql.includes('UPDATE dori_user_session') && q.sql.includes('account_deleted'),
+      );
+      expect(sessionUpdate).toBeDefined();
+      expect(sessionUpdate?.params[1]).toBe(25);
+    });
+  });
+
+  describe('BUG1 — Hiérarchie RBAC & Listing total par site', () => {
+    it('should forbid an hostess from modifying any user (even self)', async () => {
+      const hostessCaller: AuthenticatedUser = {
+        userId: 25,
+        username: 'hotesse1',
+        roles: ['hotesse'],
+        permissions: ['session_operate'],
+        userType: 'human',
+      };
+
+      dataSourceMock.query.mockImplementation(async (sql: string, params?: any[]) => {
+        if (sql.includes('SELECT MAX(r.rank) as max_rank') && params?.[0] === 25) {
+          return [{ max_rank: 2 }];
+        }
+        return [];
+      });
+
+      await expect(
+        service.updateUser(25, { email: 'new@dori.local' }, hostessCaller),
+      ).rejects.toThrow(new DoriException('FORBIDDEN_PERMISSION'));
+    });
+
+    it('should allow a manager to modify their own user', async () => {
+      const managerCaller: AuthenticatedUser = {
+        userId: 10,
+        username: 'manager1',
+        roles: ['manager'],
+        permissions: ['user_manage_hostess'],
+        userType: 'human',
+      };
+
+      dataSourceMock.query.mockImplementation(async (sql: string, params?: any[]) => {
+        if (sql.includes('SELECT MAX(r.rank) as max_rank') && params?.[0] === 10) {
+          return [{ max_rank: 3 }];
+        }
+        if (sql.includes('SELECT user_id, username, email') && params?.[0] === 10) {
+          return [{ user_id: 10, username: 'manager1', email: 'old@dori.local' }];
+        }
+        if (sql.includes('UPDATE dori_user SET')) {
+          return [{ user_id: 10, username: 'manager1', email: 'manager-new@dori.local' }];
+        }
+        return [];
+      });
+
+      const result = await service.updateUser(10, { email: 'manager-new@dori.local' }, managerCaller);
+      expect(result).toBeDefined();
+      expect(result.email).toBe('manager-new@dori.local');
+    });
+
+    it('should allow an admin to modify a manager (rank 3)', async () => {
+      const adminCaller: AuthenticatedUser = {
+        userId: 5,
+        username: 'admin1',
+        roles: ['admin'],
+        permissions: ['user_manage_admin', 'user_manage_manager'],
+        userType: 'human',
+      };
+
+      dataSourceMock.query.mockImplementation(async (sql: string, params?: any[]) => {
+        if (sql.includes('SELECT MAX(r.rank) as max_rank') && params?.[0] === 5) {
+          return [{ max_rank: 4 }]; // admin
+        }
+        if (sql.includes('SELECT user_id, user_type FROM dori_user WHERE user_id = $1') && params?.[0] === 10) {
+          return [{ user_id: 10, user_type: 'human' }];
+        }
+        if (sql.includes('SELECT MAX(r.rank) as max_rank') && params?.[0] === 10) {
+          return [{ max_rank: 3 }]; // target is manager
+        }
+        if (sql.includes('SELECT user_id, username, email') && params?.[0] === 10) {
+          return [{ user_id: 10, username: 'manager1', email: 'old@dori.local' }];
+        }
+        if (sql.includes('UPDATE dori_user SET')) {
+          return [{ user_id: 10, username: 'manager1', email: 'admin-updated@dori.local' }];
+        }
+        return [];
+      });
+
+      const result = await service.updateUser(10, { email: 'admin-updated@dori.local' }, adminCaller);
+      expect(result).toBeDefined();
+      expect(result.email).toBe('admin-updated@dori.local');
+    });
+
+    it('should forbid an admin from modifying another admin', async () => {
+      const adminCaller: AuthenticatedUser = {
+        userId: 5,
+        username: 'admin1',
+        roles: ['admin'],
+        permissions: ['user_manage_admin'],
+        userType: 'human',
+      };
+
+      dataSourceMock.query.mockImplementation(async (sql: string, params?: any[]) => {
+        if (sql.includes('SELECT MAX(r.rank) as max_rank') && params?.[0] === 5) {
+          return [{ max_rank: 4 }]; // caller admin
+        }
+        if (sql.includes('SELECT user_id, user_type FROM dori_user WHERE user_id = $1') && params?.[0] === 6) {
+          return [{ user_id: 6, user_type: 'human' }];
+        }
+        if (sql.includes('SELECT MAX(r.rank) as max_rank') && params?.[0] === 6) {
+          return [{ max_rank: 4 }]; // target also admin
+        }
+        return [];
+      });
+
+      await expect(
+        service.updateUser(6, { email: 'other-admin@dori.local' }, adminCaller),
+      ).rejects.toThrow(DoriException);
+    });
+  });
 });
+

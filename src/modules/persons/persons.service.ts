@@ -55,7 +55,7 @@ export class PersonsService {
       params.push(scope.queueIds);
     }
 
-    query += ` WHERE p.is_active = TRUE`;
+    query += ` WHERE p.is_active = TRUE AND p.deleted_at IS NULL`;
 
     if (filter.search) {
       params.push(`%${filter.search}%`);
@@ -79,7 +79,7 @@ export class PersonsService {
     await this.checkPersonScope(personId, user);
 
     const rows = await this.dataSource.query(
-      `SELECT * FROM dori_person WHERE person_id = $1 AND is_active = TRUE`,
+      `SELECT * FROM dori_person WHERE person_id = $1 AND is_active = TRUE AND deleted_at IS NULL`,
       [personId],
     );
 
@@ -318,5 +318,30 @@ export class PersonsService {
   async deleteNote(personId: number, noteId: number, user: AuthenticatedUser) {
     const res = await this.deletePersonNote(personId, noteId, user);
     return { id: res.noteId, deleted: res.deleted };
+  }
+
+  async deletePerson(personId: number, user: AuthenticatedUser) {
+    await this.checkPersonScope(personId, user);
+    await this.findPersonById(personId, user);
+
+    const now = this.clockService.now();
+
+    // 1. Soft delete de la personne
+    await this.dataSource.query(
+      `UPDATE dori_person
+       SET is_active = FALSE, deleted_at = $1, updated_by_user_id = $2, updated_at = $1
+       WHERE person_id = $3`,
+      [now, user.userId, personId],
+    );
+
+    // 2. Cascade de désactivation sur ses notes
+    await this.dataSource.query(
+      `UPDATE dori_person_note
+       SET is_active = FALSE, deleted_at = $1, updated_by_user_id = $2, updated_at = $1
+       WHERE person_id = $3 AND is_active = TRUE`,
+      [now, user.userId, personId],
+    );
+
+    return { id: personId, deleted: true };
   }
 }

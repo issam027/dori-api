@@ -106,7 +106,9 @@ export class AuthController {
   @ApiOperation({
     summary: 'Déconnexion',
     description:
-      'Invalide la session et révoque le refresh token courant (transmis via cookie, corps de requête ou session liée au JWT porteur).',
+      'Invalide la session courante du caller (sans body).\n\n' +
+      '**Global logout** : poster `{"userId": <votre_id>}` pour révoquer toutes vos sessions.\n\n' +
+      '**Force-disconnect** (manager/admin/root) : poster `{"userId": <id_cible>}` pour déconnecter un utilisateur hiérarchiquement inférieur.',
   })
   @ApiBody({ type: LogoutDto, required: false })
   @ApiDoriOkResponse(SimpleMessageResponseDto, 'Session terminée avec succès')
@@ -116,9 +118,8 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const refreshToken = logoutDto?.refreshToken || req.cookies?.refreshToken;
     res.clearCookie('refreshToken');
-    return this.authService.logout(user, refreshToken);
+    return this.authService.logout(user, logoutDto);
   }
 
   @Get('me')

@@ -21,7 +21,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly clockService: ClockService,
     private readonly scopeService: ScopeService,
-  ) {}
+  ) { }
 
   private hashToken(token: string): string {
     return crypto.createHash('sha256').update(token).digest('hex');
@@ -180,37 +180,99 @@ export class AuthService {
     };
   }
 
-  async logout(userOrId: AuthenticatedUser | number, refreshToken?: string) {
-    const userId = typeof userOrId === 'number' ? userOrId : userOrId.userId;
-    const sessionId =
-      typeof userOrId === 'object' ? userOrId.sessionId : undefined;
+  /**
+   * BUG2 — Mécanisme de logout révisé :
+   *   - Aucun body       → révoque uniquement la session courante du caller (sessionId du JWT)
+   *   - body.userId == caller.userId → global logout : révoque TOUTES les sessions du caller
+   *   - body.userId != caller.userId → force-disconnect d'un autre user :
+   *       nécessite d'être manager/admin/root et de passer le contrôle hiérarchique
+   */
+  async logout(
+    caller: AuthenticatedUser,
+    logoutDto?: { userId?: number },
+  ) {
     const now = this.clockService.now();
+    const targetUserId = logoutDto?.userId;
 
-    if (refreshToken) {
-      const tokenHash = this.hashToken(refreshToken);
-      await this.dataSource.query(
-        `UPDATE dori_user_session
-         SET revoked_at = $1, revoked_reason = 'logout'
-         WHERE refresh_token_hash = $2 AND revoked_at IS NULL`,
-        [now, tokenHash],
-      );
-    } else if (sessionId) {
-      // SEC-02 & SEC-03 : Cibler la session spécifique liée au JWT porteur
-      // Évite de révoquer toutes les sessions si aucun refreshToken n'est transmis (mobile / SPA)
+    // Cas 1 : Aucun userId fourni → déconnexion de la session courante uniquement
+    if (targetUserId === undefined || targetUserId === null) {
       await this.dataSource.query(
         `UPDATE dori_user_session
          SET revoked_at = $1, revoked_reason = 'logout'
          WHERE session_id = $2 AND revoked_at IS NULL`,
-        [now, sessionId],
+        [now, caller.sessionId],
       );
-    } else {
+      return { success: true };
+    }
+
+    // Cas 2 : userId == caller → global logout (toutes les sessions du caller)
+    if (targetUserId === caller.userId) {
       await this.dataSource.query(
         `UPDATE dori_user_session
-         SET revoked_at = $1, revoked_reason = 'logout'
+         SET revoked_at = $1, revoked_reason = 'global logout'
          WHERE user_id = $2 AND revoked_at IS NULL`,
-        [now, userId],
+        [now, caller.userId],
       );
+      return { success: true };
     }
+
+    // Cas 3 : userId != caller → force-disconnect, vérification hiérarchique
+    // Seuls les managers, admins et root peuvent déconnecter un autre utilisateur
+    const callerRoles: string[] = caller.roles || [];
+    const canForceDisconnect =
+      callerRoles.includes('root') ||
+      callerRoles.includes('admin') ||
+      callerRoles.includes('manager');
+
+    if (!canForceDisconnect) {
+      throw new DoriException('FORBIDDEN_PERMISSION');
+    }
+
+    // Vérification hiérarchique : le caller ne peut pas déconnecter un user de rang >= le sien
+    const callerRankRes = await this.dataSource.query(
+      `SELECT MAX(r.rank) as max_rank
+       FROM dori_user_role ur
+       JOIN dori_role r ON r.role_id = ur.role_id
+       WHERE ur.user_id = $1`,
+      [caller.userId],
+    );
+    const callerMaxRank = callerRoles.includes('root')
+      ? 5
+      : Number(callerRankRes[0]?.max_rank || 0);
+
+    const targetRankRes = await this.dataSource.query(
+      `SELECT MAX(r.rank) as max_rank
+       FROM dori_user_role ur
+       JOIN dori_role r ON r.role_id = ur.role_id
+       WHERE ur.user_id = $1`,
+      [targetUserId],
+    );
+    const targetMaxRank = Number(targetRankRes[0]?.max_rank || 0);
+
+    // Un manager (rank 3) ne peut déconnecter que des users de rang < 3 (hôtesse, kiosk)
+    // Un admin (rank 4) peut déconnecter jusqu'au rang 3 (manager)
+    const maxDisconnectableRank = callerMaxRank - 1;
+    if (targetMaxRank >= callerMaxRank || targetMaxRank > maxDisconnectableRank) {
+      throw new DoriException('FORBIDDEN_ROLE_ESCALATION');
+    }
+
+    // Vérifier que l'utilisateur cible existe et est actif
+    const targetUsers = await this.dataSource.query(
+      `SELECT user_id FROM dori_user WHERE user_id = $1 AND is_active = TRUE AND deleted_at IS NULL`,
+      [targetUserId],
+    );
+    if (!targetUsers || targetUsers.length === 0) {
+      throw new DoriException('USER_NOT_FOUND', { userId: targetUserId });
+    }
+
+    // Force-disconnect : révoquer toutes les sessions actives de l'utilisateur cible
+    await this.dataSource.query(
+      `UPDATE dori_user_session
+       SET revoked_at = $1, revoked_reason = 'force_logout'
+       WHERE user_id = $2 AND revoked_at IS NULL`,
+      [now, targetUserId],
+    );
+
     return { success: true };
   }
 

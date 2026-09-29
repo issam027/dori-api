@@ -1,12 +1,16 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsInt, IsOptional } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class LogoutDto {
   @ApiPropertyOptional({
     description:
-      'Refresh token à révoquer (optionnel si transmis via cookie HttpOnly ou si la session active du JWT porteur doit être révoquée)',
+      "ID de l'utilisateur à déconnecter. " +
+      "Si égal à l'ID du caller, déclenche un global logout (toutes ses sessions). " +
+      "Si différent, le caller doit être manager, admin ou root et avoir les droits hiérarchiques.",
+    example: 42,
   })
-  @IsString()
+  @IsInt()
   @IsOptional()
-  refreshToken?: string;
+  userId?: number;
 }
+

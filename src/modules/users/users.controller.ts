@@ -11,7 +11,8 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
+import { ApiDoriOkResponse } from '../../core/swagger/api-dori-response.decorator';
 import { UsersService } from './users.service';
 import {
   CreateUserDto,
@@ -21,6 +22,7 @@ import {
   AssignUserRoleDto,
   UpdateRolePermissionsDto,
   UserFilterDto,
+  UserDeleteResponseDto,
 } from './dto/user.dto';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
@@ -34,7 +36,7 @@ import {
 @ApiBearerAuth('bearer')
 @Controller('api/v1')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Get('users')
   @RequireAnyPermission(
@@ -43,6 +45,8 @@ export class UsersController {
     'user_manage_manager',
     'user_manage_admin',
     'system_manage',
+    'session_operate',
+    'queue_view',
   )
   async findUsers(
     @Query() filter: UserFilterDto,
@@ -73,6 +77,8 @@ export class UsersController {
     'user_manage_manager',
     'user_manage_admin',
     'system_manage',
+    'session_operate',
+    'queue_view',
   )
   async findUserById(
     @Param('userId', ParseIntPipe) userId: number,
@@ -109,6 +115,31 @@ export class UsersController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.usersService.updateUserStatus(userId, dto, user);
+  }
+
+  @Delete('users/:userId')
+  @RequireAnyPermission(
+    'user_manage_kiosk',
+    'user_manage_hostess',
+    'user_manage_manager',
+    'user_manage_admin',
+  )
+  @ApiOperation({
+    summary: 'Supprimer un utilisateur',
+    description:
+      'Désactive et supprime logiquement un compte utilisateur (soft-delete) et révoque ses sessions actives.',
+  })
+  @ApiParam({
+    name: 'userId',
+    type: Number,
+    description: "ID de l'utilisateur",
+  })
+  @ApiDoriOkResponse(UserDeleteResponseDto, 'Utilisateur supprimé avec succès')
+  async deleteUser(
+    @Param('userId', ParseIntPipe) userId: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.usersService.deleteUser(userId, user);
   }
 
   @Patch('users/:userId/password')
