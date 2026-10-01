@@ -5,6 +5,7 @@ import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { DoriException } from '../../core/errors/dori.exception';
+import { PaginationDto } from '../../core/pagination/pagination.dto';
 
 describe('SitesService — SEC-04 assignSiteManager', () => {
   let service: SitesService;
@@ -115,4 +116,95 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
     expect(result).toEqual({ siteId: 10, userId: 2, assigned: true });
     expect(scopeServiceMock.invalidateUserScope).toHaveBeenCalledWith(2);
   });
+
+  describe('VAL-02 — findSiteManagers and getSiteManagers pagination', () => {
+    it('should return paginated managers with correctly mapped properties', async () => {
+      dataSourceMock.query.mockImplementation(async (sql: string) => {
+        if (sql.includes('COUNT(*)')) {
+          return [{ total: 2 }];
+        }
+        if (sql.includes('FROM dori_user_site')) {
+          return [
+            {
+              user_id: 2,
+              username: 'mgr1',
+              email: 'mgr1@example.com',
+              user_type: 'human',
+              is_active: true,
+              assigned_at: '2026-09-29T10:00:00Z',
+            },
+            {
+              user_id: 3,
+              username: 'mgr2',
+              email: 'mgr2@example.com',
+              user_type: 'human',
+              is_active: true,
+              assigned_at: '2026-09-29T11:00:00Z',
+            },
+          ];
+        }
+        return [];
+      });
+
+      const pagination = new PaginationDto();
+      pagination.page = 1;
+      pagination.pageSize = 10;
+
+      const result = await service.findSiteManagers(1, pagination, adminUser);
+
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(10);
+      expect(result.total).toBe(2);
+      expect(result.items).toEqual([
+        {
+          userId: 2,
+          username: 'mgr1',
+          email: 'mgr1@example.com',
+          isActive: true,
+          userType: 'human',
+          assignedAt: '2026-09-29T10:00:00Z',
+        },
+        {
+          userId: 3,
+          username: 'mgr2',
+          email: 'mgr2@example.com',
+          isActive: true,
+          userType: 'human',
+          assignedAt: '2026-09-29T11:00:00Z',
+        },
+      ]);
+    });
+
+    it('getSiteManagers should delegate to findSiteManagers with pagination support', async () => {
+      dataSourceMock.query.mockImplementation(async (sql: string) => {
+        if (sql.includes('COUNT(*)')) {
+          return [{ total: 1 }];
+        }
+        if (sql.includes('FROM dori_user_site')) {
+          return [
+            {
+              user_id: 2,
+              username: 'mgr1',
+              email: 'mgr1@example.com',
+              user_type: 'human',
+              is_active: true,
+              assigned_at: '2026-09-29T10:00:00Z',
+            },
+          ];
+        }
+        return [];
+      });
+
+      const pagination = new PaginationDto();
+      pagination.page = 2;
+      pagination.pageSize = 5;
+
+      const res = await service.getSiteManagers(1, pagination, adminUser);
+      expect(res.page).toBe(2);
+      expect(res.pageSize).toBe(5);
+      expect(res.total).toBe(1);
+      expect(res.items[0].userId).toBe(2);
+    });
+  });
 });
+

@@ -5,6 +5,7 @@ import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { DoriException } from '../../core/errors/dori.exception';
+import { PaginationDto } from '../../core/pagination/pagination.dto';
 
 describe('PersonsService — DAT-05 deletePerson', () => {
   let service: PersonsService;
@@ -96,5 +97,85 @@ describe('PersonsService — DAT-05 deletePerson', () => {
     );
     expect(notesUpdate).toBeDefined();
     expect(notesUpdate?.params[2]).toBe(42);
+  });
+
+  describe('VAL-02 — findPersonNotes and getNotes pagination', () => {
+    it('should return paginated notes with mapped properties and author username', async () => {
+      dataSourceMock.query.mockImplementation(async (sql: string) => {
+        if (sql.includes('SELECT * FROM dori_person WHERE person_id = $1')) {
+          return [{ person_id: 10, is_active: true }];
+        }
+        if (sql.includes('COUNT(*)')) {
+          return [{ total: 1 }];
+        }
+        if (sql.includes('FROM dori_person_note')) {
+          return [
+            {
+              note_id: 1,
+              person_id: 10,
+              content: 'Patient VIP',
+              created_by_user_id: 2,
+              author_username: 'doctor1',
+              created_at: '2026-09-29T10:00:00Z',
+              updated_at: '2026-09-29T10:00:00Z',
+            },
+          ];
+        }
+        return [];
+      });
+
+      const pagination = new PaginationDto();
+      pagination.page = 1;
+      pagination.pageSize = 10;
+
+      const result = await service.findPersonNotes(10, pagination, adminUser);
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(10);
+      expect(result.total).toBe(1);
+      expect(result.items[0]).toEqual({
+        noteId: 1,
+        personId: 10,
+        content: 'Patient VIP',
+        createdByUserId: 2,
+        authorUsername: 'doctor1',
+        createdAt: '2026-09-29T10:00:00Z',
+        updatedAt: '2026-09-29T10:00:00Z',
+      });
+    });
+
+    it('getNotes should delegate to findPersonNotes with pagination', async () => {
+      dataSourceMock.query.mockImplementation(async (sql: string) => {
+        if (sql.includes('SELECT * FROM dori_person WHERE person_id = $1')) {
+          return [{ person_id: 10, is_active: true }];
+        }
+        if (sql.includes('COUNT(*)')) {
+          return [{ total: 1 }];
+        }
+        if (sql.includes('FROM dori_person_note')) {
+          return [
+            {
+              note_id: 1,
+              person_id: 10,
+              content: 'Note 1',
+              created_by_user_id: 2,
+              author_username: 'agent1',
+              created_at: '2026-09-29T10:00:00Z',
+              updated_at: '2026-09-29T10:00:00Z',
+            },
+          ];
+        }
+        return [];
+      });
+
+      const pagination = new PaginationDto();
+      pagination.page = 3;
+      pagination.pageSize = 2;
+
+      const res = await service.getNotes(10, pagination, adminUser);
+      expect(res.page).toBe(3);
+      expect(res.pageSize).toBe(2);
+      expect(res.total).toBe(1);
+      expect(res.items[0].noteId).toBe(1);
+    });
   });
 });

@@ -17,7 +17,7 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
-  ApiHeader,
+  ApiSecurity,
 } from '@nestjs/swagger';
 import {
   ApiDoriOkResponse,
@@ -45,11 +45,11 @@ import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interf
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
 
 @ApiTags('Registrations')
-@ApiBearerAuth('bearer')
 @Controller('api/v1')
 export class RegistrationsController {
   constructor(private readonly registrationsService: RegistrationsService) {}
 
+  @ApiBearerAuth('bearer')
   @Get('queues/:queueId/availability')
   @RequirePermission('customer_register')
   @ApiOperation({
@@ -67,6 +67,7 @@ export class RegistrationsController {
     return this.registrationsService.getAvailability(queueId, query, user);
   }
 
+  @ApiBearerAuth('bearer')
   @Get('registrations')
   @RequirePermission('customer_view')
   @ApiOperation({
@@ -82,6 +83,7 @@ export class RegistrationsController {
     return this.registrationsService.findRegistrations(filter, user);
   }
 
+  @ApiBearerAuth('bearer')
   @Post('registrations')
   @RequirePermission('customer_register')
   @HttpCode(HttpStatus.CREATED)
@@ -101,6 +103,7 @@ export class RegistrationsController {
     return this.registrationsService.createRegistration(dto, user);
   }
 
+  @ApiBearerAuth('bearer')
   @Get('registrations/lookup')
   @RequirePermission('appointment_lookup')
   @ApiOperation({
@@ -116,6 +119,7 @@ export class RegistrationsController {
     return this.registrationsService.lookupAppointment(dto, user);
   }
 
+  @ApiBearerAuth('bearer')
   @Get('registrations/:registrationId')
   @RequirePermission('customer_view')
   @ApiOperation({
@@ -136,6 +140,7 @@ export class RegistrationsController {
     return this.registrationsService.findRegistrationById(registrationId, user);
   }
 
+  @ApiBearerAuth('bearer')
   @Patch('registrations/:registrationId')
   @RequirePermission('customer_edit')
   @ApiOperation({
@@ -161,6 +166,7 @@ export class RegistrationsController {
     );
   }
 
+  @ApiBearerAuth('bearer')
   @Post('registrations/:registrationId/reschedule')
   @RequirePermission('appointment_manage')
   @HttpCode(HttpStatus.OK)
@@ -183,6 +189,7 @@ export class RegistrationsController {
     return this.registrationsService.reschedule(registrationId, dto, user);
   }
 
+  @ApiBearerAuth('bearer')
   @Post('registrations/:registrationId/check-in')
   @RequirePermission('appointment_checkin')
   @HttpCode(HttpStatus.OK)
@@ -204,6 +211,7 @@ export class RegistrationsController {
     return this.registrationsService.checkIn(registrationId, user);
   }
 
+  @ApiBearerAuth('bearer')
   @Delete('registrations/:registrationId')
   @RequirePermission('customer_delete')
   @ApiOperation({
@@ -224,16 +232,12 @@ export class RegistrationsController {
   }
 
   @Public()
+  @ApiSecurity('registration-token')
   @Get('public/registrations/position')
   @ApiOperation({
     summary: "Suivi public de la position d'un ticket",
     description:
-      'Permet à un client muni de son jeton de suivi (transmis par SMS ou QR code) de connaître son rang et son temps estimé.',
-  })
-  @ApiHeader({
-    name: 'X-Registration-Token',
-    description: "Jeton de suivi public de l'inscription",
-    required: true,
+      "Permet à un client muni de son jeton de suivi (transmis par SMS ou via la propriété `registrationTrackingToken` retournée par `POST /registrations`) de connaître son rang et son temps d'attente estimé sans JWT utilisateur.",
   })
   @ApiDoriOkResponse(PublicPositionResponseDto, 'Position actuelle dans la file')
   async getPublicPosition(@Headers('X-Registration-Token') token: string) {

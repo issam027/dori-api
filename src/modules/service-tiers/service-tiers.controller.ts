@@ -134,15 +134,16 @@ export class ServiceTiersController {
   @ApiOperation({
     summary: 'Forfaits associés à une file',
     description:
-      'Retourne la liste des forfaits configurés pour cette file avec leurs tarifs locaux.',
+      'Retourne la liste paginée des forfaits configurés pour cette file avec leurs tarifs locaux.',
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
   @ApiDoriOkResponse(PaginatedQueueTierResponseDto, 'Liste paginée des forfaits de la file')
   async getQueueTiers(
     @Param('queueId', ParseIntPipe) queueId: number,
+    @Query() pagination: PaginationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.tiersService.getQueueTiers(queueId, user);
+    return this.tiersService.findQueueTiers(queueId, pagination, user);
   }
 
   @Post('queues/:queueId/tiers')

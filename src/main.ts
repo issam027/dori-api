@@ -51,6 +51,27 @@ async function bootstrap() {
       'Spécification de référence de la plateforme de gestion de files d’attente et de rendez-vous Dori',
     )
     .setVersion('1.0')
+    .setContact(
+      'Dori Support',
+      'https://dori.example.com',
+      'support@dori.example.com',
+    )
+    .setLicense('Propriétaire', 'https://dori.example.com/license')
+    .addServer('http://localhost:3000', 'Environnement local de développement')
+    .addServer('https://api.dori.example.com', 'Environnement de production')
+    .addTag('Authentification', 'Authentification, sessions et gestion des mots de passe')
+    .addTag('Sites', 'Gestion des sites et affectation des gestionnaires')
+    .addTag('Queues', 'Gestion et configuration des files d’attente')
+    .addTag('QueueEngine', 'Moteur d’ordonnancement et pilotage des appels')
+    .addTag('Registrations', 'Inscriptions, prise de tickets et suivi de position')
+    .addTag('Persons', 'Gestion des profils usagers et historiques')
+    .addTag('Users', 'Gestion des comptes utilisateurs et permissions')
+    .addTag('Notifications', 'Gestion des règles et envoi des notifications')
+    .addTag('Tiers', 'Gestion des forfaits et priorités de service')
+    .addTag('Translations', 'Gestion des traductions et bundles multilingues')
+    .addTag('Reports', 'Rapports statistiques et indicateurs d’activité')
+    .addTag('Health', 'Vérification de la santé des composants et dépendances')
+    .addTag('Système', 'Informations système')
     .addBearerAuth(
       {
         type: 'http',

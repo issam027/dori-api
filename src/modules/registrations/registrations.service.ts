@@ -21,7 +21,7 @@ export class RegistrationsService {
     private readonly scopeService: ScopeService,
     private readonly clockService: ClockService,
     private readonly personsService: PersonsService,
-  ) {}
+  ) { }
 
   private formatTicketNumber(queueCode: string, lastNumber: number): string {
     const trailingZerosMatch = queueCode.match(/0+$/);
@@ -57,6 +57,14 @@ export class RegistrationsService {
         user,
       );
       personId = createdPerson.person_id;
+    } else {
+      const personRows = await this.dataSource.query(
+        `SELECT person_id FROM dori_person WHERE person_id = $1 AND is_active = TRUE AND deleted_at IS NULL`,
+        [personId],
+      );
+      if (!personRows || personRows.length === 0) {
+        throw new DoriException('PERSON_NOT_FOUND', { personId });
+      }
     }
 
     // 2. Fetch Queue and Site Configuration
@@ -525,7 +533,11 @@ export class RegistrationsService {
     user: AuthenticatedUser,
   ) {
     const scope = await this.scopeService.getUserScope(user);
-    const { pageSize, offset, sortField, sortOrder } = filter.getParams();
+    const { pageSize, offset, sortOrder } = filter.getParams();
+    const safeSortField = filter.getSafeSortField(
+      ['customer_id', 'ticket_number', 'business_date', 'status', 'scheduled_time', 'created_at', 'priority_reference_time'],
+      'customer_id',
+    );
 
     let query = `
       SELECT c.*, p.first_name, p.last_name, p.phone_number, p.email,
@@ -588,7 +600,7 @@ export class RegistrationsService {
     );
     const total = countRes[0]?.total || 0;
 
-    query += ` ORDER BY c.${sortField === 'id' ? 'customer_id' : sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`;
+    query += ` ORDER BY c.${safeSortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`;
     const items = await this.dataSource.query(query, params);
 
     return filter.createResponse(items, total);

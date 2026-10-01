@@ -4,11 +4,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RealtimeGateway } from './realtime.gateway';
 import { RealtimeService } from './realtime.service';
 import { RbacModule } from '../rbac/rbac.module';
+import { ClockModule } from '../clock/clock.module';
 
 @Global()
 @Module({
   imports: [
     RbacModule,
+    ClockModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

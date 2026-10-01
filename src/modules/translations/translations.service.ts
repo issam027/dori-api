@@ -102,7 +102,11 @@ export class TranslationsService {
   }
 
   async findTranslations(filter: TranslationFilterDto) {
-    const { pageSize, offset, sortField, sortOrder } = filter.getParams();
+    const { pageSize, offset, sortOrder } = filter.getParams();
+    const safeSortField = filter.getSafeSortField(
+      ['translation_id', 'category', 'locale', 'translation_key', 'created_at', 'updated_at'],
+      'translation_id',
+    );
 
     let query = `SELECT * FROM dori_translation WHERE is_active = TRUE`;
     const params: any[] = [];
@@ -126,7 +130,7 @@ export class TranslationsService {
     );
     const total = countRes[0]?.total || 0;
 
-    query += ` ORDER BY ${sortField === 'id' ? 'translation_id' : sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`;
+    query += ` ORDER BY ${safeSortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`;
     const items = await this.dataSource.query(query, params);
 
     return filter.createResponse(items, total);

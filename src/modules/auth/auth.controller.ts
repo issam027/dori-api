@@ -43,7 +43,7 @@ export class AuthController {
   @ApiOperation({
     summary: 'Connexion',
     description:
-      'Authentifie un utilisateur et retourne un access token JWT + un refresh token (aussi positionné en cookie HttpOnly).\n\n**Compte root par défaut** — `username: root` / `password: Root@123456`',
+      'Authentifie un utilisateur et retourne un access token JWT + un refresh token (aussi positionné en cookie HttpOnly).',
   })
   @ApiBody({ type: LoginDto })
   @ApiDoriOkResponse(LoginResponseDto, 'Connexion réussie avec token JWT et profil')
@@ -107,7 +107,7 @@ export class AuthController {
     summary: 'Déconnexion',
     description:
       'Invalide la session courante du caller (sans body).\n\n' +
-      '**Global logout** : poster `{"userId": <votre_id>}` pour révoquer toutes vos sessions.\n\n' +
+      '**global_logout** : poster `{"userId": <votre_id>}` pour révoquer toutes vos sessions.\n\n' +
       '**Force-disconnect** (manager/admin/root) : poster `{"userId": <id_cible>}` pour déconnecter un utilisateur hiérarchiquement inférieur.',
   })
   @ApiBody({ type: LogoutDto, required: false })

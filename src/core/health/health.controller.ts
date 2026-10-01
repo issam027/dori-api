@@ -8,6 +8,7 @@ import {
 import { DataSource } from 'typeorm';
 import { Response } from 'express';
 import { Public } from '../auth/decorators/public.decorator';
+import { ClockService } from '../clock/clock.service';
 
 class HealthMemoryUsageDto {
   @ApiProperty({ example: 12345678 }) rss: number;
@@ -42,7 +43,10 @@ class HealthResponseDto {
 @ApiTags('Health')
 @Controller('api/v1/health')
 export class HealthController {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly clockService: ClockService,
+  ) {}
 
   @Get()
   @Public()
@@ -116,7 +120,7 @@ export class HealthController {
 
     return res.status(statusCode).json({
       status,
-      timestamp: new Date().toISOString(),
+      timestamp: this.clockService.now().toISOString(),
       uptime: process.uptime(),
       checks: {
         database: dbStatus,

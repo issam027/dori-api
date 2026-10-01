@@ -86,6 +86,26 @@ export class QueueSessionDetailDto {
 
   @ApiPropertyOptional({ example: null, description: 'Heure de déconnexion' })
   disconnectedAt?: string;
+
+  @ApiPropertyOptional({ example: 'operator1', description: "Nom d'utilisateur de l'opérateur" })
+  username?: string;
+}
+
+export class PaginatedQueueSessionResponseDto {
+  @ApiProperty({ type: [QueueSessionDetailDto], description: 'Liste des sessions de guichets' })
+  items: QueueSessionDetailDto[];
+
+  @ApiProperty({ example: 1, description: 'Numéro de page actuelle' })
+  page: number;
+
+  @ApiProperty({ example: 25, description: "Nombre d'éléments par page" })
+  pageSize: number;
+
+  @ApiProperty({ example: 5, description: "Total d'éléments" })
+  total: number;
+
+  @ApiProperty({ example: 1, description: 'Total de pages' })
+  totalPages: number;
 }
 
 export class CalledNextCustomerResponseDto {

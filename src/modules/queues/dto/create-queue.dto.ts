@@ -32,7 +32,7 @@ export class CreateQueueDto {
   queueName?: string;
 
   @ApiPropertyOptional({
-    default: 10,
+    example: 10,
     description: "Temps d'attente moyen estimé (minutes)",
   })
   @IsInt()
@@ -41,7 +41,7 @@ export class CreateQueueDto {
   averageWaitTime?: number;
 
   @ApiPropertyOptional({
-    default: 1,
+    example: 1,
     description: 'Nombre de guichets (threads) actifs',
   })
   @IsInt()
@@ -49,13 +49,13 @@ export class CreateQueueDto {
   @IsOptional()
   threadCount?: number;
 
-  @ApiPropertyOptional({ default: false })
+  @ApiPropertyOptional({ example: false })
   @IsBoolean()
   @IsOptional()
   appointmentsEnabled?: boolean;
 
   @ApiPropertyOptional({
-    default: 15,
+    example: 15,
     description: "Durée d'un créneau (minutes)",
   })
   @IsInt()
@@ -63,7 +63,7 @@ export class CreateQueueDto {
   @IsOptional()
   appointmentSlotDuration?: number;
 
-  @ApiPropertyOptional({ default: 1 })
+  @ApiPropertyOptional({ example: 1 })
   @IsInt()
   @Min(1)
   @IsOptional()
@@ -90,7 +90,7 @@ export class CreateQueueDto {
   breakEnd?: string;
 
   @ApiPropertyOptional({
-    default: 60,
+    example: 60,
     description: 'Tolérance retard RDV (minutes)',
   })
   @IsInt()
@@ -98,34 +98,34 @@ export class CreateQueueDto {
   @IsOptional()
   lateToleranceMinutes?: number;
 
-  @ApiPropertyOptional({ default: 0 })
+  @ApiPropertyOptional({ example: 0 })
   @IsNumber()
   @IsOptional()
   baseWeightWalkin?: number;
 
-  @ApiPropertyOptional({ default: 60 })
+  @ApiPropertyOptional({ example: 60 })
   @IsNumber()
   @IsOptional()
   baseWeightAppointment?: number;
 
-  @ApiPropertyOptional({ default: 1 })
+  @ApiPropertyOptional({ example: 1 })
   @IsNumber()
   @IsOptional()
   escalationRateWalkin?: number;
 
-  @ApiPropertyOptional({ default: 1 })
+  @ApiPropertyOptional({ example: 1 })
   @IsNumber()
   @IsOptional()
   escalationRateAppointment?: number;
 
-  @ApiPropertyOptional({ default: false })
+  @ApiPropertyOptional({ example: false })
   @IsBoolean()
   @IsOptional()
   carryOverWaiting?: boolean;
 
   @ApiPropertyOptional({
     enum: ['close_all', 'close_served_only'],
-    default: 'close_all',
+    example: 'close_all',
   })
   @IsIn(['close_all', 'close_served_only'])
   @IsOptional()

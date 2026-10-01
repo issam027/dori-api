@@ -29,9 +29,9 @@ import {
   PaginatedSiteResponseDto,
   SiteDeleteResponseDto,
   SiteManagerResponseDto,
+  PaginatedSiteManagerResponseDto,
   AssignManagerResponseDto,
 } from './dto/site-response.dto';
-import { PaginatedQueueResponseDto } from '../queues/dto/queue-response.dto';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
@@ -121,36 +121,21 @@ export class SitesController {
     return this.sitesService.deleteSite(siteId, user);
   }
 
-  @Get(':siteId/queues')
-  @RequirePermission('site_view')
-  @ApiOperation({
-    summary: "Lister les files d'attente d'un site",
-    description:
-      "Retourne toutes les files d'attente actives rattachées au site.",
-  })
-  @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
-  @ApiDoriOkResponse(PaginatedQueueResponseDto, "Liste paginée des files d'attente du site")
-  async getQueues(
-    @Param('siteId', ParseIntPipe) siteId: number,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return this.sitesService.findSiteQueues(siteId, user);
-  }
-
   @Get(':siteId/managers')
   @RequirePermission('site_view')
   @ApiOperation({
     summary: "Lister les managers d'un site",
     description:
-      'Retourne la liste des utilisateurs affectés comme managers à ce site.',
+      'Retourne la liste paginée des utilisateurs affectés comme managers à ce site.',
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
-  @ApiDoriOkResponse([SiteManagerResponseDto], 'Liste des managers du site')
+  @ApiDoriOkResponse(PaginatedSiteManagerResponseDto, 'Liste paginée des managers du site')
   async getManagers(
     @Param('siteId', ParseIntPipe) siteId: number,
+    @Query() pagination: PaginationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.sitesService.getSiteManagers(siteId, user);
+    return this.sitesService.findSiteManagers(siteId, pagination, user);
   }
 
   @Post(':siteId/managers')

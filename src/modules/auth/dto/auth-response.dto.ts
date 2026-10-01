@@ -4,11 +4,11 @@ export class AuthUserDto {
   @ApiProperty({ example: 1, description: "ID unique de l'utilisateur" })
   userId: number;
 
-  @ApiProperty({ example: 'root', description: "Nom d'utilisateur" })
+  @ApiProperty({ example: 'admin', description: "Nom d'utilisateur" })
   username: string;
 
   @ApiPropertyOptional({
-    example: 'root@dori.local',
+    example: 'admin@dori.local',
     description: 'Adresse email',
   })
   email?: string;
@@ -21,7 +21,7 @@ export class AuthUserDto {
   userType: string;
 
   @ApiProperty({
-    example: ['root'],
+    example: ['admin'],
     type: [String],
     description: 'Rôles attribués',
   })

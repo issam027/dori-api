@@ -74,11 +74,43 @@ export class PersonNoteDetailDto {
   @ApiProperty({ example: 1, description: "ID de l'auteur de la note" })
   createdByUserId: number;
 
+  @ApiPropertyOptional({
+    example: 'jdupont',
+    description: "Identifiant de l'auteur de la note",
+  })
+  authorUsername?: string;
+
   @ApiProperty({
     example: '2026-09-27T10:00:00.000Z',
     description: 'Date de création',
   })
   createdAt: string;
+
+  @ApiPropertyOptional({
+    example: '2026-09-27T10:00:00.000Z',
+    description: 'Date de dernière modification',
+  })
+  updatedAt?: string;
+}
+
+export class PaginatedPersonNoteResponseDto {
+  @ApiProperty({
+    type: [PersonNoteDetailDto],
+    description: 'Liste paginée des notes de la personne',
+  })
+  items: PersonNoteDetailDto[];
+
+  @ApiProperty({ example: 1, description: 'Page actuelle' })
+  page: number;
+
+  @ApiProperty({ example: 25, description: 'Taille de page' })
+  pageSize: number;
+
+  @ApiProperty({ example: 1, description: "Total d'éléments" })
+  total: number;
+
+  @ApiProperty({ example: 1, description: 'Total de pages' })
+  totalPages: number;
 }
 
 export class PersonDeleteResponseDto {

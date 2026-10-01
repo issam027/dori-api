@@ -8,7 +8,8 @@ import {
   CreateNotificationRuleDto,
   UpdateNotificationRuleDto,
 } from './dto/service-tier.dto';
-import { PaginationDto } from '../../core/pagination/pagination.dto';
+import { PaginationDto, PaginatedResult } from '../../core/pagination/pagination.dto';
+import { QueueTierDetailDto } from './dto/tier-response.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
@@ -24,7 +25,11 @@ export class ServiceTiersService {
 
   // 1. Global catalog
   async findTiers(pagination: PaginationDto, _user?: AuthenticatedUser) {
-    const { pageSize, offset, sortField, sortOrder } = pagination.getParams();
+    const { pageSize, offset, sortOrder } = pagination.getParams();
+    const safeSortField = pagination.getSafeSortField(
+      ['tier_id', 'tier_name', 'tier_code', 'created_at', 'updated_at'],
+      'tier_id',
+    );
     const countRes = await this.dataSource.query(
       `SELECT COUNT(*)::int as total FROM dori_service_tier WHERE is_active = TRUE`,
     );
@@ -33,7 +38,7 @@ export class ServiceTiersService {
     const items = await this.dataSource.query(
       `SELECT * FROM dori_service_tier
        WHERE is_active = TRUE
-       ORDER BY ${sortField === 'id' ? 'tier_id' : sortField} ${sortOrder}
+       ORDER BY ${safeSortField} ${sortOrder}
        LIMIT ${pageSize} OFFSET ${offset}`,
     );
 
@@ -122,9 +127,13 @@ export class ServiceTiersService {
     queueId: number,
     pagination: PaginationDto,
     user: AuthenticatedUser,
-  ) {
+  ): Promise<PaginatedResult<QueueTierDetailDto>> {
     await this.scopeService.checkQueueAccess(user, queueId);
-    const { pageSize, offset } = pagination.getParams();
+    const { pageSize, offset, sortOrder } = pagination.getParams();
+    const sortField = pagination.getSafeSortField(
+      ['display_order', 'tier_id', 'price', 'created_at'],
+      'display_order',
+    );
 
     const query = `
       SELECT qt.*, t.tier_code, t.tier_name, t.description as tier_description, t.is_system
@@ -140,11 +149,29 @@ export class ServiceTiersService {
     const total = countRes[0]?.total || 0;
 
     const items = await this.dataSource.query(
-      `${query} ORDER BY qt.display_order ASC, qt.tier_id ASC LIMIT ${pageSize} OFFSET ${offset}`,
+      `${query} ORDER BY qt.${sortField} ${sortOrder}, qt.tier_id ASC LIMIT ${pageSize} OFFSET ${offset}`,
       [queueId],
     );
 
-    return pagination.createResponse(items, total);
+    const formattedItems = items.map((qt: any) => ({
+      queueId: qt.queue_id,
+      tierId: qt.tier_id,
+      price: Number(qt.price),
+      currency: qt.currency,
+      isEnabled: qt.is_active,
+      isDefault: qt.is_system || false,
+      displayOrder: qt.display_order,
+      tier: {
+        tierId: qt.tier_id,
+        tierCode: qt.tier_code,
+        tierName: qt.tier_name,
+        description: qt.tier_description,
+        isSystem: qt.is_system,
+        isActive: qt.is_active,
+      },
+    }));
+
+    return pagination.createResponse<QueueTierDetailDto>(formattedItems, total);
   }
 
   async associateQueueTier(
@@ -273,7 +300,11 @@ export class ServiceTiersService {
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkQueueAccess(user, queueId);
-    const { pageSize, offset, sortField, sortOrder } = pagination.getParams();
+    const { pageSize, offset, sortOrder } = pagination.getParams();
+    const sortField = pagination.getSafeSortField(
+      ['rule_id', 'created_at', 'updated_at'],
+      'rule_id',
+    );
 
     const query = `
       SELECT * FROM dori_tier_notification_rule
@@ -287,7 +318,7 @@ export class ServiceTiersService {
     const total = countRes[0]?.total || 0;
 
     const items = await this.dataSource.query(
-      `${query} ORDER BY ${sortField === 'id' ? 'rule_id' : sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`,
+      `${query} ORDER BY ${sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`,
       [queueId, tierId],
     );
 
@@ -432,25 +463,23 @@ export class ServiceTiersService {
     return { ruleId, deleted: true };
   }
 
-  async getQueueTiers(queueId: number, user: AuthenticatedUser) {
-    const res = await this.findQueueTiers(queueId, new PaginationDto(), user);
-    return res.items.map((qt: any) => ({
-      queueId: qt.queue_id,
-      tierId: qt.tier_id,
-      price: Number(qt.price),
-      currency: qt.currency,
-      isEnabled: qt.is_active,
-      isDefault: qt.is_system || false,
-      displayOrder: qt.display_order,
-      tier: {
-        tierId: qt.tier_id,
-        tierCode: qt.tier_code,
-        tierName: qt.tier_name,
-        description: qt.tier_description,
-        isSystem: qt.is_system,
-        isActive: qt.is_active,
-      },
-    }));
+  async getQueueTiers(
+    queueId: number,
+    paginationOrUser?: PaginationDto | AuthenticatedUser,
+    maybeUser?: AuthenticatedUser,
+  ): Promise<PaginatedResult<QueueTierDetailDto>> {
+    let pagination: PaginationDto;
+    let user: AuthenticatedUser;
+
+    if (paginationOrUser && 'userId' in paginationOrUser) {
+      user = paginationOrUser as AuthenticatedUser;
+      pagination = new PaginationDto();
+    } else {
+      pagination = (paginationOrUser as PaginationDto) || new PaginationDto();
+      user = maybeUser!;
+    }
+
+    return this.findQueueTiers(queueId, pagination, user);
   }
 
   async getNotificationRules(
@@ -458,13 +487,15 @@ export class ServiceTiersService {
     tierId: number,
     user: AuthenticatedUser,
   ) {
-    const res = await this.findNotificationRules(
-      queueId,
-      tierId,
-      new PaginationDto(),
-      user,
+    await this.scopeService.checkQueueAccess(user, queueId);
+    const items = await this.dataSource.query(
+      `SELECT * FROM dori_tier_notification_rule
+       WHERE queue_id = $1 AND tier_id = $2 AND is_active = TRUE
+       ORDER BY rule_id ASC`,
+      [queueId, tierId],
     );
-    return res.items.map((r: any) => ({
+
+    return items.map((r: any) => ({
       ruleId: r.rule_id,
       queueId: r.queue_id,
       tierId: r.tier_id,

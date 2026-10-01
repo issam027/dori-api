@@ -18,7 +18,7 @@ export class AppointmentExpiryWorker {
       this.logger.debug('Running appointment expiry worker...');
 
       // Mark expired all booked/rescheduled appointments that exceeded late tolerance (§4.3)
-      const [rows, affected] = await this.dataSource.query(`
+      const rows = await this.dataSource.query(`
         UPDATE dori_customer c
         SET status = 'expired',
             appointment_status = 'expired',
@@ -34,9 +34,9 @@ export class AppointmentExpiryWorker {
           AND (c.scheduled_time + (COALESCE(q.late_tolerance_minutes, s.default_late_tolerance_minutes, 60) * INTERVAL '1 minute')) < CURRENT_TIMESTAMP
         RETURNING c.customer_id, c.ticket_number
       `);
-      if (affected && affected.length > 0) {
+      if (rows && rows.length > 0) {
         this.logger.log(
-          `Expired ${affected.length} late appointment(s): ${affected.map((r: any) => r.ticket_number).join(', ')}`,
+          `Expired ${rows.length} late appointment(s): ${rows.map((r: any) => r.ticket_number).join(', ')}`,
         );
       }
     } catch (err: any) {

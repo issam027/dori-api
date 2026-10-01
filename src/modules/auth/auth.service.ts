@@ -183,7 +183,7 @@ export class AuthService {
   /**
    * BUG2 — Mécanisme de logout révisé :
    *   - Aucun body       → révoque uniquement la session courante du caller (sessionId du JWT)
-   *   - body.userId == caller.userId → global logout : révoque TOUTES les sessions du caller
+   *   - body.userId == caller.userId → global_logout : révoque TOUTES les sessions du caller
    *   - body.userId != caller.userId → force-disconnect d'un autre user :
    *       nécessite d'être manager/admin/root et de passer le contrôle hiérarchique
    */
@@ -205,11 +205,11 @@ export class AuthService {
       return { success: true };
     }
 
-    // Cas 2 : userId == caller → global logout (toutes les sessions du caller)
+    // Cas 2 : userId == caller → global_logout (toutes les sessions du caller)
     if (targetUserId === caller.userId) {
       await this.dataSource.query(
         `UPDATE dori_user_session
-         SET revoked_at = $1, revoked_reason = 'global logout'
+         SET revoked_at = $1, revoked_reason = 'global_logout'
          WHERE user_id = $2 AND revoked_at IS NULL`,
         [now, caller.userId],
       );

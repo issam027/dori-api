@@ -2,13 +2,17 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { DataSource } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
+import { ClockService } from '../../core/clock/clock.service';
 
 @Injectable()
 export class NotificationWorker {
   private readonly logger = new Logger(NotificationWorker.name);
   private isProcessing = false;
 
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly clockService: ClockService,
+  ) {}
 
   @Cron(CronExpression.EVERY_10_SECONDS)
   async processPendingNotifications() {
@@ -32,7 +36,7 @@ export class NotificationWorker {
       this.logger.debug(`Processing ${pending.length} pending notification(s)`);
 
       for (const notif of pending) {
-        const now = new Date();
+        const now = this.clockService.now();
         const providerMessageId = `msg_${uuidv4().replace(/-/g, '').slice(0, 16)}`;
 
         try {

@@ -26,7 +26,11 @@ export class NotificationsService {
     user: AuthenticatedUser,
   ) {
     const scope = await this.scopeService.getUserScope(user);
-    const { pageSize, offset, sortField, sortOrder } = filter.getParams();
+    const { pageSize, offset, sortOrder } = filter.getParams();
+    const safeSortField = filter.getSafeSortField(
+      ['notification_id', 'channel', 'notification_status', 'sent_at', 'created_at'],
+      'notification_id',
+    );
 
     let query = `
       SELECT n.*, c.ticket_number, c.business_date, p.first_name, p.last_name
@@ -67,7 +71,7 @@ export class NotificationsService {
     );
     const total = countRes[0]?.total || 0;
 
-    query += ` ORDER BY n.${sortField === 'id' ? 'notification_id' : sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`;
+    query += ` ORDER BY n.${safeSortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`;
     const items = await this.dataSource.query(query, params);
 
     return filter.createResponse(items, total);

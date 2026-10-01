@@ -7,7 +7,8 @@ import {
   CreateNoteDto,
   UpdateNoteDto,
 } from './dto/person.dto';
-import { PaginationDto } from '../../core/pagination/pagination.dto';
+import { PaginationDto, PaginatedResult } from '../../core/pagination/pagination.dto';
+import { PersonNoteDetailDto } from './dto/person-response.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
@@ -42,7 +43,11 @@ export class PersonsService {
 
   async findPersons(filter: PersonFilterDto, user: AuthenticatedUser) {
     const scope = await this.scopeService.getUserScope(user);
-    const { pageSize, offset, sortField, sortOrder } = filter.getParams();
+    const { pageSize, offset, sortOrder } = filter.getParams();
+    const safeSortField = filter.getSafeSortField(
+      ['person_id', 'first_name', 'last_name', 'email', 'phone_number', 'created_at', 'updated_at'],
+      'person_id',
+    );
 
     let query = `SELECT DISTINCT p.* FROM dori_person p`;
     const params: any[] = [];
@@ -69,7 +74,7 @@ export class PersonsService {
     );
     const total = countRes[0]?.total || 0;
 
-    query += ` ORDER BY p.${sortField === 'id' ? 'person_id' : sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`;
+    query += ` ORDER BY p.${safeSortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`;
     const items = await this.dataSource.query(query, params);
 
     return filter.createResponse(items, total);
@@ -183,9 +188,13 @@ export class PersonsService {
     personId: number,
     pagination: PaginationDto,
     user: AuthenticatedUser,
-  ) {
+  ): Promise<PaginatedResult<PersonNoteDetailDto>> {
     await this.checkPersonScope(personId, user);
-    const { pageSize, offset, sortField, sortOrder } = pagination.getParams();
+    const { pageSize, offset, sortOrder } = pagination.getParams();
+    const sortField = pagination.getSafeSortField(
+      ['note_id', 'created_at', 'updated_at'],
+      'created_at',
+    );
 
     const query = `
       SELECT n.*, u.username as author_username
@@ -201,11 +210,21 @@ export class PersonsService {
     const total = countRes[0]?.total || 0;
 
     const items = await this.dataSource.query(
-      `${query} ORDER BY n.${sortField === 'id' ? 'note_id' : sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`,
+      `${query} ORDER BY n.${sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`,
       [personId],
     );
 
-    return pagination.createResponse(items, total);
+    const formattedItems = items.map((n: any) => ({
+      noteId: n.note_id,
+      personId: n.person_id,
+      content: n.content,
+      createdByUserId: n.created_by_user_id,
+      authorUsername: n.author_username,
+      createdAt: n.created_at,
+      updatedAt: n.updated_at,
+    }));
+
+    return pagination.createResponse<PersonNoteDetailDto>(formattedItems, total);
   }
 
   async createPersonNote(
@@ -273,15 +292,23 @@ export class PersonsService {
     return { noteId, deleted: true };
   }
 
-  async getNotes(personId: number, user: AuthenticatedUser) {
-    const res = await this.findPersonNotes(personId, new PaginationDto(), user);
-    return res.items.map((n: any) => ({
-      noteId: n.note_id,
-      personId: n.person_id,
-      content: n.content,
-      createdByUserId: n.created_by_user_id,
-      createdAt: n.created_at,
-    }));
+  async getNotes(
+    personId: number,
+    paginationOrUser?: PaginationDto | AuthenticatedUser,
+    maybeUser?: AuthenticatedUser,
+  ): Promise<PaginatedResult<PersonNoteDetailDto>> {
+    let pagination: PaginationDto;
+    let user: AuthenticatedUser;
+
+    if (paginationOrUser && 'userId' in paginationOrUser) {
+      user = paginationOrUser as AuthenticatedUser;
+      pagination = new PaginationDto();
+    } else {
+      pagination = (paginationOrUser as PaginationDto) || new PaginationDto();
+      user = maybeUser!;
+    }
+
+    return this.findPersonNotes(personId, pagination, user);
   }
 
   async createNote(

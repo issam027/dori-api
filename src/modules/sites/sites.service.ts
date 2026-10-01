@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { CreateSiteDto } from './dto/create-site.dto';
 import { UpdateSiteDto } from './dto/update-site.dto';
-import { PaginationDto } from '../../core/pagination/pagination.dto';
+import { PaginationDto, PaginatedResult } from '../../core/pagination/pagination.dto';
+import { SiteManagerResponseDto } from './dto/site-response.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
@@ -205,56 +206,11 @@ export class SitesService {
     return { siteId, deleted: true };
   }
 
-  async findSiteQueues(
-    siteId: number,
-    paginationOrUser?: PaginationDto | AuthenticatedUser,
-    maybeUser?: AuthenticatedUser,
-  ) {
-    let pagination: PaginationDto;
-    let user: AuthenticatedUser;
-
-    if (paginationOrUser && 'userId' in paginationOrUser) {
-      user = paginationOrUser as AuthenticatedUser;
-      pagination = new PaginationDto();
-    } else {
-      pagination = (paginationOrUser as PaginationDto) || new PaginationDto();
-      user = maybeUser!;
-    }
-
-    await this.scopeService.checkSiteAccess(user, siteId);
-    const scope = await this.scopeService.getUserScope(user);
-    const { pageSize, offset, sortOrder } = pagination.getParams();
-    // VAL-01 : allowlist des colonnes autorisées pour dori_site_queue_thread
-    const sortField = pagination.getSafeSortField(
-      ['queue_id', 'queue_name', 'queue_code', 'created_at', 'updated_at'],
-      'created_at',
-    );
-
-    let query = `SELECT * FROM dori_site_queue_thread WHERE site_id = $1 AND is_active = TRUE`;
-    const params: any[] = [siteId];
-
-    if (!scope.isGlobal && !user.roles?.includes('manager')) {
-      params.push(scope.queueIds);
-      query += ` AND queue_id = ANY($2)`;
-    }
-
-    const countRes = await this.dataSource.query(
-      `SELECT COUNT(*)::int as total FROM (${query}) q`,
-      params,
-    );
-    const total = countRes[0]?.total || 0;
-
-    query += ` ORDER BY ${sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`;
-    const items = await this.dataSource.query(query, params);
-
-    return pagination.createResponse(items, total);
-  }
-
   async findSiteManagers(
     siteId: number,
     pagination: PaginationDto,
     user: AuthenticatedUser,
-  ) {
+  ): Promise<PaginatedResult<SiteManagerResponseDto>> {
     await this.scopeService.checkSiteAccess(user, siteId);
     const { pageSize, offset, sortOrder } = pagination.getParams();
     // VAL-01 : allowlist pour le JOIN dori_user_site / dori_user
@@ -264,7 +220,7 @@ export class SitesService {
     );
 
     const query = `
-      SELECT u.user_id, u.username, u.email, u.user_type, us.assigned_at
+      SELECT u.user_id, u.username, u.email, u.user_type, u.is_active, us.assigned_at
       FROM dori_user_site us
       JOIN dori_user u ON u.user_id = us.user_id
       WHERE us.site_id = $1 AND u.is_active = TRUE
@@ -281,18 +237,35 @@ export class SitesService {
       [siteId],
     );
 
-    return pagination.createResponse(items, total);
-  }
-
-  async getSiteManagers(siteId: number, user: AuthenticatedUser) {
-    const res = await this.findSiteManagers(siteId, new PaginationDto(), user);
-    return res.items.map((m: any) => ({
+    const formattedItems = items.map((m: any) => ({
       userId: m.user_id,
       username: m.username,
       email: m.email,
+      isActive: m.is_active ?? true,
       userType: m.user_type,
       assignedAt: m.assigned_at,
     }));
+
+    return pagination.createResponse<SiteManagerResponseDto>(formattedItems, total);
+  }
+
+  async getSiteManagers(
+    siteId: number,
+    paginationOrUser?: PaginationDto | AuthenticatedUser,
+    maybeUser?: AuthenticatedUser,
+  ): Promise<PaginatedResult<SiteManagerResponseDto>> {
+    let pagination: PaginationDto;
+    let user: AuthenticatedUser;
+
+    if (paginationOrUser && 'userId' in paginationOrUser) {
+      user = paginationOrUser as AuthenticatedUser;
+      pagination = new PaginationDto();
+    } else {
+      pagination = (paginationOrUser as PaginationDto) || new PaginationDto();
+      user = maybeUser!;
+    }
+
+    return this.findSiteManagers(siteId, pagination, user);
   }
 
   async assignSiteManager(

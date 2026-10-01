@@ -33,8 +33,10 @@ import {
   PersonDetailDto,
   PaginatedPersonResponseDto,
   PersonNoteDetailDto,
+  PaginatedPersonNoteResponseDto,
   PersonDeleteResponseDto,
 } from './dto/person-response.dto';
+import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
@@ -119,19 +121,23 @@ export class PersonsController {
   @ApiOperation({
     summary: 'Lister les notes attachées à une personne',
     description:
-      'Retourne les notes médicales ou administratives internes rattachées au profil.',
+      'Retourne la liste paginée des notes médicales ou administratives internes rattachées au profil.',
   })
   @ApiParam({
     name: 'personId',
     type: Number,
     description: 'ID de la personne',
   })
-  @ApiDoriOkResponse([PersonNoteDetailDto], 'Notes de la personne')
+  @ApiDoriOkResponse(
+    PaginatedPersonNoteResponseDto,
+    'Liste paginée des notes de la personne',
+  )
   async getNotes(
     @Param('personId', ParseIntPipe) personId: number,
+    @Query() pagination: PaginationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.personsService.getNotes(personId, user);
+    return this.personsService.findPersonNotes(personId, pagination, user);
   }
 
   @Post(':personId/notes')

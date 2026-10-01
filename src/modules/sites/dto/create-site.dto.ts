@@ -33,7 +33,7 @@ export class CreateSiteDto {
   @IsOptional()
   siteLogoUrl?: string;
 
-  @ApiPropertyOptional({ enum: ['public', 'private'], default: 'public' })
+  @ApiPropertyOptional({ enum: ['public', 'private'], example: 'public' })
   @IsIn(['public', 'private'])
   @IsOptional()
   siteType?: 'public' | 'private';
@@ -55,7 +55,7 @@ export class CreateSiteDto {
   defaultCurrency?: string;
 
   @ApiPropertyOptional({
-    default: false,
+    example: false,
     description: 'Activer les rendez-vous par défaut',
   })
   @IsBoolean()
@@ -63,7 +63,7 @@ export class CreateSiteDto {
   defaultAppointmentsEnabled?: boolean;
 
   @ApiPropertyOptional({
-    default: 15,
+    example: 15,
     description: "Durée d'un créneau (minutes)",
   })
   @IsInt()
@@ -71,7 +71,7 @@ export class CreateSiteDto {
   @IsOptional()
   defaultAppointmentSlotDuration?: number;
 
-  @ApiPropertyOptional({ default: 1, description: 'Capacité par créneau' })
+  @ApiPropertyOptional({ example: 1, description: 'Capacité par créneau' })
   @IsInt()
   @Min(1)
   @IsOptional()
@@ -110,7 +110,7 @@ export class CreateSiteDto {
   defaultBreakEnd?: string;
 
   @ApiPropertyOptional({
-    default: 60,
+    example: 60,
     description: 'Tolérance retard RDV (minutes)',
   })
   @IsInt()
@@ -119,7 +119,7 @@ export class CreateSiteDto {
   defaultLateToleranceMinutes?: number;
 
   @ApiPropertyOptional({
-    default: 0,
+    example: 0,
     description: 'Poids de base walk-in (priorité)',
   })
   @IsNumber()
@@ -127,20 +127,20 @@ export class CreateSiteDto {
   defaultBaseWeightWalkin?: number;
 
   @ApiPropertyOptional({
-    default: 60,
+    example: 60,
     description: 'Poids de base rendez-vous (priorité)',
   })
   @IsNumber()
   @IsOptional()
   defaultBaseWeightAppointment?: number;
 
-  @ApiPropertyOptional({ default: 1, description: "Taux d'escalade walk-in" })
+  @ApiPropertyOptional({ example: 1, description: "Taux d'escalade walk-in" })
   @IsNumber()
   @IsOptional()
   defaultEscalationRateWalkin?: number;
 
   @ApiPropertyOptional({
-    default: 1,
+    example: 1,
     description: "Taux d'escalade rendez-vous",
   })
   @IsNumber()
@@ -148,7 +148,7 @@ export class CreateSiteDto {
   defaultEscalationRateAppointment?: number;
 
   @ApiPropertyOptional({
-    default: false,
+    example: false,
     description: 'Reporter les clients en attente au lendemain',
   })
   @IsBoolean()
@@ -157,7 +157,7 @@ export class CreateSiteDto {
 
   @ApiPropertyOptional({
     enum: ['close_all', 'close_served_only'],
-    default: 'close_all',
+    example: 'close_all',
   })
   @IsIn(['close_all', 'close_served_only'])
   @IsOptional()

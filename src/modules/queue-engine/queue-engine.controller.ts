@@ -27,10 +27,12 @@ import {
   QueuePreviewResponseDto,
   QueueThreadDto,
   QueueSessionDetailDto,
+  PaginatedQueueSessionResponseDto,
   CalledNextCustomerResponseDto,
   CloseSessionResponseDto,
   CustomerActionResponseDto,
 } from './dto/engine-response.dto';
+import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
@@ -91,15 +93,16 @@ export class QueueEngineController {
   @ApiOperation({
     summary: "Sessions actives d'une file",
     description:
-      'Retourne la liste des sessions de guichets actuellement en cours.',
+      'Retourne la liste paginée des sessions de guichets actuellement en cours.',
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse([QueueSessionDetailDto], 'Sessions actives')
+  @ApiDoriOkResponse(PaginatedQueueSessionResponseDto, 'Liste paginée des sessions actives')
   async getActiveSessions(
     @Param('queueId', ParseIntPipe) queueId: number,
+    @Query() pagination: PaginationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.engineService.getActiveSessions(queueId, user);
+    return this.engineService.getActiveSessions(queueId, pagination, user);
   }
 
   @Post('queues/:queueId/sessions')

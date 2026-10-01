@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { OpenSessionDto } from './dto/session.dto';
+import { QueueSessionDetailDto } from './dto/engine-response.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { DoriException } from '../../core/errors/dori.exception';
+import { PaginationDto, PaginatedResult } from '../../core/pagination/pagination.dto';
 
 @Injectable()
 export class QueueEngineService {
@@ -549,17 +551,60 @@ export class QueueEngineService {
   }
 
   // Active supervision sessions (§5.8)
-  async getSessions(queueId: number, user: AuthenticatedUser) {
+  async getSessions(
+    queueId: number,
+    paginationOrUser?: PaginationDto | AuthenticatedUser,
+    maybeUser?: AuthenticatedUser,
+  ): Promise<PaginatedResult<QueueSessionDetailDto>> {
+    let pagination: PaginationDto;
+    let user: AuthenticatedUser;
+
+    if (paginationOrUser && 'userId' in paginationOrUser) {
+      user = paginationOrUser as AuthenticatedUser;
+      pagination = new PaginationDto();
+    } else {
+      pagination = (paginationOrUser as PaginationDto) || new PaginationDto();
+      user = maybeUser!;
+    }
+
     await this.scopeService.checkQueueAccess(user, queueId);
-    const sessions = await this.dataSource.query(
-      `SELECT qs.*, u.username
-       FROM dori_queue_session qs
-       JOIN dori_user u ON u.user_id = qs.user_id
-       WHERE qs.queue_id = $1 AND qs.disconnected_at IS NULL
-       ORDER BY qs.connected_at DESC`,
+    const { pageSize, offset, sortOrder } = pagination.getParams();
+    const sortField = pagination.getSafeSortField(
+      ['qs.connected_at', 'qs.session_id', 'qs.thread_number', 'qs.mode', 'u.username'],
+      'qs.connected_at',
+    );
+
+    const baseSql = `
+      FROM dori_queue_session qs
+      JOIN dori_user u ON u.user_id = qs.user_id
+      WHERE qs.queue_id = $1 AND qs.disconnected_at IS NULL
+    `;
+
+    const countRes = await this.dataSource.query(
+      `SELECT COUNT(*)::int as total ${baseSql}`,
       [queueId],
     );
-    return sessions;
+    const total = countRes[0]?.total || 0;
+
+    const sessions = await this.dataSource.query(
+      `SELECT qs.*, u.username ${baseSql}
+       ORDER BY ${sortField} ${sortOrder}
+       LIMIT ${pageSize} OFFSET ${offset}`,
+      [queueId],
+    );
+
+    const formattedSessions: QueueSessionDetailDto[] = sessions.map((s: any) => ({
+      sessionId: s.session_id,
+      queueId: s.queue_id,
+      threadNumber: s.thread_number,
+      userId: s.user_id,
+      username: s.username,
+      mode: s.mode,
+      connectedAt: s.connected_at instanceof Date ? s.connected_at.toISOString() : s.connected_at,
+      disconnectedAt: s.disconnected_at instanceof Date ? s.disconnected_at.toISOString() : (s.disconnected_at || null),
+    }));
+
+    return pagination.createResponse(formattedSessions, total);
   }
 
   // 6. Next Preview (§10.2)
@@ -735,8 +780,12 @@ export class QueueEngineService {
     return this.getThreads(queueId, user);
   }
 
-  async getActiveSessions(queueId: number, user: AuthenticatedUser) {
-    return this.getSessions(queueId, user);
+  async getActiveSessions(
+    queueId: number,
+    paginationOrUser?: PaginationDto | AuthenticatedUser,
+    maybeUser?: AuthenticatedUser,
+  ): Promise<PaginatedResult<QueueSessionDetailDto>> {
+    return this.getSessions(queueId, paginationOrUser, maybeUser);
   }
 
   async callNext(queueId: number, user: AuthenticatedUser) {

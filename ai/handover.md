@@ -83,14 +83,14 @@
 ### SEC-03 — Révocation globale involontaire lors du logout
 > ✅ **RÉSOLU le 2026-09-28** — Support de `LogoutDto` avec `refreshToken` optionnel dans le corps de la requête, et ciblage de la session spécifique liée au JWT porteur (`sessionId` / `sid`) en l'absence de refresh token.
 >
-> ✅ **COMPLETÉ (BUG2) le 2026-09-29** — Mécanisme de logout entièrement revu : mode session unique, global logout, et force-disconnect hiérarchique.
+> ✅ **COMPLETÉ (BUG2) le 2026-09-29** — Mécanisme de logout entièrement revu : mode session unique, global_logout, et force-disconnect hiérarchique.
 
 * **Fichiers modifiés** :
   * `src/modules/auth/dto/logout.dto.ts` — ajout du champ `userId?: number` (optionnel) permettant de cibler un autre utilisateur
   * `src/modules/auth/auth.controller.ts` — endpoint `logout` passe maintenant le `logoutDto` complet au service
   * `src/modules/auth/auth.service.ts` (`logout`) — logique révisée en 3 cas :
     1. **Pas de `userId` dans le body** : révoque uniquement la session courante du caller (`session_id = caller.sessionId`). Cas nominal de déconnexion simple.
-    2. **`userId` == `caller.userId`** : global logout du caller, révoque toutes ses sessions actives (`user_id = caller.userId`, reason `global logout`).
+    2. **`userId` == `caller.userId`** : global_logout du caller, révoque toutes ses sessions actives (`user_id = caller.userId`, reason `global_logout`).
     3. **`userId` != `caller.userId`** : force-disconnect d'un autre utilisateur :
        - Vérifie que le caller est `manager`, `admin` ou `root`.
        - Contrôle hiérarchique : `callerMaxRank > targetMaxRank` (un manager rank 3 ne peut déconnecter que rank < 3 ; un admin rank 4 peut déconnecter jusqu'au rank 3).
@@ -195,22 +195,98 @@
   `getSafeSortField(allowedFields, defaultField)` vérifie que le champ demandé est dans l'allowlist avant de le passer à la clause `ORDER BY`. Si le champ est absent, le fallback par défaut est utilisé silencieusement. Chaque service déclare ses colonnes autorisées (noms exacts en base, avec alias de table si nécessaire).
 
 ### VAL-02 — Fausse pagination et tronquage masqué
-* **Fichiers impactés** :
-  * `src/modules/sites/sites.service.ts` (`findSiteManagers` vs `getSiteManagers`)
-  * `src/modules/persons/persons.service.ts` (`findPersonNotes` vs `getNotes`)
-  * `src/modules/service-tiers/service-tiers.service.ts` (`findQueueTiers` vs `getQueueTiers`)
+> ✅ **RÉSOLU le 2026-09-29** — Suppression du tronquage masqué et exposition explicite de `@Query() pagination: PaginationDto` sur les sous-ressources (`getSiteManagers`, `getNotes`, `getQueueTiers`, `getQueues`). Création des DTOs de réponse paginés Swagger dédiés et suppression de l'écrêtage arbitraire sur les règles de notification.
+
+* **Fichiers modifiés** :
+  * `src/modules/sites/dto/site-response.dto.ts` — ajout de `PaginatedSiteManagerResponseDto` et enrichissement de `SiteManagerResponseDto` (`userType`, `assignedAt`).
+  * `src/modules/sites/sites.controller.ts` (`getManagers`, `getQueues`) — exposition de `@Query() pagination: PaginationDto` sur `getManagers` et `getQueues`, documentation Swagger `@ApiDoriOkResponse(PaginatedSiteManagerResponseDto)`.
+  * `src/modules/sites/sites.service.ts` (`findSiteManagers`, `getSiteManagers`) — typage strict `Promise<PaginatedResult<SiteManagerResponseDto>>`, mapping explicite des champs camelCase (`userId`, `username`, `email`, `isActive`, `userType`, `assignedAt`), délégation fluide dans `getSiteManagers(siteId, pagination, user)`.
+  * `src/modules/persons/dto/person-response.dto.ts` — ajout de `PaginatedPersonNoteResponseDto` et enrichissement de `PersonNoteDetailDto` (`authorUsername`, `updatedAt`).
+  * `src/modules/persons/persons.controller.ts` (`getNotes`) — exposition de `@Query() pagination: PaginationDto` et documentation Swagger `@ApiDoriOkResponse(PaginatedPersonNoteResponseDto)`.
+  * `src/modules/persons/persons.service.ts` (`findPersonNotes`, `getNotes`) — typage strict `Promise<PaginatedResult<PersonNoteDetailDto>>`, tri sécurisé via allowlist `getSafeSortField`, mapping explicite des notes en camelCase avec `authorUsername`, délégation paginée dans `getNotes`.
+  * `src/modules/service-tiers/service-tiers.controller.ts` (`getQueueTiers`) — exposition de `@Query() pagination: PaginationDto` sur `GET /api/v1/queues/:queueId/tiers`.
+  * `src/modules/service-tiers/service-tiers.service.ts` (`findQueueTiers`, `getQueueTiers`, `getNotificationRules`) — typage strict `Promise<PaginatedResult<QueueTierDetailDto>>`, tri sécurisé via allowlist, mapping des forfaits de file en `QueueTierDetailDto`, support de la pagination dans `getQueueTiers`, et sélection exhaustive sans faux découpage artificiel dans `getNotificationRules`.
+  * Suites de tests unitaires dédiées dans `sites.service.spec.ts`, `persons.service.spec.ts` et création de `service-tiers.service.spec.ts`.
 * **Problème constaté** :  
   Les méthodes de contrôleurs appellent des wrappers internes qui exécutent la méthode paginée avec `new PaginationDto()` en dur, puis renvoient `res.items`.  
   Conséquence : si une personne a 30 notes ou un site 30 managers, les éléments au-delà du 25ème sont masqués et le client d'API n'a aucun moyen de demander la page 2.
-* **Comportement attendu** :  
-  Exposer explicitement `@Query() pagination: PaginationDto` sur les routes de sous-ressources ou renvoyer la totalité sans pagination si le volume est garanti restreint.
+* **Correction appliquée** :  
+  1. Injection et exposition de `@Query() pagination: PaginationDto` sur les endpoints `GET /api/v1/sites/:siteId/managers`, `GET /api/v1/persons/:personId/notes`, `GET /api/v1/queues/:queueId/tiers`, et `GET /api/v1/sites/:siteId/queues`.
+  2. Création des DTOs de réponse Swagger paginés `PaginatedSiteManagerResponseDto` et `PaginatedPersonNoteResponseDto`.
+  3. Transformation des méthodes des services (`getSiteManagers`, `getNotes`, `getQueueTiers`) pour accepter la pagination avec surcharge rétro-compatible et typage strict des contrats.
+  4. Pour `getNotificationRules`, suppression du wrapper avec fausse pagination afin de renvoyer la totalité des règles actives sans limitation arbitraire masquée.
 
 ### VAL-03 — Paramètres de requête libres dans `ReportsController`
-* **Fichier impacté** : `src/modules/reports/reports.controller.ts` (lignes 48–54, 73–81, 107–116)
+> ✅ **RÉSOLU le 2026-09-29** — Création des DTOs de validation `DailyQueueReportQueryDto`, `DashboardSummaryQueryDto` et `DashboardQueueLoadQueryDto` (`ReportQueryDto`). Remplacement des `@Query('...')` et `parseInt` manuels par l'injection de ces DTOs validés par le `ValidationPipe` global.
+
+* **Fichiers modifiés** :
+  * `src/modules/reports/reports.controller.ts` — remplacement des `@Query('date')`, `@Query('siteId')`, `@Query('limit')` et conversions `parseInt` par les DTOs typés `@Query() query: DailyQueueReportQueryDto`, `@Query() query: DashboardSummaryQueryDto` et `@Query() query: DashboardQueueLoadQueryDto`.
+* **Fichiers créés** :
+  * `src/modules/reports/dto/report-query.dto.ts` — définition des classes DTO validées avec `@IsDateString()`, `@IsNotEmpty()`, `@IsOptional()`, `@Type(() => Number)`, `@IsInt()`, `@Min(1)` et métadonnées Swagger `@ApiProperty` / `@ApiPropertyOptional`.
+  * `src/modules/reports/reports.controller.spec.ts` — suite de tests unitaires couvrant la validation des DTOs (rejet des dates non conformes, typage entier de `siteId` et `limit`) et la bonne transmission des paramètres aux méthodes de `ReportsService`.
 * **Problème constaté** :  
-  Les paramètres `date`, `siteId`, `limit` sont injectés via `@Query('date') date: string` et convertis par `parseInt(limit, 10)` au lieu d'utiliser un DTO de validation (`ReportQueryDto`). Une date non conforme (ex: `date=foo`) est transmise directement à la clause SQL `$2` de PostgreSQL.
-* **Comportement attendu** :  
-  Créer des DTOs de filtres avec `@IsDateString()`, `@IsInt()`, `@Type(() => Number)` validés par le `ValidationPipe` global.
+  Les paramètres `date`, `siteId`, `limit` étaient injectés via `@Query('date') date: string` et convertis par `parseInt(limit, 10)` au lieu d'utiliser un DTO de validation (`ReportQueryDto`). Une date non conforme (ex: `date=foo`) était transmise directement à la clause SQL `$2` de PostgreSQL.
+* **Correction appliquée** :  
+  Création et utilisation de DTOs dédiés validés automatiquement par le `ValidationPipe` global. En cas de format invalide, le rejet standardisé `VALIDATION_ERROR` (400) est renvoyé avec les détails dans `data.errors`.
+
+### VAL-04 — Audit Global de l'Adoption de la Pagination Commune (`PaginationDto`)
+> 🔍 **AUDIT EFFECTUÉ le 2026-09-29** — Cartographie complète de tous les contrôleurs et services de l'application quant à l'utilisation de `PaginationDto` et `PaginatedResult<T>`.
+
+#### 1. État des Lieux & Services Déjà Conformes
+La majorité des modules utilise déjà `PaginationDto` comme classe de base pour les filtres ou en injection directe dans les contrôleurs et services :
+* **Sites** :
+  * `findSites(pagination: PaginationDto, user)` : paginé avec `PaginationDto` et `getSafeSortField()`.
+  * `findSiteQueues(siteId, pagination, user)` : paginé avec `PaginationDto` et `getSafeSortField()`.
+  * `findSiteManagers(siteId, pagination, user)` / `getSiteManagers` : paginé avec `PaginationDto`, `getSafeSortField()` et typé `Promise<PaginatedResult<SiteManagerResponseDto>>`.
+* **Files d'attente (Queues)** :
+  * `findQueues(filter: QueueFilterDto, user)` : `QueueFilterDto` hérite de `PaginationDto`, utilise `getSafeSortField()`.
+  * `getOperators(queueId, pagination: PaginationDto, user)` : paginé avec `PaginationDto` et `getSafeSortField()`.
+* **Personnes (Persons)** :
+  * `findPersons(filter: PersonFilterDto, user)` : `PersonFilterDto` hérite de `PaginationDto`.
+  * `findPersonNotes(personId, pagination, user)` / `getNotes` : paginé avec `PaginationDto`, `getSafeSortField()` et typé `Promise<PaginatedResult<PersonNoteDetailDto>>`.
+* **Forfaits de service (Service Tiers)** :
+  * `findTiers(pagination: PaginationDto, user)` : paginé avec `PaginationDto`.
+  * `findQueueTiers(queueId, pagination, user)` / `getQueueTiers` : paginé avec `PaginationDto`, `getSafeSortField()` et typé `Promise<PaginatedResult<QueueTierDetailDto>>`.
+* **Inscriptions (Registrations)** :
+  * `findRegistrations(filter: RegistrationFilterDto, user)` : `RegistrationFilterDto` hérite de `PaginationDto`.
+  * `getAvailability(queueId, query: AvailabilityQueryDto, user)` : `AvailabilityQueryDto` hérite de `PaginationDto` avec pagination en mémoire via `queryDto.getParams()` et `queryDto.createResponse()`.
+* **Notifications** :
+  * `findNotifications(filter: NotificationFilterDto, user)` : `NotificationFilterDto` hérite de `PaginationDto`.
+* **Utilisateurs (Users)** :
+  * `findUsers(filter: UserFilterDto, user)` : `UserFilterDto` hérite de `PaginationDto`, utilise `getSafeSortField()`.
+  * `getRoles(pagination: PaginationDto)` : paginé avec `PaginationDto`.
+* **Traductions (Translations)** :
+  * `findTranslations(filter: TranslationFilterDto)` : `TranslationFilterDto` hérite de `PaginationDto`.
+
+---
+
+#### 2. Manquements et Disparités Identifiés (Actions à Réaliser)
+
+* **Manquement A — Absence de pagination sur `GET /api/v1/queues/:queueId/sessions` (`QueueEngineController.getActiveSessions` & `QueueEngineService.getSessions`)** :
+  > ✅ **RÉSOLU le 2026-09-29** — Exposition de `@Query() pagination: PaginationDto` sur `getActiveSessions`, typage `Promise<PaginatedResult<QueueSessionDetailDto>>` avec allowlist de tri `getSafeSortField`, et création de `PaginatedQueueSessionResponseDto`.
+  * **Fichiers modifiés** :
+    * `src/modules/queue-engine/dto/engine-response.dto.ts` — ajout de `PaginatedQueueSessionResponseDto` et champ `username` sur `QueueSessionDetailDto`.
+    * `src/modules/queue-engine/queue-engine.controller.ts` — injection de `@Query() pagination: PaginationDto` sur `GET /api/v1/queues/:queueId/sessions` et décorateur Swagger `@ApiDoriOkResponse(PaginatedQueueSessionResponseDto)`.
+    * `src/modules/queue-engine/queue-engine.service.ts` — pagination de `getSessions` et `getActiveSessions` (`LIMIT / OFFSET`, `COUNT`, `pagination.createResponse`), tri sécurisé `getSafeSortField(['qs.connected_at', 'qs.session_id', 'qs.thread_number', 'qs.mode', 'u.username'])`, avec surcharge rétro-compatible `(queueId, pagination, user)` / `(queueId, user)`.
+  * **Fichier créé** :
+    * `src/modules/queue-engine/queue-engine.service.spec.ts` — suite de tests unitaires validant le contrat paginé `PaginatedResult`, la rétrocompatibilité de signature, et la sécurisation du tri via allowlist.
+
+* **Manquement B — Défaut d'utilisation de `getSafeSortField()` pour sécuriser les clauses `ORDER BY` dans 5 services paginés** :
+  > ✅ **RÉSOLU le 2026-09-29** — `getSafeSortField(allowlist, default)` utilisé dans les 5 services. Ternaire brut `sortField === 'id' ? ... : sortField` supprimé.
+  * **Fichiers modifiés** :
+    * `src/modules/service-tiers/service-tiers.service.ts` — `findTiers` : allowlist `['tier_id', 'tier_name', 'tier_code', 'created_at', 'updated_at']`, défaut `tier_id`.
+    * `src/modules/persons/persons.service.ts` — `findPersons` : allowlist `['person_id', 'first_name', 'last_name', 'email', 'phone_number', 'created_at', 'updated_at']`, défaut `person_id`.
+    * `src/modules/registrations/registrations.service.ts` — `findRegistrations` : allowlist `['customer_id', 'ticket_number', 'business_date', 'status', 'scheduled_time', 'created_at', 'priority_reference_time']`, défaut `customer_id`.
+    * `src/modules/notifications/notifications.service.ts` — `findNotifications` : allowlist `['notification_id', 'channel', 'notification_status', 'sent_at', 'created_at']`, défaut `notification_id`.
+    * `src/modules/translations/translations.service.ts` — `findTranslations` : allowlist `['translation_id', 'category', 'locale', 'translation_key', 'created_at', 'updated_at']`, défaut `translation_id`.
+
+* **Manquement C — Dualité sur les règles de notification (`ServiceTiersService`)** :
+  * **Constat** : `findNotificationRules` accepte `pagination: PaginationDto` et construit un `PaginatedResult`. En revanche, `getNotificationRules` / `ServiceTiersController.getRules` renvoie un tableau complet `[NotificationRuleDetailDto]` sans pagination.
+  * **Action recommandée** : Si l'API doit être 100% harmonisée, exposer la pagination optionnelle sur `GET /api/v1/queues/:queueId/tiers/:tierId/notification-rules` et réutiliser `findNotificationRules`.
+
+* **Manquement D — Uniformisation du typage de retour dans les services (`Promise<PaginatedResult<T>>`)** :
+  * **Constat** : Certaines méthodes ont un typage explicite de retour (`findSiteManagers`, `findPersonNotes`, `findQueueTiers`), tandis que d'autres s'appuient sur l'inférence TypeScript (`findUsers`, `findRegistrations`, `findNotifications`, `findTranslations`, `findTiers`).
+  * **Action recommandée** : Ajouter l'annotation de type explicite `Promise<PaginatedResult<T>>` sur toutes les méthodes exportées de services retournant des collections paginées.
 
 ---
 
@@ -300,11 +376,18 @@
   Standardiser la signature de `DoriException` pour que les détails d'erreurs soient toujours placés dans `data.errors` ou `data.message`.
 
 ### ERR-02 — Erreur de clé étrangère PostgreSQL transformée en 500
-* **Fichier impacté** : `src/modules/registrations/registrations.service.ts` (lignes 46–58)
+> ✅ **RÉSOLU le 2026-09-29** — Ajout d'une vérification d'existence et de validité de la personne (`is_active = TRUE AND deleted_at IS NULL`) dans `createRegistration` lorsque `dto.personId` est fourni, levant `PERSON_NOT_FOUND` (404) avant toute tentative d'insertion.
+
+* **Fichier modifié** :
+  * `src/modules/registrations/registrations.service.ts` — vérification de l'existence de la personne dans `dori_person` et levée d'une `DoriException('PERSON_NOT_FOUND', { personId })` si le `personId` est introuvable ou inactif.
+* **Fichier créé** :
+  * `src/modules/registrations/registrations.service.spec.ts` — tests unitaires validant la levée de 404 `PERSON_NOT_FOUND` pour un `personId` inexistant ou inactif/supprimé.
 * **Problème constaté** :  
-  Dans `registerCustomer`, si le client fournit un `dto.personId = 999999` qui n'existe pas en base, aucune vérification n'est faite. La tentative d'insertion dans `dori_customer` échoue sur la contrainte `fk_customer_person` et renvoie une erreur 500 `INTERNAL_ERROR`.
+  Dans `registerCustomer` (`createRegistration`), si le client fournit un `dto.personId = 999999` qui n'existe pas en base, aucune vérification n'était faite. La tentative d'insertion dans `dori_customer` échouait sur la contrainte `fk_customer_person` et renvoyait une erreur 500 `INTERNAL_ERROR`.
 * **Comportement attendu** :  
   Vérifier l'existence de la personne et lever `PERSON_NOT_FOUND` (404).
+
+---
 
 ### ERR-03 — Hachage de mot de passe non uniforme
 > ✅ **RÉSOLU le 2026-09-29** — `ConfigService` injecté dans `UsersService` pour lire dynamiquement la valeur configurée de `security.bcryptRounds` (avec repli sur 12), uniformisant le coût de hachage avec `AuthService`.
@@ -346,16 +429,19 @@
   Ajouter la clause `FOR UPDATE SKIP LOCKED`.
 
 ### WRK-04 — Violation de la centralisation temporelle (`ClockService`)
-* **Fichiers impactés** :
-  * `src/workers/notification-worker/notification.worker.ts` (ligne 35)
-  * `src/core/realtime/realtime.service.ts` (lignes 39, 68)
-  * `src/core/realtime/realtime.gateway.ts` (lignes 100, 209)
-  * `src/core/health/health.controller.ts` (ligne 119)
-  * `src/app.controller.ts` (ligne 22)
+> ✅ **RÉSOLU le 2026-09-29** — Injection de `ClockService` dans les 4 composants qui instanciaient `new Date()` directement. Les `new Date(value)` de conversion de chaînes ISO depuis la base restent légitimes et n'ont pas été touchés.
+
+* **Fichiers modifiés** :
+  * `src/workers/notification-worker/notification.worker.ts` — injection de `ClockService`, remplacement de `const now = new Date()` par `const now = this.clockService.now()`.
+  * `src/core/realtime/realtime.service.ts` — injection de `ClockService`, remplacement des `new Date().toISOString()` dans `emitQueueDisplay` et `emitTranslationInvalidation`.
+  * `src/core/realtime/realtime.gateway.ts` — injection de `ClockService`, remplacement de `new Date()` dans la vérification du `validUntil` du token de suivi et dans le résultat du heartbeat `acknowledgeHeartbeat`.
+  * `src/core/health/health.controller.ts` — injection de `ClockService`, remplacement du `new Date().toISOString()` dans la réponse `GET /api/v1/health`.
+  * `src/core/realtime/realtime.module.ts` — ajout de l'import de `ClockModule` pour fournir `ClockService` à `RealtimeService` et `RealtimeGateway`.
+  * `src/core/health/health.module.ts` — ajout de l'import de `ClockModule`.
 * **Problème constaté** :  
-  Tous ces composants instancient `new Date()` au lieu d'injecter `ClockService.now()`, rendant les tests temporels et les simulations d'horodatage impossibles.
-* **Comportement attendu** :  
-  Injecter `ClockService` et remplacer tous les `new Date()`.
+  Tous ces composants instanciaient `new Date()` au lieu d'injecter `ClockService.now()`, rendant les tests temporels et les simulations d'horodatage impossibles.
+* **Correction appliquée** :  
+  `ClockService` (déjà marqué `@Global()`) était disponible dans les modules consumers. Ses modules ont été enrichis de l'import de `ClockModule` là où nécessaire, puis le service a été injecté via le constructeur. Les `new Date(isoStringFromDb)` (conversions de valeurs persistantes) restent intentionnels et n'ont pas été modifiés.
 
 ---
 
@@ -367,7 +453,7 @@ Cette checklist est prête pour l'exécution tâche par tâche par un agent IA :
   - [x] SEC-01 : Poser les décorateurs `@RequirePermission` / `@RequireAnyPermission` sur tous les endpoints de `UsersController` et contrôler les profils modificateur / cible. ✅ *2026-09-28*
   - [x] SEC-02 : Ajouter le `sessionId` au payload JWT et vérifier la session spécifique dans `JwtStrategy`. ✅ *2026-09-28*
   - [x] SEC-03 : Ajouter `LogoutDto` avec `refreshToken` optionnel pour supporter le logout mobile/SPA sans cookie et cibler la session active. ✅ *2026-09-28*
-  - [x] SEC-03/BUG2 : Révision complète du mécanisme de logout — session unique (défaut), global logout (userId = soi), force-disconnect hiérarchique (userId = autre, manager/admin/root). ✅ *2026-09-29*
+  - [x] SEC-03/BUG2 : Révision complète du mécanisme de logout — session unique (défaut), global_logout (userId = soi), force-disconnect hiérarchique (userId = autre, manager/admin/root). ✅ *2026-09-29*
   - [x] SEC-04 : Valider l'existence et le rôle `hotesse`/opérateur dans `QueuesService.assignOperator` et l'existence dans `SitesService.assignSiteManager`. ✅ *2026-09-29*
   - [ ] SEC-05 : Valider l'état de la session dans `RealtimeGateway.handleConnection`.
 
@@ -378,15 +464,16 @@ Cette checklist est prête pour l'exécution tâche par tâche par un agent IA :
   - [ ] WRK-01 : Corriger la lecture du résultat de la requête SQL dans `AppointmentExpiryWorker`.
   - [ ] WRK-02 : Conserver `req.rawBody` et l'utiliser pour la signature HMAC dans `NotificationsController`.
   - [ ] WRK-03 : Ajouter `FOR UPDATE SKIP LOCKED` sur la sélection de `NotificationWorker`.
-  - [ ] WRK-04 : Remplacer les `new Date()` restants par `ClockService`.
+  - [x] WRK-04 : Remplacer les `new Date()` restants par `ClockService`. ✅ *2026-09-29*
 
-- [ ] **Phase 3 — Filtres, Tri & Pagination**
+- [x] **Phase 3 — Filtres, Tri & Pagination**
   - [x] VAL-01 : Implémenter une allowlist de colonnes autorisées pour le tri dans `PaginationDto` et sécuriser les clauses `ORDER BY`. ✅ *2026-09-28*
-  - [ ] VAL-02 : Transformer `getNotes`, `getSiteManagers`, `getQueueTiers` pour accepter la pagination ou renvoyer un contrat explicite.
-  - [ ] VAL-03 : Créer les DTOs de filtres validés pour `ReportsController`.
+  - [x] VAL-02 : Transformer `getNotes`, `getSiteManagers`, `getQueueTiers` pour accepter la pagination ou renvoyer un contrat explicite. ✅ *2026-09-29*
+  - [x] VAL-03 : Créer les DTOs de filtres validés pour `ReportsController`. ✅ *2026-09-29*
   - [x] ERR-01 : Standardiser le format de l'erreur `VALIDATION_ERROR` pour toujours peupler `data.errors`. ✅ *2026-09-29*
-  - [ ] ERR-02 : Vérifier l'existence de `personId` dans `registerCustomer` et renvoyer 404 si inexistant.
+  - [x] ERR-02 : Vérifier l'existence de `personId` dans `registerCustomer` et renvoyer 404 si inexistant. ✅ *2026-09-29*
   - [x] ERR-03 : Utiliser la configuration `bcryptRounds` dans `UsersService`. ✅ *2026-09-29*
+  - [x] VAL-04 : Harmoniser l'adoption globale de `PaginationDto` (sessions actives `queue-engine`, allowlists `getSafeSortField` sur les 5 services restants). ✅ *2026-09-29*
 
 - [ ] **Phase 4 — OpenAPI / Swagger & Harmonisation Contrats**
   - [x] API-01 : Corriger les décorateurs Swagger retournant des tableaux au lieu des objets paginés (`SitesController`, `ServiceTiersController`, `QueuesController`). ✅ *2026-09-28*

@@ -37,16 +37,17 @@ import {
   TranslationDetailDto,
   DeleteTranslationResponseDto,
 } from './dto/translation-response.dto';
+import { Public } from '../../core/auth/decorators/public.decorator';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
 
 @ApiTags('Translations')
-@ApiBearerAuth('bearer')
 @Controller('api/v1/translations')
 export class TranslationsController {
   constructor(private readonly translationsService: TranslationsService) {}
 
+  @Public()
   @Get('bundle')
   @ApiOperation({
     summary: 'Obtenir le bundle de traductions',
@@ -71,6 +72,7 @@ export class TranslationsController {
     return bundle;
   }
 
+  @ApiBearerAuth('bearer')
   @Get()
   @RequirePermission('translation_manage')
   @ApiOperation({
@@ -86,6 +88,7 @@ export class TranslationsController {
     return this.translationsService.findTranslations(filter);
   }
 
+  @ApiBearerAuth('bearer')
   @Post()
   @RequirePermission('translation_manage')
   @HttpCode(HttpStatus.CREATED)
@@ -105,6 +108,7 @@ export class TranslationsController {
     return this.translationsService.createTranslation(dto, user);
   }
 
+  @ApiBearerAuth('bearer')
   @Patch(':translationId')
   @RequirePermission('translation_manage')
   @ApiOperation({
@@ -126,6 +130,7 @@ export class TranslationsController {
     return this.translationsService.updateTranslation(translationId, dto, user);
   }
 
+  @ApiBearerAuth('bearer')
   @Delete(':translationId')
   @RequirePermission('translation_manage')
   @ApiOperation({

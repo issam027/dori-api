@@ -425,7 +425,7 @@ CREATE TABLE IF NOT EXISTS dori_user_session (
     expires_at TIMESTAMPTZ NOT NULL,
     revoked_at TIMESTAMPTZ,
     revoked_reason VARCHAR(30)
-        CHECK (revoked_reason IN ('logout','rotation','account_disabled','password_changed','admin')),
+        CHECK (revoked_reason IN ('global_logout','logout','rotation','account_disabled','password_changed','admin')),
     user_agent VARCHAR(255),
     ip_address INET,
     CONSTRAINT uk_session_refresh_token UNIQUE (refresh_token_hash)

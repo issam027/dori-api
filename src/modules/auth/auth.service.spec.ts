@@ -86,7 +86,7 @@ describe('AuthService — SEC-03 Logout Specific Session', () => {
     );
   });
 
-  it('CAS 2 — should revoke all caller sessions (global logout) when userId == caller.userId', async () => {
+  it('CAS 2 — should revoke all caller sessions (global_logout) when userId == caller.userId', async () => {
     const caller: AuthenticatedUser = {
       userId: 5,
       username: 'agent1',
@@ -100,7 +100,7 @@ describe('AuthService — SEC-03 Logout Specific Session', () => {
     expect(result).toEqual({ success: true });
 
     expect(dataSourceMock.query).toHaveBeenCalledWith(
-      expect.stringContaining("revoked_reason = 'global logout'"),
+      expect.stringContaining("revoked_reason = 'global_logout'"),
       [expect.any(Date), 5],
     );
   });

@@ -167,6 +167,35 @@ export class SiteManagerResponseDto {
 
   @ApiProperty({ example: true, description: 'Compte actif' })
   isActive: boolean;
+
+  @ApiPropertyOptional({ example: 'internal', description: "Type d'utilisateur" })
+  userType?: string;
+
+  @ApiPropertyOptional({
+    example: '2026-09-28T10:00:00.000Z',
+    description: "Date d'affectation au site",
+  })
+  assignedAt?: string;
+}
+
+export class PaginatedSiteManagerResponseDto {
+  @ApiProperty({
+    type: [SiteManagerResponseDto],
+    description: 'Liste des managers du site',
+  })
+  items: SiteManagerResponseDto[];
+
+  @ApiProperty({ example: 1, description: 'Page actuelle' })
+  page: number;
+
+  @ApiProperty({ example: 25, description: 'Taille de page' })
+  pageSize: number;
+
+  @ApiProperty({ example: 2, description: "Total d'éléments" })
+  total: number;
+
+  @ApiProperty({ example: 1, description: 'Total de pages' })
+  totalPages: number;
 }
 
 export class AssignManagerResponseDto {
@@ -179,3 +208,4 @@ export class AssignManagerResponseDto {
   @ApiProperty({ example: 2, description: "ID de l'utilisateur" })
   userId: number;
 }
+

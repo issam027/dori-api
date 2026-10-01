@@ -15,6 +15,7 @@ import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { ScopeService } from '../rbac/services/scope.service';
 import { RealtimeService } from './realtime.service';
+import { ClockService } from '../clock/clock.service';
 import {
   JwtPayload,
   AuthenticatedUser,
@@ -44,6 +45,7 @@ export class RealtimeGateway
     private readonly dataSource: DataSource,
     private readonly scopeService: ScopeService,
     private readonly realtimeService: RealtimeService,
+    private readonly clockService: ClockService,
   ) { }
 
   afterInit(server: Server) {
@@ -96,7 +98,7 @@ export class RealtimeGateway
           const validUntil = new Date(
             reg.registration_tracking_token_valid_until,
           );
-          if (validUntil > new Date() && reg.is_active) {
+          if (validUntil > this.clockService.now() && reg.is_active) {
             client.trackingToken = String(trackingToken);
             client.registrationId = Number(reg.customer_id);
             // Automatically join own registration room
@@ -205,7 +207,7 @@ export class RealtimeGateway
          WHERE session_id = $1 AND queue_id = $2 AND user_id = $3 AND disconnected_at IS NULL`,
         [data.sessionId, data.queueId, client.user.userId],
       );
-      return { acknowledged: true, timestamp: new Date().toISOString() };
+      return { acknowledged: true, timestamp: this.clockService.now().toISOString() };
     } catch (err: any) {
       this.logger.error(`Error updating session last_seen_at: ${err.message}`);
       return { acknowledged: false };
