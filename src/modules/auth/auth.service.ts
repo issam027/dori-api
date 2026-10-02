@@ -4,7 +4,6 @@ import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
-import { v4 as uuidv4 } from 'uuid';
 import { DoriException } from '../../core/errors/dori.exception';
 import { ClockService } from '../../core/clock/clock.service';
 import { ScopeService } from '../../core/rbac/services/scope.service';
@@ -398,9 +397,9 @@ export class AuthService {
     ipAddress?: string,
     userAgent?: string,
   ) {
-    const jti = uuidv4();
+    const jti = crypto.randomUUID();
 
-    const rawRefreshToken = `${uuidv4()}-${crypto.randomBytes(32).toString('hex')}`;
+    const rawRefreshToken = `${crypto.randomUUID()}-${crypto.randomBytes(32).toString('hex')}`;
     const refreshTokenHash = this.hashToken(rawRefreshToken);
 
     const expiresDays =

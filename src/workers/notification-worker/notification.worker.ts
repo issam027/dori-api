@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { DataSource } from 'typeorm';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { ClockService } from '../../core/clock/clock.service';
 
 @Injectable()
@@ -12,7 +12,7 @@ export class NotificationWorker {
   constructor(
     private readonly dataSource: DataSource,
     private readonly clockService: ClockService,
-  ) {}
+  ) { }
 
   @Cron(CronExpression.EVERY_10_SECONDS)
   async processPendingNotifications() {
@@ -37,7 +37,7 @@ export class NotificationWorker {
 
       for (const notif of pending) {
         const now = this.clockService.now();
-        const providerMessageId = `msg_${uuidv4().replace(/-/g, '').slice(0, 16)}`;
+        const providerMessageId = `msg_${randomUUID().replace(/-/g, '').slice(0, 16)}`;
 
         try {
           // In production, an external SMS provider (e.g. Twilio, Infobip) or SMTP is called here.
