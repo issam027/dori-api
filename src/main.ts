@@ -90,11 +90,17 @@ async function bootstrap() {
     .addServer('http://localhost:3000', 'Environnement local de développement')
     .addServer('https://dori-api.vercel.app/', 'Dori API Vercel')
     .addServer('https://api.dori.example.com', 'Environnement de production')
-    .addTag('Authentification', 'Authentification, sessions et gestion des mots de passe')
+    .addTag(
+      'Authentification',
+      'Authentification, sessions et gestion des mots de passe',
+    )
     .addTag('Sites', 'Gestion des sites et affectation des gestionnaires')
     .addTag('Queues', 'Gestion et configuration des files d’attente')
     .addTag('QueueEngine', 'Moteur d’ordonnancement et pilotage des appels')
-    .addTag('Registrations', 'Inscriptions, prise de tickets et suivi de position')
+    .addTag(
+      'Registrations',
+      'Inscriptions, prise de tickets et suivi de position',
+    )
     .addTag('Persons', 'Gestion des profils usagers et historiques')
     .addTag('Users', 'Gestion des comptes utilisateurs et permissions')
     .addTag('Notifications', 'Gestion des règles et envoi des notifications')

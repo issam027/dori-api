@@ -33,7 +33,8 @@ interface AuthenticatedSocket extends Socket {
   },
 })
 export class RealtimeGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server!: Server;
 
@@ -46,7 +47,7 @@ export class RealtimeGateway
     private readonly scopeService: ScopeService,
     private readonly realtimeService: RealtimeService,
     private readonly clockService: ClockService,
-  ) { }
+  ) {}
 
   afterInit(server: Server) {
     this.realtimeService.setServer(server);
@@ -207,7 +208,10 @@ export class RealtimeGateway
          WHERE session_id = $1 AND queue_id = $2 AND user_id = $3 AND disconnected_at IS NULL`,
         [data.sessionId, data.queueId, client.user.userId],
       );
-      return { acknowledged: true, timestamp: this.clockService.now().toISOString() };
+      return {
+        acknowledged: true,
+        timestamp: this.clockService.now().toISOString(),
+      };
     } catch (err: any) {
       this.logger.error(`Error updating session last_seen_at: ${err.message}`);
       return { acknowledged: false };

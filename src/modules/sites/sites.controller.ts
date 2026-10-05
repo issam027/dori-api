@@ -20,6 +20,7 @@ import {
 import {
   ApiDoriOkResponse,
   ApiDoriCreatedResponse,
+  ApiDoriErrorResponses,
 } from '../../core/swagger/api-dori-response.decorator';
 import { SitesService } from './sites.service';
 import { CreateSiteDto } from './dto/create-site.dto';
@@ -28,7 +29,6 @@ import {
   SiteDetailResponseDto,
   PaginatedSiteResponseDto,
   SiteDeleteResponseDto,
-  SiteManagerResponseDto,
   PaginatedSiteManagerResponseDto,
   AssignManagerResponseDto,
 } from './dto/site-response.dto';
@@ -39,6 +39,7 @@ import { RequirePermission } from '../../core/rbac/decorators/require-permission
 
 @ApiTags('Sites')
 @ApiBearerAuth('bearer')
+@ApiDoriErrorResponses()
 @Controller('api/v1/sites')
 export class SitesController {
   constructor(private readonly sitesService: SitesService) {}
@@ -129,7 +130,10 @@ export class SitesController {
       'Retourne la liste paginée des utilisateurs affectés comme managers à ce site.',
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
-  @ApiDoriOkResponse(PaginatedSiteManagerResponseDto, 'Liste paginée des managers du site')
+  @ApiDoriOkResponse(
+    PaginatedSiteManagerResponseDto,
+    'Liste paginée des managers du site',
+  )
   async getManagers(
     @Param('siteId', ParseIntPipe) siteId: number,
     @Query() pagination: PaginationDto,
@@ -146,7 +150,10 @@ export class SitesController {
     description: 'Associe un utilisateur au périmètre de gestion de ce site.',
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
-  @ApiDoriCreatedResponse(AssignManagerResponseDto, 'Manager affecté avec succès')
+  @ApiDoriCreatedResponse(
+    AssignManagerResponseDto,
+    'Manager affecté avec succès',
+  )
   async assignManager(
     @Param('siteId', ParseIntPipe) siteId: number,
     @Body() body: AssignManagerDto,

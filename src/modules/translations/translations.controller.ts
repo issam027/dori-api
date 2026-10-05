@@ -22,6 +22,8 @@ import {
 import {
   ApiDoriOkResponse,
   ApiDoriCreatedResponse,
+  ApiDoriErrorResponses,
+  ApiDoriPublicErrorResponses,
 } from '../../core/swagger/api-dori-response.decorator';
 import { Response } from 'express';
 import { TranslationsService } from './translations.service';
@@ -43,12 +45,18 @@ import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interf
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
 
 @ApiTags('Translations')
+@ApiDoriErrorResponses()
 @Controller('api/v1/translations')
 export class TranslationsController {
   constructor(private readonly translationsService: TranslationsService) {}
 
   @Public()
   @Get('bundle')
+  @ApiDoriPublicErrorResponses({
+    omit404: true,
+    omit409: true,
+    omit422: true,
+  })
   @ApiOperation({
     summary: 'Obtenir le bundle de traductions',
     description:

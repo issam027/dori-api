@@ -31,13 +31,13 @@ Sévérité : **[C]** Critique · **[I]** Important · **[M]** Mineur
 - [x] 🟢 #06 — SW-04 · Utiliser `registration-token` au lieu de `bearer` sur la position publique ✅ *2026-10-01*
 - [ ] 🔵 #07 — WRK-03 · Ajouter `FOR UPDATE SKIP LOCKED` dans `NotificationWorker`
 - [ ] 🔵 #08 — SEC-05 · Vérifier la session active dans `RealtimeGateway.handleConnection`
-- [ ] 🔵 #09 — VAL-MD · Ajouter le typage `Promise<PaginatedResult<T>>` sur 5 services
-- [ ] 🔵 #10 — SW-19 · Corriger la pagination inutile de `/queues/{id}/availability`
+- [x] 🔵 #09 — VAL-MD · Ajouter le typage `Promise<PaginatedResult<T>>` sur 5 services ✅ *2026-10-05*
+- [x] 🔵 #10 — SW-19 · Corriger la pagination inutile de `/queues/{id}/availability` ✅ *2026-10-05*
 - [ ] 🔵 #11 — SW-12 · Typer les identifiants en `integer` (pas `number`) dans les DTOs
-- [ ] 🔵 #12 — SW-17 · Corriger les exemples incohérents dans Swagger
-- [ ] 🔵 #13 — VAL-MC · Exposer la pagination sur `GET /notification-rules`
-- [ ] 🔵 #14 — SW-20 · Uniformiser la nomenclature des DTOs
-- [ ] 🟡 #15 — SW-11 · Adopter camelCase uniformément (Users + Translations)
+- [x] 🔵 #12 — SW-17 · Corriger les exemples incohérents dans Swagger ✅ *2026-10-05*
+- [x] 🔵 #13 — VAL-MC · Exposer la pagination sur `GET /notification-rules` ✅ *2026-10-05*
+- [x] 🔵 #14 — SW-20 · Uniformiser la nomenclature des DTOs ✅ *2026-10-05*
+- [x] 🟡 #15 — SW-11 · Adopter camelCase uniformément (Users + Translations) ✅ *2026-10-05*
 - [ ] 🟡 #16 — SW-07 · Rendre la config files relisible dans `QueueDetailResponseDto`
 - [ ] 🟡 #17 — SW-15 · Ajouter `format`, `maxLength`, `nullable` sur les DTOs
 - [ ] 🟡 #18 — WRK-02 · Capturer `req.rawBody` pour la vérification HMAC webhook
@@ -50,7 +50,7 @@ Sévérité : **[C]** Critique · **[I]** Important · **[M]** Mineur
 - [ ] 🟠 #25 — SW-09 · Unifier les 7 formats de réponse d'action
 - [ ] 🟠 #26 — DAT-02 + DAT-03 · Transaction atomique + `FOR UPDATE` sur `registerCustomer`
 - [ ] 🟠 #27 — SW-14 · Factoriser l'enveloppe de réponse `StandardResponseDto<T>`
-- [ ] 🟠 #28 — SW-01 · Définir le contrat d'erreur global (400/401/403/404/409/422/423/429)
+- [x] 🟠 #28 — SW-01 · Définir le contrat d'erreur global (400/401/403/404/409/422/423/429) ✅ *2026-10-05*
 - [x] 🟠 #29 — SW-16 · Rationaliser les endpoints redondants ✅ *2026-10-01*
 - [ ] 🔴 #30 — DAT-04 · Homogénéiser TypeORM vs SQL brut
 - [ ] 🔴 #31 — RGPD · Validation juridique données personnelles / notes médicales
@@ -195,20 +195,25 @@ Et `dori_user.is_active = TRUE AND deleted_at IS NULL`. Déconnecter le socket s
 ---
 
 ### #09 — VAL-MD · Typage `Promise<PaginatedResult<T>>` sur 5 services [M]
+> ✅ **RÉSOLU le 2026-10-05** — Ajout de l'annotation explicite `Promise<PaginatedResult<T>>` sur l'ensemble des méthodes paginées des services du projet (`UsersService.findUsers`, `UsersService.getRoles`, `RegistrationsService.findRegistrations`, `NotificationsService.findNotifications`, `TranslationsService.findTranslations`, `ServiceTiersService.findTiers`, ainsi que `SitesService.findSites`, `QueuesService.findQueues`, `PersonsService.findPersons`).
 
 **Source** : handover_2.md  
-**5 fichiers · Annotation de type de retour uniquement**
+**5 fichiers principaux + harmonisation globale · Annotation de type de retour explicite**
 
-Ajouter `: Promise<PaginatedResult<T>>` sur :
-- `users.service.ts` — `findUsers`, `getRoles`
-- `registrations.service.ts` — `findRegistrations`
-- `notifications.service.ts` — `findNotifications`
-- `translations.service.ts` — `findTranslations`
-- `service-tiers.service.ts` — `findTiers`
+Méthodes typées avec `Promise<PaginatedResult<T>>` :
+- `users.service.ts` — `findUsers` (`UserListItemDto`), `getRoles` (`RoleDetailResponseDto`)
+- `registrations.service.ts` — `findRegistrations` (`RegistrationDetailResponseDto`)
+- `notifications.service.ts` — `findNotifications` (`NotificationDetailDto`)
+- `translations.service.ts` — `findTranslations` (`TranslationDetailDto`)
+- `service-tiers.service.ts` — `findTiers` (`ServiceTierDetailDto`)
+- `sites.service.ts` — `findSites` (`SiteDetailResponseDto`)
+- `queues.service.ts` — `findQueues` (`QueueDetailResponseDto`)
+- `persons.service.ts` — `findPersons` (`PersonDetailDto`)
 
 ---
 
 ### #10 — SW-19 · Pagination inutile de `/queues/{id}/availability` [M]
+> ✅ **RÉSOLU le 2026-10-05** — `AvailabilityQueryDto` n'étend plus `PaginationDto` : les paramètres `page/pageSize/sort` sont supprimés du query string. Le service retourne désormais directement tous les créneaux (`{ slots }`) sans découpage. Les noms de champs de `SlotAvailabilityDto` ont été alignés sur la réponse réelle du service (`capacity`, `booked`, `available`, `isAvailable`). `nest build` et `npm test` (12/12, 61/61) passent sans erreur.
 
 **Source** : api_analysis.md  
 **1–2 fichiers**
@@ -227,55 +232,45 @@ Ajouter `@ApiProperty({ type: 'integer' })` sur tous les champs ID, count, minut
 ---
 
 ### #12 — SW-17 · Exemples incohérents [M]
-
-**Source** : api_analysis.md  
-**~5 fichiers DTOs**
-
-- Corriger les compteurs `DailyQueueVolumeDto` (87 ≠ 85)
-- Enum `userType` : `{human, kiosk}` (pas `internal`)
-- Retirer mots de passe réels des exemples
-- Documenter le format de ticket
+> ✅ **RÉSOLU le 2026-10-05** — 4 fichiers corrigés :
+> - `login.dto.ts` : mot de passe `'Root@123456'` remplacé par `'••••••••••••'` (credentials root retirés de la doc Swagger)
+> - `user.dto.ts` : `'Secure@Pass2026'` et `'NewSecure@2026'` remplacés par des placeholders `••••••••••••`
+> - `change-password.dto.ts` : `'NewSecure@2026'` remplacé par placeholder
+> - `site-response.dto.ts` : `userType: 'internal'` (valeur invalide) corrigé en `'human'` avec `enum: ['human', 'kiosk']`
+> - `registration.dto.ts` : `ticketNumber: 'MED-0042'` aligné sur le format standard `'A-012'`
+> - `DailyQueueVolumeDto` : déjà cohérent (85 = 60 + 25), pas de correction nécessaire
+> `nest build` et `npm test` (12/12, 61/61) passent sans erreur.
 
 ---
 
 ### #13 — VAL-MC · Pagination sur `GET /notification-rules` [M]
-
-**Source** : handover_2.md  
-**2 fichiers**
-
-Exposer `@Query() pagination: PaginationDto` sur `ServiceTiersController.getRules` et déléguer à `findNotificationRules`.
-
-**Fichiers** :
-- `src/modules/service-tiers/service-tiers.controller.ts`
-- `src/modules/service-tiers/service-tiers.service.ts`
+> ✅ **RÉSOLU le 2026-10-05** — Le contrôleur `ServiceTiersController.getRules` accepte désormais `@Query() pagination: PaginationDto` et délègue à `findNotificationRules` (déjà paginée côté service) au lieu de `getNotificationRules` (non paginée). Ajout de `PaginatedNotificationRuleResponseDto` dans `tier-response.dto.ts` et mise à jour de la décoration Swagger `@ApiDoriOkResponse`. `nest build` et `npm test` (12/12, 61/61) passent sans erreur.
 
 ---
 
 ### #14 — SW-20 · Nomenclature des DTOs [M]
-
-**Source** : api_analysis.md  
-**~10 fichiers DTOs · Renommage mécanique**
-
-Convention : `{Resource}DetailDto` (détail), `{Resource}ResponseDto` (action), `Paginated{Resource}ResponseDto` (paginé).
+> ✅ **RÉSOLU le 2026-10-05** — 8 classes renommées pour respecter la convention `{Resource}DetailDto` / `{Resource}ResponseDto` / `Paginated{Resource}ResponseDto` :
+> - `UserListItemDto` → `UserSummaryDto` (`user-response.dto.ts`, `users.service.ts`)
+> - `UserRoleItemDto` → `UserRoleDetailDto` (`user-response.dto.ts`)
+> - `UserSiteItemDto` → `UserSiteDetailDto` (`user-response.dto.ts`)
+> - `UserQueueItemDto` → `UserQueueDetailDto` (`user-response.dto.ts`)
+> - `SiteManagerResponseDto` → `SiteManagerDetailDto` (`site-response.dto.ts`, `sites.controller.ts`, `sites.service.ts`)
+> - `QueueNextCandidateDto` → `QueueCandidateDetailDto` (`engine-response.dto.ts`)
+> - `QueueThreadDto` → `QueueThreadDetailDto` (`engine-response.dto.ts`, `queue-engine.controller.ts`)
+> - `CallingTicketDto` → `CallingTicketDetailDto` (`queue-response.dto.ts`)
+> `nest build` et `npm test` (12/12, 61/61) passent sans erreur.
 
 ---
 
 ## 🟡 Modéré (30 min – 2h chacun)
 
 ### #15 — SW-11 · camelCase uniforme sur Users et Translations [I]
-
-**Source** : api_analysis.md  
-**2–4 fichiers + tests**
-
-- `TranslationDetailDto` : `translation_key` → `translationKey`, `is_active` → `isActive`, etc.
-- `UserDetailDto` : `user_id` → `userId`, `created_at` → `createdAt`, etc.
-- Impact : les services doivent mapper en camelCase dans les retours SQL.
-
-**Fichiers** :
-- `src/modules/translations/dto/translation-response.dto.ts`
-- `src/modules/translations/translations.service.ts`
-- `src/modules/users/dto/user-response.dto.ts`
-- `src/modules/users/users.service.ts`
+> ✅ **RÉSOLU le 2026-10-05** — 2 fichiers DTO mis à jour, aucun mapper manuel nécessaire.
+> Le `SerializationInterceptor` (`src/core/serialization/serialization.interceptor.ts`) applique automatiquement `transformKeysToCamel()` sur toutes les réponses HTTP — la conversion `snake_case`→`camelCase` est déjà gérée globalement.
+> - `translation-response.dto.ts` : champs renommés en camelCase pour aligner le schéma Swagger sur ce que l'intercepteur produit déjà en runtime (`translationId`, `translationKey`, `expectedParams`, `isActive`, `createdAt`, `updatedAt`).
+> - `user-response.dto.ts` : idem pour 8 classes DTO (`userId`, `userType`, `isActive`, `languagePreference`, `lastLogin`, `roleId`, `roleName`, `siteId`, `siteName`, `queueId`, `queueCode`, `queueName`, etc.).
+> Les services retournent toujours les lignes SQL brutes — l'intercepteur s'occupe de la conversion.
+> `nest build` et `npm test` (12/12, 61/61) passent sans erreur.
 
 ---
 
@@ -407,11 +402,12 @@ Définir `StandardResponseDto<T>` comme composant réutilisable. Utiliser `$ref`
 ---
 
 ### #28 — SW-01 · Contrat d'erreur global [C]
-
-**Source** : api_analysis.md  
-**~15 fichiers contrôleurs + DTOs**
-
-Créer `ErrorResponseDto`. Ajouter `@ApiResponse({ status: 400/401/403/404/409/422/423/429 })` sur toutes les opérations. Publier le catalogue des codes d'erreur métier.
+> ✅ **RÉSOLU le 2026-10-05** — 3 éléments créés dans `src/core/swagger/api-dori-response.decorator.ts` :
+> - **`ErrorResponseDto`** : DTO documentant la forme exacte produite par `GlobalExceptionFilter` (`code`, `translationKey`, `translationParams`, `data`).
+> - **`ApiDoriErrorResponses(opts?)`** : décorateur factorisé ajoutant `@ApiResponse` pour les codes 400/401/403/404/409/422/423/429. Options `omit401/omit403/omit404/omit409/omit422` pour les endpoints publics.
+> - **`ApiDoriPublicErrorResponses()`** : alias sans 401/403 pour les endpoints publics.
+> Appliqué au niveau classe sur les 11 contrôleurs (persons, queue-engine, queues, reports, service-tiers, sites, users, notifications, auth, registrations, translations).
+> `nest build` et `npm test` (12/12, 61/61) passent sans erreur.
 
 ---
 

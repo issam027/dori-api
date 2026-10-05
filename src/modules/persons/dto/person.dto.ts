@@ -2,15 +2,18 @@ import {
   IsBoolean,
   IsDateString,
   IsEmail,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
   Matches,
+  Min,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../../core/pagination/pagination.dto';
 
-export class CreatePersonDto {
+export class PersonIdentityDto {
   @ApiPropertyOptional({ example: 'Mohamed', description: 'Prénom' })
   @IsString()
   @IsOptional()
@@ -57,7 +60,15 @@ export class CreatePersonDto {
   languagePreference?: string;
 }
 
-export class UpdatePersonDto extends CreatePersonDto {
+export class CreatePersonDto extends PersonIdentityDto {
+  @ApiProperty({ example: 1, description: 'Site propriétaire de la personne' })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  siteId: number;
+}
+
+export class UpdatePersonDto extends PersonIdentityDto {
   @ApiPropertyOptional({ description: 'Activer / désactiver la personne' })
   @IsBoolean()
   @IsOptional()

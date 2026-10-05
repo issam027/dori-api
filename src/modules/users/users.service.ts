@@ -9,7 +9,11 @@ import {
   UpdateRolePermissionsDto,
   UserFilterDto,
 } from './dto/user.dto';
-import { PaginationDto } from '../../core/pagination/pagination.dto';
+import {
+  PaginationDto,
+  PaginatedResult,
+} from '../../core/pagination/pagination.dto';
+import { UserSummaryDto, RoleDetailResponseDto } from './dto/user-response.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
@@ -64,7 +68,9 @@ export class UsersService {
     return 0;
   }
 
-  private async getCallerMaxManageRank(user: AuthenticatedUser): Promise<number> {
+  private async getCallerMaxManageRank(
+    user: AuthenticatedUser,
+  ): Promise<number> {
     if (user.roles?.includes('root')) {
       return 5;
     }
@@ -83,7 +89,10 @@ export class UsersService {
       ...permsRes.map((r: any) => r.permission_name),
     ]);
 
-    if (permissions.has('system_manage') || permissions.has('user_manage_admin')) {
+    if (
+      permissions.has('system_manage') ||
+      permissions.has('user_manage_admin')
+    ) {
       return 4;
     }
     if (permissions.has('user_manage_manager')) {
@@ -111,7 +120,11 @@ export class UsersService {
     const callerRank = await this.getCallerMaxRank(caller);
 
     // BUG1 : Une hôtesse ne peut rien modifier (ni kiosk, ni tout rôle inférieur à manager)
-    if (callerRank < 3 || caller.roles?.includes('hotesse') || caller.roles?.includes('kiosk')) {
+    if (
+      callerRank < 3 ||
+      caller.roles?.includes('hotesse') ||
+      caller.roles?.includes('kiosk')
+    ) {
       throw new DoriException('FORBIDDEN_PERMISSION');
     }
 
@@ -162,12 +175,24 @@ export class UsersService {
     }
   }
 
-  async findUsers(filter: UserFilterDto, user: AuthenticatedUser) {
+  async findUsers(
+    filter: UserFilterDto,
+    user: AuthenticatedUser,
+  ): Promise<PaginatedResult<UserSummaryDto>> {
     const scope = await this.scopeService.getUserScope(user);
     const { pageSize, offset, sortOrder } = filter.getParams();
     // VAL-01 : allowlist des colonnes autorisées pour dori_user (alias u)
     const sortField = filter.getSafeSortField(
-      ['u.user_id', 'u.username', 'u.email', 'u.user_type', 'u.is_active', 'u.last_login', 'u.created_at', 'u.updated_at'],
+      [
+        'u.user_id',
+        'u.username',
+        'u.email',
+        'u.user_type',
+        'u.is_active',
+        'u.last_login',
+        'u.created_at',
+        'u.updated_at',
+      ],
       'u.created_at',
     );
 
@@ -480,7 +505,9 @@ export class UsersService {
   }
 
   // Roles and Permissions (§5.9, §4.9)
-  async getRoles(pagination: PaginationDto) {
+  async getRoles(
+    pagination: PaginationDto,
+  ): Promise<PaginatedResult<RoleDetailResponseDto>> {
     const { pageSize, offset } = pagination.getParams();
 
     const countRes = await this.dataSource.query(

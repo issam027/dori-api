@@ -1,9 +1,10 @@
-import { Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { PermissionsGuard } from './guards/permissions.guard';
 import { ScopeService } from './services/scope.service';
+import { DatabaseModule } from '../database/database.module';
 
-@Global()
 @Module({
+  imports: [DatabaseModule],
   providers: [PermissionsGuard, ScopeService],
   exports: [PermissionsGuard, ScopeService],
 })

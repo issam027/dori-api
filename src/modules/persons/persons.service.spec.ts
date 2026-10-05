@@ -12,6 +12,7 @@ describe('PersonsService — DAT-05 deletePerson', () => {
   let dataSourceMock: { query: jest.Mock };
   let scopeServiceMock: {
     getUserScope: jest.Mock;
+    checkSiteAccess: jest.Mock;
   };
 
   const adminUser: AuthenticatedUser = {
@@ -28,6 +29,7 @@ describe('PersonsService — DAT-05 deletePerson', () => {
     };
 
     scopeServiceMock = {
+      checkSiteAccess: jest.fn().mockResolvedValue(undefined),
       getUserScope: jest.fn().mockResolvedValue({
         isGlobal: true,
         siteIds: [],
@@ -58,6 +60,64 @@ describe('PersonsService — DAT-05 deletePerson', () => {
     service = module.get<PersonsService>(PersonsService);
   });
 
+  describe('PERSON-001 — site-scoped identity', () => {
+    it('deduplicates a phone number only inside the requested site', async () => {
+      dataSourceMock.query.mockResolvedValueOnce([
+        { person_id: 10, site_id: 2, phone_number: '+21698765432' },
+      ]);
+
+      const result = await service.createPerson(
+        { phoneNumber: '+21698765432' },
+        2,
+        adminUser,
+      );
+
+      expect(scopeServiceMock.checkSiteAccess).toHaveBeenCalledWith(
+        adminUser,
+        2,
+      );
+      expect(dataSourceMock.query).toHaveBeenCalledWith(
+        expect.stringContaining('site_id = $1 AND phone_number = $2'),
+        [2, '+21698765432'],
+      );
+      expect(result.person_id).toBe(10);
+    });
+
+    it('creates another person when the same phone exists only in another site', async () => {
+      dataSourceMock.query
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ person_id: 20, site_id: 2 }]);
+
+      const result = await service.createPerson(
+        { firstName: 'Amine', phoneNumber: '+21698765432' },
+        2,
+        adminUser,
+      );
+
+      const insert = dataSourceMock.query.mock.calls[1];
+      expect(insert[0]).toContain('site_id, first_name');
+      expect(insert[1][0]).toBe(2);
+      expect(result).toEqual({ person_id: 20, site_id: 2 });
+    });
+
+    it('does not expose a person whose site is outside the user scope', async () => {
+      scopeServiceMock.getUserScope.mockResolvedValue({
+        isGlobal: false,
+        siteIds: [1],
+        queueIds: [10],
+      });
+      dataSourceMock.query.mockResolvedValue([]);
+
+      await expect(service.findPersonById(42, adminUser)).rejects.toThrow(
+        new DoriException('PERSON_NOT_FOUND', { personId: 42 }),
+      );
+      expect(dataSourceMock.query).toHaveBeenCalledWith(
+        expect.stringContaining('site_id = ANY($2)'),
+        [42, [1]],
+      );
+    });
+  });
+
   it('should throw PERSON_NOT_FOUND when person does not exist or is inactive', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
       if (sql.includes('SELECT * FROM dori_person WHERE person_id = $1')) {
@@ -73,27 +133,33 @@ describe('PersonsService — DAT-05 deletePerson', () => {
 
   it('should soft delete person and cascade deactivation to person notes', async () => {
     const queries: { sql: string; params: any[] }[] = [];
-    dataSourceMock.query.mockImplementation(async (sql: string, params: any[]) => {
-      queries.push({ sql, params });
-      if (sql.includes('SELECT * FROM dori_person WHERE person_id = $1')) {
-        return [{ person_id: 42, is_active: true }];
-      }
-      return [];
-    });
+    dataSourceMock.query.mockImplementation(
+      async (sql: string, params: any[]) => {
+        queries.push({ sql, params });
+        if (sql.includes('SELECT * FROM dori_person WHERE person_id = $1')) {
+          return [{ person_id: 42, is_active: true }];
+        }
+        return [];
+      },
+    );
 
     const result = await service.deletePerson(42, adminUser);
     expect(result).toEqual({ id: 42, deleted: true });
 
     // Vérification soft-delete sur dori_person
-    const personUpdate = queries.find((q) =>
-      q.sql.includes('UPDATE dori_person') && q.sql.includes('SET is_active = FALSE'),
+    const personUpdate = queries.find(
+      (q) =>
+        q.sql.includes('UPDATE dori_person') &&
+        q.sql.includes('SET is_active = FALSE'),
     );
     expect(personUpdate).toBeDefined();
     expect(personUpdate?.params[2]).toBe(42);
 
     // Vérification cascade sur dori_person_note
-    const notesUpdate = queries.find((q) =>
-      q.sql.includes('UPDATE dori_person_note') && q.sql.includes('SET is_active = FALSE'),
+    const notesUpdate = queries.find(
+      (q) =>
+        q.sql.includes('UPDATE dori_person_note') &&
+        q.sql.includes('SET is_active = FALSE'),
     );
     expect(notesUpdate).toBeDefined();
     expect(notesUpdate?.params[2]).toBe(42);
@@ -133,13 +199,13 @@ describe('PersonsService — DAT-05 deletePerson', () => {
       expect(result.pageSize).toBe(10);
       expect(result.total).toBe(1);
       expect(result.items[0]).toEqual({
-        noteId: 1,
-        personId: 10,
+        note_id: 1,
+        person_id: 10,
         content: 'Patient VIP',
-        createdByUserId: 2,
-        authorUsername: 'doctor1',
-        createdAt: '2026-09-29T10:00:00Z',
-        updatedAt: '2026-09-29T10:00:00Z',
+        created_by_user_id: 2,
+        author_username: 'doctor1',
+        created_at: '2026-09-29T10:00:00Z',
+        updated_at: '2026-09-29T10:00:00Z',
       });
     });
 
@@ -175,7 +241,7 @@ describe('PersonsService — DAT-05 deletePerson', () => {
       expect(res.page).toBe(3);
       expect(res.pageSize).toBe(2);
       expect(res.total).toBe(1);
-      expect(res.items[0].noteId).toBe(1);
+      expect((res.items[0] as any).note_id).toBe(1);
     });
   });
 });

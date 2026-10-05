@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
-export class QueueNextCandidateDto {
+export class QueueCandidateDetailDto {
   @ApiProperty({ example: 102, description: "ID de l'inscription cliente" })
   customerId: number;
 
@@ -29,13 +30,13 @@ export class QueuePreviewResponseDto {
   queueId: number;
 
   @ApiProperty({
-    type: [QueueNextCandidateDto],
+    type: [QueueCandidateDetailDto],
     description: 'Candidats éligibles ordonnés par priorité',
   })
-  candidates: QueueNextCandidateDto[];
+  candidates: QueueCandidateDetailDto[];
 }
 
-export class QueueThreadDto {
+export class QueueThreadDetailDto {
   @ApiProperty({ example: 1, description: 'Numéro du guichet' })
   threadNumber: number;
 
@@ -80,19 +81,31 @@ export class QueueSessionDetailDto {
 
   @ApiProperty({
     example: '2026-09-27T08:00:00.000Z',
+    format: 'date-time',
     description: 'Heure de connexion',
   })
   connectedAt: string;
 
-  @ApiPropertyOptional({ example: null, description: 'Heure de déconnexion' })
+  @ApiPropertyOptional({
+    example: null,
+    format: 'date-time',
+    nullable: true,
+    description: 'Heure de déconnexion',
+  })
   disconnectedAt?: string;
 
-  @ApiPropertyOptional({ example: 'operator1', description: "Nom d'utilisateur de l'opérateur" })
+  @ApiPropertyOptional({
+    example: 'operator1',
+    description: "Nom d'utilisateur de l'opérateur",
+  })
   username?: string;
 }
 
-export class PaginatedQueueSessionResponseDto {
-  @ApiProperty({ type: [QueueSessionDetailDto], description: 'Liste des sessions de guichets' })
+export class PaginatedQueueSessionResponseDto extends PaginatedResponseDto {
+  @ApiProperty({
+    type: [QueueSessionDetailDto],
+    description: 'Liste des sessions de guichets',
+  })
   items: QueueSessionDetailDto[];
 
   @ApiProperty({ example: 1, description: 'Numéro de page actuelle' })

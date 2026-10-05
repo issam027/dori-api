@@ -7,7 +7,7 @@ export class AppointmentExpiryWorker {
   private readonly logger = new Logger(AppointmentExpiryWorker.name);
   private isRunning = false;
 
-  constructor(private readonly dataSource: DataSource) { }
+  constructor(private readonly dataSource: DataSource) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
   async handleAppointmentExpiry() {

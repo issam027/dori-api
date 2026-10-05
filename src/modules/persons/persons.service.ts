@@ -1,14 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import {
-  CreatePersonDto,
+  PersonIdentityDto,
   UpdatePersonDto,
   PersonFilterDto,
   CreateNoteDto,
   UpdateNoteDto,
 } from './dto/person.dto';
-import { PaginationDto, PaginatedResult } from '../../core/pagination/pagination.dto';
-import { PersonNoteDetailDto } from './dto/person-response.dto';
+import {
+  PaginationDto,
+  PaginatedResult,
+} from '../../core/pagination/pagination.dto';
+import {
+  PersonNoteDetailDto,
+  PersonDetailDto,
+} from './dto/person-response.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
@@ -26,26 +32,39 @@ export class PersonsService {
     const scope = await this.scopeService.getUserScope(user);
     if (scope.isGlobal) return;
 
-    // Check if person has had at least one registration in user's scope queues (§4.11, §4.16)
-    if (scope.queueIds.length === 0) {
+    if (scope.siteIds.length === 0) {
       throw new DoriException('PERSON_NOT_FOUND', { personId });
     }
 
-    const reg = await this.dataSource.query(
-      `SELECT customer_id FROM dori_customer WHERE person_id = $1 AND queue_id = ANY($2) LIMIT 1`,
-      [personId, scope.queueIds],
+    const person = await this.dataSource.query(
+      `SELECT person_id FROM dori_person
+       WHERE person_id = $1 AND site_id = ANY($2)
+         AND is_active = TRUE AND deleted_at IS NULL
+       LIMIT 1`,
+      [personId, scope.siteIds],
     );
 
-    if (!reg || reg.length === 0) {
+    if (!person || person.length === 0) {
       throw new DoriException('PERSON_NOT_FOUND', { personId });
     }
   }
 
-  async findPersons(filter: PersonFilterDto, user: AuthenticatedUser) {
+  async findPersons(
+    filter: PersonFilterDto,
+    user: AuthenticatedUser,
+  ): Promise<PaginatedResult<PersonDetailDto>> {
     const scope = await this.scopeService.getUserScope(user);
     const { pageSize, offset, sortOrder } = filter.getParams();
     const safeSortField = filter.getSafeSortField(
-      ['person_id', 'first_name', 'last_name', 'email', 'phone_number', 'created_at', 'updated_at'],
+      [
+        'person_id',
+        'first_name',
+        'last_name',
+        'email',
+        'phone_number',
+        'created_at',
+        'updated_at',
+      ],
       'person_id',
     );
 
@@ -56,11 +75,13 @@ export class PersonsService {
       if (scope.queueIds.length === 0) {
         return filter.createResponse([], 0);
       }
-      query += ` JOIN dori_customer c ON c.person_id = p.person_id AND c.queue_id = ANY($1)`;
-      params.push(scope.queueIds);
+      query += ` WHERE p.site_id = ANY($1)`;
+      params.push(scope.siteIds);
     }
 
-    query += ` WHERE p.is_active = TRUE AND p.deleted_at IS NULL`;
+    query += scope.isGlobal
+      ? ` WHERE p.is_active = TRUE AND p.deleted_at IS NULL`
+      : ` AND p.is_active = TRUE AND p.deleted_at IS NULL`;
 
     if (filter.search) {
       params.push(`%${filter.search}%`);
@@ -95,14 +116,22 @@ export class PersonsService {
     return rows[0];
   }
 
-  async createPerson(dto: CreatePersonDto, user: AuthenticatedUser) {
+  async createPerson(
+    dto: PersonIdentityDto,
+    siteId: number,
+    user: AuthenticatedUser,
+  ) {
+    await this.scopeService.checkSiteAccess(user, siteId);
     const now = this.clockService.now();
 
-    // Deduplication check (§3.4, §4.16)
+    // A person is unique only inside one site.
     if (dto.phoneNumber) {
       const existingPhone = await this.dataSource.query(
-        `SELECT * FROM dori_person WHERE phone_number = $1 AND is_active = TRUE LIMIT 1`,
-        [dto.phoneNumber],
+        `SELECT * FROM dori_person
+         WHERE site_id = $1 AND phone_number = $2
+           AND is_active = TRUE AND deleted_at IS NULL
+         LIMIT 1`,
+        [siteId, dto.phoneNumber],
       );
       if (existingPhone && existingPhone.length > 0) {
         return existingPhone[0];
@@ -111,8 +140,11 @@ export class PersonsService {
 
     if (dto.email) {
       const existingEmail = await this.dataSource.query(
-        `SELECT * FROM dori_person WHERE LOWER(email) = LOWER($1) AND is_active = TRUE LIMIT 1`,
-        [dto.email],
+        `SELECT * FROM dori_person
+         WHERE site_id = $1 AND LOWER(email) = LOWER($2)
+           AND is_active = TRUE AND deleted_at IS NULL
+         LIMIT 1`,
+        [siteId, dto.email],
       );
       if (existingEmail && existingEmail.length > 0) {
         return existingEmail[0];
@@ -121,11 +153,12 @@ export class PersonsService {
 
     const res = await this.dataSource.query(
       `INSERT INTO dori_person (
-        first_name, last_name, email, phone_number, birth_date, language_preference,
+        site_id, first_name, last_name, email, phone_number, birth_date, language_preference,
         created_by_user_id, updated_by_user_id, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, COALESCE($6, 'fr'), $7, $7, $8, $8)
+      ) VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, 'fr'), $8, $8, $9, $9)
       RETURNING *`,
       [
+        siteId,
         dto.firstName || null,
         dto.lastName || null,
         dto.email || null,
@@ -197,7 +230,8 @@ export class PersonsService {
     );
 
     const query = `
-      SELECT n.*, u.username as author_username
+      SELECT n.note_id, n.person_id, n.content, n.created_by_user_id,
+             u.username as author_username, n.created_at, n.updated_at
       FROM dori_person_note n
       JOIN dori_user u ON u.user_id = n.created_by_user_id
       WHERE n.person_id = $1 AND n.is_active = TRUE
@@ -214,17 +248,7 @@ export class PersonsService {
       [personId],
     );
 
-    const formattedItems = items.map((n: any) => ({
-      noteId: n.note_id,
-      personId: n.person_id,
-      content: n.content,
-      createdByUserId: n.created_by_user_id,
-      authorUsername: n.author_username,
-      createdAt: n.created_at,
-      updatedAt: n.updated_at,
-    }));
-
-    return pagination.createResponse<PersonNoteDetailDto>(formattedItems, total);
+    return pagination.createResponse<PersonNoteDetailDto>(items, total);
   }
 
   async createPersonNote(
@@ -238,7 +262,7 @@ export class PersonsService {
     const res = await this.dataSource.query(
       `INSERT INTO dori_person_note (person_id, content, created_by_user_id, updated_by_user_id, created_at, updated_at)
        VALUES ($1, $2, $3, $3, $4, $4)
-       RETURNING *`,
+       RETURNING note_id, person_id, content, created_by_user_id, created_at, updated_at`,
       [personId, dto.content, user.userId, now],
     );
 
@@ -258,7 +282,7 @@ export class PersonsService {
       `UPDATE dori_person_note
        SET content = $1, updated_by_user_id = $2, updated_at = $3
        WHERE note_id = $4 AND person_id = $5 AND is_active = TRUE
-       RETURNING *`,
+       RETURNING note_id, person_id, content, created_by_user_id, created_at, updated_at`,
       [dto.content, user.userId, now, noteId, personId],
     );
 
@@ -316,14 +340,7 @@ export class PersonsService {
     dto: CreateNoteDto,
     user: AuthenticatedUser,
   ) {
-    const n = await this.createPersonNote(personId, dto, user);
-    return {
-      noteId: n.note_id,
-      personId: n.person_id,
-      content: n.content,
-      createdByUserId: n.created_by_user_id,
-      createdAt: n.created_at,
-    };
+    return this.createPersonNote(personId, dto, user);
   }
 
   async updateNote(
@@ -332,14 +349,7 @@ export class PersonsService {
     dto: UpdateNoteDto,
     user: AuthenticatedUser,
   ) {
-    const n = await this.updatePersonNote(personId, noteId, dto, user);
-    return {
-      noteId: n.note_id,
-      personId: n.person_id,
-      content: n.content,
-      createdByUserId: n.created_by_user_id,
-      createdAt: n.created_at,
-    };
+    return this.updatePersonNote(personId, noteId, dto, user);
   }
 
   async deleteNote(personId: number, noteId: number, user: AuthenticatedUser) {

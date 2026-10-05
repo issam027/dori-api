@@ -20,7 +20,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly clockService: ClockService,
     private readonly scopeService: ScopeService,
-  ) { }
+  ) {}
 
   private hashToken(token: string): string {
     return crypto.createHash('sha256').update(token).digest('hex');
@@ -186,10 +186,7 @@ export class AuthService {
    *   - body.userId != caller.userId → force-disconnect d'un autre user :
    *       nécessite d'être manager/admin/root et de passer le contrôle hiérarchique
    */
-  async logout(
-    caller: AuthenticatedUser,
-    logoutDto?: { userId?: number },
-  ) {
+  async logout(caller: AuthenticatedUser, logoutDto?: { userId?: number }) {
     const now = this.clockService.now();
     const targetUserId = logoutDto?.userId;
 
@@ -251,7 +248,10 @@ export class AuthService {
     // Un manager (rank 3) ne peut déconnecter que des users de rang < 3 (hôtesse, kiosk)
     // Un admin (rank 4) peut déconnecter jusqu'au rang 3 (manager)
     const maxDisconnectableRank = callerMaxRank - 1;
-    if (targetMaxRank >= callerMaxRank || targetMaxRank > maxDisconnectableRank) {
+    if (
+      targetMaxRank >= callerMaxRank ||
+      targetMaxRank > maxDisconnectableRank
+    ) {
       throw new DoriException('FORBIDDEN_ROLE_ESCALATION');
     }
 

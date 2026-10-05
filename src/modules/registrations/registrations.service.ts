@@ -13,6 +13,8 @@ import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { DoriException } from '../../core/errors/dori.exception';
 import { PersonsService } from '../persons/persons.service';
+import { PaginatedResult } from '../../core/pagination/pagination.dto';
+import { RegistrationDetailResponseDto } from './dto/registration-response.dto';
 
 @Injectable()
 export class RegistrationsService {
@@ -21,7 +23,7 @@ export class RegistrationsService {
     private readonly scopeService: ScopeService,
     private readonly clockService: ClockService,
     private readonly personsService: PersonsService,
-  ) { }
+  ) {}
 
   private formatTicketNumber(queueCode: string, lastNumber: number): string {
     const trailingZerosMatch = queueCode.match(/0+$/);
@@ -42,32 +44,7 @@ export class RegistrationsService {
     await this.scopeService.checkQueueAccess(user, dto.queueId);
     const now = this.clockService.now();
 
-    // 1. Resolve Person
-    let personId = dto.personId;
-    if (!personId) {
-      if (!dto.person) {
-        throw new DoriException(
-          'VALIDATION_ERROR',
-          {},
-          { errors: ['personId or person object is required'] },
-        );
-      }
-      const createdPerson = await this.personsService.createPerson(
-        dto.person,
-        user,
-      );
-      personId = createdPerson.person_id;
-    } else {
-      const personRows = await this.dataSource.query(
-        `SELECT person_id FROM dori_person WHERE person_id = $1 AND is_active = TRUE AND deleted_at IS NULL`,
-        [personId],
-      );
-      if (!personRows || personRows.length === 0) {
-        throw new DoriException('PERSON_NOT_FOUND', { personId });
-      }
-    }
-
-    // 2. Fetch Queue and Site Configuration
+    // 1. Fetch Queue and Site Configuration
     const queueConfig = await this.dataSource.query(
       `SELECT q.*, s.timezone, s.default_currency,
               s.default_appointments_enabled, s.default_appointment_slot_duration, s.default_slot_capacity,
@@ -84,6 +61,35 @@ export class RegistrationsService {
     }
 
     const q = queueConfig[0];
+
+    // 2. Resolve a person strictly inside the queue's site.
+    let personId = dto.personId;
+    if (!personId) {
+      if (!dto.person) {
+        throw new DoriException(
+          'VALIDATION_ERROR',
+          {},
+          { errors: ['personId or person object is required'] },
+        );
+      }
+      const createdPerson = await this.personsService.createPerson(
+        dto.person,
+        q.site_id,
+        user,
+      );
+      personId = createdPerson.person_id;
+    } else {
+      const personRows = await this.dataSource.query(
+        `SELECT person_id FROM dori_person
+         WHERE person_id = $1 AND site_id = $2
+           AND is_active = TRUE AND deleted_at IS NULL`,
+        [personId, q.site_id],
+      );
+      if (!personRows || personRows.length === 0) {
+        throw new DoriException('PERSON_NOT_FOUND', { personId });
+      }
+    }
+
     const timezone = q.timezone || 'Africa/Tunis';
     const appointmentsEnabled =
       q.appointments_enabled ?? q.default_appointments_enabled ?? false;
@@ -340,18 +346,16 @@ export class RegistrationsService {
 
       slots.push({
         time: slotIso,
-        slotCapacity,
-        bookedCount: booked,
-        availableSpots,
+        capacity: slotCapacity,
+        booked,
+        available: availableSpots,
         isAvailable: availableSpots > 0,
       });
 
       currentMinutes += slotDuration;
     }
 
-    const { pageSize, offset } = queryDto.getParams();
-    const paginatedSlots = slots.slice(offset, offset + pageSize);
-    return queryDto.createResponse(paginatedSlots, slots.length);
+    return { slots };
   }
 
   async checkIn(registrationId: number, user: AuthenticatedUser) {
@@ -531,11 +535,19 @@ export class RegistrationsService {
   async findRegistrations(
     filter: RegistrationFilterDto,
     user: AuthenticatedUser,
-  ) {
+  ): Promise<PaginatedResult<RegistrationDetailResponseDto>> {
     const scope = await this.scopeService.getUserScope(user);
     const { pageSize, offset, sortOrder } = filter.getParams();
     const safeSortField = filter.getSafeSortField(
-      ['customer_id', 'ticket_number', 'business_date', 'status', 'scheduled_time', 'created_at', 'priority_reference_time'],
+      [
+        'customer_id',
+        'ticket_number',
+        'business_date',
+        'status',
+        'scheduled_time',
+        'created_at',
+        'priority_reference_time',
+      ],
       'customer_id',
     );
 

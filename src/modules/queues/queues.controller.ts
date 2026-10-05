@@ -20,6 +20,7 @@ import {
 import {
   ApiDoriOkResponse,
   ApiDoriCreatedResponse,
+  ApiDoriErrorResponses,
 } from '../../core/swagger/api-dori-response.decorator';
 import { QueuesService } from './queues.service';
 import { CreateQueueDto } from './dto/create-queue.dto';
@@ -35,7 +36,6 @@ import {
   QueueDisplayResponseDto,
   QueueDeleteResponseDto,
   QueueResetResponseDto,
-  QueueOperatorResponseDto,
   PaginatedQueueOperatorResponseDto,
   AssignOperatorResponseDto,
 } from './dto/queue-response.dto';
@@ -46,6 +46,7 @@ import { RequirePermission } from '../../core/rbac/decorators/require-permission
 
 @ApiTags('Queues')
 @ApiBearerAuth('bearer')
+@ApiDoriErrorResponses()
 @Controller('api/v1')
 export class QueuesController {
   constructor(private readonly queuesService: QueuesService) {}
@@ -57,7 +58,10 @@ export class QueuesController {
     description:
       "Retourne la liste paginée des files d'attente accessibles selon le périmètre de l'utilisateur.",
   })
-  @ApiDoriOkResponse(PaginatedQueueResponseDto, "Liste paginée des files d'attente")
+  @ApiDoriOkResponse(
+    PaginatedQueueResponseDto,
+    "Liste paginée des files d'attente",
+  )
   async findAll(
     @Query() filter: QueueFilterDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -74,7 +78,10 @@ export class QueuesController {
       "Crée une nouvelle file d'attente rattachée au site spécifié en héritant ou surchargeant les configurations par défaut.",
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
-  @ApiDoriCreatedResponse(QueueDetailResponseDto, "File d'attente créée avec succès")
+  @ApiDoriCreatedResponse(
+    QueueDetailResponseDto,
+    "File d'attente créée avec succès",
+  )
   async createForSite(
     @Param('siteId', ParseIntPipe) siteId: number,
     @Body() dto: CreateQueueDto,
@@ -139,7 +146,10 @@ export class QueuesController {
       "Fournit le nombre de personnes en attente, le temps d'attente estimé, les guichets actifs et les prochains RDV.",
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse(QueueStatusResponseDto, "Statut en temps réel de la file d'attente")
+  @ApiDoriOkResponse(
+    QueueStatusResponseDto,
+    "Statut en temps réel de la file d'attente",
+  )
   async getStatus(
     @Param('queueId', ParseIntPipe) queueId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -155,7 +165,10 @@ export class QueuesController {
       "Retourne les tickets en cours d'appel et le journal récent des appels pour les écrans de salle d'attente.",
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse(QueueDisplayResponseDto, "Données pour écran d'affichage salle d'attente")
+  @ApiDoriOkResponse(
+    QueueDisplayResponseDto,
+    "Données pour écran d'affichage salle d'attente",
+  )
   async getDisplay(
     @Param('queueId', ParseIntPipe) queueId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -188,7 +201,10 @@ export class QueuesController {
       'Retourne la liste des utilisateurs autorisés à opérer sur cette file.',
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse(PaginatedQueueOperatorResponseDto, 'Liste paginée des opérateurs assignés')
+  @ApiDoriOkResponse(
+    PaginatedQueueOperatorResponseDto,
+    'Liste paginée des opérateurs assignés',
+  )
   async getOperators(
     @Param('queueId', ParseIntPipe) queueId: number,
     @Query() pagination: PaginationDto,
@@ -206,7 +222,10 @@ export class QueuesController {
       "Donne l'autorisation à un utilisateur d'opérer les guichets de cette file.",
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriCreatedResponse(AssignOperatorResponseDto, 'Opérateur assigné avec succès')
+  @ApiDoriCreatedResponse(
+    AssignOperatorResponseDto,
+    'Opérateur assigné avec succès',
+  )
   async assignOperator(
     @Param('queueId', ParseIntPipe) queueId: number,
     @Body() body: AssignOperatorDto,

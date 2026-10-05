@@ -1,8 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
 export class PersonDetailDto {
   @ApiProperty({ example: 45, description: 'ID de la personne' })
   personId: number;
+
+  @ApiProperty({ example: 1, description: 'Site propriétaire de la personne' })
+  siteId: number;
 
   @ApiProperty({ example: 'Ben Ali', description: 'Nom de famille' })
   lastName: string;
@@ -41,7 +45,7 @@ export class PersonDetailDto {
   createdAt: string;
 }
 
-export class PaginatedPersonResponseDto {
+export class PaginatedPersonResponseDto extends PaginatedResponseDto {
   @ApiProperty({ type: [PersonDetailDto], description: 'Personnes trouvées' })
   items: PersonDetailDto[];
 
@@ -93,7 +97,7 @@ export class PersonNoteDetailDto {
   updatedAt?: string;
 }
 
-export class PaginatedPersonNoteResponseDto {
+export class PaginatedPersonNoteResponseDto extends PaginatedResponseDto {
   @ApiProperty({
     type: [PersonNoteDetailDto],
     description: 'Liste paginée des notes de la personne',

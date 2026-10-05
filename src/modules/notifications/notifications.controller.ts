@@ -20,6 +20,8 @@ import {
 import {
   ApiDoriOkResponse,
   ApiDoriCreatedResponse,
+  ApiDoriErrorResponses,
+  ApiDoriPublicErrorResponses,
 } from '../../core/swagger/api-dori-response.decorator';
 import { NotificationsService } from './notifications.service';
 import {
@@ -40,6 +42,7 @@ import { DoriException } from '../../core/errors/dori.exception';
 
 @ApiTags('Notifications')
 @ApiBearerAuth('bearer')
+@ApiDoriErrorResponses()
 @Controller('api/v1')
 export class NotificationsController {
   constructor(private readonly notifService: NotificationsService) {}
@@ -126,6 +129,12 @@ export class NotificationsController {
   @Public()
   @Post('webhooks/notifications/:provider')
   @HttpCode(HttpStatus.OK)
+  @ApiDoriPublicErrorResponses({
+    include401: true,
+    omit404: true,
+    omit409: true,
+    omit422: true,
+  })
   @ApiOperation({
     summary: 'Webhook de notification des opérateurs SMS/Email',
     description:

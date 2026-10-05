@@ -69,7 +69,7 @@ describe('QueueEngineService — getSessions & getActiveSessions (VAL-04 Manquem
       if (sql.includes('SELECT COUNT(*)::int as total')) {
         return [{ total: 1 }];
       }
-      if (sql.includes('SELECT qs.*, u.username')) {
+      if (sql.includes('SELECT qs.session_id')) {
         return rawSessions;
       }
       return [];
@@ -85,14 +85,14 @@ describe('QueueEngineService — getSessions & getActiveSessions (VAL-04 Manquem
     expect(result).toEqual({
       items: [
         {
-          sessionId: 101,
-          queueId: 1,
-          threadNumber: 1,
-          userId: 2,
+          session_id: 101,
+          queue_id: 1,
+          thread_number: 1,
+          user_id: 2,
           username: 'alice',
           mode: 'active',
-          connectedAt: '2026-09-29T08:00:00.000Z',
-          disconnectedAt: null,
+          connected_at: new Date('2026-09-29T08:00:00Z'),
+          disconnected_at: null,
         },
       ],
       page: 1,
@@ -107,7 +107,7 @@ describe('QueueEngineService — getSessions & getActiveSessions (VAL-04 Manquem
       if (sql.includes('SELECT COUNT(*)::int as total')) {
         return [{ total: 0 }];
       }
-      if (sql.includes('SELECT qs.*, u.username')) {
+      if (sql.includes('SELECT qs.session_id')) {
         return [];
       }
       return [];
@@ -125,7 +125,7 @@ describe('QueueEngineService — getSessions & getActiveSessions (VAL-04 Manquem
   it('should secure sortField via allowlist', async () => {
     let capturedSql = '';
     dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('SELECT qs.*, u.username')) {
+      if (sql.includes('SELECT qs.session_id')) {
         capturedSql = sql;
         return [];
       }

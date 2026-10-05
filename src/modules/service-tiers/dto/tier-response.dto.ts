@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
 export class ServiceTierDetailDto {
   @ApiProperty({ example: 1, description: 'ID du forfait' })
@@ -23,8 +24,11 @@ export class ServiceTierDetailDto {
   isActive: boolean;
 }
 
-export class PaginatedServiceTierResponseDto {
-  @ApiProperty({ type: [ServiceTierDetailDto], description: 'Liste des forfaits' })
+export class PaginatedServiceTierResponseDto extends PaginatedResponseDto {
+  @ApiProperty({
+    type: [ServiceTierDetailDto],
+    description: 'Liste des forfaits',
+  })
   items: ServiceTierDetailDto[];
 
   @ApiProperty({ example: 1, description: 'Numéro de page actuelle' })
@@ -69,8 +73,11 @@ export class QueueTierDetailDto {
   tier?: ServiceTierDetailDto;
 }
 
-export class PaginatedQueueTierResponseDto {
-  @ApiProperty({ type: [QueueTierDetailDto], description: 'Liste des forfaits de la file' })
+export class PaginatedQueueTierResponseDto extends PaginatedResponseDto {
+  @ApiProperty({
+    type: [QueueTierDetailDto],
+    description: 'Liste des forfaits de la file',
+  })
   items: QueueTierDetailDto[];
 
   @ApiProperty({ example: 1, description: 'Numéro de page actuelle' })
@@ -131,6 +138,26 @@ export class NotificationRuleDetailDto {
 
   @ApiProperty({ example: true, description: 'Règle active' })
   isActive: boolean;
+}
+
+export class PaginatedNotificationRuleResponseDto extends PaginatedResponseDto {
+  @ApiProperty({
+    type: [NotificationRuleDetailDto],
+    description: 'Liste des règles de notification',
+  })
+  items: NotificationRuleDetailDto[];
+
+  @ApiProperty({ example: 1, description: 'Numéro de page actuelle' })
+  page: number;
+
+  @ApiProperty({ example: 25, description: "Nombre d'éléments par page" })
+  pageSize: number;
+
+  @ApiProperty({ example: 10, description: "Total d'éléments" })
+  total: number;
+
+  @ApiProperty({ example: 1, description: 'Total de pages' })
+  totalPages: number;
 }
 
 export class TierDeleteResponseDto {

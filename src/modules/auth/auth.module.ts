@@ -7,9 +7,12 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from '../../core/auth/strategies/jwt.strategy';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { ClockModule } from '../../core/clock/clock.module';
+import { DatabaseModule } from '../../core/database/database.module';
+import { RbacModule } from '../../core/rbac/rbac.module';
 
 @Module({
   imports: [
+    ConfigModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -23,7 +26,9 @@ import { ClockModule } from '../../core/clock/clock.module';
         },
       }),
     }),
+    DatabaseModule,
     ClockModule,
+    RbacModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, JwtAuthGuard],

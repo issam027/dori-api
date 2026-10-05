@@ -3,8 +3,6 @@ import { DataSource } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
-jest.mock('uuid', () => ({ v4: () => 'mocked-uuid' }));
-
 import { AuthService } from './auth.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { ScopeService } from '../../core/rbac/services/scope.service';
@@ -132,8 +130,8 @@ describe('AuthService — SEC-03 Logout Specific Session', () => {
 
     // caller rank = 3, target rank = 2 (hotesse)
     dataSourceMock.query
-      .mockResolvedValueOnce([{ max_rank: 3 }])  // callerRankRes
-      .mockResolvedValueOnce([{ max_rank: 2 }])  // targetRankRes
+      .mockResolvedValueOnce([{ max_rank: 3 }]) // callerRankRes
+      .mockResolvedValueOnce([{ max_rank: 2 }]) // targetRankRes
       .mockResolvedValueOnce([{ user_id: 20 }]); // targetUsers exists
 
     const result = await service.logout(caller, { userId: 20 });

@@ -10,6 +10,9 @@ import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interf
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { DoriException } from '../../core/errors/dori.exception';
+import { PaginatedResult } from '../../core/pagination/pagination.dto';
+import { NotificationDetailDto } from './dto/notification-response.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class NotificationsService {
@@ -19,16 +22,23 @@ export class NotificationsService {
     private readonly dataSource: DataSource,
     private readonly scopeService: ScopeService,
     private readonly clockService: ClockService,
+    private readonly configService: ConfigService,
   ) {}
 
   async findNotifications(
     filter: NotificationFilterDto,
     user: AuthenticatedUser,
-  ) {
+  ): Promise<PaginatedResult<NotificationDetailDto>> {
     const scope = await this.scopeService.getUserScope(user);
     const { pageSize, offset, sortOrder } = filter.getParams();
     const safeSortField = filter.getSafeSortField(
-      ['notification_id', 'channel', 'notification_status', 'sent_at', 'created_at'],
+      [
+        'notification_id',
+        'channel',
+        'notification_status',
+        'sent_at',
+        'created_at',
+      ],
       'notification_id',
     );
 
@@ -171,9 +181,14 @@ export class NotificationsService {
     dto: WebhookDeliveryDto,
   ) {
     // Secret per provider
+    const normalizedProvider = provider.toLowerCase();
     const secret =
-      process.env[`WEBHOOK_SECRET_${provider.toUpperCase()}`] ||
-      'webhook-secret';
+      this.configService.get<string>(
+        `notifications.webhookSecrets.${normalizedProvider}`,
+      ) ||
+      this.configService.getOrThrow<string>(
+        'notifications.defaultWebhookSecret',
+      );
     const expectedSig = crypto
       .createHmac('sha256', secret)
       .update(`${timestamp}.${rawBody}`)

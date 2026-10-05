@@ -24,7 +24,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       if (
         body.code === 'VALIDATION_ERROR' &&
         (!body.data ||
-          (typeof body.data === 'object' && !('errors' in (body.data as object))))
+          (typeof body.data === 'object' &&
+            !('errors' in (body.data as object))))
       ) {
         const tParams =
           (body.translationParams as Record<string, unknown>) || {};

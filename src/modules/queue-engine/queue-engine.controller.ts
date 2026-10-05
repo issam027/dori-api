@@ -15,33 +15,37 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
-  ApiQuery,
 } from '@nestjs/swagger';
 import {
   ApiDoriOkResponse,
   ApiDoriCreatedResponse,
+  ApiDoriErrorResponses,
 } from '../../core/swagger/api-dori-response.decorator';
 import { QueueEngineService } from './queue-engine.service';
 import { OpenSessionDto } from './dto/session.dto';
 import {
   QueuePreviewResponseDto,
-  QueueThreadDto,
+  QueueThreadDetailDto,
   QueueSessionDetailDto,
   PaginatedQueueSessionResponseDto,
   CalledNextCustomerResponseDto,
   CloseSessionResponseDto,
   CustomerActionResponseDto,
 } from './dto/engine-response.dto';
-import { PaginationDto } from '../../core/pagination/pagination.dto';
+import {
+  LimitQueryDto,
+  PaginationDto,
+} from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
 
 @ApiTags('QueueEngine')
 @ApiBearerAuth('bearer')
+@ApiDoriErrorResponses()
 @Controller('api/v1')
 export class QueueEngineController {
-  constructor(private readonly engineService: QueueEngineService) { }
+  constructor(private readonly engineService: QueueEngineService) {}
 
   @Get('sites/:siteId/next-preview')
   @RequirePermission('queue_view')
@@ -56,20 +60,16 @@ export class QueueEngineController {
     type: Number,
     description: 'ID du site',
   })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Nombre max de résultats',
-  })
-  @ApiDoriOkResponse([QueuePreviewResponseDto], 'Prévisualisation des prochains appels')
+  @ApiDoriOkResponse(
+    [QueuePreviewResponseDto],
+    'Prévisualisation des prochains appels',
+  )
   async nextPreview(
     @CurrentUser() user: AuthenticatedUser,
     @Param('siteId', ParseIntPipe) siteId: number,
-    @Query('limit') limit?: string,
+    @Query() query: LimitQueryDto,
   ) {
-    const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.engineService.previewNext(user, siteId, limitNum);
+    return this.engineService.previewNext(user, siteId, query.limit ?? 10);
   }
 
   @Get('queues/:queueId/threads')
@@ -80,12 +80,13 @@ export class QueueEngineController {
       'Liste les guichets (threads) ouverts et fermés avec leur opérateur respectif.',
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse([QueueThreadDto], 'Liste des guichets')
+  @ApiDoriOkResponse([QueueThreadDetailDto], 'Liste des guichets')
   async getThreads(
     @Param('queueId', ParseIntPipe) queueId: number,
+    @Query() pagination: PaginationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.engineService.getThreadsStatus(queueId, user);
+    return this.engineService.getThreadsStatus(queueId, user, pagination);
   }
 
   @Get('queues/:queueId/sessions')
@@ -96,7 +97,10 @@ export class QueueEngineController {
       'Retourne la liste paginée des sessions de guichets actuellement en cours.',
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse(PaginatedQueueSessionResponseDto, 'Liste paginée des sessions actives')
+  @ApiDoriOkResponse(
+    PaginatedQueueSessionResponseDto,
+    'Liste paginée des sessions actives',
+  )
   async getActiveSessions(
     @Param('queueId', ParseIntPipe) queueId: number,
     @Query() pagination: PaginationDto,
@@ -154,7 +158,10 @@ export class QueueEngineController {
       "Sélectionne le prochain client selon l'algorithme d'escalade et lui assigne le guichet de l'opérateur.",
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse(CalledNextCustomerResponseDto, 'Prochain ticket appelé au guichet')
+  @ApiDoriOkResponse(
+    CalledNextCustomerResponseDto,
+    'Prochain ticket appelé au guichet',
+  )
   async callNext(
     @Param('queueId', ParseIntPipe) queueId: number,
     @CurrentUser() user: AuthenticatedUser,

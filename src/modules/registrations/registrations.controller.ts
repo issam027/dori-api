@@ -22,6 +22,8 @@ import {
 import {
   ApiDoriOkResponse,
   ApiDoriCreatedResponse,
+  ApiDoriErrorResponses,
+  ApiDoriPublicErrorResponses,
 } from '../../core/swagger/api-dori-response.decorator';
 import { RegistrationsService } from './registrations.service';
 import {
@@ -45,6 +47,7 @@ import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interf
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
 
 @ApiTags('Registrations')
+@ApiDoriErrorResponses()
 @Controller('api/v1')
 export class RegistrationsController {
   constructor(private readonly registrationsService: RegistrationsService) {}
@@ -75,7 +78,10 @@ export class RegistrationsController {
     description:
       'Recherche et filtre paginé des inscriptions selon la file, la date ou le statut.',
   })
-  @ApiDoriOkResponse(PaginatedRegistrationResponseDto, 'Liste paginée des inscriptions')
+  @ApiDoriOkResponse(
+    PaginatedRegistrationResponseDto,
+    'Liste paginée des inscriptions',
+  )
   async findRegistrations(
     @Query() filter: RegistrationFilterDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -223,7 +229,10 @@ export class RegistrationsController {
     type: Number,
     description: "ID de l'inscription",
   })
-  @ApiDoriOkResponse(RegistrationDeleteResponseDto, 'Inscription annulée avec succès')
+  @ApiDoriOkResponse(
+    RegistrationDeleteResponseDto,
+    'Inscription annulée avec succès',
+  )
   async remove(
     @Param('registrationId', ParseIntPipe) registrationId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -234,12 +243,21 @@ export class RegistrationsController {
   @Public()
   @ApiSecurity('registration-token')
   @Get('public/registrations/position')
+  @ApiDoriPublicErrorResponses({
+    include401: true,
+    omit404: true,
+    omit409: true,
+    omit422: true,
+  })
   @ApiOperation({
     summary: "Suivi public de la position d'un ticket",
     description:
       "Permet à un client muni de son jeton de suivi (transmis par SMS ou via la propriété `registrationTrackingToken` retournée par `POST /registrations`) de connaître son rang et son temps d'attente estimé sans JWT utilisateur.",
   })
-  @ApiDoriOkResponse(PublicPositionResponseDto, 'Position actuelle dans la file')
+  @ApiDoriOkResponse(
+    PublicPositionResponseDto,
+    'Position actuelle dans la file',
+  )
   async getPublicPosition(@Headers('X-Registration-Token') token: string) {
     return this.registrationsService.getPublicPosition(token);
   }

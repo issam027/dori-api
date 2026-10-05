@@ -6,7 +6,10 @@ import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interf
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { DoriException } from '../../core/errors/dori.exception';
-import { PaginationDto, PaginatedResult } from '../../core/pagination/pagination.dto';
+import {
+  PaginationDto,
+  PaginatedResult,
+} from '../../core/pagination/pagination.dto';
 
 @Injectable()
 export class QueueEngineService {
@@ -17,7 +20,11 @@ export class QueueEngineService {
   ) {}
 
   // 1. Threads State (§6.1)
-  async getThreads(queueId: number, user: AuthenticatedUser) {
+  async getThreads(
+    queueId: number,
+    user: AuthenticatedUser,
+    pagination: PaginationDto = new PaginationDto(),
+  ) {
     await this.scopeService.checkQueueAccess(user, queueId);
 
     const queueRes = await this.dataSource.query(
@@ -81,13 +88,11 @@ export class QueueEngineService {
       }
     }
 
-    return {
-      items,
-      page: 1,
-      pageSize: 25,
-      total: items.length,
-      totalPages: 1,
-    };
+    const { offset, pageSize } = pagination.getParams();
+    return pagination.createResponse(
+      items.slice(offset, offset + pageSize),
+      items.length,
+    );
   }
 
   // 2. Open or Take Over Session (§6.2, §4.6)
@@ -570,7 +575,13 @@ export class QueueEngineService {
     await this.scopeService.checkQueueAccess(user, queueId);
     const { pageSize, offset, sortOrder } = pagination.getParams();
     const sortField = pagination.getSafeSortField(
-      ['qs.connected_at', 'qs.session_id', 'qs.thread_number', 'qs.mode', 'u.username'],
+      [
+        'qs.connected_at',
+        'qs.session_id',
+        'qs.thread_number',
+        'qs.mode',
+        'u.username',
+      ],
       'qs.connected_at',
     );
 
@@ -587,24 +598,14 @@ export class QueueEngineService {
     const total = countRes[0]?.total || 0;
 
     const sessions = await this.dataSource.query(
-      `SELECT qs.*, u.username ${baseSql}
+      `SELECT qs.session_id, qs.queue_id, qs.thread_number, qs.user_id,
+              u.username, qs.mode, qs.connected_at, qs.disconnected_at ${baseSql}
        ORDER BY ${sortField} ${sortOrder}
        LIMIT ${pageSize} OFFSET ${offset}`,
       [queueId],
     );
 
-    const formattedSessions: QueueSessionDetailDto[] = sessions.map((s: any) => ({
-      sessionId: s.session_id,
-      queueId: s.queue_id,
-      threadNumber: s.thread_number,
-      userId: s.user_id,
-      username: s.username,
-      mode: s.mode,
-      connectedAt: s.connected_at instanceof Date ? s.connected_at.toISOString() : s.connected_at,
-      disconnectedAt: s.disconnected_at instanceof Date ? s.disconnected_at.toISOString() : (s.disconnected_at || null),
-    }));
-
-    return pagination.createResponse(formattedSessions, total);
+    return pagination.createResponse<QueueSessionDetailDto>(sessions, total);
   }
 
   // 6. Next Preview (§10.2)
@@ -776,8 +777,12 @@ export class QueueEngineService {
     return this.nextPreview(limit ?? 10, siteId, queueId, user);
   }
 
-  async getThreadsStatus(queueId: number, user: AuthenticatedUser) {
-    return this.getThreads(queueId, user);
+  async getThreadsStatus(
+    queueId: number,
+    user: AuthenticatedUser,
+    pagination?: PaginationDto,
+  ) {
+    return this.getThreads(queueId, user, pagination);
   }
 
   async getActiveSessions(

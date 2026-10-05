@@ -87,7 +87,7 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
       if (sql.includes('SELECT user_id, is_active FROM dori_user')) {
         return [{ user_id: 2, is_active: true }];
       }
-      if (sql.includes('r.role_name = \'manager\'')) {
+      if (sql.includes("r.role_name = 'manager'")) {
         return [];
       }
       return [];
@@ -103,7 +103,7 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
       if (sql.includes('SELECT user_id, is_active FROM dori_user')) {
         return [{ user_id: 2, is_active: true }];
       }
-      if (sql.includes('r.role_name = \'manager\'')) {
+      if (sql.includes("r.role_name = 'manager'")) {
         return [{ user_id: 2 }];
       }
       if (sql.includes('INSERT INTO dori_user_site')) {
@@ -157,20 +157,20 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
       expect(result.total).toBe(2);
       expect(result.items).toEqual([
         {
-          userId: 2,
+          user_id: 2,
           username: 'mgr1',
           email: 'mgr1@example.com',
-          isActive: true,
-          userType: 'human',
-          assignedAt: '2026-09-29T10:00:00Z',
+          is_active: true,
+          user_type: 'human',
+          assigned_at: '2026-09-29T10:00:00Z',
         },
         {
-          userId: 3,
+          user_id: 3,
           username: 'mgr2',
           email: 'mgr2@example.com',
-          isActive: true,
-          userType: 'human',
-          assignedAt: '2026-09-29T11:00:00Z',
+          is_active: true,
+          user_type: 'human',
+          assigned_at: '2026-09-29T11:00:00Z',
         },
       ]);
     });
@@ -203,8 +203,7 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
       expect(res.page).toBe(2);
       expect(res.pageSize).toBe(5);
       expect(res.total).toBe(1);
-      expect(res.items[0].userId).toBe(2);
+      expect((res.items[0] as any).user_id).toBe(2);
     });
   });
 });
-

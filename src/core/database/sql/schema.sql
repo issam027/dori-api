@@ -186,6 +186,7 @@ CREATE TABLE IF NOT EXISTS dori_user_queue (
 -- 10. dori_person (§3.4)
 CREATE TABLE IF NOT EXISTS dori_person (
     person_id SERIAL PRIMARY KEY,
+    site_id INT NOT NULL REFERENCES dori_site(site_id),
     first_name VARCHAR(50),
     last_name VARCHAR(50),
     email VARCHAR(255),
@@ -474,8 +475,98 @@ DO $$ BEGIN
 END $$;
 
 -- Indexes (§3.18)
-CREATE UNIQUE INDEX IF NOT EXISTS uk_person_email_active ON dori_person (LOWER(email)) WHERE email IS NOT NULL AND is_active;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_person_phone_active ON dori_person (phone_number) WHERE phone_number IS NOT NULL AND is_active;
+-- Migration idempotente des installations antérieures à la territorialisation des personnes.
+ALTER TABLE dori_person ADD COLUMN IF NOT EXISTS site_id INT REFERENCES dori_site(site_id);
+DROP INDEX IF EXISTS uk_person_email_active;
+DROP INDEX IF EXISTS uk_person_phone_active;
+
+-- Le site d'une personne existante est déduit de ses inscriptions. Une fiche historiquement
+-- partagée entre plusieurs sites est dupliquée, avec ses notes, puis chaque inscription est
+-- réaffectée à la copie appartenant à son site.
+UPDATE dori_person p
+SET site_id = inferred.site_id
+FROM (
+    SELECT c.person_id, MIN(q.site_id) AS site_id
+    FROM dori_customer c
+    JOIN dori_site_queue_thread q ON q.queue_id = c.queue_id
+    GROUP BY c.person_id
+) inferred
+WHERE p.person_id = inferred.person_id AND p.site_id IS NULL;
+
+DO $$
+DECLARE
+    cross_site RECORD;
+    cloned_person_id INT;
+BEGIN
+    FOR cross_site IN
+        SELECT DISTINCT c.person_id, q.site_id
+        FROM dori_customer c
+        JOIN dori_site_queue_thread q ON q.queue_id = c.queue_id
+        JOIN dori_person p ON p.person_id = c.person_id
+        WHERE p.site_id IS DISTINCT FROM q.site_id
+    LOOP
+        INSERT INTO dori_person (
+            site_id, first_name, last_name, email, phone_number, birth_date,
+            language_preference, is_active, deleted_at, created_by_user_id,
+            updated_by_user_id, created_at, updated_at
+        )
+        SELECT cross_site.site_id, first_name, last_name, email, phone_number,
+               birth_date, language_preference, is_active, deleted_at,
+               created_by_user_id, updated_by_user_id, created_at, updated_at
+        FROM dori_person
+        WHERE person_id = cross_site.person_id
+        RETURNING person_id INTO cloned_person_id;
+
+        INSERT INTO dori_person_note (
+            person_id, content, created_by_user_id, updated_by_user_id,
+            is_active, deleted_at, created_at, updated_at
+        )
+        SELECT cloned_person_id, content, created_by_user_id, updated_by_user_id,
+               is_active, deleted_at, created_at, updated_at
+        FROM dori_person_note
+        WHERE person_id = cross_site.person_id;
+
+        UPDATE dori_customer c
+        SET person_id = cloned_person_id
+        FROM dori_site_queue_thread q
+        WHERE c.queue_id = q.queue_id
+          AND c.person_id = cross_site.person_id
+          AND q.site_id = cross_site.site_id;
+    END LOOP;
+END $$;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM dori_person WHERE site_id IS NULL) THEN
+        RAISE EXCEPTION 'Cannot assign a site to orphan dori_person rows; migrate them explicitly before applying PERSON-001';
+    END IF;
+END $$;
+
+ALTER TABLE dori_person ALTER COLUMN site_id SET NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_person_site_email_active ON dori_person (site_id, LOWER(email)) WHERE email IS NOT NULL AND is_active;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_person_site_phone_active ON dori_person (site_id, phone_number) WHERE phone_number IS NOT NULL AND is_active;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_person_id_site ON dori_person (person_id, site_id);
+
+CREATE OR REPLACE FUNCTION dori_check_customer_person_site() RETURNS trigger AS $$
+DECLARE
+    person_site_id INT;
+    queue_site_id INT;
+BEGIN
+    SELECT site_id INTO person_site_id FROM dori_person WHERE person_id = NEW.person_id;
+    SELECT site_id INTO queue_site_id FROM dori_site_queue_thread WHERE queue_id = NEW.queue_id;
+    IF person_site_id IS DISTINCT FROM queue_site_id THEN
+        RAISE EXCEPTION 'Person % belongs to site %, queue % belongs to site %',
+            NEW.person_id, person_site_id, NEW.queue_id, queue_site_id
+            USING ERRCODE = '23514';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_customer_person_site ON dori_customer;
+CREATE TRIGGER trg_customer_person_site
+BEFORE INSERT OR UPDATE OF person_id, queue_id ON dori_customer
+FOR EACH ROW EXECUTE FUNCTION dori_check_customer_person_site();
 CREATE UNIQUE INDEX IF NOT EXISTS uk_queue_thread_active ON dori_queue_session (queue_id, thread_number) WHERE disconnected_at IS NULL AND thread_number IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_queue_user_active ON dori_queue_session (queue_id, user_id) WHERE disconnected_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_customer_person_open ON dori_customer (queue_id, person_id) WHERE status IN ('booked','waiting','in_progress') AND is_active;
@@ -499,6 +590,7 @@ CREATE INDEX IF NOT EXISTS idx_user_status ON dori_user (is_active, locked_until
 CREATE INDEX IF NOT EXISTS idx_queue_site ON dori_site_queue_thread (site_id) WHERE is_active;
 CREATE INDEX IF NOT EXISTS idx_translation_lookup ON dori_translation (category, locale, translation_key) WHERE is_active;
 CREATE INDEX IF NOT EXISTS idx_person_name ON dori_person (last_name, first_name);
+CREATE INDEX IF NOT EXISTS idx_person_site_name ON dori_person (site_id, last_name, first_name) WHERE is_active;
 CREATE INDEX IF NOT EXISTS idx_person_note_person ON dori_person_note (person_id) WHERE is_active;
 CREATE INDEX IF NOT EXISTS idx_notification_customer ON dori_notification (customer_id);
 CREATE INDEX IF NOT EXISTS idx_site_type ON dori_site (site_type);

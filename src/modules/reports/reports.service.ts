@@ -9,7 +9,7 @@ export class ReportsService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly scopeService: ScopeService,
-  ) { }
+  ) {}
 
   async getDailyQueueReport(
     queueId: number,
@@ -52,7 +52,11 @@ export class ReportsService {
     const totalServed = row.total_served || 0;
     const totalNoShow = row.total_no_show || 0;
     const handledTotal = totalServed + totalNoShow;
-    const totalOpen = row.total_registered - row.total_expired - row.total_cancelled - handledTotal;
+    const totalOpen =
+      row.total_registered -
+      row.total_expired -
+      row.total_cancelled -
+      handledTotal;
     const noShowRate =
       handledTotal > 0 ? Number((totalNoShow / handledTotal).toFixed(3)) : 0;
 
@@ -207,16 +211,6 @@ export class ReportsService {
       LIMIT ${limitParam}
     `;
 
-    const rows = await this.dataSource.query(sql, params);
-    return rows.map((r: any) => ({
-      queueId: r.queue_id,
-      queueCode: r.queue_code,
-      queueName: r.queue_name,
-      siteId: r.site_id,
-      siteName: r.site_name,
-      queueType: r.queue_type,
-      waitingCount: r.waiting_count || 0,
-      dominantTier: r.dominant_tier,
-    }));
+    return this.dataSource.query(sql, params);
   }
 }

@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CreatePersonDto } from '../../persons/dto/person.dto';
+import { PersonIdentityDto } from '../../persons/dto/person.dto';
 import { PaginationDto } from '../../../core/pagination/pagination.dto';
 
 export class CreateRegistrationDto {
@@ -22,13 +22,13 @@ export class CreateRegistrationDto {
   personId?: number;
 
   @ApiPropertyOptional({
-    type: () => CreatePersonDto,
+    type: () => PersonIdentityDto,
     description: 'Créer une nouvelle personne à la volée',
   })
   @ValidateNested()
-  @Type(() => CreatePersonDto)
+  @Type(() => PersonIdentityDto)
   @IsOptional()
-  person?: CreatePersonDto;
+  person?: PersonIdentityDto;
 
   @ApiProperty({ example: 1, description: 'ID de la queue cible' })
   @IsInt()
@@ -90,7 +90,7 @@ export class RescheduleDto {
 
 export class LookupRegistrationDto {
   @ApiPropertyOptional({
-    example: 'MED-0042',
+    example: 'A-012',
     description: 'Numéro de ticket à rechercher',
   })
   @IsString()
@@ -168,7 +168,7 @@ export class RegistrationFilterDto extends PaginationDto {
   search?: string;
 }
 
-export class AvailabilityQueryDto extends PaginationDto {
+export class AvailabilityQueryDto {
   @ApiProperty({
     example: '2026-10-01',
     description: 'Date à consulter (YYYY-MM-DD)',

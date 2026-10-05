@@ -20,6 +20,7 @@ import {
 import {
   ApiDoriOkResponse,
   ApiDoriCreatedResponse,
+  ApiDoriErrorResponses,
 } from '../../core/swagger/api-dori-response.decorator';
 import { PersonsService } from './persons.service';
 import {
@@ -43,6 +44,7 @@ import { RequirePermission } from '../../core/rbac/decorators/require-permission
 
 @ApiTags('Persons')
 @ApiBearerAuth('bearer')
+@ApiDoriErrorResponses()
 @Controller('api/v1/persons')
 export class PersonsController {
   constructor(private readonly personsService: PersonsService) {}
@@ -73,7 +75,7 @@ export class PersonsController {
     @Body() dto: CreatePersonDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.personsService.createPerson(dto, user);
+    return this.personsService.createPerson(dto, dto.siteId, user);
   }
 
   @Get(':personId')

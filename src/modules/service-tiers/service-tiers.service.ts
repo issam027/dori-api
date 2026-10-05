@@ -8,8 +8,14 @@ import {
   CreateNotificationRuleDto,
   UpdateNotificationRuleDto,
 } from './dto/service-tier.dto';
-import { PaginationDto, PaginatedResult } from '../../core/pagination/pagination.dto';
-import { QueueTierDetailDto } from './dto/tier-response.dto';
+import {
+  PaginationDto,
+  PaginatedResult,
+} from '../../core/pagination/pagination.dto';
+import {
+  QueueTierDetailDto,
+  ServiceTierDetailDto,
+} from './dto/tier-response.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
@@ -24,7 +30,10 @@ export class ServiceTiersService {
   ) {}
 
   // 1. Global catalog
-  async findTiers(pagination: PaginationDto, _user?: AuthenticatedUser) {
+  async findTiers(
+    pagination: PaginationDto,
+    _user?: AuthenticatedUser,
+  ): Promise<PaginatedResult<ServiceTierDetailDto>> {
     const { pageSize, offset, sortOrder } = pagination.getParams();
     const safeSortField = pagination.getSafeSortField(
       ['tier_id', 'tier_name', 'tier_code', 'created_at', 'updated_at'],

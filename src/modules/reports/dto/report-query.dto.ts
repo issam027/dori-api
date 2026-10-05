@@ -1,6 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDateString, IsInt, IsNotEmpty, IsOptional, Min } from 'class-validator';
+import {
+  IsDateString,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  Min,
+} from 'class-validator';
+import { LimitQueryDto } from '../../../core/pagination/pagination.dto';
 
 export class DailyQueueReportQueryDto {
   @ApiProperty({
@@ -27,18 +34,14 @@ export class DashboardSummaryQueryDto {
   siteId?: number;
 }
 
-export class DashboardQueueLoadQueryDto {
+export class DashboardQueueLoadQueryDto extends LimitQueryDto {
   @ApiPropertyOptional({
     type: Number,
     example: 4,
     default: 4,
     description: 'Nombre maximum de files à retourner (par défaut 4)',
   })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  limit?: number = 4;
+  limit: number = 4;
 
   @ApiPropertyOptional({
     type: Number,

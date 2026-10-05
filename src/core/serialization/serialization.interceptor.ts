@@ -47,7 +47,7 @@ export function transformKeysToCamel(data: any): any {
 
 @Injectable()
 export class SerializationInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(_context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(map((data) => transformKeysToCamel(data)));
   }
 }

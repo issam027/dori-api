@@ -34,7 +34,11 @@ export class DailyQueueVolumeDto {
   @ApiProperty({ example: 7, description: "Total d'annulations" })
   totalCancelled: number;
 
-  @ApiProperty({ example: 2, description: "Total non clôturées : en attente, en cours au guichet ou reportées." })
+  @ApiProperty({
+    example: 2,
+    description:
+      'Total non clôturées : en attente, en cours au guichet ou reportées.',
+  })
   totalOpen: number;
 }
 

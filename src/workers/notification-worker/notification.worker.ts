@@ -12,7 +12,7 @@ export class NotificationWorker {
   constructor(
     private readonly dataSource: DataSource,
     private readonly clockService: ClockService,
-  ) { }
+  ) {}
 
   @Cron(CronExpression.EVERY_10_SECONDS)
   async processPendingNotifications() {

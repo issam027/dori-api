@@ -34,7 +34,9 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
           provide: ScopeService,
           useValue: {
             checkQueueAccess: jest.fn().mockResolvedValue(undefined),
-            getUserScope: jest.fn().mockResolvedValue({ isGlobal: true, siteIds: [], queueIds: [] }),
+            getUserScope: jest
+              .fn()
+              .mockResolvedValue({ isGlobal: true, siteIds: [], queueIds: [] }),
           },
         },
         {
@@ -55,6 +57,9 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
 
   it('should throw PERSON_NOT_FOUND (404) when personId does not exist in dori_person', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM dori_site_queue_thread')) {
+        return [{ site_id: 7 }];
+      }
       if (sql.includes('SELECT person_id FROM dori_person')) {
         return [];
       }
@@ -68,13 +73,18 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
       entryType: 'walk-in' as const,
     };
 
-    await expect(service.createRegistration(dto as any, adminUser)).rejects.toThrow(
+    await expect(
+      service.createRegistration(dto as any, adminUser),
+    ).rejects.toThrow(
       new DoriException('PERSON_NOT_FOUND', { personId: 999999 }),
     );
   });
 
   it('should throw PERSON_NOT_FOUND (404) when person exists but is inactive or deleted', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM dori_site_queue_thread')) {
+        return [{ site_id: 7 }];
+      }
       if (sql.includes('SELECT person_id FROM dori_person')) {
         return [];
       }
@@ -88,17 +98,20 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
       entryType: 'walk-in' as const,
     };
 
-    await expect(service.createRegistration(dto as any, adminUser)).rejects.toThrow(
-      new DoriException('PERSON_NOT_FOUND', { personId: 42 }),
-    );
+    await expect(
+      service.createRegistration(dto as any, adminUser),
+    ).rejects.toThrow(new DoriException('PERSON_NOT_FOUND', { personId: 42 }));
   });
 
-  it('should proceed past person check when personId is valid and active', async () => {
+  it('should proceed to tier validation when person belongs to the queue site', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM dori_site_queue_thread')) {
+        return [{ site_id: 7 }];
+      }
       if (sql.includes('SELECT person_id FROM dori_person')) {
         return [{ person_id: 10 }];
       }
-      if (sql.includes('FROM dori_site_queue_thread')) {
+      if (sql.includes('FROM dori_queue_service_tier')) {
         return [];
       }
       return [];
@@ -111,8 +124,44 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
       entryType: 'walk-in' as const,
     };
 
-    await expect(service.createRegistration(dto as any, adminUser)).rejects.toThrow(
-      new DoriException('QUEUE_NOT_FOUND', { queueId: 1 }),
+    await expect(
+      service.createRegistration(dto as any, adminUser),
+    ).rejects.toThrow(
+      new DoriException('TIER_NOT_OFFERED_BY_QUEUE', {
+        tierId: 1,
+        queueId: 1,
+      }),
+    );
+    expect(dataSourceMock.query).toHaveBeenCalledWith(
+      expect.stringContaining('person_id = $1 AND site_id = $2'),
+      [10, 7],
+    );
+  });
+
+  it('creates an inline person in the queue site', async () => {
+    dataSourceMock.query.mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM dori_site_queue_thread')) {
+        return [{ site_id: 7 }];
+      }
+      if (sql.includes('FROM dori_queue_service_tier')) return [];
+      return [];
+    });
+    personsServiceMock.createPerson.mockResolvedValue({ person_id: 15 });
+
+    const dto = {
+      person: { firstName: 'Nadia', email: 'nadia@example.com' },
+      queueId: 1,
+      tierId: 1,
+      entryType: 'walkin' as const,
+    };
+
+    await expect(service.createRegistration(dto, adminUser)).rejects.toThrow(
+      DoriException,
+    );
+    expect(personsServiceMock.createPerson).toHaveBeenCalledWith(
+      dto.person,
+      7,
+      adminUser,
     );
   });
 });

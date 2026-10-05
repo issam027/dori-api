@@ -9,6 +9,8 @@ import {
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ClockService } from '../../core/clock/clock.service';
 import { DoriException } from '../../core/errors/dori.exception';
+import { PaginatedResult } from '../../core/pagination/pagination.dto';
+import { TranslationDetailDto } from './dto/translation-response.dto';
 
 @Injectable()
 export class TranslationsService {
@@ -101,10 +103,19 @@ export class TranslationsService {
     };
   }
 
-  async findTranslations(filter: TranslationFilterDto) {
+  async findTranslations(
+    filter: TranslationFilterDto,
+  ): Promise<PaginatedResult<TranslationDetailDto>> {
     const { pageSize, offset, sortOrder } = filter.getParams();
     const safeSortField = filter.getSafeSortField(
-      ['translation_id', 'category', 'locale', 'translation_key', 'created_at', 'updated_at'],
+      [
+        'translation_id',
+        'category',
+        'locale',
+        'translation_key',
+        'created_at',
+        'updated_at',
+      ],
       'translation_id',
     );
 

@@ -1,4 +1,13 @@
 export default () => {
+  const webhookSecrets = Object.fromEntries(
+    Object.entries(process.env)
+      .filter(([key, value]) => key.startsWith('WEBHOOK_SECRET_') && value)
+      .map(([key, value]) => [
+        key.slice('WEBHOOK_SECRET_'.length).toLowerCase(),
+        value as string,
+      ]),
+  );
+
   let dbHost = process.env.DB_HOST ?? 'localhost';
   let dbPort = parseInt(process.env.DB_PORT ?? '5432', 10);
   let dbUser = process.env.DB_USER ?? 'postgres';
@@ -79,6 +88,13 @@ export default () => {
 
     notifications: {
       scopeCacheTtlSeconds: 30,
+      webhookSecrets,
+      defaultWebhookSecret:
+        process.env.WEBHOOK_SECRET_DEFAULT ?? 'webhook-secret',
+    },
+
+    databaseInitialization: {
+      autoRunMigrations: process.env.AUTO_RUN_MIGRATIONS === 'true',
     },
 
     tracking: {

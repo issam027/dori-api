@@ -1,14 +1,16 @@
-import { Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RealtimeGateway } from './realtime.gateway';
 import { RealtimeService } from './realtime.service';
 import { RbacModule } from '../rbac/rbac.module';
 import { ClockModule } from '../clock/clock.module';
+import { DatabaseModule } from '../database/database.module';
 
-@Global()
 @Module({
   imports: [
+    ConfigModule,
+    DatabaseModule,
     RbacModule,
     ClockModule,
     JwtModule.registerAsync({

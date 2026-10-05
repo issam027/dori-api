@@ -1,6 +1,12 @@
 import { PartialType, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CreateQueueDto } from './create-queue.dto';
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { PaginationDto } from '../../../core/pagination/pagination.dto';
 

@@ -68,21 +68,40 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
     // When checking caller max rank: manager rank 3
     // When checking caller permissions: only user_manage_hostess -> maxManageRank = 2
     // Target user (userId 20) is manager: rank 3
-    dataSourceMock.query.mockImplementation(async (sql: string, params?: any[]) => {
-      if (sql.includes('SELECT MAX(r.rank) as max_rank') && params?.[0] === 10) {
-        return [{ max_rank: 3 }];
-      }
-      if (sql.includes('SELECT DISTINCT p.permission_name') && params?.[0] === 10) {
-        return [{ permission_name: 'user_manage_hostess' }, { permission_name: 'user_manage_kiosk' }];
-      }
-      if (sql.includes('SELECT user_id, user_type FROM dori_user WHERE user_id = $1') && params?.[0] === 20) {
-        return [{ user_id: 20, user_type: 'human' }];
-      }
-      if (sql.includes('SELECT MAX(r.rank) as max_rank') && params?.[0] === 20) {
-        return [{ max_rank: 3 }]; // target is rank 3 (manager)
-      }
-      return [];
-    });
+    dataSourceMock.query.mockImplementation(
+      async (sql: string, params?: any[]) => {
+        if (
+          sql.includes('SELECT MAX(r.rank) as max_rank') &&
+          params?.[0] === 10
+        ) {
+          return [{ max_rank: 3 }];
+        }
+        if (
+          sql.includes('SELECT DISTINCT p.permission_name') &&
+          params?.[0] === 10
+        ) {
+          return [
+            { permission_name: 'user_manage_hostess' },
+            { permission_name: 'user_manage_kiosk' },
+          ];
+        }
+        if (
+          sql.includes(
+            'SELECT user_id, user_type FROM dori_user WHERE user_id = $1',
+          ) &&
+          params?.[0] === 20
+        ) {
+          return [{ user_id: 20, user_type: 'human' }];
+        }
+        if (
+          sql.includes('SELECT MAX(r.rank) as max_rank') &&
+          params?.[0] === 20
+        ) {
+          return [{ max_rank: 3 }]; // target is rank 3 (manager)
+        }
+        return [];
+      },
+    );
 
     await expect(
       service.updateUser(20, { email: 'new@dori.local' }, caller),
@@ -91,7 +110,9 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
     try {
       await service.updateUser(20, { email: 'new@dori.local' }, caller);
     } catch (e: any) {
-      expect(['FORBIDDEN_PERMISSION', 'FORBIDDEN_ROLE_ESCALATION']).toContain(e.code);
+      expect(['FORBIDDEN_PERMISSION', 'FORBIDDEN_ROLE_ESCALATION']).toContain(
+        e.code,
+      );
     }
   });
 
@@ -104,29 +125,59 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
       userType: 'human',
     };
 
-    dataSourceMock.query.mockImplementation(async (sql: string, params?: any[]) => {
-      if (sql.includes('SELECT MAX(r.rank) as max_rank') && params?.[0] === 10) {
-        return [{ max_rank: 3 }];
-      }
-      if (sql.includes('SELECT DISTINCT p.permission_name') && params?.[0] === 10) {
-        return [{ permission_name: 'user_manage_hostess' }, { permission_name: 'user_manage_kiosk' }];
-      }
-      if (sql.includes('SELECT user_id, user_type FROM dori_user WHERE user_id = $1') && params?.[0] === 25) {
-        return [{ user_id: 25, user_type: 'human' }];
-      }
-      if (sql.includes('SELECT MAX(r.rank) as max_rank') && params?.[0] === 25) {
-        return [{ max_rank: 2 }]; // target is rank 2 (hotesse)
-      }
-      if (sql.includes('SELECT user_id, username, email') && params?.[0] === 25) {
-        return [{ user_id: 25, username: 'hotesse1', email: 'old@dori.local' }];
-      }
-      if (sql.includes('UPDATE dori_user SET')) {
-        return [{ user_id: 25, username: 'hotesse1', email: 'updated@dori.local' }];
-      }
-      return [];
-    });
+    dataSourceMock.query.mockImplementation(
+      async (sql: string, params?: any[]) => {
+        if (
+          sql.includes('SELECT MAX(r.rank) as max_rank') &&
+          params?.[0] === 10
+        ) {
+          return [{ max_rank: 3 }];
+        }
+        if (
+          sql.includes('SELECT DISTINCT p.permission_name') &&
+          params?.[0] === 10
+        ) {
+          return [
+            { permission_name: 'user_manage_hostess' },
+            { permission_name: 'user_manage_kiosk' },
+          ];
+        }
+        if (
+          sql.includes(
+            'SELECT user_id, user_type FROM dori_user WHERE user_id = $1',
+          ) &&
+          params?.[0] === 25
+        ) {
+          return [{ user_id: 25, user_type: 'human' }];
+        }
+        if (
+          sql.includes('SELECT MAX(r.rank) as max_rank') &&
+          params?.[0] === 25
+        ) {
+          return [{ max_rank: 2 }]; // target is rank 2 (hotesse)
+        }
+        if (
+          sql.includes('SELECT user_id, username, email') &&
+          params?.[0] === 25
+        ) {
+          return [
+            { user_id: 25, username: 'hotesse1', email: 'old@dori.local' },
+          ];
+        }
+        if (sql.includes('UPDATE dori_user SET')) {
+          return [
+            { user_id: 25, username: 'hotesse1', email: 'updated@dori.local' },
+          ];
+        }
+        return [];
+      },
+    );
 
-    const result = await service.updateUser(25, { email: 'updated@dori.local' }, caller);
+    const result = await service.updateUser(
+      25,
+      { email: 'updated@dori.local' },
+      caller,
+    );
     expect(result).toBeDefined();
     expect(result.email).toBe('updated@dori.local');
   });
@@ -140,26 +191,47 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
       userType: 'human',
     };
 
-    dataSourceMock.query.mockImplementation(async (sql: string, params?: any[]) => {
-      if (sql.includes('SELECT MAX(r.rank) as max_rank') && params?.[0] === 10) {
-        return [{ max_rank: 4 }]; // caller rank 4
-      }
-      if (sql.includes('SELECT DISTINCT p.permission_name') && params?.[0] === 10) {
-        return [{ permission_name: 'user_manage_hostess' }];
-      }
-      if (sql.includes('SELECT user_id, user_type FROM dori_user WHERE user_id = $1') && params?.[0] === 30) {
-        return [{ user_id: 30, user_type: 'human' }];
-      }
-      if (sql.includes('SELECT MAX(r.rank) as max_rank') && params?.[0] === 30) {
-        return [{ max_rank: 2 }]; // target is rank 2 (hotesse)
-      }
-      if (sql.includes('SELECT rank FROM dori_role WHERE role_id = $1') && params?.[0] === 3) {
-        return [{ rank: 3 }]; // trying to assign manager role (rank 3)
-      }
-      return [];
-    });
+    dataSourceMock.query.mockImplementation(
+      async (sql: string, params?: any[]) => {
+        if (
+          sql.includes('SELECT MAX(r.rank) as max_rank') &&
+          params?.[0] === 10
+        ) {
+          return [{ max_rank: 4 }]; // caller rank 4
+        }
+        if (
+          sql.includes('SELECT DISTINCT p.permission_name') &&
+          params?.[0] === 10
+        ) {
+          return [{ permission_name: 'user_manage_hostess' }];
+        }
+        if (
+          sql.includes(
+            'SELECT user_id, user_type FROM dori_user WHERE user_id = $1',
+          ) &&
+          params?.[0] === 30
+        ) {
+          return [{ user_id: 30, user_type: 'human' }];
+        }
+        if (
+          sql.includes('SELECT MAX(r.rank) as max_rank') &&
+          params?.[0] === 30
+        ) {
+          return [{ max_rank: 2 }]; // target is rank 2 (hotesse)
+        }
+        if (
+          sql.includes('SELECT rank FROM dori_role WHERE role_id = $1') &&
+          params?.[0] === 3
+        ) {
+          return [{ rank: 3 }]; // trying to assign manager role (rank 3)
+        }
+        return [];
+      },
+    );
 
-    await expect(service.assignUserRole(30, 3, caller)).rejects.toThrow(DoriException);
+    await expect(service.assignUserRole(30, 3, caller)).rejects.toThrow(
+      DoriException,
+    );
     try {
       await service.assignUserRole(30, 3, caller);
     } catch (e: any) {
@@ -178,7 +250,11 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
       };
 
       dataSourceMock.query.mockImplementation(async (sql: string) => {
-        if (sql.includes('FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL')) {
+        if (
+          sql.includes(
+            'FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL',
+          )
+        ) {
           return [];
         }
         return [];
@@ -199,25 +275,35 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
       };
 
       const queries: { sql: string; params: any[] }[] = [];
-      dataSourceMock.query.mockImplementation(async (sql: string, params: any[]) => {
-        queries.push({ sql, params });
-        if (sql.includes('FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL')) {
-          return [{ user_id: 25, username: 'operator1', is_active: true }];
-        }
-        return [];
-      });
+      dataSourceMock.query.mockImplementation(
+        async (sql: string, params: any[]) => {
+          queries.push({ sql, params });
+          if (
+            sql.includes(
+              'FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL',
+            )
+          ) {
+            return [{ user_id: 25, username: 'operator1', is_active: true }];
+          }
+          return [];
+        },
+      );
 
       const result = await service.deleteUser(25, rootCaller);
       expect(result).toEqual({ userId: 25, deleted: true });
 
       const userUpdate = queries.find(
-        (q) => q.sql.includes('UPDATE dori_user') && q.sql.includes('SET is_active = FALSE'),
+        (q) =>
+          q.sql.includes('UPDATE dori_user') &&
+          q.sql.includes('SET is_active = FALSE'),
       );
       expect(userUpdate).toBeDefined();
       expect(userUpdate?.params[2]).toBe(25);
 
       const sessionUpdate = queries.find(
-        (q) => q.sql.includes('UPDATE dori_user_session') && q.sql.includes('account_deleted'),
+        (q) =>
+          q.sql.includes('UPDATE dori_user_session') &&
+          q.sql.includes('account_deleted'),
       );
       expect(sessionUpdate).toBeDefined();
       expect(sessionUpdate?.params[1]).toBe(25);
@@ -234,12 +320,17 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
         userType: 'human',
       };
 
-      dataSourceMock.query.mockImplementation(async (sql: string, params?: any[]) => {
-        if (sql.includes('SELECT MAX(r.rank) as max_rank') && params?.[0] === 25) {
-          return [{ max_rank: 2 }];
-        }
-        return [];
-      });
+      dataSourceMock.query.mockImplementation(
+        async (sql: string, params?: any[]) => {
+          if (
+            sql.includes('SELECT MAX(r.rank) as max_rank') &&
+            params?.[0] === 25
+          ) {
+            return [{ max_rank: 2 }];
+          }
+          return [];
+        },
+      );
 
       await expect(
         service.updateUser(25, { email: 'new@dori.local' }, hostessCaller),
@@ -255,20 +346,40 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
         userType: 'human',
       };
 
-      dataSourceMock.query.mockImplementation(async (sql: string, params?: any[]) => {
-        if (sql.includes('SELECT MAX(r.rank) as max_rank') && params?.[0] === 10) {
-          return [{ max_rank: 3 }];
-        }
-        if (sql.includes('SELECT user_id, username, email') && params?.[0] === 10) {
-          return [{ user_id: 10, username: 'manager1', email: 'old@dori.local' }];
-        }
-        if (sql.includes('UPDATE dori_user SET')) {
-          return [{ user_id: 10, username: 'manager1', email: 'manager-new@dori.local' }];
-        }
-        return [];
-      });
+      dataSourceMock.query.mockImplementation(
+        async (sql: string, params?: any[]) => {
+          if (
+            sql.includes('SELECT MAX(r.rank) as max_rank') &&
+            params?.[0] === 10
+          ) {
+            return [{ max_rank: 3 }];
+          }
+          if (
+            sql.includes('SELECT user_id, username, email') &&
+            params?.[0] === 10
+          ) {
+            return [
+              { user_id: 10, username: 'manager1', email: 'old@dori.local' },
+            ];
+          }
+          if (sql.includes('UPDATE dori_user SET')) {
+            return [
+              {
+                user_id: 10,
+                username: 'manager1',
+                email: 'manager-new@dori.local',
+              },
+            ];
+          }
+          return [];
+        },
+      );
 
-      const result = await service.updateUser(10, { email: 'manager-new@dori.local' }, managerCaller);
+      const result = await service.updateUser(
+        10,
+        { email: 'manager-new@dori.local' },
+        managerCaller,
+      );
       expect(result).toBeDefined();
       expect(result.email).toBe('manager-new@dori.local');
     });
@@ -282,26 +393,54 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
         userType: 'human',
       };
 
-      dataSourceMock.query.mockImplementation(async (sql: string, params?: any[]) => {
-        if (sql.includes('SELECT MAX(r.rank) as max_rank') && params?.[0] === 5) {
-          return [{ max_rank: 4 }]; // admin
-        }
-        if (sql.includes('SELECT user_id, user_type FROM dori_user WHERE user_id = $1') && params?.[0] === 10) {
-          return [{ user_id: 10, user_type: 'human' }];
-        }
-        if (sql.includes('SELECT MAX(r.rank) as max_rank') && params?.[0] === 10) {
-          return [{ max_rank: 3 }]; // target is manager
-        }
-        if (sql.includes('SELECT user_id, username, email') && params?.[0] === 10) {
-          return [{ user_id: 10, username: 'manager1', email: 'old@dori.local' }];
-        }
-        if (sql.includes('UPDATE dori_user SET')) {
-          return [{ user_id: 10, username: 'manager1', email: 'admin-updated@dori.local' }];
-        }
-        return [];
-      });
+      dataSourceMock.query.mockImplementation(
+        async (sql: string, params?: any[]) => {
+          if (
+            sql.includes('SELECT MAX(r.rank) as max_rank') &&
+            params?.[0] === 5
+          ) {
+            return [{ max_rank: 4 }]; // admin
+          }
+          if (
+            sql.includes(
+              'SELECT user_id, user_type FROM dori_user WHERE user_id = $1',
+            ) &&
+            params?.[0] === 10
+          ) {
+            return [{ user_id: 10, user_type: 'human' }];
+          }
+          if (
+            sql.includes('SELECT MAX(r.rank) as max_rank') &&
+            params?.[0] === 10
+          ) {
+            return [{ max_rank: 3 }]; // target is manager
+          }
+          if (
+            sql.includes('SELECT user_id, username, email') &&
+            params?.[0] === 10
+          ) {
+            return [
+              { user_id: 10, username: 'manager1', email: 'old@dori.local' },
+            ];
+          }
+          if (sql.includes('UPDATE dori_user SET')) {
+            return [
+              {
+                user_id: 10,
+                username: 'manager1',
+                email: 'admin-updated@dori.local',
+              },
+            ];
+          }
+          return [];
+        },
+      );
 
-      const result = await service.updateUser(10, { email: 'admin-updated@dori.local' }, adminCaller);
+      const result = await service.updateUser(
+        10,
+        { email: 'admin-updated@dori.local' },
+        adminCaller,
+      );
       expect(result).toBeDefined();
       expect(result.email).toBe('admin-updated@dori.local');
     });
@@ -315,18 +454,31 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
         userType: 'human',
       };
 
-      dataSourceMock.query.mockImplementation(async (sql: string, params?: any[]) => {
-        if (sql.includes('SELECT MAX(r.rank) as max_rank') && params?.[0] === 5) {
-          return [{ max_rank: 4 }]; // caller admin
-        }
-        if (sql.includes('SELECT user_id, user_type FROM dori_user WHERE user_id = $1') && params?.[0] === 6) {
-          return [{ user_id: 6, user_type: 'human' }];
-        }
-        if (sql.includes('SELECT MAX(r.rank) as max_rank') && params?.[0] === 6) {
-          return [{ max_rank: 4 }]; // target also admin
-        }
-        return [];
-      });
+      dataSourceMock.query.mockImplementation(
+        async (sql: string, params?: any[]) => {
+          if (
+            sql.includes('SELECT MAX(r.rank) as max_rank') &&
+            params?.[0] === 5
+          ) {
+            return [{ max_rank: 4 }]; // caller admin
+          }
+          if (
+            sql.includes(
+              'SELECT user_id, user_type FROM dori_user WHERE user_id = $1',
+            ) &&
+            params?.[0] === 6
+          ) {
+            return [{ user_id: 6, user_type: 'human' }];
+          }
+          if (
+            sql.includes('SELECT MAX(r.rank) as max_rank') &&
+            params?.[0] === 6
+          ) {
+            return [{ max_rank: 4 }]; // target also admin
+          }
+          return [];
+        },
+      );
 
       await expect(
         service.updateUser(6, { email: 'other-admin@dori.local' }, adminCaller),
@@ -334,4 +486,3 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
     });
   });
 });
-

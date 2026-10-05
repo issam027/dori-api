@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
 export class QueueDetailResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la file' })
@@ -83,7 +84,7 @@ export class QueueDetailResponseDto {
   updatedAt: string;
 }
 
-export class PaginatedQueueResponseDto {
+export class PaginatedQueueResponseDto extends PaginatedResponseDto {
   @ApiProperty({
     type: [QueueDetailResponseDto],
     description: 'Liste des files',
@@ -149,7 +150,7 @@ export class QueueStatusResponseDto {
   nextAppointments: NextAppointmentItemDto[];
 }
 
-export class CallingTicketDto {
+export class CallingTicketDetailDto {
   @ApiProperty({ example: 1, description: 'Numéro du guichet' })
   threadNumber: number;
 
@@ -177,16 +178,16 @@ export class QueueDisplayResponseDto {
   queueName: string;
 
   @ApiProperty({
-    type: [CallingTicketDto],
+    type: [CallingTicketDetailDto],
     description: 'Tickets actuellement appelés aux guichets',
   })
-  currentCalling: CallingTicketDto[];
+  currentCalling: CallingTicketDetailDto[];
 
   @ApiProperty({
-    type: [CallingTicketDto],
+    type: [CallingTicketDetailDto],
     description: 'Derniers tickets appelés (historique récent pour affichage)',
   })
-  recentCalled: CallingTicketDto[];
+  recentCalled: CallingTicketDetailDto[];
 }
 
 export class QueueDeleteResponseDto {
@@ -231,8 +232,11 @@ export class QueueOperatorResponseDto {
   isActive: boolean;
 }
 
-export class PaginatedQueueOperatorResponseDto {
-  @ApiProperty({ type: [QueueOperatorResponseDto], description: 'Liste des opérateurs' })
+export class PaginatedQueueOperatorResponseDto extends PaginatedResponseDto {
+  @ApiProperty({
+    type: [QueueOperatorResponseDto],
+    description: 'Liste des opérateurs',
+  })
   items: QueueOperatorResponseDto[];
 
   @ApiProperty({ example: 1, description: 'Numéro de page actuelle' })

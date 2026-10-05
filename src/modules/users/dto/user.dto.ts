@@ -30,7 +30,7 @@ export class CreateUserDto {
   email?: string;
 
   @ApiProperty({
-    example: 'Secure@Pass2026',
+    example: '••••••••••••',
     description: 'Mot de passe (minimum 10 caractères)',
     minLength: 10,
   })
@@ -87,7 +87,7 @@ export class UpdateUserStatusDto {
 
 export class SetUserPasswordDto {
   @ApiProperty({
-    example: 'NewSecure@2026',
+    example: '••••••••••••',
     description: 'Nouveau mot de passe (minimum 10 caractères)',
     minLength: 10,
   })
@@ -135,4 +135,3 @@ export class UserDeleteResponseDto {
   @ApiProperty({ example: true, description: 'Confirmation de la suppression' })
   deleted: boolean;
 }
-

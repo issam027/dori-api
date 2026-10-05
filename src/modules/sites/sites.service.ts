@@ -2,8 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { CreateSiteDto } from './dto/create-site.dto';
 import { UpdateSiteDto } from './dto/update-site.dto';
-import { PaginationDto, PaginatedResult } from '../../core/pagination/pagination.dto';
-import { SiteManagerResponseDto } from './dto/site-response.dto';
+import {
+  PaginationDto,
+  PaginatedResult,
+} from '../../core/pagination/pagination.dto';
+import {
+  SiteManagerDetailDto,
+  SiteDetailResponseDto,
+} from './dto/site-response.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
@@ -15,9 +21,12 @@ export class SitesService {
     private readonly dataSource: DataSource,
     private readonly scopeService: ScopeService,
     private readonly clockService: ClockService,
-  ) { }
+  ) {}
 
-  async findSites(pagination: PaginationDto, user: AuthenticatedUser) {
+  async findSites(
+    pagination: PaginationDto,
+    user: AuthenticatedUser,
+  ): Promise<PaginatedResult<SiteDetailResponseDto>> {
     const scope = await this.scopeService.getUserScope(user);
     const { pageSize, offset, sortOrder } = pagination.getParams();
     // VAL-01 : allowlist des colonnes autorisées pour dori_site
@@ -210,7 +219,7 @@ export class SitesService {
     siteId: number,
     pagination: PaginationDto,
     user: AuthenticatedUser,
-  ): Promise<PaginatedResult<SiteManagerResponseDto>> {
+  ): Promise<PaginatedResult<SiteManagerDetailDto>> {
     await this.scopeService.checkSiteAccess(user, siteId);
     const { pageSize, offset, sortOrder } = pagination.getParams();
     // VAL-01 : allowlist pour le JOIN dori_user_site / dori_user
@@ -237,23 +246,14 @@ export class SitesService {
       [siteId],
     );
 
-    const formattedItems = items.map((m: any) => ({
-      userId: m.user_id,
-      username: m.username,
-      email: m.email,
-      isActive: m.is_active ?? true,
-      userType: m.user_type,
-      assignedAt: m.assigned_at,
-    }));
-
-    return pagination.createResponse<SiteManagerResponseDto>(formattedItems, total);
+    return pagination.createResponse<SiteManagerDetailDto>(items, total);
   }
 
   async getSiteManagers(
     siteId: number,
     paginationOrUser?: PaginationDto | AuthenticatedUser,
     maybeUser?: AuthenticatedUser,
-  ): Promise<PaginatedResult<SiteManagerResponseDto>> {
+  ): Promise<PaginatedResult<SiteManagerDetailDto>> {
     let pagination: PaginationDto;
     let user: AuthenticatedUser;
 

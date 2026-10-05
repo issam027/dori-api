@@ -34,7 +34,6 @@ import { GlobalExceptionFilter } from './core/errors/global-exception.filter';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true,
       load: [configuration],
     }),
     ScheduleModule.forRoot(),
