@@ -1,25 +1,18 @@
-// --- DIAGNOSTIC TEMPORAIRE : à retirer une fois le problème `pg` réglé ---
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pgVersion = require('pg/package.json').version;
-  console.log('pg OK, version', pgVersion);
-} catch (e) {
-  console.error('pg FAILED:', e);
-}
-// --- FIN DIAGNOSTIC ---
-
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
+import cookieParser = require('cookie-parser');
 import { AppModule } from './app.module';
+import { ConfiguredIoAdapter } from './core/realtime/configured-io.adapter';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   const configService = app.get(ConfigService);
+  app.use(cookieParser());
 
   // Security Headers (§7.3, §8.3)
   // CSP adaptée pour autoriser les assets Swagger UI chargés depuis cdnjs
@@ -50,6 +43,7 @@ async function bootstrap() {
     'http://localhost:3001',
     'http://localhost:5173',
   ];
+  app.useWebSocketAdapter(new ConfiguredIoAdapter(app, allowedOrigins));
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,

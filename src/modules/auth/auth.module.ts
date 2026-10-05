@@ -18,8 +18,7 @@ import { RbacModule } from '../../core/rbac/rbac.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret:
-          configService.get<string>('jwt.secret') || 'change-me-in-production',
+        secret: configService.getOrThrow<string>('jwt.secret'),
         signOptions: {
           expiresIn:
             configService.get<string>('jwt.accessTokenExpiresIn') || '60m',
@@ -32,6 +31,6 @@ import { RbacModule } from '../../core/rbac/rbac.module';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, JwtAuthGuard],
-  exports: [AuthService, JwtModule, JwtAuthGuard],
+  exports: [AuthService, JwtModule, JwtAuthGuard, JwtStrategy],
 })
 export class AuthModule {}

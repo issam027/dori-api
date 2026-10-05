@@ -53,12 +53,12 @@ export class NotificationFilterDto extends PaginationDto {
   channel?: 'sms' | 'email';
 
   @ApiPropertyOptional({
-    enum: ['pending', 'sent', 'delivered', 'failed'],
+    enum: ['pending', 'processing', 'sent', 'delivered', 'failed'],
     description: 'Filtrer par statut',
   })
-  @IsIn(['pending', 'sent', 'delivered', 'failed'])
+  @IsIn(['pending', 'processing', 'sent', 'delivered', 'failed'])
   @IsOptional()
-  status?: 'pending' | 'sent' | 'delivered' | 'failed';
+  status?: 'pending' | 'processing' | 'sent' | 'delivered' | 'failed';
 
   @ApiPropertyOptional({
     example: '2026-09-27',

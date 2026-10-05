@@ -177,24 +177,41 @@ export class NotificationsService {
     provider: string,
     signature: string,
     timestamp: string,
+    eventId: string,
     rawBody: Buffer | string,
     dto: WebhookDeliveryDto,
   ) {
     // Secret per provider
     const normalizedProvider = provider.toLowerCase();
-    const secret =
-      this.configService.get<string>(
-        `notifications.webhookSecrets.${normalizedProvider}`,
-      ) ||
-      this.configService.getOrThrow<string>(
-        'notifications.defaultWebhookSecret',
-      );
+    const secret = this.configService.get<string>(
+      `notifications.webhookSecrets.${normalizedProvider}`,
+    );
+    if (!secret) throw new DoriException('UNAUTHENTICATED');
+
+    const timestampSeconds = Number(timestamp);
+    const maxAgeSeconds = this.configService.getOrThrow<number>(
+      'notifications.webhookMaxAgeSeconds',
+    );
+    const now = this.clockService.now();
+    if (
+      !Number.isInteger(timestampSeconds) ||
+      Math.abs(now.getTime() / 1000 - timestampSeconds) > maxAgeSeconds
+    ) {
+      throw new DoriException('UNAUTHENTICATED');
+    }
+
     const expectedSig = crypto
       .createHmac('sha256', secret)
       .update(`${timestamp}.${rawBody}`)
       .digest('hex');
 
-    if (signature !== expectedSig) {
+    const receivedSig = signature.replace(/^sha256=/i, '');
+    const expectedBuffer = Buffer.from(expectedSig, 'hex');
+    const receivedBuffer = Buffer.from(receivedSig, 'hex');
+    if (
+      receivedBuffer.length !== expectedBuffer.length ||
+      !crypto.timingSafeEqual(receivedBuffer, expectedBuffer)
+    ) {
       this.logger.warn(
         `Invalid HMAC signature for webhook from provider ${provider}`,
       );
@@ -202,17 +219,36 @@ export class NotificationsService {
       throw new DoriException('UNAUTHENTICATED');
     }
 
-    const now = this.clockService.now();
+    await this.dataSource.transaction(async (manager) => {
+      const accepted = await manager.query(
+        `INSERT INTO dori_webhook_event (provider, event_id, received_at)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (provider, event_id) DO NOTHING
+         RETURNING event_id`,
+        [normalizedProvider, eventId, now],
+      );
+      if (accepted.length === 0) return;
 
-    await this.dataSource.query(
-      `UPDATE dori_notification
-       SET notification_status = $1,
-           delivered_at = CASE WHEN $1 = 'delivered' THEN $2 ELSE delivered_at END,
-           failure_reason = CASE WHEN $1 = 'failed' THEN $3 ELSE failure_reason END,
-           updated_at = $2
-       WHERE provider_message_id = $4`,
-      [dto.status, now, dto.reason || null, dto.messageId],
-    );
+      const updated = await manager.query(
+        `UPDATE dori_notification
+         SET notification_status = $1,
+             delivered_at = CASE WHEN $1 = 'delivered' THEN $2 ELSE delivered_at END,
+             failure_reason = CASE WHEN $1 = 'failed' THEN $3 ELSE failure_reason END,
+             updated_at = $2
+         WHERE provider = $4 AND provider_message_id = $5
+         RETURNING notification_id`,
+        [
+          dto.status,
+          now,
+          dto.reason || null,
+          normalizedProvider,
+          dto.messageId,
+        ],
+      );
+      if (updated.length === 0) {
+        throw new DoriException('NOTIFICATION_NOT_FOUND');
+      }
+    });
 
     return { received: true };
   }

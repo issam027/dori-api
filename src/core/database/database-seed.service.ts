@@ -43,6 +43,7 @@ export class DatabaseSeedService implements OnApplicationBootstrap {
       }
     } catch (err: any) {
       this.logger.error(`Error running schema/seed: ${err.message}`, err.stack);
+      throw err;
     }
   }
 }

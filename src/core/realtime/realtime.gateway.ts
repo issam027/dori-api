@@ -20,6 +20,7 @@ import {
   JwtPayload,
   AuthenticatedUser,
 } from '../auth/interfaces/jwt-payload.interface';
+import { JwtStrategy } from '../auth/strategies/jwt.strategy';
 
 interface AuthenticatedSocket extends Socket {
   user?: AuthenticatedUser;
@@ -27,11 +28,7 @@ interface AuthenticatedSocket extends Socket {
   registrationId?: number;
 }
 
-@WebSocketGateway({
-  cors: {
-    origin: '*',
-  },
-})
+@WebSocketGateway()
 export class RealtimeGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
@@ -47,6 +44,7 @@ export class RealtimeGateway
     private readonly scopeService: ScopeService,
     private readonly realtimeService: RealtimeService,
     private readonly clockService: ClockService,
+    private readonly jwtStrategy: JwtStrategy,
   ) {}
 
   afterInit(server: Server) {
@@ -67,18 +65,9 @@ export class RealtimeGateway
         auth.registrationToken || headers['x-registration-token'];
 
       if (token) {
-        const secret =
-          this.configService.get<string>('jwt.secret') ||
-          'change-me-in-production';
+        const secret = this.configService.getOrThrow<string>('jwt.secret');
         const payload: JwtPayload = this.jwtService.verify(token, { secret });
-
-        client.user = {
-          userId: Number(payload.sub),
-          username: payload.username,
-          userType: payload.userType,
-          roles: payload.roles,
-          permissions: payload.permissions,
-        };
+        client.user = await this.jwtStrategy.validate(payload);
         this.logger.debug(
           `User ${client.user.username} (id: ${client.user.userId}) connected via WS`,
         );
@@ -96,7 +85,7 @@ export class RealtimeGateway
 
         if (rows && rows.length > 0) {
           const reg = rows[0];
-          const validUntil = new Date(
+          const validUntil = this.clockService.parse(
             reg.registration_tracking_token_valid_until,
           );
           if (validUntil > this.clockService.now() && reg.is_active) {
@@ -204,9 +193,14 @@ export class RealtimeGateway
     try {
       await this.dataSource.query(
         `UPDATE dori_queue_session
-         SET last_seen_at = CURRENT_TIMESTAMP
+         SET last_seen_at = $4
          WHERE session_id = $1 AND queue_id = $2 AND user_id = $3 AND disconnected_at IS NULL`,
-        [data.sessionId, data.queueId, client.user.userId],
+        [
+          data.sessionId,
+          data.queueId,
+          client.user.userId,
+          this.clockService.now(),
+        ],
       );
       return {
         acknowledged: true,

@@ -44,7 +44,7 @@ export class AuthService {
     const user = users[0];
 
     // Check temporary lockout (§4.12 & §8.3)
-    if (user.locked_until && new Date(user.locked_until) > now) {
+    if (user.locked_until && this.clockService.parse(user.locked_until) > now) {
       throw new DoriException('ACCOUNT_LOCKED');
     }
 
@@ -57,7 +57,7 @@ export class AuthService {
       const failedAttempts = (user.failed_attempts || 0) + 1;
       let lockedUntil: Date | null = null;
       if (failedAttempts >= 5) {
-        lockedUntil = new Date(now.getTime() + 15 * 60 * 1000); // 15 mins
+        lockedUntil = this.clockService.addMinutes(now, 15);
       }
 
       await this.dataSource.query(
@@ -133,7 +133,7 @@ export class AuthService {
       throw new DoriException('UNAUTHENTICATED');
     }
 
-    if (new Date(session.expires_at) <= now) {
+    if (this.clockService.parse(session.expires_at) <= now) {
       throw new DoriException('UNAUTHENTICATED');
     }
 
@@ -405,9 +405,7 @@ export class AuthService {
     const expiresDays =
       this.configService.get<number>('jwt.refreshTokenExpiresInDays') || 30;
     const now = this.clockService.now();
-    const expiresAt = new Date(
-      now.getTime() + expiresDays * 24 * 60 * 60 * 1000,
-    );
+    const expiresAt = this.clockService.addDays(now, expiresDays);
 
     // SEC-02 : récupérer le session_id créé pour le lier au payload JWT
     const inserted = await this.dataSource.query(

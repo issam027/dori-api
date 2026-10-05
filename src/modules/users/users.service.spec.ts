@@ -9,11 +9,14 @@ import { DoriException } from '../../core/errors/dori.exception';
 
 describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
   let service: UsersService;
-  let dataSourceMock: { query: jest.Mock };
+  let dataSourceMock: { query: jest.Mock; transaction: jest.Mock };
 
   beforeEach(async () => {
     dataSourceMock = {
       query: jest.fn(),
+      transaction: jest.fn(async (callback) =>
+        callback({ query: dataSourceMock.query }),
+      ),
     };
 
     const module: TestingModule = await Test.createTestingModule({

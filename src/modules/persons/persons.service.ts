@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import {
   PersonIdentityDto,
   UpdatePersonDto,
@@ -120,13 +120,15 @@ export class PersonsService {
     dto: PersonIdentityDto,
     siteId: number,
     user: AuthenticatedUser,
+    manager?: EntityManager,
   ) {
     await this.scopeService.checkSiteAccess(user, siteId);
+    const database = manager ?? this.dataSource;
     const now = this.clockService.now();
 
     // A person is unique only inside one site.
     if (dto.phoneNumber) {
-      const existingPhone = await this.dataSource.query(
+      const existingPhone = await database.query(
         `SELECT * FROM dori_person
          WHERE site_id = $1 AND phone_number = $2
            AND is_active = TRUE AND deleted_at IS NULL
@@ -139,7 +141,7 @@ export class PersonsService {
     }
 
     if (dto.email) {
-      const existingEmail = await this.dataSource.query(
+      const existingEmail = await database.query(
         `SELECT * FROM dori_person
          WHERE site_id = $1 AND LOWER(email) = LOWER($2)
            AND is_active = TRUE AND deleted_at IS NULL
@@ -151,7 +153,7 @@ export class PersonsService {
       }
     }
 
-    const res = await this.dataSource.query(
+    const res = await database.query(
       `INSERT INTO dori_person (
         site_id, first_name, last_name, email, phone_number, birth_date, language_preference,
         created_by_user_id, updated_by_user_id, created_at, updated_at

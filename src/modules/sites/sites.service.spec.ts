@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { DataSource } from 'typeorm';
 import { SitesService } from './sites.service';
+import { SitesRepository } from './sites.repository';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
@@ -9,7 +9,12 @@ import { PaginationDto } from '../../core/pagination/pagination.dto';
 
 describe('SitesService — SEC-04 assignSiteManager', () => {
   let service: SitesService;
-  let dataSourceMock: { query: jest.Mock };
+  let sitesRepositoryMock: {
+    findUserStatus: jest.Mock;
+    hasActiveManagerRole: jest.Mock;
+    assignManager: jest.Mock;
+    findManagers: jest.Mock;
+  };
   let scopeServiceMock: {
     checkSiteAccess: jest.Mock;
     invalidateUserScope: jest.Mock;
@@ -24,8 +29,11 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
   };
 
   beforeEach(async () => {
-    dataSourceMock = {
-      query: jest.fn(),
+    sitesRepositoryMock = {
+      findUserStatus: jest.fn(),
+      hasActiveManagerRole: jest.fn(),
+      assignManager: jest.fn(),
+      findManagers: jest.fn(),
     };
 
     scopeServiceMock = {
@@ -37,8 +45,8 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
       providers: [
         SitesService,
         {
-          provide: DataSource,
-          useValue: dataSourceMock,
+          provide: SitesRepository,
+          useValue: sitesRepositoryMock,
         },
         {
           provide: ScopeService,
@@ -57,12 +65,7 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
   });
 
   it('should throw USER_NOT_FOUND when target user does not exist in dori_user', async () => {
-    dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('SELECT user_id, is_active FROM dori_user')) {
-        return [];
-      }
-      return [];
-    });
+    sitesRepositoryMock.findUserStatus.mockResolvedValue(null);
 
     await expect(service.assignSiteManager(10, 999, adminUser)).rejects.toThrow(
       new DoriException('USER_NOT_FOUND', { userId: 999 }),
@@ -70,11 +73,9 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
   });
 
   it('should throw ACCOUNT_LOCKED when target user is inactive', async () => {
-    dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('SELECT user_id, is_active FROM dori_user')) {
-        return [{ user_id: 2, is_active: false }];
-      }
-      return [];
+    sitesRepositoryMock.findUserStatus.mockResolvedValue({
+      user_id: 2,
+      is_active: false,
     });
 
     await expect(service.assignSiteManager(10, 2, adminUser)).rejects.toThrow(
@@ -83,15 +84,11 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
   });
 
   it('should throw FORBIDDEN_ROLE_ESCALATION when target user does not have manager role', async () => {
-    dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('SELECT user_id, is_active FROM dori_user')) {
-        return [{ user_id: 2, is_active: true }];
-      }
-      if (sql.includes("r.role_name = 'manager'")) {
-        return [];
-      }
-      return [];
+    sitesRepositoryMock.findUserStatus.mockResolvedValue({
+      user_id: 2,
+      is_active: true,
     });
+    sitesRepositoryMock.hasActiveManagerRole.mockResolvedValue(false);
 
     await expect(service.assignSiteManager(10, 2, adminUser)).rejects.toThrow(
       new DoriException('FORBIDDEN_ROLE_ESCALATION'),
@@ -99,18 +96,12 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
   });
 
   it('should assign site manager successfully when user exists, is active and has manager role', async () => {
-    dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('SELECT user_id, is_active FROM dori_user')) {
-        return [{ user_id: 2, is_active: true }];
-      }
-      if (sql.includes("r.role_name = 'manager'")) {
-        return [{ user_id: 2 }];
-      }
-      if (sql.includes('INSERT INTO dori_user_site')) {
-        return [];
-      }
-      return [];
+    sitesRepositoryMock.findUserStatus.mockResolvedValue({
+      user_id: 2,
+      is_active: true,
     });
+    sitesRepositoryMock.hasActiveManagerRole.mockResolvedValue(true);
+    sitesRepositoryMock.assignManager.mockResolvedValue(undefined);
 
     const result = await service.assignSiteManager(10, 2, adminUser);
     expect(result).toEqual({ siteId: 10, userId: 2, assigned: true });
@@ -119,31 +110,26 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
 
   describe('VAL-02 — findSiteManagers and getSiteManagers pagination', () => {
     it('should return paginated managers with correctly mapped properties', async () => {
-      dataSourceMock.query.mockImplementation(async (sql: string) => {
-        if (sql.includes('COUNT(*)')) {
-          return [{ total: 2 }];
-        }
-        if (sql.includes('FROM dori_user_site')) {
-          return [
-            {
-              user_id: 2,
-              username: 'mgr1',
-              email: 'mgr1@example.com',
-              user_type: 'human',
-              is_active: true,
-              assigned_at: '2026-09-29T10:00:00Z',
-            },
-            {
-              user_id: 3,
-              username: 'mgr2',
-              email: 'mgr2@example.com',
-              user_type: 'human',
-              is_active: true,
-              assigned_at: '2026-09-29T11:00:00Z',
-            },
-          ];
-        }
-        return [];
+      sitesRepositoryMock.findManagers.mockResolvedValue({
+        total: 2,
+        items: [
+          {
+            user_id: 2,
+            username: 'mgr1',
+            email: 'mgr1@example.com',
+            user_type: 'human',
+            is_active: true,
+            assigned_at: '2026-09-29T10:00:00Z',
+          },
+          {
+            user_id: 3,
+            username: 'mgr2',
+            email: 'mgr2@example.com',
+            user_type: 'human',
+            is_active: true,
+            assigned_at: '2026-09-29T11:00:00Z',
+          },
+        ],
       });
 
       const pagination = new PaginationDto();
@@ -176,23 +162,18 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
     });
 
     it('getSiteManagers should delegate to findSiteManagers with pagination support', async () => {
-      dataSourceMock.query.mockImplementation(async (sql: string) => {
-        if (sql.includes('COUNT(*)')) {
-          return [{ total: 1 }];
-        }
-        if (sql.includes('FROM dori_user_site')) {
-          return [
-            {
-              user_id: 2,
-              username: 'mgr1',
-              email: 'mgr1@example.com',
-              user_type: 'human',
-              is_active: true,
-              assigned_at: '2026-09-29T10:00:00Z',
-            },
-          ];
-        }
-        return [];
+      sitesRepositoryMock.findManagers.mockResolvedValue({
+        total: 1,
+        items: [
+          {
+            user_id: 2,
+            username: 'mgr1',
+            email: 'mgr1@example.com',
+            user_type: 'human',
+            is_active: true,
+            assigned_at: '2026-09-29T10:00:00Z',
+          },
+        ],
       });
 
       const pagination = new PaginationDto();

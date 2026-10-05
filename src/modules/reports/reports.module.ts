@@ -3,11 +3,12 @@ import { ReportsService } from './reports.service';
 import { ReportsController } from './reports.controller';
 import { RbacModule } from '../../core/rbac/rbac.module';
 import { DatabaseModule } from '../../core/database/database.module';
+import { ReportsRepository } from './reports.repository';
 
 @Module({
   imports: [DatabaseModule, RbacModule],
   controllers: [ReportsController],
-  providers: [ReportsService],
+  providers: [ReportsService, ReportsRepository],
   exports: [ReportsService],
 })
 export class ReportsModule {}

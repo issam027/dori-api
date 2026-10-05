@@ -9,6 +9,8 @@ import {
   ParseIntPipe,
   Post,
   Query,
+  RawBodyRequest,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -39,6 +41,7 @@ import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
 import { DoriException } from '../../core/errors/dori.exception';
+import { Request } from 'express';
 
 @ApiTags('Notifications')
 @ApiBearerAuth('bearer')
@@ -160,6 +163,8 @@ export class NotificationsController {
     @Headers('authorization') authHeader: string,
     @Headers('x-signature') signature: string,
     @Headers('x-timestamp') timestamp: string,
+    @Headers('x-event-id') eventId: string,
+    @Req() request: RawBodyRequest<Request>,
     @Body() dto: WebhookDeliveryDto,
   ) {
     // If Bearer token passed to webhook, reject immediately (§5.10)
@@ -167,16 +172,16 @@ export class NotificationsController {
       throw new DoriException('UNAUTHENTICATED');
     }
 
-    if (!signature || !timestamp) {
+    if (!signature || !timestamp || !eventId || !request.rawBody) {
       throw new DoriException('UNAUTHENTICATED');
     }
 
-    const rawBody = JSON.stringify(dto);
     return this.notifService.handleWebhook(
       provider,
       signature,
       timestamp,
-      rawBody,
+      eventId,
+      request.rawBody,
       dto,
     );
   }

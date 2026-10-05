@@ -9,7 +9,7 @@ import { DoriException } from '../../core/errors/dori.exception';
 
 describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
   let service: RegistrationsService;
-  let dataSourceMock: { query: jest.Mock };
+  let dataSourceMock: { query: jest.Mock; transaction: jest.Mock };
   let personsServiceMock: { createPerson: jest.Mock };
 
   const adminUser: AuthenticatedUser = {
@@ -23,7 +23,12 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
   const fixedNow = new Date('2026-09-29T10:00:00Z');
 
   beforeEach(async () => {
-    dataSourceMock = { query: jest.fn() };
+    dataSourceMock = {
+      query: jest.fn(),
+      transaction: jest.fn(async (callback) =>
+        callback({ query: dataSourceMock.query }),
+      ),
+    };
     personsServiceMock = { createPerson: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -63,6 +68,7 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
       if (sql.includes('SELECT person_id FROM dori_person')) {
         return [];
       }
+      if (sql.includes('pg_advisory_xact_lock')) return [];
       return [];
     });
 
@@ -162,6 +168,7 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
       dto.person,
       7,
       adminUser,
+      expect.objectContaining({ query: expect.any(Function) }),
     );
   });
 });

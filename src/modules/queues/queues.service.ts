@@ -539,7 +539,7 @@ export class QueuesService {
           [
             tomorrow,
             businessDate,
-            new Date(now.getTime() + 24 * 60 * 60 * 1000),
+            this.clockService.addDays(now, 1),
             now,
             queueId,
           ],

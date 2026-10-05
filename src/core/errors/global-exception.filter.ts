@@ -21,44 +21,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof DoriException) {
       const body = exception.getResponse() as Record<string, unknown>;
-      if (
-        body.code === 'VALIDATION_ERROR' &&
-        (!body.data ||
-          (typeof body.data === 'object' &&
-            !('errors' in (body.data as object))))
-      ) {
-        const tParams =
-          (body.translationParams as Record<string, unknown>) || {};
-        if (tParams.errors) {
-          body.data = {
-            errors: Array.isArray(tParams.errors)
-              ? tParams.errors
-              : [tParams.errors],
-          };
-          delete tParams.errors;
-        } else if (tParams.message) {
-          body.data = { errors: [String(tParams.message)] };
-          delete tParams.message;
-        } else {
-          body.data = { errors: [] };
-        }
-      }
       return response.status(exception.getStatus()).json(body);
     }
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const exRes = exception.getResponse();
-
-      // Handle 429 Rate Limiting per §6.9 & §7.3
-      if (status === 429) {
-        return response.status(429).json({
-          code: 'RATE_LIMITED',
-          translationKey: 'errors.rate_limited',
-          translationParams: {},
-          data: null,
-        });
-      }
 
       // Handle class-validator ValidationPipe errors
       if (
@@ -75,12 +43,30 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         });
       }
 
+      const codeByStatus: Record<number, string> = {
+        400: 'VALIDATION_ERROR',
+        401: 'UNAUTHENTICATED',
+        403: 'FORBIDDEN_PERMISSION',
+        404: 'RESOURCE_NOT_FOUND',
+        409: 'CONFLICT',
+        429: 'RATE_LIMITED',
+      };
+      const code = codeByStatus[status] ?? 'INTERNAL_ERROR';
+      const translations: Record<string, string> = {
+        VALIDATION_ERROR: 'errors.validation_error',
+        UNAUTHENTICATED: 'errors.unauthenticated',
+        FORBIDDEN_PERMISSION: 'errors.forbidden_permission',
+        RESOURCE_NOT_FOUND: 'errors.resource_not_found',
+        CONFLICT: 'errors.conflict',
+        RATE_LIMITED: 'errors.rate_limited',
+        INTERNAL_ERROR: 'errors.internal_error',
+      };
+
       return response.status(status).json({
-        code: 'ERROR',
-        translationKey: null,
+        code,
+        translationKey: translations[code],
         translationParams: {},
-        data:
-          typeof exRes === 'string' ? { message: exRes } : (exRes as unknown),
+        data: null,
       });
     }
 

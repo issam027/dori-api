@@ -48,8 +48,8 @@ export class DailyResetWorker {
           continue;
         }
 
-        const businessDate = this.clockService.todayInTimezone(timezone);
-        const tomorrow = this.clockService.tomorrowInTimezone(timezone);
+        const businessDate = this.clockService.yesterdayInTimezone(timezone);
+        const nextBusinessDate = this.clockService.todayInTimezone(timezone);
         const shouldCarryOver =
           q.carry_over_waiting !== null
             ? q.carry_over_waiting
@@ -57,22 +57,26 @@ export class DailyResetWorker {
         const resetMode =
           q.daily_reset_mode || q.default_daily_reset_mode || 'close_all';
 
-        // Check if already reset for this business date
-        const counter = await this.dataSource.query(
-          `SELECT last_number FROM dori_queue_counter WHERE queue_id = $1 AND business_date = $2`,
-          [q.queue_id, tomorrow],
-        );
-
-        // If counter for tomorrow already exists, skip to remain idempotent
-        if (counter && counter.length > 0) {
-          continue;
-        }
-
-        this.logger.log(
-          `Executing daily reset for queue ${q.queue_id} (timezone: ${timezone}, localTime: ${localTimeStr})`,
-        );
-
         await this.dataSource.transaction(async (manager) => {
+          const lock = await manager.query(
+            `SELECT pg_try_advisory_xact_lock(hashtext($1), $2) AS acquired`,
+            ['daily-reset', q.queue_id],
+          );
+          if (!lock[0]?.acquired) return;
+
+          const marker = await manager.query(
+            `INSERT INTO dori_queue_daily_reset (queue_id, business_date, executed_at)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (queue_id, business_date) DO NOTHING
+             RETURNING queue_id`,
+            [q.queue_id, businessDate, now],
+          );
+          if (marker.length === 0) return;
+
+          this.logger.log(
+            `Executing daily reset for queue ${q.queue_id} and business date ${businessDate}`,
+          );
+
           // 1. Close open sessions (§4.8)
           await manager.query(
             `UPDATE dori_queue_session
@@ -86,7 +90,7 @@ export class DailyResetWorker {
             await manager.query(
               `UPDATE dori_customer
                SET status = 'expired', closed_at = $1, is_active = FALSE, updated_at = $1
-               WHERE queue_id = $2 AND business_date = $3 AND status = 'waiting' AND is_active = TRUE`,
+               WHERE queue_id = $2 AND business_date = $3 AND status IN ('booked', 'waiting') AND is_active = TRUE`,
               [now, q.queue_id, businessDate],
             );
           } else {
@@ -94,7 +98,7 @@ export class DailyResetWorker {
             await manager.query(
               `UPDATE dori_customer
                SET status = 'expired', closed_at = $1, is_active = FALSE, updated_at = $1
-               WHERE queue_id = $2 AND business_date = $3 AND status = 'waiting' AND is_active = TRUE
+               WHERE queue_id = $2 AND business_date = $3 AND status IN ('booked', 'waiting') AND is_active = TRUE
                  AND ticket_number LIKE 'OLD-%'`,
               [now, q.queue_id, businessDate],
             );
@@ -104,12 +108,12 @@ export class DailyResetWorker {
               `UPDATE dori_customer
                SET business_date = $1, carried_over_from_date = $2, ticket_number = 'OLD-' || ticket_number,
                    registration_tracking_token_valid_until = $3, updated_at = $4
-               WHERE queue_id = $5 AND business_date = $2 AND status = 'waiting' AND is_active = TRUE
+               WHERE queue_id = $5 AND business_date = $2 AND status IN ('booked', 'waiting') AND is_active = TRUE
                  AND ticket_number NOT LIKE 'OLD-%'`,
               [
-                tomorrow,
+                nextBusinessDate,
                 businessDate,
-                new Date(now.getTime() + 24 * 60 * 60 * 1000),
+                this.clockService.addDays(now, 1),
                 now,
                 q.queue_id,
               ],

@@ -1,6 +1,7 @@
 # Build output
 /dist
 /build
+/.quality-dist
 
 # Node modules
 node_modules/

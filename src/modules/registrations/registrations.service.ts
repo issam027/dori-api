@@ -42,163 +42,174 @@ export class RegistrationsService {
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkQueueAccess(user, dto.queueId);
-    const now = this.clockService.now();
+    return this.dataSource.transaction(async (manager) => {
+      const now = this.clockService.now();
 
-    // 1. Fetch Queue and Site Configuration
-    const queueConfig = await this.dataSource.query(
-      `SELECT q.*, s.timezone, s.default_currency,
+      // 1. Fetch Queue and Site Configuration
+      const queueConfig = await manager.query(
+        `SELECT q.*, s.timezone, s.default_currency,
               s.default_appointments_enabled, s.default_appointment_slot_duration, s.default_slot_capacity,
               s.default_working_hours_start, s.default_working_hours_end, s.default_break_start, s.default_break_end,
               s.default_late_tolerance_minutes
        FROM dori_site_queue_thread q
        JOIN dori_site s ON s.site_id = q.site_id
        WHERE q.queue_id = $1 AND q.is_active = TRUE`,
-      [dto.queueId],
-    );
-
-    if (!queueConfig || queueConfig.length === 0) {
-      throw new DoriException('QUEUE_NOT_FOUND', { queueId: dto.queueId });
-    }
-
-    const q = queueConfig[0];
-
-    // 2. Resolve a person strictly inside the queue's site.
-    let personId = dto.personId;
-    if (!personId) {
-      if (!dto.person) {
-        throw new DoriException(
-          'VALIDATION_ERROR',
-          {},
-          { errors: ['personId or person object is required'] },
-        );
-      }
-      const createdPerson = await this.personsService.createPerson(
-        dto.person,
-        q.site_id,
-        user,
+        [dto.queueId],
       );
-      personId = createdPerson.person_id;
-    } else {
-      const personRows = await this.dataSource.query(
-        `SELECT person_id FROM dori_person
+
+      if (!queueConfig || queueConfig.length === 0) {
+        throw new DoriException('QUEUE_NOT_FOUND', { queueId: dto.queueId });
+      }
+
+      const q = queueConfig[0];
+
+      // 2. Resolve a person strictly inside the queue's site.
+      let personId = dto.personId;
+      if (!personId) {
+        if (!dto.person) {
+          throw new DoriException(
+            'VALIDATION_ERROR',
+            {},
+            { errors: ['personId or person object is required'] },
+          );
+        }
+        const createdPerson = await this.personsService.createPerson(
+          dto.person,
+          q.site_id,
+          user,
+          manager,
+        );
+        personId = createdPerson.person_id;
+      } else {
+        const personRows = await manager.query(
+          `SELECT person_id FROM dori_person
          WHERE person_id = $1 AND site_id = $2
            AND is_active = TRUE AND deleted_at IS NULL`,
-        [personId, q.site_id],
-      );
-      if (!personRows || personRows.length === 0) {
-        throw new DoriException('PERSON_NOT_FOUND', { personId });
+          [personId, q.site_id],
+        );
+        if (!personRows || personRows.length === 0) {
+          throw new DoriException('PERSON_NOT_FOUND', { personId });
+        }
       }
-    }
 
-    const timezone = q.timezone || 'Africa/Tunis';
-    const appointmentsEnabled =
-      q.appointments_enabled ?? q.default_appointments_enabled ?? false;
-    const slotCapacity = q.slot_capacity ?? q.default_slot_capacity ?? 1;
+      const timezone = q.timezone || 'Africa/Tunis';
+      const appointmentsEnabled =
+        q.appointments_enabled ?? q.default_appointments_enabled ?? false;
+      const slotCapacity = q.slot_capacity ?? q.default_slot_capacity ?? 1;
 
-    // 3. Verify Tier Offered By Queue (§4.1, §6.5)
-    const tierRows = await this.dataSource.query(
-      `SELECT qt.price, qt.currency, t.tier_code, t.tier_name
+      // 3. Verify Tier Offered By Queue (§4.1, §6.5)
+      const tierRows = await manager.query(
+        `SELECT qt.price, qt.currency, t.tier_code, t.tier_name
        FROM dori_queue_service_tier qt
        JOIN dori_service_tier t ON t.tier_id = qt.tier_id
        WHERE qt.queue_id = $1 AND qt.tier_id = $2 AND qt.is_active = TRUE`,
-      [dto.queueId, dto.tierId],
-    );
-
-    if (!tierRows || tierRows.length === 0) {
-      throw new DoriException('TIER_NOT_OFFERED_BY_QUEUE', {
-        tierId: dto.tierId,
-        queueId: dto.queueId,
-      });
-    }
-
-    const tierInfo = tierRows[0];
-
-    // 4. Duplicate Check (§3.10, §6.9)
-    const openRegs = await this.dataSource.query(
-      `SELECT customer_id FROM dori_customer
-       WHERE queue_id = $1 AND person_id = $2 AND status IN ('booked', 'waiting', 'in_progress') AND is_active = TRUE`,
-      [dto.queueId, personId],
-    );
-
-    if (openRegs && openRegs.length > 0) {
-      throw new DoriException('DUPLICATE_ACTIVE_REGISTRATION');
-    }
-
-    // 5. Entry Type Validation and Business Date
-    let businessDate: string;
-    let scheduledTime: Date | null = null;
-    let appointmentStatus: string = 'n/a';
-    let status: string = 'waiting';
-    let priorityRefTime: Date;
-
-    if (dto.entryType === 'appointment') {
-      if (!appointmentsEnabled) {
-        throw new DoriException('APPOINTMENTS_DISABLED');
-      }
-      if (!dto.scheduledTime) {
-        throw new DoriException(
-          'VALIDATION_ERROR',
-          {},
-          { errors: ['scheduledTime is required for appointment'] },
-        );
-      }
-
-      scheduledTime = new Date(dto.scheduledTime);
-      businessDate = this.clockService.dateInTimezone(scheduledTime, timezone);
-      appointmentStatus = 'booked';
-      status = 'booked';
-      priorityRefTime = scheduledTime;
-
-      // Slot capacity check (§4.2, §6.5)
-      const existingAppts = await this.dataSource.query(
-        `SELECT COUNT(*)::int as count FROM dori_customer
-         WHERE queue_id = $1 AND scheduled_time = $2 AND status IN ('booked', 'waiting', 'in_progress') AND is_active = TRUE`,
-        [dto.queueId, scheduledTime],
+        [dto.queueId, dto.tierId],
       );
 
-      const count = existingAppts[0]?.count || 0;
-      if (count >= slotCapacity) {
-        throw new DoriException('APPOINTMENT_SLOT_FULL', {
-          scheduledTime: dto.scheduledTime,
+      if (!tierRows || tierRows.length === 0) {
+        throw new DoriException('TIER_NOT_OFFERED_BY_QUEUE', {
+          tierId: dto.tierId,
+          queueId: dto.queueId,
         });
       }
-    } else {
-      businessDate = this.clockService.todayInTimezone(timezone);
-      status = 'waiting';
-      appointmentStatus = 'n/a';
-      priorityRefTime = now;
-    }
 
-    // 6. Generate Ticket Number Atomically (§3.11, §7.6)
-    const counterRes = await this.dataSource.query(
-      `INSERT INTO dori_queue_counter (queue_id, business_date, last_number)
+      const tierInfo = tierRows[0];
+
+      // 4. Duplicate Check (§3.10, §6.9)
+      const openRegs = await manager.query(
+        `SELECT customer_id FROM dori_customer
+       WHERE queue_id = $1 AND person_id = $2 AND status IN ('booked', 'waiting', 'in_progress') AND is_active = TRUE`,
+        [dto.queueId, personId],
+      );
+
+      if (openRegs && openRegs.length > 0) {
+        throw new DoriException('DUPLICATE_ACTIVE_REGISTRATION');
+      }
+
+      // 5. Entry Type Validation and Business Date
+      let businessDate: string;
+      let scheduledTime: Date | null = null;
+      let appointmentStatus: string = 'n/a';
+      let status: string = 'waiting';
+      let priorityRefTime: Date;
+
+      if (dto.entryType === 'appointment') {
+        if (!appointmentsEnabled) {
+          throw new DoriException('APPOINTMENTS_DISABLED');
+        }
+        if (!dto.scheduledTime) {
+          throw new DoriException(
+            'VALIDATION_ERROR',
+            {},
+            { errors: ['scheduledTime is required for appointment'] },
+          );
+        }
+
+        scheduledTime = this.clockService.parseInTimezone(
+          dto.scheduledTime,
+          timezone,
+        );
+        businessDate = this.clockService.dateInTimezone(
+          scheduledTime,
+          timezone,
+        );
+        appointmentStatus = 'booked';
+        status = 'booked';
+        priorityRefTime = scheduledTime;
+
+        // Slot capacity check (§4.2, §6.5)
+        await manager.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [
+          `appointment-slot:${dto.queueId}:${scheduledTime.toISOString()}`,
+        ]);
+        const existingAppts = await manager.query(
+          `SELECT COUNT(*)::int as count FROM dori_customer
+         WHERE queue_id = $1 AND scheduled_time = $2 AND status IN ('booked', 'waiting', 'in_progress') AND is_active = TRUE`,
+          [dto.queueId, scheduledTime],
+        );
+
+        const count = existingAppts[0]?.count || 0;
+        if (count >= slotCapacity) {
+          throw new DoriException('APPOINTMENT_SLOT_FULL', {
+            scheduledTime: dto.scheduledTime,
+          });
+        }
+      } else {
+        businessDate = this.clockService.todayInTimezone(timezone);
+        status = 'waiting';
+        appointmentStatus = 'n/a';
+        priorityRefTime = now;
+      }
+
+      // 6. Generate Ticket Number Atomically (§3.11, §7.6)
+      const counterRes = await manager.query(
+        `INSERT INTO dori_queue_counter (queue_id, business_date, last_number)
        VALUES ($1, $2, 1)
        ON CONFLICT (queue_id, business_date)
-       DO UPDATE SET last_number = dori_queue_counter.last_number + 1, updated_at = CURRENT_TIMESTAMP
+       DO UPDATE SET last_number = dori_queue_counter.last_number + 1, updated_at = $3
        RETURNING last_number`,
-      [dto.queueId, businessDate],
-    );
+        [dto.queueId, businessDate, now],
+      );
 
-    const lastNumber = counterRes[0].last_number;
-    const ticketNumber = this.formatTicketNumber(q.queue_code, lastNumber);
+      const lastNumber = counterRes[0].last_number;
+      const ticketNumber = this.formatTicketNumber(q.queue_code, lastNumber);
 
-    // End of business date for tracking token
-    const tokenValidUntil = this.clockService.endOfDayInTimezone(
-      businessDate,
-      timezone,
-    );
+      // End of business date for tracking token
+      const tokenValidUntil = this.clockService.endOfDayInTimezone(
+        businessDate,
+        timezone,
+      );
 
-    // 7. Check if tier has includeTrackingLink rule
-    const rules = await this.dataSource.query(
-      `SELECT include_tracking_link FROM dori_tier_notification_rule
+      // 7. Check if tier has includeTrackingLink rule
+      const rules = await manager.query(
+        `SELECT include_tracking_link FROM dori_tier_notification_rule
        WHERE queue_id = $1 AND tier_id = $2 AND include_tracking_link = TRUE AND is_active = TRUE LIMIT 1`,
-      [dto.queueId, dto.tierId],
-    );
-    const hasTrackingRule = rules && rules.length > 0;
+        [dto.queueId, dto.tierId],
+      );
+      const hasTrackingRule = rules && rules.length > 0;
 
-    // 8. Insert dori_customer
-    const insertRes = await this.dataSource.query(
-      `INSERT INTO dori_customer (
+      // 8. Insert dori_customer
+      const insertRes = await manager.query(
+        `INSERT INTO dori_customer (
         person_id, queue_id, tier_id, business_date, ticket_number,
         entry_type, scheduled_time, appointment_status, priority_reference_time,
         status, registration_tracking_token_valid_until, language_preference,
@@ -209,49 +220,50 @@ export class RegistrationsService {
         $10, $11, $12,
         $13, $13, $14, $14
       ) RETURNING *`,
-      [
-        personId,
-        dto.queueId,
-        dto.tierId,
-        businessDate,
-        ticketNumber,
-        dto.entryType,
-        scheduledTime,
-        appointmentStatus,
-        priorityRefTime,
-        status,
-        tokenValidUntil,
-        dto.languagePreference || null,
-        user.userId,
-        now,
-      ],
-    );
+        [
+          personId,
+          dto.queueId,
+          dto.tierId,
+          businessDate,
+          ticketNumber,
+          dto.entryType,
+          scheduledTime,
+          appointmentStatus,
+          priorityRefTime,
+          status,
+          tokenValidUntil,
+          dto.languagePreference || null,
+          user.userId,
+          now,
+        ],
+      );
 
-    const created = insertRes[0];
-    const trackingUrl = hasTrackingRule
-      ? `https://suivi.dori.tn/#${created.registration_tracking_token}`
-      : null;
+      const created = insertRes[0];
+      const trackingUrl = hasTrackingRule
+        ? `https://suivi.dori.tn/#${created.registration_tracking_token}`
+        : null;
 
-    return {
-      registrationId: created.customer_id,
-      ticketNumber: created.ticket_number,
-      businessDate: created.business_date,
-      entryType: created.entry_type,
-      appointmentStatus: created.appointment_status,
-      scheduledTime: created.scheduled_time,
-      status: created.status,
-      tier: {
-        tierId: dto.tierId,
-        tierCode: tierInfo.tier_code,
-        price: Number(tierInfo.price),
-        currency: tierInfo.currency,
-      },
-      priorityReferenceTime: created.priority_reference_time,
-      trackingUrl,
-      registrationTrackingTokenValidUntil: hasTrackingRule
-        ? tokenValidUntil
-        : null,
-    };
+      return {
+        registrationId: created.customer_id,
+        ticketNumber: created.ticket_number,
+        businessDate: created.business_date,
+        entryType: created.entry_type,
+        appointmentStatus: created.appointment_status,
+        scheduledTime: created.scheduled_time,
+        status: created.status,
+        tier: {
+          tierId: dto.tierId,
+          tierCode: tierInfo.tier_code,
+          price: Number(tierInfo.price),
+          currency: tierInfo.currency,
+        },
+        priorityReferenceTime: created.priority_reference_time,
+        trackingUrl,
+        registrationTrackingTokenValidUntil: hasTrackingRule
+          ? tokenValidUntil
+          : null,
+      };
+    });
   }
 
   async getAvailability(
@@ -321,7 +333,10 @@ export class RegistrationsService {
     const bookingMap = new Map<string, number>();
     for (const b of bookedCounts) {
       if (b.scheduled_time) {
-        bookingMap.set(new Date(b.scheduled_time).toISOString(), b.count);
+        bookingMap.set(
+          this.clockService.parse(b.scheduled_time).toISOString(),
+          b.count,
+        );
       }
     }
 
@@ -339,7 +354,9 @@ export class RegistrationsService {
       const h = Math.floor(currentMinutes / 60);
       const m = currentMinutes % 60;
       const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
-      const slotIso = `${queryDto.date}T${timeStr}`;
+      const slotIso = this.clockService
+        .fromZonedTime(`${queryDto.date}T${timeStr}`, q.timezone)
+        .toISOString();
 
       const booked = bookingMap.get(slotIso) || 0;
       const availableSpots = Math.max(0, slotCapacity - booked);
@@ -382,8 +399,8 @@ export class RegistrationsService {
     const now = this.clockService.now();
     const tolerance =
       reg.late_tolerance_minutes ?? reg.default_late_tolerance_minutes ?? 60;
-    const scheduledTime = new Date(reg.scheduled_time);
-    const deadline = new Date(scheduledTime.getTime() + tolerance * 60 * 1000);
+    const scheduledTime = this.clockService.parse(reg.scheduled_time);
+    const deadline = this.clockService.addMinutes(scheduledTime, tolerance);
 
     // Late arrival beyond tolerance -> expired (§4.3)
     if (now > deadline) {
@@ -440,44 +457,53 @@ export class RegistrationsService {
       throw new DoriException('REGISTRATION_CLOSED');
     }
 
-    const newTime = new Date(dto.scheduledTime);
+    const newTime = this.clockService.parseInTimezone(
+      dto.scheduledTime,
+      reg.timezone || 'Africa/Tunis',
+    );
     const slotCapacity = reg.slot_capacity ?? reg.default_slot_capacity ?? 1;
 
-    // Check slot capacity on target slot (§6.6)
-    const existing = await this.dataSource.query(
-      `SELECT COUNT(*)::int as count FROM dori_customer
-       WHERE queue_id = $1 AND scheduled_time = $2 AND status IN ('booked', 'waiting', 'in_progress') AND is_active = TRUE
-         AND customer_id <> $3`,
-      [reg.queue_id, newTime, registrationId],
-    );
+    return this.dataSource.transaction(async (manager) => {
+      await manager.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [
+        `appointment-slot:${reg.queue_id}:${newTime.toISOString()}`,
+      ]);
+      const existing = await manager.query(
+        `SELECT COUNT(*)::int as count FROM dori_customer
+         WHERE queue_id = $1 AND scheduled_time = $2 AND status IN ('booked', 'waiting', 'in_progress') AND is_active = TRUE
+           AND customer_id <> $3`,
+        [reg.queue_id, newTime, registrationId],
+      );
 
-    if ((existing[0]?.count || 0) >= slotCapacity) {
-      throw new DoriException('APPOINTMENT_SLOT_FULL', {
-        scheduledTime: dto.scheduledTime,
-      });
-    }
+      if ((existing[0]?.count || 0) >= slotCapacity) {
+        throw new DoriException('APPOINTMENT_SLOT_FULL', {
+          scheduledTime: dto.scheduledTime,
+        });
+      }
 
-    const timezone = reg.timezone || 'Africa/Tunis';
-    const newBusinessDate = this.clockService.dateInTimezone(newTime, timezone);
-    const now = this.clockService.now();
+      const timezone = reg.timezone || 'Africa/Tunis';
+      const newBusinessDate = this.clockService.dateInTimezone(
+        newTime,
+        timezone,
+      );
+      const now = this.clockService.now();
+      const res = await manager.query(
+        `UPDATE dori_customer
+         SET scheduled_time = $1, priority_reference_time = $1, business_date = $2,
+             appointment_status = 'rescheduled', status = 'booked', checked_in_at = NULL, updated_at = $3
+         WHERE customer_id = $4
+         RETURNING *`,
+        [newTime, newBusinessDate, now, registrationId],
+      );
 
-    const res = await this.dataSource.query(
-      `UPDATE dori_customer
-       SET scheduled_time = $1, priority_reference_time = $1, business_date = $2,
-           appointment_status = 'rescheduled', status = 'booked', checked_in_at = NULL, updated_at = $3
-       WHERE customer_id = $4
-       RETURNING *`,
-      [newTime, newBusinessDate, now, registrationId],
-    );
-
-    const updated = res[0];
-    return {
-      registrationId: updated.customer_id,
-      appointmentStatus: updated.appointment_status,
-      status: updated.status,
-      scheduledTime: updated.scheduled_time,
-      priorityReferenceTime: updated.priority_reference_time,
-    };
+      const updated = res[0];
+      return {
+        registrationId: updated.customer_id,
+        appointmentStatus: updated.appointment_status,
+        status: updated.status,
+        scheduledTime: updated.scheduled_time,
+        priorityReferenceTime: updated.priority_reference_time,
+      };
+    });
   }
 
   async lookupAppointment(dto: LookupRegistrationDto, user: AuthenticatedUser) {
@@ -520,7 +546,7 @@ export class RegistrationsService {
     } else {
       params.push(`%${dto.lastName}%`);
       query += ` AND p.last_name ILIKE $${params.length}`;
-      params.push(new Date(dto.scheduledTime!));
+      params.push(this.clockService.parse(dto.scheduledTime!));
       query += ` AND c.scheduled_time = $${params.length}`;
     }
 
@@ -729,14 +755,17 @@ export class RegistrationsService {
     const reg = rows[0];
 
     // Check token expiration date (§4.14)
-    if (new Date(reg.registration_tracking_token_valid_until) < now) {
+    if (
+      this.clockService.parse(reg.registration_tracking_token_valid_until) < now
+    ) {
       throw new DoriException('TOKEN_EXPIRED');
     }
 
     // Degraded response if finished > 60 minutes (§4.14, §6.8)
     if (
       reg.closed_at &&
-      now.getTime() - new Date(reg.closed_at).getTime() > 60 * 60 * 1000
+      now.getTime() - this.clockService.parse(reg.closed_at).getTime() >
+        60 * 60 * 1000
     ) {
       return { status: 'closed' };
     }

@@ -5,6 +5,7 @@ import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
+import { RealtimeService } from '../../core/realtime/realtime.service';
 
 describe('QueueEngineService — getSessions & getActiveSessions (VAL-04 Manquement A)', () => {
   let service: QueueEngineService;
@@ -43,6 +44,14 @@ describe('QueueEngineService — getSessions & getActiveSessions (VAL-04 Manquem
           provide: ClockService,
           useValue: {
             now: jest.fn(() => new Date('2026-09-29T12:00:00Z')),
+          },
+        },
+        {
+          provide: RealtimeService,
+          useValue: {
+            emitQueueOps: jest.fn(),
+            emitQueueDisplay: jest.fn(),
+            emitRegistrationUpdate: jest.fn(),
           },
         },
       ],

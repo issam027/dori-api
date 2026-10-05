@@ -18,41 +18,28 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey:
-        configService.get<string>('jwt.secret') || 'change-me-in-production',
+      secretOrKey: configService.getOrThrow<string>('jwt.secret'),
     });
   }
 
   async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
-    let sessionId: string | undefined;
+    if (!payload.sid) {
+      throw new DoriException('UNAUTHENTICATED');
+    }
 
-    if (payload.sid) {
-      // SEC-02 : vérifier la session SPECIFIQUE liée à ce JWT
-      const sessions = await this.dataSource.query(
-        `SELECT session_id FROM dori_user_session
-         WHERE session_id = $1 AND revoked_reason IS NULL AND revoked_at IS NULL
-           AND expires_at > NOW()`,
-        [payload.sid],
-      );
+    const sessions = await this.dataSource.query(
+      `SELECT s.session_id
+       FROM dori_user_session s
+       JOIN dori_user u ON u.user_id = s.user_id
+       WHERE s.session_id = $1 AND s.user_id = $2
+         AND s.revoked_reason IS NULL AND s.revoked_at IS NULL
+         AND s.expires_at > NOW()
+         AND u.is_active = TRUE AND u.deleted_at IS NULL`,
+      [payload.sid, payload.sub],
+    );
 
-      if (!sessions || sessions.length === 0) {
-        throw new DoriException('UNAUTHENTICATED');
-      }
-      sessionId = sessions[0].session_id;
-    } else {
-      // Fallback pour les tokens émis avant le correctif SEC-02 (sans sid)
-      const sessions = await this.dataSource.query(
-        `SELECT session_id FROM dori_user_session
-         WHERE user_id = $1 AND revoked_reason IS NULL AND revoked_at IS NULL
-           AND expires_at > NOW()
-         LIMIT 1`,
-        [payload.sub],
-      );
-
-      if (!sessions || sessions.length === 0) {
-        throw new DoriException('UNAUTHENTICATED');
-      }
-      sessionId = sessions[0].session_id;
+    if (!sessions || sessions.length === 0) {
+      throw new DoriException('UNAUTHENTICATED');
     }
 
     return {
@@ -61,7 +48,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       roles: payload.roles || [],
       permissions: payload.permissions || [],
       userType: payload.userType || 'human',
-      sessionId,
+      sessionId: sessions[0].session_id,
     };
   }
 }

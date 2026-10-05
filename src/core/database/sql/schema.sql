@@ -369,6 +369,13 @@ CREATE TABLE IF NOT EXISTS dori_queue_counter (
     PRIMARY KEY (queue_id, business_date)
 );
 
+CREATE TABLE IF NOT EXISTS dori_queue_daily_reset (
+    queue_id INT NOT NULL REFERENCES dori_site_queue_thread(queue_id),
+    business_date DATE NOT NULL,
+    executed_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (queue_id, business_date)
+);
+
 -- 18. dori_notification (§3.12)
 CREATE TABLE IF NOT EXISTS dori_notification (
     notification_id SERIAL PRIMARY KEY,
@@ -382,8 +389,10 @@ CREATE TABLE IF NOT EXISTS dori_notification (
     recipient VARCHAR(255) NOT NULL,
     notification_content TEXT,
     notification_status VARCHAR(20) NOT NULL DEFAULT 'pending'
-        CHECK (notification_status IN ('pending','sent','delivered','failed')),
+        CHECK (notification_status IN ('pending','processing','sent','delivered','failed')),
+    processing_started_at TIMESTAMPTZ,
     provider_message_id VARCHAR(128),
+    provider VARCHAR(50),
     failure_reason TEXT,
     attempt_count INT NOT NULL DEFAULT 0,
     sent_at TIMESTAMPTZ,
@@ -391,6 +400,19 @@ CREATE TABLE IF NOT EXISTS dori_notification (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS dori_webhook_event (
+    provider VARCHAR(50) NOT NULL,
+    event_id VARCHAR(255) NOT NULL,
+    received_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (provider, event_id)
+);
+
+ALTER TABLE dori_notification ADD COLUMN IF NOT EXISTS provider VARCHAR(50);
+ALTER TABLE dori_notification ADD COLUMN IF NOT EXISTS processing_started_at TIMESTAMPTZ;
+ALTER TABLE dori_notification DROP CONSTRAINT IF EXISTS dori_notification_notification_status_check;
+ALTER TABLE dori_notification ADD CONSTRAINT dori_notification_notification_status_check
+    CHECK (notification_status IN ('pending','processing','sent','delivered','failed'));
 
 -- 19. dori_translation (§3.13)
 CREATE TABLE IF NOT EXISTS dori_translation (
@@ -426,11 +448,15 @@ CREATE TABLE IF NOT EXISTS dori_user_session (
     expires_at TIMESTAMPTZ NOT NULL,
     revoked_at TIMESTAMPTZ,
     revoked_reason VARCHAR(30)
-        CHECK (revoked_reason IN ('global_logout','logout','rotation','account_disabled','password_changed','admin')),
+        CHECK (revoked_reason IN ('global_logout','logout','rotation','account_disabled','account_deleted','password_changed','admin')),
     user_agent VARCHAR(255),
     ip_address INET,
     CONSTRAINT uk_session_refresh_token UNIQUE (refresh_token_hash)
 );
+
+ALTER TABLE dori_user_session DROP CONSTRAINT IF EXISTS dori_user_session_revoked_reason_check;
+ALTER TABLE dori_user_session ADD CONSTRAINT dori_user_session_revoked_reason_check
+    CHECK (revoked_reason IN ('global_logout','logout','rotation','account_disabled','account_deleted','password_changed','admin'));
 
 -- Triggers for updated_at – idempotent (§3.17)
 DO $$ BEGIN
@@ -571,7 +597,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_queue_thread_active ON dori_queue_session (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_queue_user_active ON dori_queue_session (queue_id, user_id) WHERE disconnected_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_customer_person_open ON dori_customer (queue_id, person_id) WHERE status IN ('booked','waiting','in_progress') AND is_active;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_notification_once ON dori_notification (customer_id, notification_type, channel) WHERE notification_status <> 'failed';
-CREATE INDEX IF NOT EXISTS idx_notification_provider_msg ON dori_notification (provider_message_id);
+DROP INDEX IF EXISTS idx_notification_provider_msg;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_notification_provider_msg ON dori_notification (provider, provider_message_id) WHERE provider IS NOT NULL AND provider_message_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_user_email_active ON dori_user (LOWER(email)) WHERE email IS NOT NULL AND is_active;
 
 CREATE INDEX IF NOT EXISTS idx_customer_queue_day_status ON dori_customer (queue_id, business_date, status) WHERE is_active;
