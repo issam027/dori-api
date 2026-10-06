@@ -33,7 +33,11 @@ describe('PermissionsGuard', () => {
       if (key === 'permissions') return ['user_manage_admin'];
       return undefined;
     });
-    const context = createMockContext({ userId: 1, roles: ['root'], permissions: [] });
+    const context = createMockContext({
+      userId: 1,
+      roles: ['root'],
+      permissions: [],
+    });
     expect(guard.canActivate(context)).toBe(true);
   });
 

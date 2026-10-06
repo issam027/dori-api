@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
 import { AuthenticatedUser } from '../../auth/interfaces/jwt-payload.interface';
 import { DoriException } from '../../errors/dori.exception';
+import { ScopeRepository } from '../repositories/scope.repository';
 
 export interface UserScope {
   isGlobal: boolean;
@@ -18,7 +18,7 @@ export class ScopeService {
   >();
   private readonly CACHE_TTL_MS = 30 * 1000;
 
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(private readonly scopeRepository: ScopeRepository) {}
 
   async getUserScope(user: AuthenticatedUser): Promise<UserScope> {
     if (user.roles?.includes('root') || user.roles?.includes('admin')) {
@@ -35,37 +35,17 @@ export class ScopeService {
 
     if (user.roles?.includes('manager')) {
       // Managers have access to their assigned sites and ALL queues of those sites (§4.10)
-      const userSites = await this.dataSource.query(
-        `SELECT site_id FROM dori_user_site WHERE user_id = $1`,
-        [user.userId],
-      );
-      siteIds = userSites.map((r: any) => Number(r.site_id));
-
-      if (siteIds.length > 0) {
-        const queues = await this.dataSource.query(
-          `SELECT queue_id FROM dori_site_queue_thread WHERE site_id = ANY($1) AND is_active = TRUE`,
-          [siteIds],
-        );
-        queueIds = queues.map((r: any) => Number(r.queue_id));
-      }
+      siteIds = await this.scopeRepository.findUserSiteIds(user.userId);
+      queueIds = await this.scopeRepository.findActiveQueueIdsBySites(siteIds);
     } else {
-      const userQueues = await this.dataSource.query(
-        `SELECT uq.queue_id, q.site_id
-         FROM dori_user_queue uq
-         JOIN dori_site_queue_thread q ON q.queue_id = uq.queue_id
-         WHERE uq.user_id = $1 AND q.is_active = TRUE`,
-        [user.userId],
+      const queueScope = await this.scopeRepository.findUserQueueScope(
+        user.userId,
       );
-      queueIds = userQueues.map((r: any) => Number(r.queue_id));
-      const queueSiteIds = userQueues.map((r: any) => Number(r.site_id));
-
-      const userDirectSites = await this.dataSource.query(
-        `SELECT site_id FROM dori_user_site WHERE user_id = $1`,
-        [user.userId],
+      queueIds = queueScope.queueIds;
+      const directSiteIds = await this.scopeRepository.findUserSiteIds(
+        user.userId,
       );
-      const directSiteIds = userDirectSites.map((r: any) => Number(r.site_id));
-
-      siteIds = Array.from(new Set([...queueSiteIds, ...directSiteIds]));
+      siteIds = Array.from(new Set([...queueScope.siteIds, ...directSiteIds]));
     }
 
     const scope: UserScope = {

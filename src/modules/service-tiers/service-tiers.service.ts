@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
 import {
   CreateTierDto,
   UpdateTierDto,
@@ -8,63 +7,125 @@ import {
   CreateNotificationRuleDto,
   UpdateNotificationRuleDto,
 } from './dto/service-tier.dto';
-import { PaginationDto, PaginatedResult } from '../../core/pagination/pagination.dto';
-import { QueueTierDetailDto } from './dto/tier-response.dto';
+import {
+  PaginationDto,
+  PaginatedResult,
+} from '../../core/pagination/pagination.dto';
+import {
+  QueueTierDetailDto,
+  ServiceTierDetailDto,
+} from './dto/tier-response.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { DoriException } from '../../core/errors/dori.exception';
+import { ServiceTiersRepository } from './service-tiers.repository';
 
 @Injectable()
 export class ServiceTiersService {
   constructor(
-    private readonly dataSource: DataSource,
+    private readonly serviceTiersRepository: ServiceTiersRepository,
     private readonly scopeService: ScopeService,
     private readonly clockService: ClockService,
   ) {}
 
+  private validateNotificationRule(rule: {
+    notificationType: string;
+    thresholdPosition?: number | null;
+    thresholdMinutes?: number | null;
+    includeTrackingLink?: boolean;
+  }) {
+    if (
+      rule.notificationType === 'threshold' &&
+      rule.thresholdPosition == null &&
+      rule.thresholdMinutes == null
+    ) {
+      throw new DoriException(
+        'VALIDATION_ERROR',
+        {},
+        {
+          errors: ['Threshold rule requires position or minutes'],
+        },
+      );
+    }
+    if (
+      rule.includeTrackingLink &&
+      !['welcome', 'trakingLink'].includes(rule.notificationType)
+    ) {
+      throw new DoriException(
+        'VALIDATION_ERROR',
+        {},
+        {
+          errors: [
+            'Tracking link allowed only on welcome or trakingLink rules',
+          ],
+        },
+      );
+    }
+  }
+
+  private async getQueueTierRepresentation(queueId: number, tierId: number) {
+    const row = await this.serviceTiersRepository.findQueueTier(
+      queueId,
+      tierId,
+    );
+    if (!row) throw new DoriException('TIER_NOT_FOUND', { tierId });
+    return {
+      queueId: row.queue_id,
+      tierId: row.tier_id,
+      price: Number(row.price),
+      currency: row.currency,
+      isEnabled: row.is_active,
+      isDefault: row.is_system || false,
+      displayOrder: row.display_order,
+      tier: {
+        tierId: row.tier_id,
+        tierCode: row.tier_code,
+        tierName: row.tier_name,
+        description: row.description,
+        isSystem: row.is_system,
+        isActive: row.is_active,
+      },
+    };
+  }
+
   // 1. Global catalog
-  async findTiers(pagination: PaginationDto, _user?: AuthenticatedUser) {
+  async findTiers(
+    pagination: PaginationDto,
+    _user?: AuthenticatedUser,
+  ): Promise<PaginatedResult<ServiceTierDetailDto>> {
     const { pageSize, offset, sortOrder } = pagination.getParams();
     const safeSortField = pagination.getSafeSortField(
       ['tier_id', 'tier_name', 'tier_code', 'created_at', 'updated_at'],
       'tier_id',
     );
-    const countRes = await this.dataSource.query(
-      `SELECT COUNT(*)::int as total FROM dori_service_tier WHERE is_active = TRUE`,
+    const result = await this.serviceTiersRepository.findTierPage({
+      sortField: safeSortField,
+      sortOrder,
+      pageSize,
+      offset,
+    });
+    return pagination.createResponse<ServiceTierDetailDto>(
+      result.items as unknown as ServiceTierDetailDto[],
+      result.total,
     );
-    const total = countRes[0]?.total || 0;
-
-    const items = await this.dataSource.query(
-      `SELECT * FROM dori_service_tier
-       WHERE is_active = TRUE
-       ORDER BY ${safeSortField} ${sortOrder}
-       LIMIT ${pageSize} OFFSET ${offset}`,
-    );
-
-    return pagination.createResponse(items, total);
   }
 
   async findTierById(tierId: number, _user?: AuthenticatedUser) {
-    const res = await this.dataSource.query(
-      `SELECT * FROM dori_service_tier WHERE tier_id = $1 AND is_active = TRUE`,
-      [tierId],
-    );
-    if (!res || res.length === 0) {
+    const tier = await this.serviceTiersRepository.findActiveTier(tierId);
+    if (!tier) {
       throw new DoriException('TIER_NOT_FOUND', { tierId });
     }
-    return res[0];
+    return tier;
   }
 
   async createTier(dto: CreateTierDto, user: AuthenticatedUser) {
     const now = this.clockService.now();
-    const res = await this.dataSource.query(
-      `INSERT INTO dori_service_tier (tier_code, tier_name, description, is_system, created_by_user_id, updated_by_user_id, created_at, updated_at)
-       VALUES ($1, $2, $3, FALSE, $4, $4, $5, $5)
-       RETURNING *`,
-      [dto.tierCode, dto.tierName, dto.description || null, user.userId, now],
-    );
-    return res[0];
+    return this.serviceTiersRepository.createTier({
+      ...dto,
+      userId: user.userId,
+      now,
+    });
   }
 
   async updateTier(
@@ -75,35 +136,12 @@ export class ServiceTiersService {
     await this.findTierById(tierId);
     const now = this.clockService.now();
 
-    const fields: string[] = [];
-    const values: any[] = [];
-    let idx = 1;
-
-    if (dto.tierName !== undefined) {
-      fields.push(`tier_name = $${idx++}`);
-      values.push(dto.tierName);
-    }
-    if (dto.description !== undefined) {
-      fields.push(`description = $${idx++}`);
-      values.push(dto.description);
-    }
-    if (dto.isActive !== undefined) {
-      fields.push(`is_active = $${idx++}`);
-      values.push(dto.isActive);
-    }
-
-    fields.push(`updated_by_user_id = $${idx++}`);
-    values.push(user.userId);
-    fields.push(`updated_at = $${idx++}`);
-    values.push(now);
-
-    values.push(tierId);
-
-    const res = await this.dataSource.query(
-      `UPDATE dori_service_tier SET ${fields.join(', ')} WHERE tier_id = $${idx} RETURNING *`,
-      values,
+    return this.serviceTiersRepository.updateTier(
+      tierId,
+      dto,
+      user.userId,
+      now,
     );
-    return res[0];
   }
 
   async deleteTier(tierId: number, user: AuthenticatedUser) {
@@ -113,12 +151,7 @@ export class ServiceTiersService {
     }
 
     const now = this.clockService.now();
-    await this.dataSource.query(
-      `UPDATE dori_service_tier
-       SET is_active = FALSE, deleted_at = $1, updated_by_user_id = $2, updated_at = $1
-       WHERE tier_id = $3`,
-      [now, user.userId, tierId],
-    );
+    await this.serviceTiersRepository.softDeleteTier(tierId, user.userId, now);
 
     return { tierId, deleted: true };
   }
@@ -135,25 +168,15 @@ export class ServiceTiersService {
       'display_order',
     );
 
-    const query = `
-      SELECT qt.*, t.tier_code, t.tier_name, t.description as tier_description, t.is_system
-      FROM dori_queue_service_tier qt
-      JOIN dori_service_tier t ON t.tier_id = qt.tier_id
-      WHERE qt.queue_id = $1 AND qt.is_active = TRUE
-    `;
+    const result = await this.serviceTiersRepository.findQueueTierPage({
+      queueId,
+      sortField,
+      sortOrder,
+      pageSize,
+      offset,
+    });
 
-    const countRes = await this.dataSource.query(
-      `SELECT COUNT(*)::int as total FROM (${query}) q`,
-      [queueId],
-    );
-    const total = countRes[0]?.total || 0;
-
-    const items = await this.dataSource.query(
-      `${query} ORDER BY qt.${sortField} ${sortOrder}, qt.tier_id ASC LIMIT ${pageSize} OFFSET ${offset}`,
-      [queueId],
-    );
-
-    const formattedItems = items.map((qt: any) => ({
+    const formattedItems = result.items.map((qt) => ({
       queueId: qt.queue_id,
       tierId: qt.tier_id,
       price: Number(qt.price),
@@ -171,7 +194,10 @@ export class ServiceTiersService {
       },
     }));
 
-    return pagination.createResponse<QueueTierDetailDto>(formattedItems, total);
+    return pagination.createResponse<QueueTierDetailDto>(
+      formattedItems,
+      result.total,
+    );
   }
 
   async associateQueueTier(
@@ -186,35 +212,18 @@ export class ServiceTiersService {
     // Default currency from site if not provided
     let currency = dto.currency;
     if (!currency) {
-      const siteRes = await this.dataSource.query(
-        `SELECT s.default_currency
-         FROM dori_site_queue_thread q
-         JOIN dori_site s ON s.site_id = q.site_id
-         WHERE q.queue_id = $1`,
-        [queueId],
-      );
-      currency = siteRes[0]?.default_currency || 'TND';
+      currency = await this.serviceTiersRepository.findQueueCurrency(queueId);
     }
 
-    const res = await this.dataSource.query(
-      `INSERT INTO dori_queue_service_tier (queue_id, tier_id, price, currency, display_order, created_by_user_id, updated_by_user_id, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, COALESCE($5, 0), $6, $6, $7, $7)
-       ON CONFLICT (queue_id, tier_id)
-       DO UPDATE SET price = $3, currency = $4, display_order = COALESCE($5, dori_queue_service_tier.display_order),
-                     is_active = TRUE, deleted_at = NULL, updated_by_user_id = $6, updated_at = $7
-       RETURNING *`,
-      [
-        queueId,
-        dto.tierId,
-        dto.price,
-        currency,
-        dto.displayOrder ?? null,
-        user.userId,
-        now,
-      ],
+    await this.serviceTiersRepository.upsertQueueTier(
+      queueId,
+      dto,
+      currency,
+      user.userId,
+      now,
     );
 
-    return res[0];
+    return this.getQueueTierRepresentation(queueId, dto.tierId);
   }
 
   async updateQueueTier(
@@ -232,41 +241,15 @@ export class ServiceTiersService {
       throw new DoriException('TIER_IS_SYSTEM', { tierId });
     }
 
-    const fields: string[] = [];
-    const values: any[] = [];
-    let idx = 1;
-
-    if (dto.price !== undefined) {
-      fields.push(`price = $${idx++}`);
-      values.push(dto.price);
-    }
-    if (dto.currency !== undefined) {
-      fields.push(`currency = $${idx++}`);
-      values.push(dto.currency);
-    }
-    if (dto.displayOrder !== undefined) {
-      fields.push(`display_order = $${idx++}`);
-      values.push(dto.displayOrder);
-    }
-    if (dto.isActive !== undefined) {
-      fields.push(`is_active = $${idx++}`);
-      values.push(dto.isActive);
-    }
-
-    fields.push(`updated_by_user_id = $${idx++}`);
-    values.push(user.userId);
-    fields.push(`updated_at = $${idx++}`);
-    values.push(now);
-
-    values.push(queueId);
-    values.push(tierId);
-
-    const res = await this.dataSource.query(
-      `UPDATE dori_queue_service_tier SET ${fields.join(', ')} WHERE queue_id = $${idx++} AND tier_id = $${idx} RETURNING *`,
-      values,
+    await this.serviceTiersRepository.updateQueueTier(
+      queueId,
+      tierId,
+      dto,
+      user.userId,
+      now,
     );
 
-    return res[0];
+    return this.getQueueTierRepresentation(queueId, tierId);
   }
 
   async removeQueueTier(
@@ -282,11 +265,11 @@ export class ServiceTiersService {
     }
 
     const now = this.clockService.now();
-    await this.dataSource.query(
-      `UPDATE dori_queue_service_tier
-       SET is_active = FALSE, deleted_at = $1, updated_by_user_id = $2, updated_at = $1
-       WHERE queue_id = $3 AND tier_id = $4`,
-      [now, user.userId, queueId, tierId],
+    await this.serviceTiersRepository.removeQueueTier(
+      queueId,
+      tierId,
+      user.userId,
+      now,
     );
 
     return { queueId, tierId, removed: true };
@@ -306,23 +289,15 @@ export class ServiceTiersService {
       'rule_id',
     );
 
-    const query = `
-      SELECT * FROM dori_tier_notification_rule
-      WHERE queue_id = $1 AND tier_id = $2 AND is_active = TRUE
-    `;
-
-    const countRes = await this.dataSource.query(
-      `SELECT COUNT(*)::int as total FROM (${query}) q`,
-      [queueId, tierId],
-    );
-    const total = countRes[0]?.total || 0;
-
-    const items = await this.dataSource.query(
-      `${query} ORDER BY ${sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`,
-      [queueId, tierId],
-    );
-
-    return pagination.createResponse(items, total);
+    const result = await this.serviceTiersRepository.findNotificationRulePage({
+      queueId,
+      tierId,
+      sortField,
+      sortOrder,
+      pageSize,
+      offset,
+    });
+    return pagination.createResponse(result.items, result.total);
   }
 
   async createNotificationRule(
@@ -363,27 +338,13 @@ export class ServiceTiersService {
       );
     }
 
-    const res = await this.dataSource.query(
-      `INSERT INTO dori_tier_notification_rule (
-        queue_id, tier_id, notification_type, channel, threshold_position, threshold_minutes,
-        include_tracking_link, created_by_user_id, updated_by_user_id, created_at, updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, COALESCE($7, FALSE), $8, $8, $9, $9
-      ) RETURNING *`,
-      [
-        queueId,
-        tierId,
-        dto.notificationType,
-        dto.channel,
-        dto.thresholdPosition ?? null,
-        dto.thresholdMinutes ?? null,
-        dto.includeTrackingLink ?? false,
-        user.userId,
-        now,
-      ],
+    return this.serviceTiersRepository.createNotificationRule(
+      queueId,
+      tierId,
+      dto,
+      user.userId,
+      now,
     );
-
-    return res[0];
   }
 
   async updateNotificationRule(
@@ -396,52 +357,32 @@ export class ServiceTiersService {
     await this.scopeService.checkQueueAccess(user, queueId);
     const now = this.clockService.now();
 
-    const fields: string[] = [];
-    const values: any[] = [];
-    let idx = 1;
-
-    if (dto.notificationType !== undefined) {
-      fields.push(`notification_type = $${idx++}`);
-      values.push(dto.notificationType);
-    }
-    if (dto.channel !== undefined) {
-      fields.push(`channel = $${idx++}`);
-      values.push(dto.channel);
-    }
-    if (dto.thresholdPosition !== undefined) {
-      fields.push(`threshold_position = $${idx++}`);
-      values.push(dto.thresholdPosition);
-    }
-    if (dto.thresholdMinutes !== undefined) {
-      fields.push(`threshold_minutes = $${idx++}`);
-      values.push(dto.thresholdMinutes);
-    }
-    if (dto.includeTrackingLink !== undefined) {
-      fields.push(`include_tracking_link = $${idx++}`);
-      values.push(dto.includeTrackingLink);
-    }
-    if (dto.isActive !== undefined) {
-      fields.push(`is_active = $${idx++}`);
-      values.push(dto.isActive);
-    }
-
-    fields.push(`updated_by_user_id = $${idx++}`);
-    values.push(user.userId);
-    fields.push(`updated_at = $${idx++}`);
-    values.push(now);
-
-    values.push(ruleId);
-    values.push(queueId);
-    values.push(tierId);
-
-    const res = await this.dataSource.query(
-      `UPDATE dori_tier_notification_rule SET ${fields.join(', ')}
-       WHERE rule_id = $${idx++} AND queue_id = $${idx++} AND tier_id = $${idx}
-       RETURNING *`,
-      values,
+    const current = await this.serviceTiersRepository.findNotificationRule(
+      queueId,
+      tierId,
+      ruleId,
     );
+    if (!current) {
+      throw new DoriException('NOTIFICATION_NOT_FOUND', {
+        notificationId: ruleId,
+      });
+    }
+    this.validateNotificationRule({
+      notificationType: dto.notificationType ?? current.notification_type,
+      thresholdPosition: dto.thresholdPosition ?? current.threshold_position,
+      thresholdMinutes: dto.thresholdMinutes ?? current.threshold_minutes,
+      includeTrackingLink:
+        dto.includeTrackingLink ?? current.include_tracking_link,
+    });
 
-    return res[0];
+    return this.serviceTiersRepository.updateNotificationRule(
+      queueId,
+      tierId,
+      ruleId,
+      dto,
+      user.userId,
+      now,
+    );
   }
 
   async deleteNotificationRule(
@@ -453,11 +394,12 @@ export class ServiceTiersService {
     await this.scopeService.checkQueueAccess(user, queueId);
     const now = this.clockService.now();
 
-    await this.dataSource.query(
-      `UPDATE dori_tier_notification_rule
-       SET is_active = FALSE, deleted_at = $1, updated_by_user_id = $2, updated_at = $1
-       WHERE rule_id = $3 AND queue_id = $4 AND tier_id = $5`,
-      [now, user.userId, ruleId, queueId, tierId],
+    await this.serviceTiersRepository.softDeleteNotificationRule(
+      queueId,
+      tierId,
+      ruleId,
+      user.userId,
+      now,
     );
 
     return { ruleId, deleted: true };
@@ -488,14 +430,12 @@ export class ServiceTiersService {
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkQueueAccess(user, queueId);
-    const items = await this.dataSource.query(
-      `SELECT * FROM dori_tier_notification_rule
-       WHERE queue_id = $1 AND tier_id = $2 AND is_active = TRUE
-       ORDER BY rule_id ASC`,
-      [queueId, tierId],
+    const items = await this.serviceTiersRepository.findActiveNotificationRules(
+      queueId,
+      tierId,
     );
 
-    return items.map((r: any) => ({
+    return items.map((r) => ({
       ruleId: r.rule_id,
       queueId: r.queue_id,
       tierId: r.tier_id,

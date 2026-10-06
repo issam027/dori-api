@@ -61,4 +61,3 @@ export class DoriException extends HttpException {
     this.payload = data;
   }
 }
-

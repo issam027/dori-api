@@ -1,25 +1,14 @@
-import { Global, Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { RealtimeGateway } from './realtime.gateway';
 import { RealtimeService } from './realtime.service';
 import { RbacModule } from '../rbac/rbac.module';
 import { ClockModule } from '../clock/clock.module';
+import { DatabaseModule } from '../database/database.module';
+import { AuthModule } from '../../modules/auth/auth.module';
 
-@Global()
 @Module({
-  imports: [
-    RbacModule,
-    ClockModule,
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('jwt.secret') || 'change-me-in-production',
-        signOptions: { expiresIn: '60m' },
-      }),
-    }),
-  ],
+  imports: [ConfigModule, DatabaseModule, RbacModule, ClockModule, AuthModule],
   providers: [RealtimeGateway, RealtimeService],
   exports: [RealtimeService],
 })

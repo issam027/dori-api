@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
 export class SiteDetailResponseDto {
   @ApiProperty({ example: 1, description: 'ID unique du site' })
@@ -124,7 +125,7 @@ export class SiteDetailResponseDto {
   updatedAt: string;
 }
 
-export class PaginatedSiteResponseDto {
+export class PaginatedSiteResponseDto extends PaginatedResponseDto {
   @ApiProperty({
     type: [SiteDetailResponseDto],
     description: 'Liste des sites',
@@ -152,7 +153,7 @@ export class SiteDeleteResponseDto {
   deleted: boolean;
 }
 
-export class SiteManagerResponseDto {
+export class SiteManagerDetailDto {
   @ApiProperty({ example: 2, description: 'ID utilisateur du manager' })
   userId: number;
 
@@ -168,7 +169,11 @@ export class SiteManagerResponseDto {
   @ApiProperty({ example: true, description: 'Compte actif' })
   isActive: boolean;
 
-  @ApiPropertyOptional({ example: 'internal', description: "Type d'utilisateur" })
+  @ApiPropertyOptional({
+    example: 'human',
+    enum: ['human', 'kiosk'],
+    description: 'Type de compte utilisateur',
+  })
   userType?: string;
 
   @ApiPropertyOptional({
@@ -178,12 +183,12 @@ export class SiteManagerResponseDto {
   assignedAt?: string;
 }
 
-export class PaginatedSiteManagerResponseDto {
+export class PaginatedSiteManagerResponseDto extends PaginatedResponseDto {
   @ApiProperty({
-    type: [SiteManagerResponseDto],
+    type: [SiteManagerDetailDto],
     description: 'Liste des managers du site',
   })
-  items: SiteManagerResponseDto[];
+  items: SiteManagerDetailDto[];
 
   @ApiProperty({ example: 1, description: 'Page actuelle' })
   page: number;
@@ -200,7 +205,7 @@ export class PaginatedSiteManagerResponseDto {
 
 export class AssignManagerResponseDto {
   @ApiProperty({ example: true, description: 'Opération réussie' })
-  success: boolean;
+  assigned: boolean;
 
   @ApiProperty({ example: 1, description: 'ID du site' })
   siteId: number;
@@ -209,3 +214,8 @@ export class AssignManagerResponseDto {
   userId: number;
 }
 
+export class RemoveManagerResponseDto {
+  @ApiProperty({ minimum: 1 }) siteId: number;
+  @ApiProperty({ minimum: 1 }) userId: number;
+  @ApiProperty({ example: true }) removed: boolean;
+}

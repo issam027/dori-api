@@ -20,6 +20,7 @@ import {
 import {
   ApiDoriOkResponse,
   ApiDoriCreatedResponse,
+  ApiDoriErrorResponses,
 } from '../../core/swagger/api-dori-response.decorator';
 import { ServiceTiersService } from './service-tiers.service';
 import {
@@ -36,6 +37,7 @@ import {
   QueueTierDetailDto,
   PaginatedQueueTierResponseDto,
   NotificationRuleDetailDto,
+  PaginatedNotificationRuleResponseDto,
   TierDeleteResponseDto,
 } from './dto/tier-response.dto';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
@@ -45,6 +47,7 @@ import { RequirePermission } from '../../core/rbac/decorators/require-permission
 
 @ApiTags('Tiers')
 @ApiBearerAuth('bearer')
+@ApiDoriErrorResponses()
 @Controller('api/v1')
 export class ServiceTiersController {
   constructor(private readonly tiersService: ServiceTiersService) {}
@@ -57,7 +60,10 @@ export class ServiceTiersController {
     description:
       'Retourne tous les forfaits disponibles au catalogue (Gratuit, Standard, Premium...).',
   })
-  @ApiDoriOkResponse(PaginatedServiceTierResponseDto, 'Liste paginée des forfaits du catalogue')
+  @ApiDoriOkResponse(
+    PaginatedServiceTierResponseDto,
+    'Liste paginée des forfaits du catalogue',
+  )
   async findTiers(
     @Query() pagination: PaginationDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -137,7 +143,10 @@ export class ServiceTiersController {
       'Retourne la liste paginée des forfaits configurés pour cette file avec leurs tarifs locaux.',
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse(PaginatedQueueTierResponseDto, 'Liste paginée des forfaits de la file')
+  @ApiDoriOkResponse(
+    PaginatedQueueTierResponseDto,
+    'Liste paginée des forfaits de la file',
+  )
   async getQueueTiers(
     @Param('queueId', ParseIntPipe) queueId: number,
     @Query() pagination: PaginationDto,
@@ -210,13 +219,22 @@ export class ServiceTiersController {
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
   @ApiParam({ name: 'tierId', type: Number, description: 'ID du forfait' })
-  @ApiDoriOkResponse([NotificationRuleDetailDto], 'Liste des règles de notification')
+  @ApiDoriOkResponse(
+    PaginatedNotificationRuleResponseDto,
+    'Liste paginée des règles de notification',
+  )
   async getRules(
     @Param('queueId', ParseIntPipe) queueId: number,
     @Param('tierId', ParseIntPipe) tierId: number,
+    @Query() pagination: PaginationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.tiersService.getNotificationRules(queueId, tierId, user);
+    return this.tiersService.findNotificationRules(
+      queueId,
+      tierId,
+      pagination,
+      user,
+    );
   }
 
   @Post('queues/:queueId/tiers/:tierId/notification-rules')

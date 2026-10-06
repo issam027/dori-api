@@ -99,7 +99,7 @@ describe('QueuesService — SEC-04 assignOperator', () => {
       if (sql.includes('SELECT user_id, is_active FROM dori_user')) {
         return [{ user_id: 2, is_active: true }];
       }
-      if (sql.includes('r.role_name IN (\'hotesse\', \'operator\')')) {
+      if (sql.includes("r.role_name IN ('hotesse', 'operator')")) {
         return [];
       }
       return [];
@@ -118,7 +118,7 @@ describe('QueuesService — SEC-04 assignOperator', () => {
       if (sql.includes('SELECT user_id, is_active FROM dori_user')) {
         return [{ user_id: 2, is_active: true }];
       }
-      if (sql.includes('r.role_name IN (\'hotesse\', \'operator\')')) {
+      if (sql.includes("r.role_name IN ('hotesse', 'operator')")) {
         return [{ user_id: 2 }];
       }
       if (sql.includes('INSERT INTO dori_user_queue')) {
@@ -148,35 +148,42 @@ describe('QueuesService — SEC-04 assignOperator', () => {
 
     it('should soft delete queue, cascade to tiers and close open sessions', async () => {
       const queries: { sql: string; params: any[] }[] = [];
-      dataSourceMock.query.mockImplementation(async (sql: string, params: any[]) => {
-        queries.push({ sql, params });
-        if (sql.includes('FROM dori_site_queue_thread q')) {
-          return [{ queue_id: 5, is_active: true }];
-        }
-        return [];
-      });
+      dataSourceMock.query.mockImplementation(
+        async (sql: string, params: any[]) => {
+          queries.push({ sql, params });
+          if (sql.includes('FROM dori_site_queue_thread q')) {
+            return [{ queue_id: 5, is_active: true }];
+          }
+          return [];
+        },
+      );
 
       const result = await service.deleteQueue(5, managerUser);
       expect(result).toEqual({ queueId: 5, deleted: true });
 
       const queueUpdate = queries.find(
-        (q) => q.sql.includes('UPDATE dori_site_queue_thread') && q.sql.includes('SET is_active = FALSE'),
+        (q) =>
+          q.sql.includes('UPDATE dori_site_queue_thread') &&
+          q.sql.includes('SET is_active = FALSE'),
       );
       expect(queueUpdate).toBeDefined();
       expect(queueUpdate?.params[2]).toBe(5);
 
       const tiersUpdate = queries.find(
-        (q) => q.sql.includes('UPDATE dori_queue_service_tier') && q.sql.includes('SET is_active = FALSE'),
+        (q) =>
+          q.sql.includes('UPDATE dori_queue_service_tier') &&
+          q.sql.includes('SET is_active = FALSE'),
       );
       expect(tiersUpdate).toBeDefined();
       expect(tiersUpdate?.params[2]).toBe(5);
 
       const sessionsUpdate = queries.find(
-        (q) => q.sql.includes('UPDATE dori_queue_session') && q.sql.includes('closure_reason = \'forced\''),
+        (q) =>
+          q.sql.includes('UPDATE dori_queue_session') &&
+          q.sql.includes("closure_reason = 'forced'"),
       );
       expect(sessionsUpdate).toBeDefined();
       expect(sessionsUpdate?.params[2]).toBe(5);
     });
   });
 });
-

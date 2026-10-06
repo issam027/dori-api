@@ -20,6 +20,7 @@ import {
 import {
   ApiDoriOkResponse,
   ApiDoriCreatedResponse,
+  ApiDoriErrorResponses,
 } from '../../core/swagger/api-dori-response.decorator';
 import { UsersService } from './users.service';
 import {
@@ -54,6 +55,7 @@ import {
 
 @ApiTags('Users')
 @ApiBearerAuth('bearer')
+@ApiDoriErrorResponses()
 @Controller('api/v1')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -147,7 +149,10 @@ export class UsersController {
     type: Number,
     description: "ID de l'utilisateur",
   })
-  @ApiDoriOkResponse(UpdateUserResponseDto, 'Utilisateur mis à jour avec succès')
+  @ApiDoriOkResponse(
+    UpdateUserResponseDto,
+    'Utilisateur mis à jour avec succès',
+  )
   async updateUser(
     @Param('userId', ParseIntPipe) userId: number,
     @Body() dto: UpdateUserDto,
@@ -257,10 +262,7 @@ export class UsersController {
     type: Number,
     description: "ID de l'utilisateur",
   })
-  @ApiDoriCreatedResponse(
-    AssignUserRoleResponseDto,
-    'Rôle assigné avec succès',
-  )
+  @ApiDoriCreatedResponse(AssignUserRoleResponseDto, 'Rôle assigné avec succès')
   async assignUserRole(
     @Param('userId', ParseIntPipe) userId: number,
     @Body() body: AssignUserRoleDto,
@@ -278,8 +280,7 @@ export class UsersController {
   )
   @ApiOperation({
     summary: 'Retirer un rôle à un utilisateur',
-    description:
-      'Retire un rôle précédemment assigné à un compte utilisateur.',
+    description: 'Retire un rôle précédemment assigné à un compte utilisateur.',
   })
   @ApiParam({
     name: 'userId',

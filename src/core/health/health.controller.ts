@@ -1,14 +1,13 @@
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiProperty,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiProperty } from '@nestjs/swagger';
 import { DataSource } from 'typeorm';
 import { Response } from 'express';
 import { Public } from '../auth/decorators/public.decorator';
 import { ClockService } from '../clock/clock.service';
+import {
+  ApiDoriPublicErrorResponses,
+  ApiDoriRawResponse,
+} from '../swagger/api-dori-response.decorator';
 
 class HealthMemoryUsageDto {
   @ApiProperty({ example: 12345678 }) rss: number;
@@ -33,7 +32,10 @@ class HealthResponseDto {
   @ApiProperty({ example: '2026-09-28T15:00:00.000Z' })
   timestamp: string;
 
-  @ApiProperty({ example: 3600.5, description: 'Uptime du process en secondes' })
+  @ApiProperty({
+    example: 3600.5,
+    description: 'Uptime du process en secondes',
+  })
   uptime: number;
 
   @ApiProperty({ type: HealthChecksDto })
@@ -55,53 +57,50 @@ export class HealthController {
     description:
       "Vérifie la connectivité à PostgreSQL, l'uptime et l'état de la mémoire du serveur",
   })
-  @ApiResponse({
-    status: 200,
-    description: 'API et Base de données opérationnelles',
-    type: HealthResponseDto,
-    content: {
-      'application/json': {
-        example: {
-          status: 'ok',
-          timestamp: '2026-09-28T15:00:00.000Z',
-          uptime: 3600.5,
-          checks: {
-            database: 'up',
-            memoryUsage: {
-              rss: 12345678,
-              heapTotal: 9876543,
-              heapUsed: 7654321,
-              external: 1234567,
-              arrayBuffers: 0,
-            },
-          },
+  @ApiDoriRawResponse(
+    HttpStatus.OK,
+    'API et Base de données opérationnelles',
+    HealthResponseDto,
+    {
+      status: 'ok',
+      timestamp: '2026-09-28T15:00:00.000Z',
+      uptime: 3600.5,
+      checks: {
+        database: 'up',
+        memoryUsage: {
+          rss: 12345678,
+          heapTotal: 9876543,
+          heapUsed: 7654321,
+          external: 1234567,
+          arrayBuffers: 0,
         },
       },
     },
-  })
-  @ApiResponse({
-    status: 503,
-    description: 'Base de données inaccessible ou service dégradé',
-    type: HealthResponseDto,
-    content: {
-      'application/json': {
-        example: {
-          status: 'degraded',
-          timestamp: '2026-09-28T15:00:00.000Z',
-          uptime: 3600.5,
-          checks: {
-            database: 'down',
-            memoryUsage: {
-              rss: 12345678,
-              heapTotal: 9876543,
-              heapUsed: 7654321,
-              external: 1234567,
-              arrayBuffers: 0,
-            },
-          },
+  )
+  @ApiDoriRawResponse(
+    HttpStatus.SERVICE_UNAVAILABLE,
+    'Base de données inaccessible ou service dégradé',
+    HealthResponseDto,
+    {
+      status: 'degraded',
+      timestamp: '2026-09-28T15:00:00.000Z',
+      uptime: 3600.5,
+      checks: {
+        database: 'down',
+        memoryUsage: {
+          rss: 12345678,
+          heapTotal: 9876543,
+          heapUsed: 7654321,
+          external: 1234567,
+          arrayBuffers: 0,
         },
       },
     },
+  )
+  @ApiDoriPublicErrorResponses({
+    omit404: true,
+    omit409: true,
+    omit422: true,
   })
   async check(@Res() res: Response) {
     let dbStatus = 'down';

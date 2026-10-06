@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
 export class QueueDetailResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la file' })
@@ -83,7 +84,7 @@ export class QueueDetailResponseDto {
   updatedAt: string;
 }
 
-export class PaginatedQueueResponseDto {
+export class PaginatedQueueResponseDto extends PaginatedResponseDto {
   @ApiProperty({
     type: [QueueDetailResponseDto],
     description: 'Liste des files',
@@ -149,44 +150,42 @@ export class QueueStatusResponseDto {
   nextAppointments: NextAppointmentItemDto[];
 }
 
-export class CallingTicketDto {
+export class CallingTicketDetailDto {
   @ApiProperty({ example: 1, description: 'Numéro du guichet' })
   threadNumber: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'A-007',
+    nullable: true,
     description: 'Numéro de ticket en cours de traitement',
   })
-  ticketNumber: string;
+  currentTicket: string | null;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: '2026-09-27T10:15:00.000Z',
     description: "Heure de l'appel",
   })
-  calledAt: string;
+  calledAt?: string;
 }
 
 export class QueueDisplayResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la file' })
   queueId: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'Consultation Cardiologie',
     description: 'Nom de la file',
   })
-  queueName: string;
+  queueName?: string;
 
   @ApiProperty({
-    type: [CallingTicketDto],
+    type: [CallingTicketDetailDto],
     description: 'Tickets actuellement appelés aux guichets',
   })
-  currentCalling: CallingTicketDto[];
+  activeThreads: CallingTicketDetailDto[];
 
-  @ApiProperty({
-    type: [CallingTicketDto],
-    description: 'Derniers tickets appelés (historique récent pour affichage)',
-  })
-  recentCalled: CallingTicketDto[];
+  @ApiProperty({ type: [String], description: 'Prochains numéros de ticket' })
+  nextTickets: string[];
 }
 
 export class QueueDeleteResponseDto {
@@ -205,10 +204,10 @@ export class QueueResetResponseDto {
     example: '2026-09-27T12:00:00.000Z',
     description: 'Horodatage de la réinitialisation',
   })
-  resetAt: string;
+  timestamp: string;
 
-  @ApiProperty({ example: 0, description: 'Nombre de clients clôturés' })
-  closedWaitingCount: number;
+  @ApiProperty({ example: true, description: 'Réinitialisation confirmée' })
+  reset: boolean;
 }
 
 export class QueueOperatorResponseDto {
@@ -231,8 +230,11 @@ export class QueueOperatorResponseDto {
   isActive: boolean;
 }
 
-export class PaginatedQueueOperatorResponseDto {
-  @ApiProperty({ type: [QueueOperatorResponseDto], description: 'Liste des opérateurs' })
+export class PaginatedQueueOperatorResponseDto extends PaginatedResponseDto {
+  @ApiProperty({
+    type: [QueueOperatorResponseDto],
+    description: 'Liste des opérateurs',
+  })
   items: QueueOperatorResponseDto[];
 
   @ApiProperty({ example: 1, description: 'Numéro de page actuelle' })
@@ -250,11 +252,17 @@ export class PaginatedQueueOperatorResponseDto {
 
 export class AssignOperatorResponseDto {
   @ApiProperty({ example: true, description: 'Opération réussie' })
-  success: boolean;
+  assigned: boolean;
 
   @ApiProperty({ example: 1, description: 'ID de la file' })
   queueId: number;
 
   @ApiProperty({ example: 3, description: "ID de l'utilisateur" })
   userId: number;
+}
+
+export class RemoveOperatorResponseDto {
+  @ApiProperty({ minimum: 1 }) queueId: number;
+  @ApiProperty({ minimum: 1 }) userId: number;
+  @ApiProperty({ example: true }) removed: boolean;
 }

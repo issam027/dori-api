@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
 export class NotificationDetailDto {
   @ApiProperty({ example: 1, description: 'ID unique de la notification' })
@@ -40,7 +41,7 @@ export class NotificationDetailDto {
   notificationContent: string;
 
   @ApiProperty({
-    enum: ['pending', 'sent', 'delivered', 'failed'],
+    enum: ['pending', 'processing', 'sent', 'delivered', 'failed'],
     example: 'delivered',
     description: "Statut d'acheminement",
   })
@@ -51,24 +52,29 @@ export class NotificationDetailDto {
 
   @ApiPropertyOptional({
     example: '2026-09-27T10:15:30.000Z',
+    format: 'date-time',
+    nullable: true,
     description: 'Date de remise confirmée par le webhook',
   })
   deliveredAt?: string;
 
   @ApiPropertyOptional({
     example: null,
+    nullable: true,
     description: "Motif de l'échec éventuel",
   })
   failureReason?: string;
 
   @ApiProperty({
     example: '2026-09-27T10:14:00.000Z',
+    format: 'date-time',
     description: 'Date de création',
   })
   createdAt: string;
 
   @ApiProperty({
     example: '2026-09-27T10:15:30.000Z',
+    format: 'date-time',
     description: 'Date de dernière mise à jour',
   })
   updatedAt: string;
@@ -89,7 +95,7 @@ export class NotificationDetailDto {
   lastName?: string;
 }
 
-export class PaginatedNotificationResponseDto {
+export class PaginatedNotificationResponseDto extends PaginatedResponseDto {
   @ApiProperty({
     type: [NotificationDetailDto],
     description: 'Notifications trouvées',

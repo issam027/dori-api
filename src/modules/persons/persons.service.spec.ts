@@ -1,181 +1,142 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { DataSource } from 'typeorm';
+import { Test } from '@nestjs/testing';
 import { PersonsService } from './persons.service';
+import { PersonsRepository } from './persons.repository';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { DoriException } from '../../core/errors/dori.exception';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
 
-describe('PersonsService — DAT-05 deletePerson', () => {
+describe('PersonsService', () => {
   let service: PersonsService;
-  let dataSourceMock: { query: jest.Mock };
-  let scopeServiceMock: {
-    getUserScope: jest.Mock;
-  };
-
-  const adminUser: AuthenticatedUser = {
+  let repository: Record<string, jest.Mock>;
+  let scope: { getUserScope: jest.Mock; checkSiteAccess: jest.Mock };
+  const user: AuthenticatedUser = {
     userId: 1,
-    username: 'admin_user',
+    username: 'admin',
     roles: ['admin'],
     permissions: ['customer_delete', 'customer_view'],
     userType: 'human',
   };
 
   beforeEach(async () => {
-    dataSourceMock = {
-      query: jest.fn(),
+    repository = {
+      existsInSites: jest.fn(),
+      findPersons: jest.fn(),
+      findActiveById: jest.fn(),
+      findByPhone: jest.fn(),
+      findByEmail: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      findNotes: jest.fn(),
+      createNote: jest.fn(),
+      updateNote: jest.fn(),
+      deleteNote: jest.fn(),
+      softDeleteWithNotes: jest.fn(),
     };
-
-    scopeServiceMock = {
+    scope = {
+      checkSiteAccess: jest.fn().mockResolvedValue(undefined),
       getUserScope: jest.fn().mockResolvedValue({
         isGlobal: true,
         siteIds: [],
         queueIds: [],
       }),
     };
-
-    const module: TestingModule = await Test.createTestingModule({
+    const module = await Test.createTestingModule({
       providers: [
         PersonsService,
-        {
-          provide: DataSource,
-          useValue: dataSourceMock,
-        },
-        {
-          provide: ScopeService,
-          useValue: scopeServiceMock,
-        },
+        { provide: PersonsRepository, useValue: repository },
+        { provide: ScopeService, useValue: scope },
         {
           provide: ClockService,
-          useValue: {
-            now: jest.fn(() => new Date('2026-09-29T12:00:00Z')),
-          },
+          useValue: { now: () => new Date('2026-09-29T12:00:00Z') },
         },
       ],
     }).compile();
-
-    service = module.get<PersonsService>(PersonsService);
+    service = module.get(PersonsService);
   });
 
-  it('should throw PERSON_NOT_FOUND when person does not exist or is inactive', async () => {
-    dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('SELECT * FROM dori_person WHERE person_id = $1')) {
-        return [];
-      }
-      return [];
-    });
+  it('deduplicates a phone number only inside the requested site', async () => {
+    repository.findByPhone.mockResolvedValue({ person_id: 10, site_id: 2 });
+    const result = await service.createPerson(
+      { lastName: 'Ben Ali', phoneNumber: '+21698765432' },
+      2,
+      user,
+    );
+    expect(repository.findByPhone).toHaveBeenCalledWith(
+      2,
+      '+21698765432',
+      undefined,
+    );
+    expect(repository.create).not.toHaveBeenCalled();
+    expect(result.person_id).toBe(10);
+  });
 
-    await expect(service.deletePerson(999, adminUser)).rejects.toThrow(
-      new DoriException('PERSON_NOT_FOUND', { personId: 999 }),
+  it('creates a person when no identity exists in that site', async () => {
+    repository.findByPhone.mockResolvedValue(null);
+    repository.create.mockResolvedValue({ person_id: 20, site_id: 2 });
+    const result = await service.createPerson(
+      {
+        firstName: 'Amine',
+        lastName: 'Ben Ali',
+        phoneNumber: '+21698765432',
+      },
+      2,
+      user,
+    );
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ firstName: 'Amine' }),
+      2,
+      1,
+      new Date('2026-09-29T12:00:00Z'),
+      undefined,
+    );
+    expect(result.person_id).toBe(20);
+  });
+
+  it('hides a person outside the user site scope', async () => {
+    scope.getUserScope.mockResolvedValue({
+      isGlobal: false,
+      siteIds: [1],
+      queueIds: [],
+    });
+    repository.existsInSites.mockResolvedValue(false);
+    await expect(service.findPersonById(42, user)).rejects.toThrow(
+      new DoriException('PERSON_NOT_FOUND', { personId: 42 }),
+    );
+    expect(repository.existsInSites).toHaveBeenCalledWith(42, [1]);
+  });
+
+  it('soft deletes a person and its notes through one repository operation', async () => {
+    repository.findActiveById.mockResolvedValue({ person_id: 42, site_id: 1 });
+    await expect(service.deletePerson(42, user)).resolves.toEqual({
+      id: 42,
+      deleted: true,
+    });
+    expect(repository.softDeleteWithNotes).toHaveBeenCalledWith(
+      42,
+      1,
+      new Date('2026-09-29T12:00:00Z'),
     );
   });
 
-  it('should soft delete person and cascade deactivation to person notes', async () => {
-    const queries: { sql: string; params: any[] }[] = [];
-    dataSourceMock.query.mockImplementation(async (sql: string, params: any[]) => {
-      queries.push({ sql, params });
-      if (sql.includes('SELECT * FROM dori_person WHERE person_id = $1')) {
-        return [{ person_id: 42, is_active: true }];
-      }
-      return [];
+  it('delegates paginated notes to the repository', async () => {
+    repository.findNotes.mockResolvedValue({
+      total: 1,
+      items: [{ note_id: 1, person_id: 10, content: 'VIP' }],
     });
-
-    const result = await service.deletePerson(42, adminUser);
-    expect(result).toEqual({ id: 42, deleted: true });
-
-    // Vérification soft-delete sur dori_person
-    const personUpdate = queries.find((q) =>
-      q.sql.includes('UPDATE dori_person') && q.sql.includes('SET is_active = FALSE'),
-    );
-    expect(personUpdate).toBeDefined();
-    expect(personUpdate?.params[2]).toBe(42);
-
-    // Vérification cascade sur dori_person_note
-    const notesUpdate = queries.find((q) =>
-      q.sql.includes('UPDATE dori_person_note') && q.sql.includes('SET is_active = FALSE'),
-    );
-    expect(notesUpdate).toBeDefined();
-    expect(notesUpdate?.params[2]).toBe(42);
-  });
-
-  describe('VAL-02 — findPersonNotes and getNotes pagination', () => {
-    it('should return paginated notes with mapped properties and author username', async () => {
-      dataSourceMock.query.mockImplementation(async (sql: string) => {
-        if (sql.includes('SELECT * FROM dori_person WHERE person_id = $1')) {
-          return [{ person_id: 10, is_active: true }];
-        }
-        if (sql.includes('COUNT(*)')) {
-          return [{ total: 1 }];
-        }
-        if (sql.includes('FROM dori_person_note')) {
-          return [
-            {
-              note_id: 1,
-              person_id: 10,
-              content: 'Patient VIP',
-              created_by_user_id: 2,
-              author_username: 'doctor1',
-              created_at: '2026-09-29T10:00:00Z',
-              updated_at: '2026-09-29T10:00:00Z',
-            },
-          ];
-        }
-        return [];
-      });
-
-      const pagination = new PaginationDto();
-      pagination.page = 1;
-      pagination.pageSize = 10;
-
-      const result = await service.findPersonNotes(10, pagination, adminUser);
-      expect(result.page).toBe(1);
-      expect(result.pageSize).toBe(10);
-      expect(result.total).toBe(1);
-      expect(result.items[0]).toEqual({
-        noteId: 1,
-        personId: 10,
-        content: 'Patient VIP',
-        createdByUserId: 2,
-        authorUsername: 'doctor1',
-        createdAt: '2026-09-29T10:00:00Z',
-        updatedAt: '2026-09-29T10:00:00Z',
-      });
+    const pagination = Object.assign(new PaginationDto(), {
+      page: 3,
+      pageSize: 2,
     });
-
-    it('getNotes should delegate to findPersonNotes with pagination', async () => {
-      dataSourceMock.query.mockImplementation(async (sql: string) => {
-        if (sql.includes('SELECT * FROM dori_person WHERE person_id = $1')) {
-          return [{ person_id: 10, is_active: true }];
-        }
-        if (sql.includes('COUNT(*)')) {
-          return [{ total: 1 }];
-        }
-        if (sql.includes('FROM dori_person_note')) {
-          return [
-            {
-              note_id: 1,
-              person_id: 10,
-              content: 'Note 1',
-              created_by_user_id: 2,
-              author_username: 'agent1',
-              created_at: '2026-09-29T10:00:00Z',
-              updated_at: '2026-09-29T10:00:00Z',
-            },
-          ];
-        }
-        return [];
-      });
-
-      const pagination = new PaginationDto();
-      pagination.page = 3;
-      pagination.pageSize = 2;
-
-      const res = await service.getNotes(10, pagination, adminUser);
-      expect(res.page).toBe(3);
-      expect(res.pageSize).toBe(2);
-      expect(res.total).toBe(1);
-      expect(res.items[0].noteId).toBe(1);
+    const result = await service.findPersonNotes(10, pagination, user);
+    expect(repository.findNotes).toHaveBeenCalledWith({
+      personId: 10,
+      sortField: 'created_at',
+      sortOrder: 'DESC',
+      pageSize: 2,
+      offset: 4,
     });
+    expect(result).toMatchObject({ page: 3, pageSize: 2, total: 1 });
   });
 });

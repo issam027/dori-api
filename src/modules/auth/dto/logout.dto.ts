@@ -1,4 +1,4 @@
-import { IsInt, IsOptional } from 'class-validator';
+import { IsInt, IsOptional, Min } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class LogoutDto {
@@ -6,11 +6,11 @@ export class LogoutDto {
     description:
       "ID de l'utilisateur à déconnecter. " +
       "Si égal à l'ID du caller, déclenche un global_logout (toutes ses sessions). " +
-      "Si différent, le caller doit être manager, admin ou root et avoir les droits hiérarchiques.",
+      'Si différent, le caller doit être manager, admin ou root et avoir les droits hiérarchiques.',
     example: 42,
   })
   @IsInt()
+  @Min(1)
   @IsOptional()
   userId?: number;
 }
-

@@ -12,7 +12,7 @@ export class NotificationWorker {
   constructor(
     private readonly dataSource: DataSource,
     private readonly clockService: ClockService,
-  ) { }
+  ) {}
 
   @Cron(CronExpression.EVERY_10_SECONDS)
   async processPendingNotifications() {
@@ -20,14 +20,36 @@ export class NotificationWorker {
     this.isProcessing = true;
 
     try {
-      // Pick pending notifications with attempt_count < 3
-      const pending = await this.dataSource.query(`
-        SELECT notification_id, channel, notification_type, recipient, notification_content, attempt_count
-        FROM dori_notification
-        WHERE notification_status = 'pending' AND attempt_count < 3
-        ORDER BY created_at ASC
-        LIMIT 50
-      `);
+      const claimTime = this.clockService.now();
+      const pending = await this.dataSource.transaction(async (manager) =>
+        manager.query(
+          `WITH candidates AS (
+             SELECT notification_id
+             FROM dori_notification
+             WHERE attempt_count < 3
+               AND (
+                 notification_status = 'pending'
+                 OR (
+                   notification_status = 'processing'
+                   AND processing_started_at < $1::timestamptz - INTERVAL '5 minutes'
+                 )
+               )
+             ORDER BY created_at ASC
+             FOR UPDATE SKIP LOCKED
+             LIMIT 50
+           )
+           UPDATE dori_notification n
+           SET notification_status = 'processing',
+               processing_started_at = $1,
+               attempt_count = n.attempt_count + 1,
+               updated_at = $1
+           FROM candidates
+           WHERE n.notification_id = candidates.notification_id
+           RETURNING n.notification_id, n.channel, n.notification_type,
+                     n.recipient, n.notification_content, n.attempt_count`,
+          [claimTime],
+        ),
+      );
 
       if (!pending || pending.length === 0) {
         return;
@@ -45,10 +67,11 @@ export class NotificationWorker {
           await this.dataSource.query(
             `UPDATE dori_notification
              SET notification_status = 'delivered',
+                 provider = 'simulation',
                  provider_message_id = $1,
                  sent_at = $2,
                  delivered_at = $2,
-                 attempt_count = attempt_count + 1,
+                 processing_started_at = NULL,
                  updated_at = $2
              WHERE notification_id = $3`,
             [providerMessageId, now, notif.notification_id],
@@ -58,12 +81,12 @@ export class NotificationWorker {
             `Notification ${notif.notification_id} [${notif.channel}] sent to ${notif.recipient} (msgId: ${providerMessageId})`,
           );
         } catch (err: any) {
-          const isFinal = notif.attempt_count + 1 >= 3;
+          const isFinal = notif.attempt_count >= 3;
           await this.dataSource.query(
             `UPDATE dori_notification
              SET notification_status = $1,
                  failure_reason = $2,
-                 attempt_count = attempt_count + 1,
+                 processing_started_at = NULL,
                  updated_at = $3
              WHERE notification_id = $4`,
             [

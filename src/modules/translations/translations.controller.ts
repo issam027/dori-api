@@ -18,10 +18,14 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
+  ApiHeader,
+  ApiResponse,
 } from '@nestjs/swagger';
 import {
   ApiDoriOkResponse,
   ApiDoriCreatedResponse,
+  ApiDoriErrorResponses,
+  ApiDoriPublicErrorResponses,
 } from '../../core/swagger/api-dori-response.decorator';
 import { Response } from 'express';
 import { TranslationsService } from './translations.service';
@@ -43,18 +47,38 @@ import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interf
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
 
 @ApiTags('Translations')
+@ApiDoriErrorResponses()
 @Controller('api/v1/translations')
 export class TranslationsController {
   constructor(private readonly translationsService: TranslationsService) {}
 
   @Public()
   @Get('bundle')
+  @ApiDoriPublicErrorResponses({
+    omit404: true,
+    omit409: true,
+    omit422: true,
+  })
   @ApiOperation({
     summary: 'Obtenir le bundle de traductions',
     description:
       'Retourne le dictionnaire de traductions pour une locale et une catégorie données avec support du cache HTTP via ETag.',
   })
-  @ApiDoriOkResponse(TranslationBundleResponseDto, 'Bundle de traductions')
+  @ApiHeader({
+    name: 'If-None-Match',
+    required: false,
+    description: 'ETag reçu lors du dernier téléchargement du bundle',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_MODIFIED,
+    description: "Le bundle n'a pas changé; réponse sans corps.",
+  })
+  @ApiDoriOkResponse(TranslationBundleResponseDto, 'Bundle de traductions', {
+    ETag: {
+      description: 'Version faible du bundle retourné',
+      schema: { type: 'string' },
+    },
+  })
   async getBundle(
     @Query() query: BundleQueryDto,
     @Headers('if-none-match') ifNoneMatch: string,

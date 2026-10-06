@@ -9,7 +9,7 @@ export class ChangePasswordDto {
 
   @ApiProperty({
     description: 'Nouveau mot de passe (minimum 10 caractères)',
-    example: 'NewSecure@2026',
+    example: '••••••••••••',
     minLength: 10,
   })
   @IsString()

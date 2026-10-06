@@ -3,9 +3,11 @@ import { RegistrationsController } from './registrations.controller';
 import { RegistrationsService } from './registrations.service';
 import { PersonsModule } from '../persons/persons.module';
 import { ClockModule } from '../../core/clock/clock.module';
+import { DatabaseModule } from '../../core/database/database.module';
+import { RbacModule } from '../../core/rbac/rbac.module';
 
 @Module({
-  imports: [PersonsModule, ClockModule],
+  imports: [DatabaseModule, ClockModule, RbacModule, PersonsModule],
   controllers: [RegistrationsController],
   providers: [RegistrationsService],
   exports: [RegistrationsService],

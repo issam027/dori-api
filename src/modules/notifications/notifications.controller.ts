@@ -9,6 +9,8 @@ import {
   ParseIntPipe,
   Post,
   Query,
+  RawBodyRequest,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,6 +22,8 @@ import {
 import {
   ApiDoriOkResponse,
   ApiDoriCreatedResponse,
+  ApiDoriErrorResponses,
+  ApiDoriPublicErrorResponses,
 } from '../../core/swagger/api-dori-response.decorator';
 import { NotificationsService } from './notifications.service';
 import {
@@ -37,9 +41,11 @@ import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
 import { DoriException } from '../../core/errors/dori.exception';
+import { Request } from 'express';
 
 @ApiTags('Notifications')
 @ApiBearerAuth('bearer')
+@ApiDoriErrorResponses()
 @Controller('api/v1')
 export class NotificationsController {
   constructor(private readonly notifService: NotificationsService) {}
@@ -126,10 +132,17 @@ export class NotificationsController {
   @Public()
   @Post('webhooks/notifications/:provider')
   @HttpCode(HttpStatus.OK)
+  @ApiDoriPublicErrorResponses({
+    include401: true,
+    omit404: true,
+    omit409: true,
+    omit422: true,
+  })
   @ApiOperation({
     summary: 'Webhook de notification des opérateurs SMS/Email',
     description:
-      'Réception des accusés de remise (delivery reports) validés par signature HMAC SHA-256.',
+      'Réception des accusés de remise validés par HMAC SHA-256. La signature porte sur les octets bruts du body.',
+    security: [],
   })
   @ApiParam({
     name: 'provider',
@@ -143,31 +156,41 @@ export class NotificationsController {
   })
   @ApiHeader({
     name: 'x-timestamp',
-    description: "Timestamp UNIX d'émission du webhook",
+    description: "Timestamp UNIX en secondes à l'émission du webhook",
+    required: true,
+    example: '1791327600',
+  })
+  @ApiHeader({
+    name: 'x-event-id',
+    description: "Identifiant unique et stable utilisé pour l'idempotence",
+    required: true,
+    example: 'evt_01J9Z7V3M2Y8N4Q6R0T1',
   })
   @ApiDoriOkResponse(WebhookResponseDto, 'Accusé de réception du webhook')
   async handleWebhook(
     @Param('provider') provider: string,
-    @Headers('authorization') authHeader: string,
     @Headers('x-signature') signature: string,
     @Headers('x-timestamp') timestamp: string,
+    @Headers('x-event-id') eventId: string,
+    @Req() request: RawBodyRequest<Request>,
     @Body() dto: WebhookDeliveryDto,
   ) {
     // If Bearer token passed to webhook, reject immediately (§5.10)
-    if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+    const authHeader = request.headers.authorization;
+    if (authHeader?.toLowerCase().startsWith('bearer ')) {
       throw new DoriException('UNAUTHENTICATED');
     }
 
-    if (!signature || !timestamp) {
+    if (!signature || !timestamp || !eventId || !request.rawBody) {
       throw new DoriException('UNAUTHENTICATED');
     }
 
-    const rawBody = JSON.stringify(dto);
     return this.notifService.handleWebhook(
       provider,
       signature,
       timestamp,
-      rawBody,
+      eventId,
+      request.rawBody,
       dto,
     );
   }

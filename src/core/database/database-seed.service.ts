@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -7,11 +8,18 @@ import * as path from 'path';
 export class DatabaseSeedService implements OnApplicationBootstrap {
   private readonly logger = new Logger(DatabaseSeedService.name);
 
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly configService: ConfigService,
+  ) {}
 
   async onApplicationBootstrap() {
     // Only run if DB is connected and enabled
-    if (process.env.AUTO_RUN_MIGRATIONS === 'true') {
+    if (
+      this.configService.get<boolean>(
+        'databaseInitialization.autoRunMigrations',
+      ) === true
+    ) {
       await this.runSchemaAndSeed();
     }
   }
@@ -35,6 +43,7 @@ export class DatabaseSeedService implements OnApplicationBootstrap {
       }
     } catch (err: any) {
       this.logger.error(`Error running schema/seed: ${err.message}`, err.stack);
+      throw err;
     }
   }
 }

@@ -20,7 +20,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly clockService: ClockService,
     private readonly scopeService: ScopeService,
-  ) { }
+  ) {}
 
   private hashToken(token: string): string {
     return crypto.createHash('sha256').update(token).digest('hex');
@@ -44,7 +44,7 @@ export class AuthService {
     const user = users[0];
 
     // Check temporary lockout (§4.12 & §8.3)
-    if (user.locked_until && new Date(user.locked_until) > now) {
+    if (user.locked_until && this.clockService.parse(user.locked_until) > now) {
       throw new DoriException('ACCOUNT_LOCKED');
     }
 
@@ -57,7 +57,7 @@ export class AuthService {
       const failedAttempts = (user.failed_attempts || 0) + 1;
       let lockedUntil: Date | null = null;
       if (failedAttempts >= 5) {
-        lockedUntil = new Date(now.getTime() + 15 * 60 * 1000); // 15 mins
+        lockedUntil = this.clockService.addMinutes(now, 15);
       }
 
       await this.dataSource.query(
@@ -133,7 +133,7 @@ export class AuthService {
       throw new DoriException('UNAUTHENTICATED');
     }
 
-    if (new Date(session.expires_at) <= now) {
+    if (this.clockService.parse(session.expires_at) <= now) {
       throw new DoriException('UNAUTHENTICATED');
     }
 
@@ -186,10 +186,7 @@ export class AuthService {
    *   - body.userId != caller.userId → force-disconnect d'un autre user :
    *       nécessite d'être manager/admin/root et de passer le contrôle hiérarchique
    */
-  async logout(
-    caller: AuthenticatedUser,
-    logoutDto?: { userId?: number },
-  ) {
+  async logout(caller: AuthenticatedUser, logoutDto?: { userId?: number }) {
     const now = this.clockService.now();
     const targetUserId = logoutDto?.userId;
 
@@ -251,7 +248,10 @@ export class AuthService {
     // Un manager (rank 3) ne peut déconnecter que des users de rang < 3 (hôtesse, kiosk)
     // Un admin (rank 4) peut déconnecter jusqu'au rang 3 (manager)
     const maxDisconnectableRank = callerMaxRank - 1;
-    if (targetMaxRank >= callerMaxRank || targetMaxRank > maxDisconnectableRank) {
+    if (
+      targetMaxRank >= callerMaxRank ||
+      targetMaxRank > maxDisconnectableRank
+    ) {
       throw new DoriException('FORBIDDEN_ROLE_ESCALATION');
     }
 
@@ -405,9 +405,7 @@ export class AuthService {
     const expiresDays =
       this.configService.get<number>('jwt.refreshTokenExpiresInDays') || 30;
     const now = this.clockService.now();
-    const expiresAt = new Date(
-      now.getTime() + expiresDays * 24 * 60 * 60 * 1000,
-    );
+    const expiresAt = this.clockService.addDays(now, expiresDays);
 
     // SEC-02 : récupérer le session_id créé pour le lier au payload JWT
     const inserted = await this.dataSource.query(

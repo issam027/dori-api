@@ -48,7 +48,9 @@ describe('ReportsController & DTO Validation (VAL-03)', () => {
 
   describe('DailyQueueReportQueryDto validation', () => {
     it('should validate valid ISO date string YYYY-MM-DD', async () => {
-      const dto = plainToInstance(DailyQueueReportQueryDto, { date: '2026-09-29' });
+      const dto = plainToInstance(DailyQueueReportQueryDto, {
+        date: '2026-09-29',
+      });
       const errors = await validate(dto);
       expect(errors.length).toBe(0);
     });
@@ -84,7 +86,9 @@ describe('ReportsController & DTO Validation (VAL-03)', () => {
     });
 
     it('should fail when siteId is not a valid integer', async () => {
-      const dto = plainToInstance(DashboardSummaryQueryDto, { siteId: 'invalid' });
+      const dto = plainToInstance(DashboardSummaryQueryDto, {
+        siteId: 'invalid',
+      });
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
       expect(errors[0].property).toBe('siteId');
@@ -107,7 +111,10 @@ describe('ReportsController & DTO Validation (VAL-03)', () => {
     });
 
     it('should transform numeric string limit and siteId', async () => {
-      const dto = plainToInstance(DashboardQueueLoadQueryDto, { limit: '10', siteId: '2' });
+      const dto = plainToInstance(DashboardQueueLoadQueryDto, {
+        limit: '10',
+        siteId: '2',
+      });
       const errors = await validate(dto);
       expect(errors.length).toBe(0);
       expect(dto.limit).toBe(10);
@@ -126,7 +133,11 @@ describe('ReportsController & DTO Validation (VAL-03)', () => {
     it('getDailyQueueReport should forward queueId, validated date and user to service', async () => {
       const query: DailyQueueReportQueryDto = { date: '2026-09-29' };
       const res = await controller.getDailyQueueReport(42, query, testUser);
-      expect(serviceMock.getDailyQueueReport).toHaveBeenCalledWith(42, '2026-09-29', testUser);
+      expect(serviceMock.getDailyQueueReport).toHaveBeenCalledWith(
+        42,
+        '2026-09-29',
+        testUser,
+      );
       expect(res).toEqual({ queueId: 1 });
     });
 
@@ -140,7 +151,11 @@ describe('ReportsController & DTO Validation (VAL-03)', () => {
     it('getDashboardQueueLoad should forward validated limit, siteId and user to service', async () => {
       const query: DashboardQueueLoadQueryDto = { limit: 10, siteId: 3 };
       const res = await controller.getDashboardQueueLoad(testUser, query);
-      expect(serviceMock.getDashboardQueueLoad).toHaveBeenCalledWith(10, 3, testUser);
+      expect(serviceMock.getDashboardQueueLoad).toHaveBeenCalledWith(
+        10,
+        3,
+        testUser,
+      );
       expect(res).toEqual([]);
     });
   });

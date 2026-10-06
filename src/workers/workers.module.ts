@@ -3,9 +3,10 @@ import { AppointmentExpiryWorker } from './appointment-expiry/appointment-expiry
 import { DailyResetWorker } from './daily-reset/daily-reset.worker';
 import { NotificationWorker } from './notification-worker/notification.worker';
 import { ClockModule } from '../core/clock/clock.module';
+import { DatabaseModule } from '../core/database/database.module';
 
 @Module({
-  imports: [ClockModule],
+  imports: [DatabaseModule, ClockModule],
   providers: [AppointmentExpiryWorker, DailyResetWorker, NotificationWorker],
 })
 export class WorkersModule {}

@@ -1,28 +1,31 @@
-// --- DIAGNOSTIC TEMPORAIRE : à retirer une fois le problème `pg` réglé ---
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pgVersion = require('pg/package.json').version;
-  console.log('pg OK, version', pgVersion);
-} catch (e) {
-  console.error('pg FAILED:', e);
-}
-// --- FIN DIAGNOSTIC ---
-
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
+import type { IncomingMessage, ServerResponse } from 'http';
 import helmet from 'helmet';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+import cookieParser = require('cookie-parser');
 import { AppModule } from './app.module';
+import { ConfiguredIoAdapter } from './core/realtime/configured-io.adapter';
+import {
+  createOpenApiConfig,
+  normalizeOpenApiDocument,
+} from './core/swagger/openapi.config';
+import { PositiveIdParamPipe } from './core/validation/positive-id-param.pipe';
 
-async function bootstrap() {
-  const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule);
+console.log('[boot] main.ts e83a0e4, VERCEL =', process.env.VERCEL);
+const isVercel = !!process.env.VERCEL;
+
+async function createApp(): Promise<NestExpressApplication> {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
+  });
 
   const configService = app.get(ConfigService);
+  app.use(cookieParser());
 
-  // Security Headers (§7.3, §8.3)
-  // CSP adaptée pour autoriser les assets Swagger UI chargés depuis cdnjs
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -44,12 +47,17 @@ async function bootstrap() {
     }),
   );
 
-  // CORS (§7.3, §8.3)
   const allowedOrigins = configService.get<string[]>('cors.allowedOrigins') || [
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:5173',
   ];
+
+  // WebSockets can't run on serverless functions
+  if (!isVercel) {
+    app.useWebSocketAdapter(new ConfiguredIoAdapter(app, allowedOrigins));
+  }
+
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,
@@ -64,8 +72,8 @@ async function bootstrap() {
     exposedHeaders: ['X-Correlation-Id', 'ETag'],
   });
 
-  // Global Validation Pipe with strict whitelisting (§7.3)
   app.useGlobalPipes(
+    new PositiveIdParamPipe(),
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
@@ -74,59 +82,10 @@ async function bootstrap() {
     }),
   );
 
-  // OpenAPI 3 Specification / Swagger UI (§7.1)
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Dori API')
-    .setDescription(
-      'Spécification de référence de la plateforme de gestion de files d’attente et de rendez-vous Dori',
-    )
-    .setVersion('1.0')
-    .setContact(
-      'Dori Support',
-      'https://dori.example.com',
-      'support@dori.example.com',
-    )
-    .setLicense('Propriétaire', 'https://dori.example.com/license')
-    .addServer('http://localhost:3000', 'Environnement local de développement')
-    .addServer('https://dori-api.vercel.app/', 'Dori API Vercel')
-    .addServer('https://api.dori.example.com', 'Environnement de production')
-    .addTag('Authentification', 'Authentification, sessions et gestion des mots de passe')
-    .addTag('Sites', 'Gestion des sites et affectation des gestionnaires')
-    .addTag('Queues', 'Gestion et configuration des files d’attente')
-    .addTag('QueueEngine', 'Moteur d’ordonnancement et pilotage des appels')
-    .addTag('Registrations', 'Inscriptions, prise de tickets et suivi de position')
-    .addTag('Persons', 'Gestion des profils usagers et historiques')
-    .addTag('Users', 'Gestion des comptes utilisateurs et permissions')
-    .addTag('Notifications', 'Gestion des règles et envoi des notifications')
-    .addTag('Tiers', 'Gestion des forfaits et priorités de service')
-    .addTag('Translations', 'Gestion des traductions et bundles multilingues')
-    .addTag('Reports', 'Rapports statistiques et indicateurs d’activité')
-    .addTag('Health', 'Vérification de la santé des composants et dépendances')
-    .addTag('Système', 'Informations système')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        description: 'Entrez votre token JWT d’accès',
-      },
-      'bearer',
-    )
-    .addApiKey(
-      {
-        type: 'apiKey',
-        name: 'X-Registration-Token',
-        in: 'header',
-        description: 'Jeton public de suivi de position',
-      },
-      'registration-token',
-    )
-    .build();
-
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  const document = normalizeOpenApiDocument(
+    SwaggerModule.createDocument(app, createOpenApiConfig()),
+  );
   SwaggerModule.setup('api/docs', app, document, {
-    // Assets chargés depuis un CDN : les fichiers de swagger-ui-dist
-    // ne sont pas toujours déployés sur Vercel
     customCssUrl:
       'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui.min.css',
     customJs: [
@@ -139,12 +98,40 @@ async function bootstrap() {
     },
   });
 
-  const port = configService.get<number>('port') || 3000;
-  await app.listen(port);
-  logger.log(`Dori API server successfully started on port ${port}`);
-  logger.log(
-    `OpenAPI documentation available at http://localhost:${port}/api/docs`,
-  );
+  await app.init(); // init(), not listen(): Vercel owns the HTTP server
+  return app;
 }
 
-bootstrap();
+// Cached so the app is built once per warm instance
+let appPromise: Promise<NestExpressApplication> | null = null;
+
+function getApp(): Promise<NestExpressApplication> {
+  appPromise ??= createApp().catch((err) => {
+    appPromise = null; // allow a retry on the next request
+    throw err;
+  });
+  return appPromise;
+}
+
+// Vercel entry point
+export default async function handler(
+  req: IncomingMessage,
+  res: ServerResponse,
+) {
+  const app = await getApp();
+  const instance = app.getHttpAdapter().getInstance();
+  return instance(req, res);
+}
+
+// Local / traditional hosting: keep the normal listen behaviour
+if (!isVercel) {
+  void getApp().then(async (app) => {
+    const logger = new Logger('Bootstrap');
+    const port = app.get(ConfigService).get<number>('port') || 3000;
+    await app.listen(port);
+    logger.log(`Dori API server successfully started on port ${port}`);
+    logger.log(
+      `OpenAPI documentation available at http://localhost:${port}/api/docs`,
+    );
+  });
+}

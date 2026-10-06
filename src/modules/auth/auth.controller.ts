@@ -8,14 +8,12 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiBody,
-  ApiBearerAuth,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
-import { ApiDoriOkResponse } from '../../core/swagger/api-dori-response.decorator';
+  ApiDoriOkResponse,
+  ApiDoriErrorResponses,
+  ApiDoriPublicErrorResponses,
+} from '../../core/swagger/api-dori-response.decorator';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -31,11 +29,28 @@ import {
 import { Public } from '../../core/auth/decorators/public.decorator';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
+import { ConfigService } from '@nestjs/config';
 
 @ApiTags('Authentification')
+@ApiDoriErrorResponses({ omit401: false, omit403: true })
 @Controller('api/v1/auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  private getRefreshCookieOptions() {
+    const refreshTokenExpiresInDays =
+      this.configService.get<number>('jwt.refreshTokenExpiresInDays') ?? 30;
+
+    return {
+      httpOnly: true,
+      secure: this.configService.get<string>('nodeEnv') === 'production',
+      sameSite: 'strict' as const,
+      maxAge: refreshTokenExpiresInDays * 24 * 60 * 60 * 1000,
+    };
+  }
 
   @Public()
   @Post('login')
@@ -46,9 +61,20 @@ export class AuthController {
       'Authentifie un utilisateur et retourne un access token JWT + un refresh token (aussi positionné en cookie HttpOnly).',
   })
   @ApiBody({ type: LoginDto })
-  @ApiDoriOkResponse(LoginResponseDto, 'Connexion réussie avec token JWT et profil')
-  @ApiUnauthorizedResponse({
-    description: 'Identifiants invalides ou compte verrouillé',
+  @ApiDoriOkResponse(
+    LoginResponseDto,
+    'Connexion réussie avec token JWT et profil',
+    {
+      'Set-Cookie': {
+        description: 'Cookie refreshToken HttpOnly, SameSite=Strict',
+        schema: { type: 'string' },
+      },
+    },
+  )
+  @ApiDoriPublicErrorResponses({
+    include401: true,
+    omit404: true,
+    omit422: true,
   })
   async login(
     @Body() loginDto: LoginDto,
@@ -59,12 +85,11 @@ export class AuthController {
     const userAgent = req.headers['user-agent'];
     const result = await this.authService.login(loginDto, ipAddress, userAgent);
 
-    res.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie(
+      'refreshToken',
+      result.refreshToken,
+      this.getRefreshCookieOptions(),
+    );
 
     return result;
   }
@@ -76,10 +101,26 @@ export class AuthController {
     summary: 'Renouveler les tokens',
     description:
       'Échange un refresh token contre une nouvelle paire access/refresh (rotation).',
+    security: [{ 'refresh-cookie': [] }, {}],
   })
-  @ApiBody({ type: RefreshDto })
-  @ApiDoriOkResponse(TokensResponseDto, 'Nouveaux tokens émis avec succès')
-  @ApiUnauthorizedResponse({ description: 'Refresh token expiré ou révoqué' })
+  @ApiBody({
+    type: RefreshDto,
+    required: false,
+    description:
+      'Optionnel lorsque le cookie HttpOnly refreshToken est présent.',
+  })
+  @ApiDoriOkResponse(TokensResponseDto, 'Nouveaux tokens émis avec succès', {
+    'Set-Cookie': {
+      description: 'Rotation du cookie refreshToken HttpOnly',
+      schema: { type: 'string' },
+    },
+  })
+  @ApiDoriPublicErrorResponses({
+    include401: true,
+    omit404: true,
+    omit409: true,
+    omit422: true,
+  })
   async refresh(
     @Body() refreshDto: RefreshDto,
     @Req() req: Request,
@@ -90,12 +131,11 @@ export class AuthController {
     const userAgent = req.headers['user-agent'];
     const result = await this.authService.refresh(token, ipAddress, userAgent);
 
-    res.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie(
+      'refreshToken',
+      result.refreshToken,
+      this.getRefreshCookieOptions(),
+    );
 
     return result;
   }
@@ -111,11 +151,15 @@ export class AuthController {
       '**Force-disconnect** (manager/admin/root) : poster `{"userId": <id_cible>}` pour déconnecter un utilisateur hiérarchiquement inférieur.',
   })
   @ApiBody({ type: LogoutDto, required: false })
-  @ApiDoriOkResponse(SimpleMessageResponseDto, 'Session terminée avec succès')
+  @ApiDoriOkResponse(SimpleMessageResponseDto, 'Session terminée avec succès', {
+    'Set-Cookie': {
+      description: 'Suppression du cookie refreshToken',
+      schema: { type: 'string' },
+    },
+  })
   async logout(
     @CurrentUser() user: AuthenticatedUser,
     @Body() logoutDto: LogoutDto,
-    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
     res.clearCookie('refreshToken');
@@ -142,7 +186,10 @@ export class AuthController {
     description:
       "Permet à l'utilisateur connecté de changer son mot de passe actuel.",
   })
-  @ApiDoriOkResponse(SimpleMessageResponseDto, 'Mot de passe modifié avec succès')
+  @ApiDoriOkResponse(
+    SimpleMessageResponseDto,
+    'Mot de passe modifié avec succès',
+  )
   async changePassword(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ChangePasswordDto,

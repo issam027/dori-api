@@ -1,13 +1,21 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
 export class TranslationDetailDto {
   @ApiProperty({ example: 1, description: 'ID unique de la traduction' })
-  translation_id: number;
+  translationId: number;
 
-  @ApiProperty({ example: 'queue.ticket.your_turn', description: 'Clé de traduction' })
-  translation_key: string;
+  @ApiProperty({
+    example: 'queue.ticket.your_turn',
+    description: 'Clé de traduction',
+  })
+  translationKey: string;
 
-  @ApiProperty({ example: 'ihm', enum: ['ihm', 'sms', 'error'], description: "Catégorie d'usage" })
+  @ApiProperty({
+    example: 'ihm',
+    enum: ['ihm', 'sms', 'error'],
+    description: "Catégorie d'usage",
+  })
   category: string;
 
   @ApiProperty({ example: 'fr', description: 'Code de locale' })
@@ -24,20 +32,29 @@ export class TranslationDetailDto {
     type: [String],
     description: 'Paramètres attendus dans le gabarit',
   })
-  expected_params?: string[];
+  expectedParams?: string[];
 
   @ApiProperty({ example: true, description: 'Statut actif de la traduction' })
-  is_active: boolean;
+  isActive: boolean;
 
-  @ApiProperty({ example: '2026-09-01T08:00:00.000Z', description: 'Date de création' })
-  created_at: string;
+  @ApiProperty({
+    example: '2026-09-01T08:00:00.000Z',
+    description: 'Date de création',
+  })
+  createdAt: string;
 
-  @ApiProperty({ example: '2026-09-28T14:30:00.000Z', description: 'Date de dernière modification' })
-  updated_at: string;
+  @ApiProperty({
+    example: '2026-09-28T14:30:00.000Z',
+    description: 'Date de dernière modification',
+  })
+  updatedAt: string;
 }
 
-export class PaginatedTranslationResponseDto {
-  @ApiProperty({ type: [TranslationDetailDto], description: 'Liste des traductions' })
+export class PaginatedTranslationResponseDto extends PaginatedResponseDto {
+  @ApiProperty({
+    type: [TranslationDetailDto],
+    description: 'Liste des traductions',
+  })
   items: TranslationDetailDto[];
 
   @ApiProperty({ example: 1, description: 'Page actuelle' })
@@ -60,7 +77,10 @@ export class TranslationBundleResponseDto {
   @ApiProperty({ example: 'ihm', description: 'Catégorie du bundle' })
   category: string;
 
-  @ApiProperty({ example: 3, description: 'Numéro de version du bundle de traduction' })
+  @ApiProperty({
+    example: 3,
+    description: 'Numéro de version du bundle de traduction',
+  })
   version: number;
 
   @ApiProperty({
@@ -68,7 +88,8 @@ export class TranslationBundleResponseDto {
       'queue.ticket.your_turn': "C'est votre tour au guichet {counterNumber} !",
       'welcome.message': 'Bienvenue à la clinique',
     },
-    description: 'Dictionnaire clé-valeur des traductions pour la locale et la catégorie',
+    description:
+      'Dictionnaire clé-valeur des traductions pour la locale et la catégorie',
     type: 'object',
     additionalProperties: { type: 'string' },
   })

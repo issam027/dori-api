@@ -11,6 +11,9 @@ export class DoriPerson {
   @PrimaryGeneratedColumn()
   person_id: number;
 
+  @Column({ type: 'int' })
+  site_id: number;
+
   @Column({ type: 'varchar', length: 50, nullable: true })
   first_name: string | null;
 

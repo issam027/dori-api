@@ -73,20 +73,40 @@ export class TokensResponseDto {
     description: 'Nouveau jeton de rafraîchissement',
   })
   refreshToken: string;
-}
 
-export class CurrentUserResponseDto {
   @ApiProperty({
     type: AuthUserDto,
-    description: 'Informations de session et permissions du compte actif',
+    description: 'Profil associé aux tokens renouvelés',
   })
   user: AuthUserDto;
 }
 
+export class UserScopeDto {
+  @ApiProperty({ example: false })
+  isGlobal: boolean;
+
+  @ApiProperty({ type: [Number], example: [1] })
+  siteIds: number[];
+
+  @ApiProperty({ type: [Number], example: [1, 2] })
+  queueIds: number[];
+}
+
+export class CurrentUserResponseDto extends AuthUserDto {
+  @ApiPropertyOptional({ example: 'fr' })
+  languagePreference?: string;
+
+  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  lastLogin?: string | null;
+
+  @ApiProperty({ type: UserScopeDto })
+  scope: UserScopeDto;
+}
+
 export class SimpleMessageResponseDto {
   @ApiProperty({
-    example: 'Opération effectuée avec succès',
-    description: 'Message descriptif',
+    example: true,
+    description: 'Opération effectuée avec succès',
   })
-  message: string;
+  success: boolean;
 }

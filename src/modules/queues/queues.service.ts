@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { CreateQueueDto } from './dto/create-queue.dto';
 import { UpdateQueueDto, QueueFilterDto } from './dto/update-queue.dto';
-import { PaginationDto } from '../../core/pagination/pagination.dto';
+import {
+  PaginationDto,
+  PaginatedResult,
+} from '../../core/pagination/pagination.dto';
+import { QueueDetailResponseDto } from './dto/queue-response.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
@@ -14,14 +18,24 @@ export class QueuesService {
     private readonly dataSource: DataSource,
     private readonly scopeService: ScopeService,
     private readonly clockService: ClockService,
-  ) { }
+  ) {}
 
-  async findQueues(filter: QueueFilterDto, user: AuthenticatedUser) {
+  async findQueues(
+    filter: QueueFilterDto,
+    user: AuthenticatedUser,
+  ): Promise<PaginatedResult<QueueDetailResponseDto>> {
     const scope = await this.scopeService.getUserScope(user);
     const { pageSize, offset, sortOrder } = filter.getParams();
     // VAL-01 : allowlist des colonnes autorisées pour dori_site_queue_thread (alias q)
     const sortField = filter.getSafeSortField(
-      ['q.queue_id', 'q.queue_name', 'q.queue_code', 'q.created_at', 'q.updated_at', 's.site_name'],
+      [
+        'q.queue_id',
+        'q.queue_name',
+        'q.queue_code',
+        'q.created_at',
+        'q.updated_at',
+        's.site_name',
+      ],
       'q.created_at',
     );
 
@@ -525,7 +539,7 @@ export class QueuesService {
           [
             tomorrow,
             businessDate,
-            new Date(now.getTime() + 24 * 60 * 60 * 1000),
+            this.clockService.addDays(now, 1),
             now,
             queueId,
           ],

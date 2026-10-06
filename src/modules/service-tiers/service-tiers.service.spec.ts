@@ -5,6 +5,7 @@ import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
+import { ServiceTiersRepository } from './service-tiers.repository';
 
 describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
   let service: ServiceTiersService;
@@ -35,6 +36,12 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ServiceTiersService,
+        {
+          provide: ServiceTiersRepository,
+          useFactory: (dataSource: DataSource) =>
+            new ServiceTiersRepository(dataSource),
+          inject: [DataSource],
+        },
         {
           provide: DataSource,
           useValue: dataSourceMock,

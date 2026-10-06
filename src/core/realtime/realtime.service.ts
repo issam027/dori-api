@@ -1,10 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Server } from 'socket.io';
 import { ClockService } from '../clock/clock.service';
 
 @Injectable()
 export class RealtimeService {
-  private readonly logger = new Logger(RealtimeService.name);
   private server: Server | null = null;
 
   constructor(private readonly clockService: ClockService) {}

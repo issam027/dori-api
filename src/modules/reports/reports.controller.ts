@@ -5,7 +5,10 @@ import {
   ApiOperation,
   ApiParam,
 } from '@nestjs/swagger';
-import { ApiDoriOkResponse } from '../../core/swagger/api-dori-response.decorator';
+import {
+  ApiDoriOkResponse,
+  ApiDoriErrorResponses,
+} from '../../core/swagger/api-dori-response.decorator';
 import { ReportsService } from './reports.service';
 import {
   DailyQueueReportResponseDto,
@@ -23,6 +26,7 @@ import { RequirePermission } from '../../core/rbac/decorators/require-permission
 
 @ApiTags('Reports')
 @ApiBearerAuth('bearer')
+@ApiDoriErrorResponses()
 @Controller('api/v1/reports')
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
@@ -91,4 +95,3 @@ export class ReportsController {
     );
   }
 }
-

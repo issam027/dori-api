@@ -6,7 +6,11 @@ import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interf
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { DoriException } from '../../core/errors/dori.exception';
-import { PaginationDto, PaginatedResult } from '../../core/pagination/pagination.dto';
+import {
+  PaginationDto,
+  PaginatedResult,
+} from '../../core/pagination/pagination.dto';
+import { RealtimeService } from '../../core/realtime/realtime.service';
 
 @Injectable()
 export class QueueEngineService {
@@ -14,10 +18,15 @@ export class QueueEngineService {
     private readonly dataSource: DataSource,
     private readonly scopeService: ScopeService,
     private readonly clockService: ClockService,
+    private readonly realtimeService: RealtimeService,
   ) {}
 
   // 1. Threads State (§6.1)
-  async getThreads(queueId: number, user: AuthenticatedUser) {
+  async getThreads(
+    queueId: number,
+    user: AuthenticatedUser,
+    pagination: PaginationDto = new PaginationDto(),
+  ) {
     await this.scopeService.checkQueueAccess(user, queueId);
 
     const queueRes = await this.dataSource.query(
@@ -54,7 +63,7 @@ export class QueueEngineService {
     for (let t = 1; t <= threadCount; t++) {
       const s = sessionByThread.get(t);
       if (s) {
-        const lastSeen = new Date(s.last_seen_at);
+        const lastSeen = this.clockService.parse(s.last_seen_at);
         const inactiveMinutes = Math.max(
           0,
           Math.floor((now.getTime() - lastSeen.getTime()) / 60000),
@@ -81,13 +90,11 @@ export class QueueEngineService {
       }
     }
 
-    return {
-      items,
-      page: 1,
-      pageSize: 25,
-      total: items.length,
-      totalPages: 1,
-    };
+    const { offset, pageSize } = pagination.getParams();
+    return pagination.createResponse(
+      items.slice(offset, offset + pageSize),
+      items.length,
+    );
   }
 
   // 2. Open or Take Over Session (§6.2, §4.6)
@@ -101,12 +108,20 @@ export class QueueEngineService {
     const mode = dto.mode || 'active';
 
     if (mode === 'consultation_only') {
-      const res = await this.dataSource.query(
-        `INSERT INTO dori_queue_session (queue_id, user_id, thread_number, mode, connected_at, last_seen_at)
-         VALUES ($1, $2, NULL, 'consultation_only', $3, $3)
-         RETURNING *`,
-        [queueId, user.userId, now],
-      );
+      let res: any[];
+      try {
+        res = await this.dataSource.query(
+          `INSERT INTO dori_queue_session (queue_id, user_id, thread_number, mode, connected_at, last_seen_at)
+           VALUES ($1, $2, NULL, 'consultation_only', $3, $3)
+           RETURNING *`,
+          [queueId, user.userId, now],
+        );
+      } catch (error) {
+        if ((error as { code?: string }).code === '23505') {
+          throw new DoriException('SESSION_ALREADY_OPEN');
+        }
+        throw error;
+      }
       const session = res[0];
       return {
         sessionId: session.session_id,
@@ -183,7 +198,7 @@ export class QueueEngineService {
     if (occupiedRows && occupiedRows.length > 0) {
       const occupied = occupiedRows[0];
       if (!dto.takeOver) {
-        const lastSeen = new Date(occupied.last_seen_at);
+        const lastSeen = this.clockService.parse(occupied.last_seen_at);
         const inactiveMinutes = Math.max(
           0,
           Math.floor((now.getTime() - lastSeen.getTime()) / 60000),
@@ -202,12 +217,26 @@ export class QueueEngineService {
 
       // Take over in single transaction (§4.6, §7.6)
       return await this.dataSource.transaction(async (manager) => {
+        const lockedRows = await manager.query(
+          `SELECT qs.*, u.username
+           FROM dori_queue_session qs
+           JOIN dori_user u ON u.user_id = qs.user_id
+           WHERE qs.queue_id = $1 AND qs.thread_number = $2
+             AND qs.disconnected_at IS NULL
+           FOR UPDATE OF qs`,
+          [queueId, dto.threadNumber],
+        );
+        if (lockedRows.length === 0) {
+          throw new DoriException('THREAD_UNAVAILABLE');
+        }
+        const lockedSession = lockedRows[0];
+
         // 1. Close old session
         await manager.query(
           `UPDATE dori_queue_session
            SET disconnected_at = $1, closure_reason = 'taken_over', closed_by_user_id = $2
            WHERE session_id = $3`,
-          [now, user.userId, occupied.session_id],
+          [now, user.userId, lockedSession.session_id],
         );
 
         // 2. Open new session
@@ -224,7 +253,7 @@ export class QueueEngineService {
         const currentClient = await manager.query(
           `SELECT customer_id FROM dori_customer
            WHERE current_session_id = $1 AND status = 'in_progress' AND is_active = TRUE`,
-          [occupied.session_id],
+          [lockedSession.session_id],
         );
 
         if (currentClient && currentClient.length > 0) {
@@ -244,19 +273,33 @@ export class QueueEngineService {
           threadNumber: newSession.thread_number,
           mode: 'active',
           connectedAt: newSession.connected_at,
-          takenOverFromSessionId: occupied.session_id,
+          takenOverFromSessionId: lockedSession.session_id,
           reassignedRegistrationId: reassignedId,
         };
       });
     }
 
     // Thread is free, open directly
-    const res = await this.dataSource.query(
-      `INSERT INTO dori_queue_session (queue_id, user_id, thread_number, mode, connected_at, last_seen_at)
-       VALUES ($1, $2, $3, 'active', $4, $4)
-       RETURNING *`,
-      [queueId, user.userId, dto.threadNumber, now],
-    );
+    let res: any[];
+    try {
+      res = await this.dataSource.query(
+        `INSERT INTO dori_queue_session (queue_id, user_id, thread_number, mode, connected_at, last_seen_at)
+         VALUES ($1, $2, $3, 'active', $4, $4)
+         RETURNING *`,
+        [queueId, user.userId, dto.threadNumber, now],
+      );
+    } catch (error) {
+      const dbError = error as { code?: string; constraint?: string };
+      if (dbError.code === '23505') {
+        if (dbError.constraint === 'uk_queue_user_active') {
+          throw new DoriException('SESSION_ALREADY_OPEN');
+        }
+        throw new DoriException('THREAD_OCCUPIED', {
+          threadNumber: dto.threadNumber,
+        });
+      }
+      throw error;
+    }
     const session = res[0];
 
     return {
@@ -344,7 +387,7 @@ export class QueueEngineService {
     const businessDate = this.clockService.todayInTimezone(timezone);
 
     // 3. Execute atomic select and update in transaction using SKIP LOCKED (§7.6)
-    return await this.dataSource.transaction(async (manager) => {
+    const result = await this.dataSource.transaction(async (manager) => {
       // Pass 1: Eligible waiting clients ordered by priority score (§4.4, §7.6)
       const pass1Sql = `
         WITH eligible AS (
@@ -430,6 +473,7 @@ export class QueueEngineService {
       // Fetch complete details for response (§6.3)
       const detailRows = await manager.query(
         `SELECT c.customer_id, c.ticket_number, c.entry_type, c.scheduled_time, c.status, c.called_at,
+                c.registration_tracking_token,
                 t.tier_id, t.tier_code, t.tier_name,
                 p.person_id, p.first_name, p.last_name, p.phone_number,
                 (SELECT COUNT(*)::int FROM dori_person_note n WHERE n.person_id = p.person_id AND n.is_active = TRUE) as notes_count
@@ -465,8 +509,20 @@ export class QueueEngineService {
           phone: d.phone_number,
           hasNotes: (d.notes_count || 0) > 0,
         },
+        trackingToken: d.registration_tracking_token,
       };
     });
+    this.realtimeService.emitQueueOps(queueId, 'customer_called', result);
+    this.realtimeService.emitQueueDisplay(queueId, 'customer_called', {
+      ticketNumber: result.ticketNumber,
+      threadNumber: result.threadNumber,
+    });
+    this.realtimeService.emitRegistrationUpdate(result.trackingToken, {
+      ticketNumber: result.ticketNumber,
+      status: result.status,
+    });
+    const { trackingToken: _trackingToken, ...response } = result;
+    return response;
   }
 
   // 5. Close Customer Served / No-Show (§6.4)
@@ -570,7 +626,13 @@ export class QueueEngineService {
     await this.scopeService.checkQueueAccess(user, queueId);
     const { pageSize, offset, sortOrder } = pagination.getParams();
     const sortField = pagination.getSafeSortField(
-      ['qs.connected_at', 'qs.session_id', 'qs.thread_number', 'qs.mode', 'u.username'],
+      [
+        'qs.connected_at',
+        'qs.session_id',
+        'qs.thread_number',
+        'qs.mode',
+        'u.username',
+      ],
       'qs.connected_at',
     );
 
@@ -587,24 +649,14 @@ export class QueueEngineService {
     const total = countRes[0]?.total || 0;
 
     const sessions = await this.dataSource.query(
-      `SELECT qs.*, u.username ${baseSql}
+      `SELECT qs.session_id, qs.queue_id, qs.thread_number, qs.user_id,
+              u.username, qs.mode, qs.connected_at, qs.disconnected_at ${baseSql}
        ORDER BY ${sortField} ${sortOrder}
        LIMIT ${pageSize} OFFSET ${offset}`,
       [queueId],
     );
 
-    const formattedSessions: QueueSessionDetailDto[] = sessions.map((s: any) => ({
-      sessionId: s.session_id,
-      queueId: s.queue_id,
-      threadNumber: s.thread_number,
-      userId: s.user_id,
-      username: s.username,
-      mode: s.mode,
-      connectedAt: s.connected_at instanceof Date ? s.connected_at.toISOString() : s.connected_at,
-      disconnectedAt: s.disconnected_at instanceof Date ? s.disconnected_at.toISOString() : (s.disconnected_at || null),
-    }));
-
-    return pagination.createResponse(formattedSessions, total);
+    return pagination.createResponse<QueueSessionDetailDto>(sessions, total);
   }
 
   // 6. Next Preview (§10.2)
@@ -776,8 +828,12 @@ export class QueueEngineService {
     return this.nextPreview(limit ?? 10, siteId, queueId, user);
   }
 
-  async getThreadsStatus(queueId: number, user: AuthenticatedUser) {
-    return this.getThreads(queueId, user);
+  async getThreadsStatus(
+    queueId: number,
+    user: AuthenticatedUser,
+    pagination?: PaginationDto,
+  ) {
+    return this.getThreads(queueId, user, pagination);
   }
 
   async getActiveSessions(
