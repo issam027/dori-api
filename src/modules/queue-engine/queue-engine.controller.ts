@@ -25,7 +25,7 @@ import { QueueEngineService } from './queue-engine.service';
 import { OpenSessionDto } from './dto/session.dto';
 import {
   QueuePreviewResponseDto,
-  QueueThreadDetailDto,
+  PaginatedQueueThreadResponseDto,
   QueueSessionDetailDto,
   PaginatedQueueSessionResponseDto,
   CalledNextCustomerResponseDto,
@@ -80,7 +80,7 @@ export class QueueEngineController {
       'Liste les guichets (threads) ouverts et fermés avec leur opérateur respectif.',
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse([QueueThreadDetailDto], 'Liste des guichets')
+  @ApiDoriOkResponse(PaginatedQueueThreadResponseDto, 'Liste des guichets')
   async getThreads(
     @Param('queueId', ParseIntPipe) queueId: number,
     @Query() pagination: PaginationDto,

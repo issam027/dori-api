@@ -141,7 +141,8 @@ export class NotificationsController {
   @ApiOperation({
     summary: 'Webhook de notification des opérateurs SMS/Email',
     description:
-      'Réception des accusés de remise (delivery reports) validés par signature HMAC SHA-256.',
+      'Réception des accusés de remise validés par HMAC SHA-256. La signature porte sur les octets bruts du body.',
+    security: [],
   })
   @ApiParam({
     name: 'provider',
@@ -155,12 +156,19 @@ export class NotificationsController {
   })
   @ApiHeader({
     name: 'x-timestamp',
-    description: "Timestamp UNIX d'émission du webhook",
+    description: "Timestamp UNIX en secondes à l'émission du webhook",
+    required: true,
+    example: '1791327600',
+  })
+  @ApiHeader({
+    name: 'x-event-id',
+    description: "Identifiant unique et stable utilisé pour l'idempotence",
+    required: true,
+    example: 'evt_01J9Z7V3M2Y8N4Q6R0T1',
   })
   @ApiDoriOkResponse(WebhookResponseDto, 'Accusé de réception du webhook')
   async handleWebhook(
     @Param('provider') provider: string,
-    @Headers('authorization') authHeader: string,
     @Headers('x-signature') signature: string,
     @Headers('x-timestamp') timestamp: string,
     @Headers('x-event-id') eventId: string,
@@ -168,7 +176,8 @@ export class NotificationsController {
     @Body() dto: WebhookDeliveryDto,
   ) {
     // If Bearer token passed to webhook, reject immediately (§5.10)
-    if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+    const authHeader = request.headers.authorization;
+    if (authHeader?.toLowerCase().startsWith('bearer ')) {
       throw new DoriException('UNAUTHENTICATED');
     }
 

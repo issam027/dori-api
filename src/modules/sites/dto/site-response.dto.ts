@@ -205,11 +205,17 @@ export class PaginatedSiteManagerResponseDto extends PaginatedResponseDto {
 
 export class AssignManagerResponseDto {
   @ApiProperty({ example: true, description: 'Opération réussie' })
-  success: boolean;
+  assigned: boolean;
 
   @ApiProperty({ example: 1, description: 'ID du site' })
   siteId: number;
 
   @ApiProperty({ example: 2, description: "ID de l'utilisateur" })
   userId: number;
+}
+
+export class RemoveManagerResponseDto {
+  @ApiProperty({ minimum: 1 }) siteId: number;
+  @ApiProperty({ minimum: 1 }) userId: number;
+  @ApiProperty({ example: true }) removed: boolean;
 }

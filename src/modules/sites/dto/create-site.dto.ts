@@ -8,6 +8,11 @@ import {
   IsString,
   Matches,
   Min,
+  IsISO4217CurrencyCode,
+  IsLocale,
+  IsTimeZone,
+  IsUrl,
+  MaxLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -15,6 +20,7 @@ export class CreateSiteDto {
   @ApiProperty({ example: 'Hôpital Aziza Othmana', description: 'Nom du site' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   siteName: string;
 
   @ApiPropertyOptional({
@@ -22,6 +28,7 @@ export class CreateSiteDto {
     description: 'Adresse ou localisation',
   })
   @IsString()
+  @MaxLength(255)
   @IsOptional()
   siteLocation?: string;
 
@@ -29,7 +36,8 @@ export class CreateSiteDto {
     example: 'https://cdn.dori.tn/logos/hao.png',
     description: 'URL du logo',
   })
-  @IsString()
+  @IsUrl({ require_protocol: true })
+  @MaxLength(500)
   @IsOptional()
   siteLogoUrl?: string;
 
@@ -42,7 +50,8 @@ export class CreateSiteDto {
     example: 'Africa/Tunis',
     description: 'Fuseau horaire IANA',
   })
-  @IsString()
+  @IsTimeZone()
+  @MaxLength(64)
   @IsOptional()
   timezone?: string;
 
@@ -50,7 +59,7 @@ export class CreateSiteDto {
     example: 'TND',
     description: 'Code devise ISO 4217 (3 lettres)',
   })
-  @IsString()
+  @IsISO4217CurrencyCode()
   @IsOptional()
   defaultCurrency?: string;
 
@@ -175,7 +184,8 @@ export class CreateSiteDto {
     example: 'fr',
     description: 'Locale par défaut (ISO 639-1)',
   })
-  @IsString()
+  @IsLocale()
+  @MaxLength(10)
   @IsOptional()
   defaultLocale?: string;
 }

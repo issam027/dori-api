@@ -1,6 +1,8 @@
 import { IsBoolean, IsIn, IsInt, IsOptional, Min } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ValidSessionMode } from '../../../core/validation/domain-validation.decorators';
 
+@ValidSessionMode()
 export class OpenSessionDto {
   @ApiPropertyOptional({
     example: 1,

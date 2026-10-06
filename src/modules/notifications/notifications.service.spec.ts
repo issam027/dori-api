@@ -1,9 +1,9 @@
 import { createHmac } from 'crypto';
 import { ConfigService } from '@nestjs/config';
-import { DataSource } from 'typeorm';
 import { NotificationsService } from './notifications.service';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
+import { NotificationsRepository } from './notifications.repository';
 
 describe('NotificationsService webhooks', () => {
   const now = new Date('2026-10-05T12:00:00.000Z');
@@ -14,13 +14,12 @@ describe('NotificationsService webhooks', () => {
   const dto = { messageId: 'msg-1', status: 'delivered' as const };
   const secret = 'provider-secret';
 
-  const createService = (managerResults: unknown[][] = []) => {
-    const manager = {
-      query: jest.fn().mockImplementation(() => managerResults.shift() ?? []),
-    };
-    const dataSource = {
-      transaction: jest.fn(async (callback) => callback(manager)),
-    } as unknown as DataSource;
+  const createService = (
+    outcome: 'updated' | 'duplicate' | 'missing' = 'updated',
+  ) => {
+    const repository = {
+      applyWebhook: jest.fn().mockResolvedValue(outcome),
+    } as unknown as NotificationsRepository;
     const config = {
       get: jest.fn((key: string) =>
         key === 'notifications.webhookSecrets.twilio' ? secret : undefined,
@@ -31,12 +30,12 @@ describe('NotificationsService webhooks', () => {
       now: jest.fn().mockReturnValue(now),
     } as unknown as ClockService;
     const service = new NotificationsService(
-      dataSource,
+      repository,
       {} as ScopeService,
       clock,
       config,
     );
-    return { service, manager, dataSource };
+    return { service, repository };
   };
 
   const signature = createHmac('sha256', secret)
@@ -61,10 +60,7 @@ describe('NotificationsService webhooks', () => {
   });
 
   it('uses constant-time HMAC validation and binds the update to provider', async () => {
-    const { service, manager } = createService([
-      [{ event_id: 'evt-1' }],
-      [{ notification_id: 1 }],
-    ]);
+    const { service, repository } = createService();
 
     await expect(
       service.handleWebhook(
@@ -76,16 +72,16 @@ describe('NotificationsService webhooks', () => {
         dto,
       ),
     ).resolves.toEqual({ received: true });
-    expect(manager.query).toHaveBeenLastCalledWith(
-      expect.stringContaining(
-        'WHERE provider = $4 AND provider_message_id = $5',
-      ),
-      ['delivered', now, null, 'twilio', 'msg-1'],
+    expect(repository.applyWebhook).toHaveBeenCalledWith(
+      'twilio',
+      'evt-1',
+      dto,
+      now,
     );
   });
 
   it('acknowledges an already processed event without applying it twice', async () => {
-    const { service, manager } = createService([[]]);
+    const { service, repository } = createService('duplicate');
 
     await service.handleWebhook(
       'twilio',
@@ -95,6 +91,20 @@ describe('NotificationsService webhooks', () => {
       rawBody,
       dto,
     );
-    expect(manager.query).toHaveBeenCalledTimes(1);
+    expect(repository.applyWebhook).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects an event for an unknown provider message', async () => {
+    const { service } = createService('missing');
+    await expect(
+      service.handleWebhook(
+        'twilio',
+        signature,
+        timestamp,
+        'evt-1',
+        rawBody,
+        dto,
+      ),
+    ).rejects.toThrow();
   });
 });

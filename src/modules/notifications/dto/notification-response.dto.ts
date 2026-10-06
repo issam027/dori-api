@@ -41,7 +41,7 @@ export class NotificationDetailDto {
   notificationContent: string;
 
   @ApiProperty({
-    enum: ['pending', 'sent', 'delivered', 'failed'],
+    enum: ['pending', 'processing', 'sent', 'delivered', 'failed'],
     example: 'delivered',
     description: "Statut d'acheminement",
   })

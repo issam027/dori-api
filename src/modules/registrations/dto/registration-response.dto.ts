@@ -69,6 +69,31 @@ export class RegistrationDetailResponseDto {
   updatedAt: string;
 }
 
+export class RegistrationCreatedResponseDto {
+  @ApiProperty({ minimum: 1 }) registrationId: number;
+  @ApiProperty() ticketNumber: string;
+  @ApiProperty({ format: 'date' }) businessDate: string;
+  @ApiProperty({ enum: ['walkin', 'appointment'] }) entryType: string;
+  @ApiPropertyOptional({ nullable: true }) appointmentStatus?: string | null;
+  @ApiPropertyOptional({ format: 'date-time', nullable: true }) scheduledTime?:
+    string | null;
+  @ApiProperty() status: string;
+  @ApiProperty({ type: 'object' }) tier: Record<string, unknown>;
+  @ApiProperty({ format: 'date-time' }) priorityReferenceTime: string;
+  @ApiPropertyOptional({ nullable: true }) trackingUrl?: string | null;
+  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  registrationTrackingTokenValidUntil?: string | null;
+}
+
+export class RegistrationTransitionResponseDto {
+  @ApiProperty({ minimum: 1 }) registrationId: number;
+  @ApiProperty() status: string;
+  @ApiPropertyOptional({ nullable: true }) appointmentStatus?: string | null;
+  @ApiPropertyOptional({ format: 'date-time', nullable: true }) scheduledTime?:
+    string | null;
+  @ApiPropertyOptional({ format: 'date-time' }) priorityReferenceTime?: string;
+}
+
 export class PaginatedRegistrationResponseDto extends PaginatedResponseDto {
   @ApiProperty({
     type: [RegistrationDetailResponseDto],
@@ -127,17 +152,20 @@ export class AvailabilityResponseDto {
 }
 
 export class PublicPositionResponseDto {
-  @ApiProperty({ example: 'A-012', description: 'Numéro de ticket' })
-  ticketNumber: string;
+  @ApiPropertyOptional({ example: 'A-012', description: 'Numéro de ticket' })
+  ticketNumber?: string;
 
-  @ApiProperty({ example: 3, description: 'Position courante dans la file' })
-  position: number;
+  @ApiPropertyOptional({
+    example: 3,
+    description: 'Position courante dans la file',
+  })
+  position?: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 25,
     description: "Temps d'attente estimé en minutes",
   })
-  estimatedWaitMinutes: number;
+  estimatedWaitMinutes?: number;
 
   @ApiProperty({ example: 'waiting', description: 'Statut du ticket' })
   status: string;
@@ -148,11 +176,11 @@ export class PublicPositionResponseDto {
   })
   counterNumber?: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'Consultation Cardiologie',
     description: 'Nom de la file',
   })
-  queueName: string;
+  queueName?: string;
 }
 
 export class RegistrationDeleteResponseDto {
@@ -160,5 +188,5 @@ export class RegistrationDeleteResponseDto {
   registrationId: number;
 
   @ApiProperty({ example: true, description: 'Annulation confirmée' })
-  deleted: boolean;
+  cancelled: boolean;
 }

@@ -64,6 +64,12 @@ export class AuthController {
   @ApiDoriOkResponse(
     LoginResponseDto,
     'Connexion réussie avec token JWT et profil',
+    {
+      'Set-Cookie': {
+        description: 'Cookie refreshToken HttpOnly, SameSite=Strict',
+        schema: { type: 'string' },
+      },
+    },
   )
   @ApiDoriPublicErrorResponses({
     include401: true,
@@ -95,9 +101,20 @@ export class AuthController {
     summary: 'Renouveler les tokens',
     description:
       'Échange un refresh token contre une nouvelle paire access/refresh (rotation).',
+    security: [{ 'refresh-cookie': [] }, {}],
   })
-  @ApiBody({ type: RefreshDto })
-  @ApiDoriOkResponse(TokensResponseDto, 'Nouveaux tokens émis avec succès')
+  @ApiBody({
+    type: RefreshDto,
+    required: false,
+    description:
+      'Optionnel lorsque le cookie HttpOnly refreshToken est présent.',
+  })
+  @ApiDoriOkResponse(TokensResponseDto, 'Nouveaux tokens émis avec succès', {
+    'Set-Cookie': {
+      description: 'Rotation du cookie refreshToken HttpOnly',
+      schema: { type: 'string' },
+    },
+  })
   @ApiDoriPublicErrorResponses({
     include401: true,
     omit404: true,
@@ -134,7 +151,12 @@ export class AuthController {
       '**Force-disconnect** (manager/admin/root) : poster `{"userId": <id_cible>}` pour déconnecter un utilisateur hiérarchiquement inférieur.',
   })
   @ApiBody({ type: LogoutDto, required: false })
-  @ApiDoriOkResponse(SimpleMessageResponseDto, 'Session terminée avec succès')
+  @ApiDoriOkResponse(SimpleMessageResponseDto, 'Session terminée avec succès', {
+    'Set-Cookie': {
+      description: 'Suppression du cookie refreshToken',
+      schema: { type: 'string' },
+    },
+  })
   async logout(
     @CurrentUser() user: AuthenticatedUser,
     @Body() logoutDto: LogoutDto,

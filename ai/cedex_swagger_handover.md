@@ -47,7 +47,7 @@
 
 ## Constats détaillés
 
-### [ ] SW-PERSON-001 — Rendre le site explicite dans la recherche des personnes
+### [x] SW-PERSON-001 — Rendre le site explicite dans la recherche des personnes
 
 - **Contrat observé :** `GET /api/v1/persons` expose la pagination, le tri et `search`, mais aucun `siteId`. À l’inverse, `POST /api/v1/persons` reçoit le site via un paramètre query obligatoire.
 - **Implémentation observée :** `dori_person.site_id` est obligatoire et `PersonsService.findPersons` limite les utilisateurs non globaux à leurs sites, mais un utilisateur global recherche implicitement dans tous les sites.
@@ -56,7 +56,7 @@
 - **Impacts code :** `PersonsController`, `PersonFilterDto`, `PersonsService`/`PersonsRepository`, documentation Swagger et tests de scope multi-site.
 - **Validation attendue :** même téléphone présent sur deux sites ; une recherche sur le site A ne retourne jamais la fiche du site B. Un `siteId` hors scope renvoie 403/404 selon la politique publique retenue.
 
-### [ ] SW-SEC-001 — Documenter correctement l’authentification HMAC du webhook
+### [x] SW-SEC-001 — Documenter correctement l’authentification HMAC du webhook
 
 - **Contrat observé :** `POST /api/v1/webhooks/notifications/{provider}` hérite de `bearer` posé au niveau de `NotificationsController`. En plus, l’inférence Swagger transforme le paramètre `@Headers('authorization')` en header `authorization` obligatoire. `x-event-id` apparaît bien, mais sans description ni exemple.
 - **Implémentation observée :** la route est `@Public()`, rejette explicitement un Bearer et exige `x-signature`, `x-timestamp`, `x-event-id` ainsi que le corps brut.
@@ -64,7 +64,7 @@
 - **Correction recommandée :** retirer la sécurité Bearer sur cette opération avec `@ApiSecurity`/`security: []`, empêcher `authorization` d’être déclaré obligatoire (ne pas l’exposer comme paramètre de contrat), puis documenter les trois headers HMAC requis avec formats/exemples. Préciser que la signature porte sur les octets bruts du body et définir l’unité/format du timestamp.
 - **Validation attendue :** le JSON OpenAPI de cette opération ne contient plus `bearer`, contient les trois headers requis et permet de reproduire une signature valide.
 
-### [ ] SW-AUTH-001 — Représenter le refresh par cookie ou body
+### [x] SW-AUTH-001 — Représenter le refresh par cookie ou body
 
 - **Contrat observé :** `POST /api/v1/auth/refresh` déclare `requestBody.required: true` via `@ApiBody`, sans cookie documenté.
 - **Implémentation observée :** le contrôleur accepte `refreshDto.refreshToken || req.cookies?.refreshToken`; le body peut donc être absent lorsque le cookie HttpOnly est présent.
@@ -72,7 +72,7 @@
 - **Correction recommandée :** rendre le body optionnel, déclarer un schéma `apiKey` de type cookie nommé `refreshToken`, documenter les deux alternatives et les en-têtes `Set-Cookie` des réponses login/refresh ainsi que la suppression au logout.
 - **Validation attendue :** OpenAPI autorise un appel sans body et décrit clairement le mode cookie et le mode body.
 
-### [ ] SW-CACHE-001 — Documenter le cache conditionnel du bundle de traductions
+### [x] SW-CACHE-001 — Documenter le cache conditionnel du bundle de traductions
 
 - **Contrat observé :** `GET /api/v1/translations/bundle` ne déclare que `200` et les erreurs standard.
 - **Implémentation observée :** le contrôleur lit `If-None-Match`, émet `ETag` et retourne `304` lorsque la version correspond.
@@ -80,7 +80,7 @@
 - **Correction recommandée :** ajouter le header request `If-None-Match`, le header response `ETag` sur `200`, et une réponse `304` sans enveloppe JSON.
 - **Validation attendue :** ces trois éléments apparaissent dans `openapi.json` et un test de contrat couvre `200` puis `304`.
 
-### [ ] SW-GEN-001 — Utiliser une configuration OpenAPI unique
+### [x] SW-GEN-001 — Utiliser une configuration OpenAPI unique
 
 - **Contrat observé :** `scripts/swagger-export.ts` et `src/main.ts` construisent séparément `DocumentBuilder`. L’export omet notamment contact, licence, serveurs et tags décrits dans le Swagger servi.
 - **Impact :** le fichier livré aux intégrateurs n’est pas le document consulté dans Swagger UI ; toute évolution doit être synchronisée manuellement et dérivera à nouveau.
@@ -102,7 +102,7 @@
 - **Correction recommandée :** validateurs de classe communs (`ExactlyOneOf`, conditions rendez-vous/mode) et schémas OpenAPI `oneOf` documentant les variantes. Interdire aussi `scheduledTime` pour un walk-in afin que le contrat corresponde à la contrainte SQL.
 - **Validation attendue :** validation DTO et document OpenAPI acceptent exactement les mêmes combinaisons que le domaine.
 
-### [ ] SW-VAL-003 — Fermer les domaines de filtres et identifiants
+### [x] SW-VAL-003 — Fermer les domaines de filtres et identifiants
 
 - **Preuve :** `RegistrationFilterDto.status`, `entryType` et `appointmentStatus` utilisent `IsString`; `businessDate` et `NotificationFilterDto.businessDate` ne valident pas réellement une date. Plusieurs IDs acceptent zéro ou des valeurs négatives, contrairement aux IDs PostgreSQL générés.
 - **Impact :** Swagger génère des clients autorisant des valeurs impossibles, et les fautes deviennent des recherches vides plutôt que des erreurs explicites.
@@ -116,7 +116,7 @@
 - **Correction recommandée :** migration DB et code vers `trackingLink`, avec éventuelle période de compatibilité d’entrée si des clients existent déjà. Centraliser l’enum pour éviter une nouvelle divergence.
 - **Validation attendue :** aucune occurrence de `trakingLink`; anciennes données migrées et Swagger régénéré.
 
-### [ ] SW-ERR-001 — Documenter les erreurs internes
+### [x] SW-ERR-001 — Documenter les erreurs internes
 
 - **Preuve :** `GlobalExceptionFilter` transforme toute exception inconnue en HTTP 500 avec `code=INTERNAL_ERROR`, mais `ApiDoriErrorResponses` ne déclare jamais 500.
 - **Impact :** les SDK et consommateurs ne modélisent pas une réponse pourtant possible sur chaque opération.
@@ -137,7 +137,7 @@
 - **Correction recommandée :** choisir `registrationId` dans le contrat public, conserver `customer_id` comme détail interne si une migration DB n’est pas souhaitée, puis renommer DTO, réponses, descriptions et paramètres de service.
 - **Validation attendue :** un seul nom public désigne cette ressource sur Registrations, QueueEngine et Notifications.
 
-### [ ] SW-SCHEMA-001 — Corriger l’enum des modes de session
+### [x] SW-SCHEMA-001 — Corriger l’enum des modes de session
 
 - **Contrat observé :** `QueueSessionDetailDto.mode` annonce `active | paused | closed`.
 - **Implémentation observée :** la table, `OpenSessionDto` et le service utilisent `active | consultation_only`; la fermeture est représentée par `disconnected_at`, pas par un mode `closed`.
@@ -145,7 +145,7 @@
 - **Correction recommandée :** centraliser `QueueSessionMode` et documenter `active | consultation_only`; représenter l’état ouvert/fermé séparément si nécessaire.
 - **Validation attendue :** enum identique dans DTO d’entrée, DTO de sortie, entité et contrainte SQL.
 
-### [ ] SW-SCHEMA-002 — Ajouter `processing` au statut des notifications
+### [x] SW-SCHEMA-002 — Ajouter `processing` au statut des notifications
 
 - **Contrat observé :** `NotificationDetailDto.notificationStatus` annonce `pending | sent | delivered | failed`.
 - **Implémentation observée :** le worker réserve une notification avec le statut persistant `processing`, également accepté par `NotificationFilterDto` et la contrainte SQL.
@@ -153,14 +153,14 @@
 - **Correction recommandée :** enum partagé unique pour entité, worker, filtres et réponses.
 - **Validation attendue :** `processing` apparaît dans le schéma de réponse et toutes les listes restent identiques.
 
-### [ ] SW-FORMAT-001 — Documenter formats et bornes scalaires
+### [x] SW-FORMAT-001 — Documenter formats et bornes scalaires
 
 - **Preuve :** de nombreuses propriétés `createdAt`, `updatedAt`, `scheduledTime`, `businessDate`, `birthDate` et heures métier sont de simples `string` sans `format`; les IDs numériques n’ont généralement pas `minimum: 1`. Plusieurs propriétés entières sont décrites comme `number` sans format `int32`.
 - **Impact :** génération de clients trop permissifs, absence de validation locale et ambiguïté entre date, instant UTC et heure locale.
 - **Correction recommandée :** composants/décorateurs centraux pour ID positif, `date`, `date-time`, heure locale et timezone IANA. Aligner `class-validator` avec ces formats.
 - **Validation attendue :** contrôle automatisé du document ne trouvant plus de propriétés temporelles non qualifiées ni d’IDs d’entrée sans borne.
 
-### [ ] SW-PAG-001 — Exposer les valeurs de tri autorisées par endpoint
+### [x] SW-PAG-001 — Exposer les valeurs de tri autorisées par endpoint
 
 - **Contrat observé :** `PaginationDto.sort` est une chaîne générique au format `field:asc|desc`.
 - **Implémentation observée :** chaque service appelle `getSafeSortField` avec une allowlist propre et remplace silencieusement une valeur inconnue par le tri par défaut.
@@ -168,7 +168,7 @@
 - **Correction recommandée :** DTO de filtre par ressource avec enum Swagger partagé avec l’allowlist d’exécution, et rejet 400 d’un champ inconnu plutôt qu’un fallback silencieux.
 - **Validation attendue :** les valeurs `sort` générées correspondent exactement aux colonnes autorisées de chaque listing.
 
-### [ ] SW-ENGINE-001 — Réaligner tous les schémas de sortie QueueEngine
+### [x] SW-ENGINE-001 — Réaligner tous les schémas de sortie QueueEngine
 
 - **Threads :** `GET /queues/{queueId}/threads` est documenté comme un tableau de `QueueThreadDetailDto` (`isOpen`, `operatorUserId`, `currentTicketNumber`), alors que le service retourne une réponse paginée contenant `threadNumber`, `status` et un objet `session` imbriqué.
 - **Preview :** `GET /sites/{siteId}/next-preview` annonce un tableau de `QueuePreviewResponseDto` contenant lui-même `queueId` et `candidates`; le service retourne directement un tableau de candidats enrichis (`registrationId`, queue, site, personne, score, `calledEarly`).
@@ -178,14 +178,14 @@
 - **Correction recommandée :** créer des DTO correspondant aux modèles de sortie actuels, typer explicitement les retours des services et ajouter des tests de contrat sur les objets après `SerializationInterceptor`.
 - **Validation attendue :** snapshots JSON réels comparés aux schémas OpenAPI pour les quatre familles d’opérations.
 
-### [ ] SW-RBAC-001 — Exposer les permissions requises
+### [x] SW-RBAC-001 — Exposer les permissions requises
 
 - **Contrat observé :** OpenAPI indique uniquement `bearer`; les métadonnées `@RequirePermission` et `@RequireAnyPermission` ne sont pas visibles.
 - **Impact :** un intégrateur authentifié ne peut pas déterminer pourquoi un endpoint retourne 403 ni quel rôle/jeu de permissions demander. C’est particulièrement problématique pour les endpoints Users dont les alternatives sont nombreuses.
 - **Correction recommandée :** enrichir les décorateurs RBAC centralisés pour ajouter une extension OpenAPI (`x-required-permissions`, avec sémantique all/any) et, si utile, une description lisible générée.
 - **Validation attendue :** chaque route protégée expose les permissions exactes sans duplication manuelle dans les contrôleurs.
 
-### [ ] SW-QUEUE-001 — Réaligner les réponses opérationnelles des files
+### [x] SW-QUEUE-001 — Réaligner les réponses opérationnelles des files
 
 - **Display :** `QueueDisplayResponseDto` annonce `queueName`, `currentCalling` et `recentCalled`; le service retourne `queueId`, `activeThreads[{threadNumber,currentTicket}]` et `nextTickets[string]`.
 - **Reset :** `QueueResetResponseDto` annonce `resetAt` et `closedWaitingCount`; le service retourne `reset: true` et `timestamp` sans compteur.
@@ -194,7 +194,7 @@
 - **Correction recommandée :** décider la forme métier cible, typer les retours du service avec les DTO correspondants, séparer les DTO assign/remove si leurs formes diffèrent, et supprimer les anciens champs non produits.
 - **Validation attendue :** tests HTTP passant les réponses sérialisées dans un validateur OpenAPI pour status, display, reset et opérateurs.
 
-### [ ] SW-TIER-002 — Réaligner les modèles de forfaits de file et règles
+### [x] SW-TIER-002 — Réaligner les modèles de forfaits de file et règles
 
 - **Queue tier :** `QueueTierDetailDto` documente essentiellement `price`, `isEnabled`, `isDefault` et `tier`; les créations/mises à jour retournent directement la ligne d’association avec notamment `currency`, `displayOrder`, timestamps et sans objet `tier`. La liste, elle, construit une forme enrichie encore différente.
 - **Notification rule :** le DTO annonce `triggerEvent`, `thresholdType`, `thresholdValue` et `templateKey`. La table et le service produisent `notificationType`, `channel`, `thresholdPosition`, `thresholdMinutes` et `includeTrackingLink`.
@@ -202,14 +202,14 @@
 - **Correction recommandée :** choisir une représentation canonique par ressource, mapper toutes les mutations vers celle-ci et supprimer les DTO hérités de l’ancien modèle.
 - **Validation attendue :** create/update/list renvoient la même forme canonique et passent une validation OpenAPI.
 
-### [ ] SW-RESP-001 — Remplacer les DTO de résultat trop génériques
+### [x] SW-RESP-001 — Remplacer les DTO de résultat trop génériques
 
 - **Preuve :** `AssignManagerResponseDto`/`AssignOperatorResponseDto` annoncent `success`, alors que les services renvoient `assigned` ou `removed`. `TierDeleteResponseDto` annonce `{id, deleted}` mais sert aussi à documenter des retours réels `{tierId, deleted}`, `{queueId, tierId, removed}` et `{ruleId, deleted}`.
 - **Impact :** plusieurs opérations sont documentées avec des propriétés absentes ou de mauvais identifiants.
 - **Correction recommandée :** DTO dédiés `AssignmentResponse`, `RemovalResponse`, `TierDeleteResponse`, `QueueTierRemovalResponse`, `RuleDeleteResponse`, ou une convention unique réellement appliquée par tous les services.
 - **Validation attendue :** aucune opération ne réutilise un DTO dont les propriétés diffèrent de son retour réel.
 
-### [ ] SW-AUTH-002 — Réaligner les réponses d’authentification
+### [x] SW-AUTH-002 — Réaligner les réponses d’authentification
 
 - **Refresh :** `TokensResponseDto` annonce seulement les deux tokens, mais `AuthService.refresh` retourne aussi `user`.
 - **Me :** `CurrentUserResponseDto` annonce `{user: AuthUserDto}`; le service retourne le profil à plat avec `userId`, identité, rôles, permissions et `scope`.
@@ -219,7 +219,7 @@
 - **Correction recommandée :** choisir les réponses cibles, créer des DTO distincts si nécessaire, et typer les retours des méthodes du service pour rendre ces divergences impossibles à compiler.
 - **Validation attendue :** tests e2e login → refresh → me → password/logout validés contre OpenAPI après sérialisation.
 
-### [ ] SW-REG-001 — Documenter l’annulation comme une annulation
+### [x] SW-REG-001 — Documenter l’annulation comme une annulation
 
 - **Contrat observé :** `DELETE /registrations/{registrationId}` utilise `RegistrationDeleteResponseDto` avec `{registrationId, deleted}`.
 - **Implémentation observée :** la ressource passe au statut `cancelled` et retourne `{registrationId, cancelled: true}`.
@@ -227,7 +227,7 @@
 - **Correction recommandée :** préférer une action explicite `POST /registrations/{id}/cancel` ou, au minimum, renommer le DTO et documenter précisément le soft-delete/statut. Harmoniser la propriété `cancelled`.
 - **Validation attendue :** méthode, description, statut métier et payload emploient la même sémantique.
 
-### [ ] SW-REG-002 — Définir des représentations cohérentes de l’inscription
+### [x] SW-REG-002 — Définir des représentations cohérentes de l’inscription
 
 - **Contrat observé :** `RegistrationDetailResponseDto` exige `customerId`, `queueId`, `personId`, `tierId`, token de suivi, dates et timestamps. Il est utilisé pour create, lookup, get, update, reschedule et check-in.
 - **Implémentation observée :** la création retourne notamment `registrationId`, un objet `tier`, `priorityReferenceTime`, `trackingUrl` et `registrationTrackingTokenValidUntil`, sans plusieurs champs exigés par le DTO. D’autres opérations retournent des lignes SQL ou des projections encore différentes.
@@ -236,7 +236,7 @@
 - **Correction recommandée :** définir une représentation canonique complète, ou des DTO explicites par cas d’usage (`RegistrationCreated`, `RegistrationDetail`, `RegistrationTransition`). Mapper systématiquement les sorties au lieu de renvoyer des lignes SQL brutes.
 - **Validation attendue :** chaque opération retourne exactement son DTO, y compris noms, nullabilité, formats UUID/date-time et objets imbriqués.
 
-### [ ] SW-REG-003 — Modéliser les variantes du suivi public
+### [x] SW-REG-003 — Modéliser les variantes du suivi public
 
 - **Contrat observé :** `PublicPositionResponseDto` exige ticket, position, attente, statut et `queueName`.
 - **Implémentation observée :** une inscription clôturée depuis plus d’une heure retourne seulement `{status:'closed'}`; `in_progress` et `waiting` n’incluent pas `queueName`; les autres statuts retournent seulement ticket et statut.
@@ -244,7 +244,7 @@
 - **Correction recommandée :** `oneOf` discriminé par `status` (waiting, in_progress, terminal, closed/degraded), ou réponse stable avec champs optionnels/nullables explicitement définis. Décider si le nom de file doit réellement être fourni puis l’implémenter.
 - **Validation attendue :** test de contrat pour chaque branche de statut et token expiré.
 
-### [ ] SW-MAP-001 — Séparer conversion de casse et projection de contrat
+### [x] SW-MAP-001 — Séparer conversion de casse et projection de contrat
 
 - **Preuve :** de nombreux services/repositories renvoient directement `SELECT *`, `alias.*` ou `RETURNING *` (sites, queues, persons, registrations, notifications, tiers, translations). `SerializationInterceptor` convertit récursivement snake_case vers camelCase et retire quelques secrets, mais ne limite pas les propriétés au DTO Swagger.
 - **Impact :** champs d’audit et colonnes ajoutées ultérieurement deviennent automatiquement publics sans mise à jour OpenAPI ni revue de sécurité. Les réponses contiennent aussi des propriétés non documentées, ce qui masque les divergences décrites dans cet audit.
@@ -258,7 +258,7 @@
 - **Correction recommandée :** constantes/validateurs partagés pour ISO 4217, locale BCP 47, timezone IANA, URL, longueurs et valeurs positives. Faire dériver les métadonnées Swagger des mêmes contraintes.
 - **Validation attendue :** tests de frontière DTO et aucune violation connue de longueur/check DB atteignable après validation HTTP.
 
-### [ ] SW-TIER-003 — Revalider une règle complète lors d’un PATCH
+### [x] SW-TIER-003 — Revalider une règle complète lors d’un PATCH
 
 - **Preuve :** la création vérifie qu’une règle `threshold` possède position ou minutes et limite le tracking link à certains types. `updateNotificationRule` applique seulement les champs reçus sans recharger/revalider l’état final; la base peut alors rejeter la requête ou laisser le service produire une erreur technique.
 - **Impact :** le même état est accepté ou rejeté différemment selon qu’il provient d’un POST ou de plusieurs PATCH; OpenAPI ne décrit pas ces dépendances.
@@ -272,12 +272,55 @@
 - **Correction recommandée :** PUT sur une clé naturelle pour les upserts, ou réponses explicites avec `created/updated/unchanged`; réserver 201 aux créations effectives et documenter l’idempotence.
 - **Validation attendue :** appels répétés couverts avec statuts et payloads fidèles à l’effet réel.
 
-### [ ] SW-RT-001 — Spécifier le protocole temps réel
+### [x] SW-RT-001 — Spécifier le protocole temps réel
 
 - **Preuve :** OpenAPI décrit uniquement HTTP alors que `RealtimeGateway` expose `subscribe`, `ping_session` et plusieurs événements métier ops/display/suivi/traductions.
 - **Impact :** les clients temps réel doivent lire le code source pour connaître handshake, authentification, rooms, payloads et erreurs.
 - **Correction recommandée :** ajouter un document AsyncAPI (ou documentation contractuelle équivalente) généré depuis des DTO partagés avec les émissions HTTP/realtime.
 - **Validation attendue :** événements entrants/sortants, sécurité, canaux et exemples couverts par tests de contrat.
+
+## Journal des corrections
+
+- **2026-10-06 — SW-GEN-001 :** `createOpenApiConfig()` est la source unique du bootstrap et de l'export.
+- **2026-10-06 — SW-SEC-001 :** webhook sans Bearer dans le contrat; les trois headers HMAC, le timestamp, le corps brut signé et l'idempotence sont documentés.
+- **2026-10-06 — SW-AUTH-001 :** body de refresh optionnel et cookie `refreshToken` déclaré.
+- **2026-10-06 — SW-CACHE-001 :** `If-None-Match`, `ETag` et réponse vide 304 documentés.
+- **2026-10-06 — SW-PERSON-001 :** `siteId` positif obligatoire, contrôle de scope préalable et recherche limitée à ce site.
+- **2026-10-06 — SW-ERR-001 :** réponse 500 centralisée, sans détail technique.
+- **2026-10-06 — SW-RBAC-001 :** extension `x-required-permissions` générée par les décorateurs centraux (`all`/`any`).
+- **2026-10-06 — SW-AUTH-002 :** refresh, `/me`, logout et changement de mot de passe alignés sur leurs retours réels.
+- **2026-10-06 — SW-SCHEMA-001 / SW-SCHEMA-002 :** enums de session et de notification alignés sur le domaine persistant.
+- **2026-10-06 — SW-VAL-002 :** validateurs communs pour personne, créneau, lookup et mode de session.
+- **2026-10-06 — SW-TIER-003 :** le PATCH valide l'état final fusionné avec les invariants de création.
+- **2026-10-06 — SW-ENGINE-001 :** DTO dédiés aux candidats, threads paginés, sessions, appels et transitions served/no-show, avec enums et nullabilité réels.
+- **2026-10-06 — SW-QUEUE-001 :** display, reset et affectations sont alignés sur les payloads effectivement retournés.
+- **2026-10-06 — SW-TIER-002 :** représentation queue-tier canonique après create/update/list et modèle de règle aligné sur la table active.
+- **2026-10-06 — SW-RESP-001 :** DTO distincts pour assign/remove et pour chaque type de suppression de forfait/règle.
+- **2026-10-06 — SW-REG-001 / SW-REG-003 :** annulation documentée avec `cancelled`; variantes publiques rendues explicitement optionnelles selon le statut.
+- **2026-10-06 — SW-RT-001 :** ajout de `asyncapi.yaml` pour le handshake, les rooms, `subscribe`, `ping_session` et les événements sortants.
+- **2026-10-06 — SW-VAL-003 / SW-FORMAT-001 :** enums/date stricts sur les filtres concernés, pipe global pour tous les paramètres `*Id` positifs, et normalisation OpenAPI commune des minima et formats temporels.
+- **2026-10-06 — SW-REG-002 :** DTO distincts pour la création, le détail et les transitions d'inscription; formats et nullabilité du tracking explicités.
+- **2026-10-06 — SW-MAP-001 :** les décorateurs de réponse transmettent le DTO cible au `SerializationInterceptor`, qui convertit puis projette récursivement les propriétés autorisées. Une colonne SQL ajoutée ne devient donc plus publique par défaut.
+- **2026-10-06 — SW-ERR-002 :** le décorateur commun est ramené aux erreurs réellement transversales; les 404/409/422 ne sont plus annoncées uniformément et le 423 générique a été supprimé.
+- **2026-10-06 — SW-PAG-001 :** la normalisation OpenAPI publie les valeurs `champ:asc|desc` propres à chaque opération; les autres tris conservent un pattern strict.
+- **2026-10-06 — SW-VAL-004 :** contraintes DTO rapprochées des bornes SQL avec validateurs standards pour URL, timezone IANA, ISO 4217, locale, longueurs et identifiants positifs.
+
+## Décisions produit requises — non modifiées
+
+- **SW-VAL-001 :** définir l'identité minimale autorisée pour une personne (email, téléphone ou identité nominative).
+- **SW-TIER-001 :** choisir la stratégie de compatibilité/migration de la valeur publique persistée `trakingLink` vers `trackingLink`.
+- **SW-NAME-001 :** confirmer le renommage public transversal `customerId` vers `registrationId` et sa période de compatibilité.
+- **SW-HTTP-001 :** choisir les statuts et la stratégie de compatibilité pour les POST actuellement idempotents/upsert.
+
+## Double contrôle du 2026-10-06
+
+- **Résultat de vérification :** `npm run quality:check` réussi après corrections, avec **21 suites et 103 tests réussis**.
+- **SW-VAL-002 rouvert :** les règles sont effectivement validées à l'exécution, mais les variantes conditionnelles ne sont pas encore toutes exprimées structurellement en `oneOf` dans OpenAPI.
+- **SW-ERR-002 rouvert :** le bruit générique a été retiré, mais les erreurs métier 404/409/422 doivent encore être ajoutées précisément endpoint par endpoint.
+- **SW-VAL-004 rouvert :** plusieurs contraintes majeures sont présentes (URL, timezone, devise, locale, longueurs et IDs), mais l'équivalence exhaustive avec chaque colonne SQL n'est pas encore prouvée.
+- **Correction complémentaire :** la disponibilité d'inscription retourne maintenant `queueId` et `date`, conformément à `AvailabilityResponseDto`; les headers `Set-Cookie` login/refresh/logout et les paramètres de tri non supportés ont également été corrigés.
+- **Vérification :** `npm run build` réussi; 19 suites et 93 tests réussis. L'export Swagger nécessite une base joignable et n'a pas pu être rejoué dans cette session.
+- **Première vérification du 2026-10-06 :** `npm run quality:check` avait réussi intégralement avec 21 suites et 101 tests. Le double contrôle ci-dessous prévaut sur cette première conclusion et a rouvert les fermetures insuffisamment démontrées.
 
 ## Points solides observés
 
@@ -303,3 +346,37 @@
 - Toutes les opérations, paramètres, bodies, réponses, security requirements et schémas ont été inventoriés.
 - Les constats ont été confrontés aux contrôleurs, DTO, services, intercepteurs, filtre d’erreurs, entités et contraintes SQL concernés.
 - Cet audit ne corrige pas les points : il fournit un backlog ordonné et des validations attendues pour des corrections à faible coût et vérifiables.
+
+<!-- CHECKPOINT id="ckpt_muvv5ihf_ml4d99" time="2026-10-05T23:10:56.979Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muvvidgb_rrzwzb" time="2026-10-05T23:20:56.987Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muvwg7sy_mfjbrd" time="2026-10-05T23:47:15.970Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muw46x9v_gavi50" time="2026-10-06T03:23:59.347Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muwbu299_6fz97j" time="2026-10-06T06:57:56.205Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muwcanv6_bpqhm7" time="2026-10-06T07:10:50.706Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muwcniu4_c5b64n" time="2026-10-06T07:20:50.716Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muwd0dt4_d7dzou" time="2026-10-06T07:30:50.728Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muwdd8rs_tnoy7r" time="2026-10-06T07:40:50.728Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muwdq3vt_70tfge" time="2026-10-06T07:50:50.921Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muwe2vvw_ki3y47" time="2026-10-06T08:00:47.084Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muwefqut_a0ocps" time="2026-10-06T08:10:47.093Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muweslu0_zil8f7" time="2026-10-06T08:20:47.112Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muwf5gsy_aof8r3" time="2026-10-06T08:30:47.122Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muwfibs2_xw2ecr" time="2026-10-06T08:40:47.138Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muwgxrns_fdkzhp" time="2026-10-06T09:20:47.176Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muwhammr_c6r564" time="2026-10-06T09:30:47.187Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

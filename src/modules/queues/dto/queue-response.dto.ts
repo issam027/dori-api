@@ -154,40 +154,38 @@ export class CallingTicketDetailDto {
   @ApiProperty({ example: 1, description: 'Numéro du guichet' })
   threadNumber: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'A-007',
+    nullable: true,
     description: 'Numéro de ticket en cours de traitement',
   })
-  ticketNumber: string;
+  currentTicket: string | null;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: '2026-09-27T10:15:00.000Z',
     description: "Heure de l'appel",
   })
-  calledAt: string;
+  calledAt?: string;
 }
 
 export class QueueDisplayResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la file' })
   queueId: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'Consultation Cardiologie',
     description: 'Nom de la file',
   })
-  queueName: string;
+  queueName?: string;
 
   @ApiProperty({
     type: [CallingTicketDetailDto],
     description: 'Tickets actuellement appelés aux guichets',
   })
-  currentCalling: CallingTicketDetailDto[];
+  activeThreads: CallingTicketDetailDto[];
 
-  @ApiProperty({
-    type: [CallingTicketDetailDto],
-    description: 'Derniers tickets appelés (historique récent pour affichage)',
-  })
-  recentCalled: CallingTicketDetailDto[];
+  @ApiProperty({ type: [String], description: 'Prochains numéros de ticket' })
+  nextTickets: string[];
 }
 
 export class QueueDeleteResponseDto {
@@ -206,10 +204,10 @@ export class QueueResetResponseDto {
     example: '2026-09-27T12:00:00.000Z',
     description: 'Horodatage de la réinitialisation',
   })
-  resetAt: string;
+  timestamp: string;
 
-  @ApiProperty({ example: 0, description: 'Nombre de clients clôturés' })
-  closedWaitingCount: number;
+  @ApiProperty({ example: true, description: 'Réinitialisation confirmée' })
+  reset: boolean;
 }
 
 export class QueueOperatorResponseDto {
@@ -254,11 +252,17 @@ export class PaginatedQueueOperatorResponseDto extends PaginatedResponseDto {
 
 export class AssignOperatorResponseDto {
   @ApiProperty({ example: true, description: 'Opération réussie' })
-  success: boolean;
+  assigned: boolean;
 
   @ApiProperty({ example: 1, description: 'ID de la file' })
   queueId: number;
 
   @ApiProperty({ example: 3, description: "ID de l'utilisateur" })
   userId: number;
+}
+
+export class RemoveOperatorResponseDto {
+  @ApiProperty({ minimum: 1 }) queueId: number;
+  @ApiProperty({ minimum: 1 }) userId: number;
+  @ApiProperty({ example: true }) removed: boolean;
 }

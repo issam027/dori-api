@@ -7,6 +7,8 @@ import {
   IsOptional,
   IsString,
   Min,
+  Length,
+  MaxLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -14,17 +16,20 @@ export class CreateTierDto {
   @ApiProperty({ example: 'gold', description: 'Code unique du forfait' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(20)
   tierCode: string;
 
   @ApiProperty({ example: 'Or', description: 'Nom affiché du forfait' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(50)
   tierName: string;
 
   @ApiPropertyOptional({
     example: 'Notification de bienvenue + seuil + lien de suivi',
   })
   @IsString()
+  @MaxLength(500)
   @IsOptional()
   description?: string;
 }
@@ -58,11 +63,13 @@ export class AssociateQueueTierDto {
 
   @ApiPropertyOptional({ example: 'TND', description: 'Code devise ISO 4217' })
   @IsString()
+  @Length(3, 3)
   @IsOptional()
   currency?: string;
 
   @ApiPropertyOptional({ example: 1, description: "Ordre d'affichage" })
   @IsInt()
+  @Min(0)
   @IsOptional()
   displayOrder?: number;
 }
@@ -76,6 +83,7 @@ export class UpdateQueueTierDto {
 
   @ApiPropertyOptional({ example: 'EUR' })
   @IsString()
+  @Length(3, 3)
   @IsOptional()
   currency?: string;
 

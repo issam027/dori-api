@@ -372,7 +372,7 @@ export class RegistrationsService {
       currentMinutes += slotDuration;
     }
 
-    return { slots };
+    return { queueId, date: queryDto.date, slots };
   }
 
   async checkIn(registrationId: number, user: AuthenticatedUser) {

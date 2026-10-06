@@ -38,6 +38,7 @@ import {
   QueueResetResponseDto,
   PaginatedQueueOperatorResponseDto,
   AssignOperatorResponseDto,
+  RemoveOperatorResponseDto,
 } from './dto/queue-response.dto';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
@@ -247,7 +248,7 @@ export class QueuesController {
     type: Number,
     description: "ID de l'utilisateur à retirer",
   })
-  @ApiDoriOkResponse(AssignOperatorResponseDto, 'Opérateur retiré avec succès')
+  @ApiDoriOkResponse(RemoveOperatorResponseDto, 'Opérateur retiré avec succès')
   async removeOperator(
     @Param('queueId', ParseIntPipe) queueId: number,
     @Param('userId', ParseIntPipe) userId: number,

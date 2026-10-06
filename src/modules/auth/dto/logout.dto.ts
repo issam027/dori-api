@@ -1,4 +1,4 @@
-import { IsInt, IsOptional } from 'class-validator';
+import { IsInt, IsOptional, Min } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class LogoutDto {
@@ -10,6 +10,7 @@ export class LogoutDto {
     example: 42,
   })
   @IsInt()
+  @Min(1)
   @IsOptional()
   userId?: number;
 }

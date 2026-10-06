@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DataSource } from 'typeorm';
 import * as crypto from 'crypto';
 import {
   SendManualNotificationDto,
@@ -13,13 +12,17 @@ import { DoriException } from '../../core/errors/dori.exception';
 import { PaginatedResult } from '../../core/pagination/pagination.dto';
 import { NotificationDetailDto } from './dto/notification-response.dto';
 import { ConfigService } from '@nestjs/config';
+import {
+  NotificationsRepository,
+  ThresholdRuleRow,
+} from './notifications.repository';
 
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
   constructor(
-    private readonly dataSource: DataSource,
+    private readonly notificationsRepository: NotificationsRepository,
     private readonly scopeService: ScopeService,
     private readonly clockService: ClockService,
     private readonly configService: ConfigService,
@@ -42,88 +45,47 @@ export class NotificationsService {
       'notification_id',
     );
 
-    let query = `
-      SELECT n.*, c.ticket_number, c.business_date, p.first_name, p.last_name
-      FROM dori_notification n
-      JOIN dori_customer c ON c.customer_id = n.customer_id
-      JOIN dori_person p ON p.person_id = c.person_id
-      JOIN dori_site_queue_thread q ON q.queue_id = c.queue_id
-      WHERE 1=1
-    `;
-    const params: any[] = [];
-
     if (!scope.isGlobal) {
       if (scope.queueIds.length === 0) return filter.createResponse([], 0);
-      params.push(scope.queueIds);
-      query += ` AND c.queue_id = ANY($${params.length})`;
     }
-
-    if (filter.registrationId) {
-      params.push(filter.registrationId);
-      query += ` AND n.customer_id = $${params.length}`;
-    }
-    if (filter.channel) {
-      params.push(filter.channel);
-      query += ` AND n.channel = $${params.length}`;
-    }
-    if (filter.status) {
-      params.push(filter.status);
-      query += ` AND n.notification_status = $${params.length}`;
-    }
-    if (filter.businessDate) {
-      params.push(filter.businessDate);
-      query += ` AND c.business_date = $${params.length}`;
-    }
-
-    const countRes = await this.dataSource.query(
-      `SELECT COUNT(*)::int as total FROM (${query}) count_sub`,
-      params,
+    const result = await this.notificationsRepository.findMany({
+      filter,
+      queueIds: scope.isGlobal ? undefined : scope.queueIds,
+      sortField: safeSortField,
+      sortOrder,
+      pageSize,
+      offset,
+    });
+    return filter.createResponse<NotificationDetailDto>(
+      result.items as unknown as NotificationDetailDto[],
+      result.total,
     );
-    const total = countRes[0]?.total || 0;
-
-    query += ` ORDER BY n.${safeSortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`;
-    const items = await this.dataSource.query(query, params);
-
-    return filter.createResponse(items, total);
   }
 
   async findNotificationById(notificationId: number, user: AuthenticatedUser) {
-    const rows = await this.dataSource.query(
-      `SELECT n.*, c.queue_id, c.ticket_number, c.business_date
-       FROM dori_notification n
-       JOIN dori_customer c ON c.customer_id = n.customer_id
-       WHERE n.notification_id = $1`,
-      [notificationId],
-    );
-
-    if (!rows || rows.length === 0) {
+    const notification =
+      await this.notificationsRepository.findById(notificationId);
+    if (!notification) {
       throw new DoriException('NOTIFICATION_NOT_FOUND', { notificationId });
     }
 
-    const notif = rows[0];
-    await this.scopeService.checkQueueAccess(user, notif.queue_id);
-    return notif;
+    await this.scopeService.checkQueueAccess(user, notification.queue_id!);
+    return notification;
   }
 
   async sendManualNotification(
     dto: SendManualNotificationDto,
     user: AuthenticatedUser,
   ) {
-    const customerRows = await this.dataSource.query(
-      `SELECT c.*, p.phone_number, p.email, p.language_preference as person_lang
-       FROM dori_customer c
-       JOIN dori_person p ON p.person_id = c.person_id
-       WHERE c.customer_id = $1 AND c.is_active = TRUE`,
-      [dto.customerId],
+    const customer = await this.notificationsRepository.findActiveCustomer(
+      dto.customerId,
     );
-
-    if (!customerRows || customerRows.length === 0) {
+    if (!customer) {
       throw new DoriException('REGISTRATION_NOT_FOUND', {
         registrationId: dto.customerId,
       });
     }
 
-    const customer = customerRows[0];
     await this.scopeService.checkQueueAccess(user, customer.queue_id);
 
     const recipient =
@@ -145,31 +107,19 @@ export class NotificationsService {
     const locale = customer.language_preference || customer.person_lang || 'fr';
     const now = this.clockService.now();
 
-    const res = await this.dataSource.query(
-      `INSERT INTO dori_notification (
-        customer_id, channel, notification_type, locale, recipient, notification_content,
-        notification_status, attempt_count, created_at, updated_at
-      ) VALUES ($1, $2, 'welcome', $3, $4, $5, 'pending', 0, $6, $6)
-      RETURNING *`,
-      [dto.customerId, dto.channel, locale, recipient, dto.content, now],
+    return this.notificationsRepository.createManual(
+      dto,
+      locale,
+      recipient,
+      now,
     );
-
-    return res[0];
   }
 
   async resendNotification(notificationId: number, user: AuthenticatedUser) {
     await this.findNotificationById(notificationId, user);
     const now = this.clockService.now();
 
-    const res = await this.dataSource.query(
-      `UPDATE dori_notification
-       SET notification_status = 'pending', attempt_count = attempt_count + 1, failure_reason = NULL, updated_at = $1
-       WHERE notification_id = $2
-       RETURNING *`,
-      [now, notificationId],
-    );
-
-    return res[0];
+    return this.notificationsRepository.markPending(notificationId, now);
   }
 
   // HMAC Webhook (§5.10, §8.3)
@@ -219,36 +169,15 @@ export class NotificationsService {
       throw new DoriException('UNAUTHENTICATED');
     }
 
-    await this.dataSource.transaction(async (manager) => {
-      const accepted = await manager.query(
-        `INSERT INTO dori_webhook_event (provider, event_id, received_at)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (provider, event_id) DO NOTHING
-         RETURNING event_id`,
-        [normalizedProvider, eventId, now],
-      );
-      if (accepted.length === 0) return;
-
-      const updated = await manager.query(
-        `UPDATE dori_notification
-         SET notification_status = $1,
-             delivered_at = CASE WHEN $1 = 'delivered' THEN $2 ELSE delivered_at END,
-             failure_reason = CASE WHEN $1 = 'failed' THEN $3 ELSE failure_reason END,
-             updated_at = $2
-         WHERE provider = $4 AND provider_message_id = $5
-         RETURNING notification_id`,
-        [
-          dto.status,
-          now,
-          dto.reason || null,
-          normalizedProvider,
-          dto.messageId,
-        ],
-      );
-      if (updated.length === 0) {
-        throw new DoriException('NOTIFICATION_NOT_FOUND');
-      }
-    });
+    const outcome = await this.notificationsRepository.applyWebhook(
+      normalizedProvider,
+      eventId,
+      dto,
+      now,
+    );
+    if (outcome === 'missing') {
+      throw new DoriException('NOTIFICATION_NOT_FOUND');
+    }
 
     return { received: true };
   }
@@ -258,37 +187,22 @@ export class NotificationsService {
     const now = this.clockService.now();
 
     // 1. Fetch active waiting clients for this queue
-    const waitingClients = await this.dataSource.query(
-      `SELECT c.customer_id, c.ticket_number, c.tier_id, c.language_preference,
-              p.first_name, p.last_name, p.phone_number, p.email, p.language_preference as p_lang,
-              q.average_wait_time, s.timezone, s.default_locale
-       FROM dori_customer c
-       JOIN dori_person p ON p.person_id = c.person_id
-       JOIN dori_site_queue_thread q ON q.queue_id = c.queue_id
-       JOIN dori_site s ON s.site_id = q.site_id
-       WHERE c.queue_id = $1 AND c.status = 'waiting' AND c.is_active = TRUE
-       ORDER BY c.priority_reference_time ASC`,
-      [queueId],
-    );
+    const waitingClients =
+      await this.notificationsRepository.findWaitingCustomers(queueId);
 
     if (!waitingClients || waitingClients.length === 0) return;
 
     // Count active threads
-    const activeThreadsRes = await this.dataSource.query(
-      `SELECT COUNT(*)::int as count FROM dori_queue_session
-       WHERE queue_id = $1 AND disconnected_at IS NULL AND mode = 'active'`,
-      [queueId],
+    const activeThreads = Math.max(
+      1,
+      await this.notificationsRepository.countActiveThreads(queueId),
     );
-    const activeThreads = Math.max(1, activeThreadsRes[0]?.count || 1);
 
     // 2. Fetch threshold rules for this queue
-    const rules = await this.dataSource.query(
-      `SELECT * FROM dori_tier_notification_rule
-       WHERE queue_id = $1 AND notification_type = 'threshold' AND is_active = TRUE`,
-      [queueId],
-    );
+    const rules =
+      await this.notificationsRepository.findThresholdRules(queueId);
 
-    const rulesByTier = new Map<number, any[]>();
+    const rulesByTier = new Map<number, ThresholdRuleRow[]>();
     for (const r of rules) {
       if (!rulesByTier.has(r.tier_id)) rulesByTier.set(r.tier_id, []);
       rulesByTier.get(r.tier_id)!.push(r);
@@ -312,42 +226,25 @@ export class NotificationsService {
 
         if (thresholdPosSatisfied || thresholdMinSatisfied) {
           // Idempotency: check if already sent (§3.12, §4.1)
-          const existing = await this.dataSource.query(
-            `SELECT notification_id FROM dori_notification
-             WHERE customer_id = $1 AND notification_type = 'threshold' AND channel = $2 AND notification_status <> 'failed'`,
-            [client.customer_id, rule.channel],
-          );
-
-          if (!existing || existing.length === 0) {
-            const recipient =
-              rule.channel === 'sms' ? client.phone_number : client.email;
-            if (recipient) {
-              const locale =
-                client.language_preference ||
-                client.p_lang ||
-                client.default_locale ||
-                'fr';
-              const content =
-                `${client.first_name || ''}, votre tour approche. Ticket ${client.ticket_number}.`.trim();
-
-              await this.dataSource.query(
-                `INSERT INTO dori_notification (
-                  customer_id, rule_id, channel, notification_type, locale, recipient,
-                  notification_content, notification_status, attempt_count, created_at, updated_at
-                ) VALUES ($1, $2, $3, 'threshold', $4, $5, $6, 'pending', 0, $7, $7)
-                ON CONFLICT (customer_id, notification_type, channel) WHERE notification_status <> 'failed'
-                DO NOTHING`,
-                [
-                  client.customer_id,
-                  rule.rule_id,
-                  rule.channel,
-                  locale,
-                  recipient,
-                  content,
-                  now,
-                ],
-              );
-            }
+          const recipient =
+            rule.channel === 'sms' ? client.phone_number : client.email;
+          if (recipient) {
+            const locale =
+              client.language_preference ||
+              client.p_lang ||
+              client.default_locale ||
+              'fr';
+            const content =
+              `${client.first_name || ''}, votre tour approche. Ticket ${client.ticket_number}.`.trim();
+            await this.notificationsRepository.createThresholdIfAbsent({
+              customerId: client.customer_id,
+              ruleId: rule.rule_id,
+              channel: rule.channel,
+              locale,
+              recipient,
+              content,
+              now,
+            });
           }
         }
       }

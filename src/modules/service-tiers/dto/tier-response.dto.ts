@@ -57,6 +57,9 @@ export class QueueTierDetailDto {
   })
   price: number;
 
+  @ApiProperty({ example: 'TND', minLength: 3, maxLength: 3 })
+  currency: string;
+
   @ApiProperty({
     example: true,
     description: 'Indique si ce forfait est proposé par la file',
@@ -65,6 +68,9 @@ export class QueueTierDetailDto {
 
   @ApiProperty({ example: true, description: 'Forfait sélectionné par défaut' })
   isDefault: boolean;
+
+  @ApiProperty({ example: 0 })
+  displayOrder: number;
 
   @ApiPropertyOptional({
     type: ServiceTierDetailDto,
@@ -105,23 +111,16 @@ export class NotificationRuleDetailDto {
 
   @ApiProperty({
     example: 'threshold',
-    enum: ['welcome', 'threshold', 'near_turn'],
+    enum: ['welcome', 'threshold', 'trakingLink'],
     description: 'Événement déclencheur',
   })
-  triggerEvent: string;
+  notificationType: string;
 
-  @ApiProperty({
-    example: 'position',
-    enum: ['position', 'estimated_time'],
-    description: 'Type de seuil',
-  })
-  thresholdType: string;
+  @ApiPropertyOptional({ example: 3, minimum: 0, nullable: true })
+  thresholdPosition?: number;
 
-  @ApiProperty({
-    example: 3,
-    description: 'Valeur du seuil (ex: 3 personnes avant)',
-  })
-  thresholdValue: number;
+  @ApiPropertyOptional({ example: 10, minimum: 0, nullable: true })
+  thresholdMinutes?: number;
 
   @ApiProperty({
     example: 'sms',
@@ -134,7 +133,7 @@ export class NotificationRuleDetailDto {
     example: 'sms.threshold_reached',
     description: 'Clé du gabarit de traduction',
   })
-  templateKey?: string;
+  includeTrackingLink: boolean;
 
   @ApiProperty({ example: true, description: 'Règle active' })
   isActive: boolean;
@@ -162,8 +161,17 @@ export class PaginatedNotificationRuleResponseDto extends PaginatedResponseDto {
 
 export class TierDeleteResponseDto {
   @ApiProperty({ example: 1, description: "ID de l'élément supprimé" })
-  id: number;
+  tierId?: number;
+
+  @ApiPropertyOptional({ example: 1 })
+  queueId?: number;
+
+  @ApiPropertyOptional({ example: 1 })
+  ruleId?: number;
 
   @ApiProperty({ example: true, description: 'Confirmation de suppression' })
   deleted: boolean;
+
+  @ApiPropertyOptional({ example: true })
+  removed?: boolean;
 }

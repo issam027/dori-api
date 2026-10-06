@@ -155,7 +155,12 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
     personsServiceMock.createPerson.mockResolvedValue({ person_id: 15 });
 
     const dto = {
-      person: { firstName: 'Nadia', email: 'nadia@example.com' },
+      person: {
+        firstName: 'Nadia',
+        lastName: 'Ben Ali',
+        phoneNumber: '+21698765432',
+        email: 'nadia@example.com',
+      },
       queueId: 1,
       tierId: 1,
       entryType: 'walkin' as const,

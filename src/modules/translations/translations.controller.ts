@@ -18,6 +18,8 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
+  ApiHeader,
+  ApiResponse,
 } from '@nestjs/swagger';
 import {
   ApiDoriOkResponse,
@@ -62,7 +64,21 @@ export class TranslationsController {
     description:
       'Retourne le dictionnaire de traductions pour une locale et une catégorie données avec support du cache HTTP via ETag.',
   })
-  @ApiDoriOkResponse(TranslationBundleResponseDto, 'Bundle de traductions')
+  @ApiHeader({
+    name: 'If-None-Match',
+    required: false,
+    description: 'ETag reçu lors du dernier téléchargement du bundle',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_MODIFIED,
+    description: "Le bundle n'a pas changé; réponse sans corps.",
+  })
+  @ApiDoriOkResponse(TranslationBundleResponseDto, 'Bundle de traductions', {
+    ETag: {
+      description: 'Version faible du bundle retourné',
+      schema: { type: 'string' },
+    },
+  })
   async getBundle(
     @Query() query: BundleQueryDto,
     @Headers('if-none-match') ifNoneMatch: string,

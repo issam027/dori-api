@@ -1,4 +1,4 @@
-import { applyDecorators, Type } from '@nestjs/common';
+import { applyDecorators, SetMetadata, Type } from '@nestjs/common';
 import {
   ApiExtraModels,
   ApiOkResponse,
@@ -8,6 +8,8 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
+
+export const SERIALIZATION_DTO_KEY = 'dori:serialization-dto';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ErrorResponseDto : forme exacte produite par GlobalExceptionFilter
@@ -68,6 +70,9 @@ export function ApiDoriErrorResponses(
     omit422?: boolean;
   } = {},
 ) {
+  opts.omit404 ??= true;
+  opts.omit409 ??= true;
+  opts.omit422 ??= true;
   const decorators: MethodDecorator[] = [ApiExtraModels(ErrorResponseDto)];
 
   decorators.push(
@@ -130,13 +135,13 @@ export function ApiDoriErrorResponses(
 
   decorators.push(
     ApiResponse({
-      status: 423,
-      description: 'Ressource verrouillée (ex : compte temporairement bloqué)',
+      status: 429,
+      description: 'Trop de requêtes — limite de débit atteinte',
       schema: errorSchema(),
     }),
     ApiResponse({
-      status: 429,
-      description: 'Trop de requêtes — limite de débit atteinte',
+      status: 500,
+      description: 'Erreur interne sans exposition de détails techniques',
       schema: errorSchema(),
     }),
   );
@@ -246,6 +251,7 @@ function buildEnvelopeSchema(dataSchema: Record<string, unknown>) {
 export function ApiDoriOkResponse<T extends Type<unknown>>(
   dto: T | [T],
   description = 'Succès',
+  headers?: Record<string, { description: string; schema: { type: string } }>,
 ) {
   const isArray = Array.isArray(dto);
   const dtoClass = isArray ? (dto as [T])[0] : (dto as T);
@@ -255,9 +261,11 @@ export function ApiDoriOkResponse<T extends Type<unknown>>(
     : { $ref: getSchemaPath(dtoClass) };
 
   return applyDecorators(
+    SetMetadata(SERIALIZATION_DTO_KEY, { dto: dtoClass, isArray }),
     ApiExtraModels(dtoClass),
     ApiOkResponse({
       description,
+      headers,
       schema: buildEnvelopeSchema(dataSchema),
     }),
   );
@@ -274,6 +282,7 @@ export function ApiDoriCreatedResponse<T extends Type<unknown>>(
   const dataSchema: Record<string, unknown> = { $ref: getSchemaPath(dto) };
 
   return applyDecorators(
+    SetMetadata(SERIALIZATION_DTO_KEY, { dto, isArray: false }),
     ApiExtraModels(dto),
     ApiCreatedResponse({
       description,

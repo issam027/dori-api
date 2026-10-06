@@ -8,6 +8,9 @@ import {
   IsOptional,
   IsString,
   MinLength,
+  MaxLength,
+  Min,
+  IsLocale,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../../core/pagination/pagination.dto';
@@ -19,6 +22,7 @@ export class CreateUserDto {
   })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(50)
   username: string;
 
   @ApiPropertyOptional({
@@ -26,6 +30,7 @@ export class CreateUserDto {
     description: 'Adresse e-mail',
   })
   @IsEmail()
+  @MaxLength(255)
   @IsOptional()
   email?: string;
 
@@ -34,7 +39,8 @@ export class CreateUserDto {
     description: 'Mot de passe (minimum 10 caractères)',
     minLength: 10,
   })
-  @IsString()
+  @IsLocale()
+  @MaxLength(10)
   @MinLength(10)
   password: string;
 
@@ -60,6 +66,7 @@ export class CreateUserDto {
     description: 'Rôle initial à assigner (ID)',
   })
   @IsInt()
+  @Min(1)
   @IsOptional()
   roleId?: number;
 }
@@ -67,11 +74,13 @@ export class CreateUserDto {
 export class UpdateUserDto {
   @ApiPropertyOptional({ example: 'nouvel.email@hopital.tn' })
   @IsEmail()
+  @MaxLength(255)
   @IsOptional()
   email?: string;
 
   @ApiPropertyOptional({ example: 'ar' })
-  @IsString()
+  @IsLocale()
+  @MaxLength(10)
   @IsOptional()
   languagePreference?: string;
 }
@@ -99,6 +108,7 @@ export class SetUserPasswordDto {
 export class AssignUserRoleDto {
   @ApiProperty({ example: 2, description: 'ID du rôle à assigner' })
   @IsInt()
+  @Min(1)
   roleId: number;
 }
 

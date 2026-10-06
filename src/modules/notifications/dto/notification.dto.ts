@@ -1,4 +1,12 @@
-import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../../core/pagination/pagination.dto';
@@ -9,6 +17,7 @@ export class SendManualNotificationDto {
     example: 1,
   })
   @IsInt()
+  @Min(1)
   @IsNotEmpty()
   customerId: number;
 
@@ -40,6 +49,7 @@ export class SendManualNotificationDto {
 export class NotificationFilterDto extends PaginationDto {
   @ApiPropertyOptional({ description: "Filtrer par ID d'inscription" })
   @IsInt()
+  @Min(1)
   @IsOptional()
   @Type(() => Number)
   registrationId?: number;
@@ -64,7 +74,7 @@ export class NotificationFilterDto extends PaginationDto {
     example: '2026-09-27',
     description: 'Date métier (YYYY-MM-DD)',
   })
-  @IsString()
+  @IsDateString()
   @IsOptional()
   businessDate?: string;
 }

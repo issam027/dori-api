@@ -1,11 +1,18 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+// CommonJS export: default import compiles but is not callable with this tsconfig.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 import cookieParser = require('cookie-parser');
 import { AppModule } from './app.module';
 import { ConfiguredIoAdapter } from './core/realtime/configured-io.adapter';
+import {
+  createOpenApiConfig,
+  normalizeOpenApiDocument,
+} from './core/swagger/openapi.config';
+import { PositiveIdParamPipe } from './core/validation/positive-id-param.pipe';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -60,6 +67,7 @@ async function bootstrap() {
 
   // Global Validation Pipe with strict whitelisting (§7.3)
   app.useGlobalPipes(
+    new PositiveIdParamPipe(),
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
@@ -69,7 +77,9 @@ async function bootstrap() {
   );
 
   // OpenAPI 3 Specification / Swagger UI (§7.1)
-  const swaggerConfig = new DocumentBuilder()
+  const swaggerConfig = createOpenApiConfig();
+  /*
+  new DocumentBuilder()
     .setTitle('Dori API')
     .setDescription(
       'Spécification de référence de la plateforme de gestion de files d’attente et de rendez-vous Dori',
@@ -102,7 +112,6 @@ async function bootstrap() {
     .addTag('Translations', 'Gestion des traductions et bundles multilingues')
     .addTag('Reports', 'Rapports statistiques et indicateurs d’activité')
     .addTag('Health', 'Vérification de la santé des composants et dépendances')
-    .addTag('Système', 'Informations système')
     .addBearerAuth(
       {
         type: 'http',
@@ -122,8 +131,11 @@ async function bootstrap() {
       'registration-token',
     )
     .build();
+  */
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  const document = normalizeOpenApiDocument(
+    SwaggerModule.createDocument(app, swaggerConfig),
+  );
   SwaggerModule.setup('api/docs', app, document, {
     // Assets chargés depuis un CDN : les fichiers de swagger-ui-dist
     // ne sont pas toujours déployés sur Vercel

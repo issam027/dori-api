@@ -188,9 +188,9 @@ CREATE TABLE IF NOT EXISTS dori_person (
     person_id SERIAL PRIMARY KEY,
     site_id INT NOT NULL REFERENCES dori_site(site_id),
     first_name VARCHAR(50),
-    last_name VARCHAR(50),
+    last_name VARCHAR(50) NOT NULL,
     email VARCHAR(255),
-    phone_number VARCHAR(20),
+    phone_number VARCHAR(20) NOT NULL,
     birth_date DATE,
     language_preference VARCHAR(10) NOT NULL DEFAULT 'fr',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -199,7 +199,8 @@ CREATE TABLE IF NOT EXISTS dori_person (
     updated_by_user_id INT REFERENCES dori_user(user_id),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT ck_person_phone_e164 CHECK (phone_number IS NULL OR phone_number ~ '^\+[1-9][0-9]{6,14}$')
+    CONSTRAINT ck_person_last_name_not_blank CHECK (BTRIM(last_name) <> ''),
+    CONSTRAINT ck_person_phone_e164 CHECK (phone_number ~ '^\+[1-9][0-9]{6,14}$')
 );
 
 -- 11. dori_person_note (§3.5)
@@ -569,6 +570,23 @@ BEGIN
 END $$;
 
 ALTER TABLE dori_person ALTER COLUMN site_id SET NOT NULL;
+
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM dori_person
+        WHERE last_name IS NULL OR BTRIM(last_name) = '' OR phone_number IS NULL
+    ) THEN
+        RAISE EXCEPTION 'Cannot enforce SW-VAL-001: every existing dori_person must have a non-empty last_name and a phone_number';
+    END IF;
+END $$;
+
+ALTER TABLE dori_person ALTER COLUMN last_name SET NOT NULL;
+ALTER TABLE dori_person ALTER COLUMN phone_number SET NOT NULL;
+ALTER TABLE dori_person DROP CONSTRAINT IF EXISTS ck_person_last_name_not_blank;
+ALTER TABLE dori_person ADD CONSTRAINT ck_person_last_name_not_blank CHECK (BTRIM(last_name) <> '');
+ALTER TABLE dori_person DROP CONSTRAINT IF EXISTS ck_person_phone_e164;
+ALTER TABLE dori_person ADD CONSTRAINT ck_person_phone_e164 CHECK (phone_number ~ '^\+[1-9][0-9]{6,14}$');
 CREATE UNIQUE INDEX IF NOT EXISTS uk_person_site_email_active ON dori_person (site_id, LOWER(email)) WHERE email IS NOT NULL AND is_active;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_person_site_phone_active ON dori_person (site_id, phone_number) WHERE phone_number IS NOT NULL AND is_active;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_person_id_site ON dori_person (person_id, site_id);

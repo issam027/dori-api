@@ -36,6 +36,8 @@ import {
 } from './dto/registration.dto';
 import {
   RegistrationDetailResponseDto,
+  RegistrationCreatedResponseDto,
+  RegistrationTransitionResponseDto,
   PaginatedRegistrationResponseDto,
   AvailabilityResponseDto,
   PublicPositionResponseDto,
@@ -99,7 +101,7 @@ export class RegistrationsController {
       'Génère un nouveau ticket pour un client présent sur place ou réserve un créneau de rendez-vous.',
   })
   @ApiDoriCreatedResponse(
-    RegistrationDetailResponseDto,
+    RegistrationCreatedResponseDto,
     'Inscription effectuée avec ticket généré',
   )
   async register(
@@ -186,7 +188,10 @@ export class RegistrationsController {
     type: Number,
     description: "ID de l'inscription",
   })
-  @ApiDoriOkResponse(RegistrationDetailResponseDto, 'Rendez-vous reprogrammé')
+  @ApiDoriOkResponse(
+    RegistrationTransitionResponseDto,
+    'Rendez-vous reprogrammé',
+  )
   async reschedule(
     @Param('registrationId', ParseIntPipe) registrationId: number,
     @Body() dto: RescheduleDto,

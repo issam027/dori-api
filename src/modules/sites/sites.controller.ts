@@ -31,6 +31,7 @@ import {
   SiteDeleteResponseDto,
   PaginatedSiteManagerResponseDto,
   AssignManagerResponseDto,
+  RemoveManagerResponseDto,
 } from './dto/site-response.dto';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
@@ -174,7 +175,7 @@ export class SitesController {
     type: Number,
     description: "ID de l'utilisateur à retirer",
   })
-  @ApiDoriOkResponse(AssignManagerResponseDto, 'Manager retiré avec succès')
+  @ApiDoriOkResponse(RemoveManagerResponseDto, 'Manager retiré avec succès')
   async removeManager(
     @Param('siteId', ParseIntPipe) siteId: number,
     @Param('userId', ParseIntPipe) userId: number,
