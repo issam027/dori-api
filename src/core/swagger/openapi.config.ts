@@ -17,10 +17,10 @@ export function createOpenApiConfig(): Omit<OpenAPIObject, 'paths'> {
       'https://dori.example.com',
       'support@dori.example.com',
     )
-    .setLicense('Propriétaire', 'https://dori.example.com/license')
+    .setLicense('Propriétaire', 'https://dori.com/license')
     .addServer('http://localhost:3000', 'Environnement local de développement')
+    .addServer('https://dori-api-dev.vercel.app', 'Environnement distant de développement')
     .addServer('https://dori-api.vercel.app/', 'Dori API Vercel')
-    .addServer('https://api.dori.example.com', 'Environnement de production')
     .addTag('Authentification', 'Authentification, sessions et mots de passe')
     .addTag('Sites', 'Gestion des sites et affectation des gestionnaires')
     .addTag('Queues', "Gestion et configuration des files d'attente")
