@@ -62,9 +62,10 @@ export class SitesRepository {
       ) VALUES (
         $1, $2, $3, COALESCE($4, 'public'), COALESCE($5, 'Africa/Tunis'), COALESCE($6, 'TND'),
         COALESCE($7, FALSE), COALESCE($8, 15), COALESCE($9, 1),
-        COALESCE($10, '08:00'), COALESCE($11, '17:00'), COALESCE($12, '12:00'), COALESCE($13, '14:00'),
+        COALESCE($10::time, TIME '08:00'), COALESCE($11::time, TIME '17:00'),
+        COALESCE($12::time, TIME '12:00'), COALESCE($13::time, TIME '14:00'),
         COALESCE($14, 60), COALESCE($15, 0), COALESCE($16, 60), COALESCE($17, 1), COALESCE($18, 1),
-        COALESCE($19, FALSE), COALESCE($20, 'close_all'), COALESCE($21, '03:00'), COALESCE($22, 'fr'),
+        COALESCE($19, FALSE), COALESCE($20, 'close_all'), COALESCE($21::time, TIME '03:00'), COALESCE($22, 'fr'),
         $23, $23, $24, $24
       ) RETURNING *`,
       [
@@ -113,10 +114,20 @@ export class SitesRepository {
   ): Promise<SiteResponseDto> {
     const fields: string[] = [];
     const values: unknown[] = [];
+    const timeColumns = new Set([
+      'default_working_hours_start',
+      'default_working_hours_end',
+      'default_break_start',
+      'default_break_end',
+      'default_daily_reset_time',
+    ]);
     const add = (column: string, value: unknown) => {
       if (value !== undefined) {
         values.push(value);
-        fields.push(`${column} = $${values.length}`);
+        const placeholder = timeColumns.has(column)
+          ? `$${values.length}::time`
+          : `$${values.length}`;
+        fields.push(`${column} = ${placeholder}`);
       }
     };
     add('site_name', dto.siteName);
