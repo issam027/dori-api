@@ -11,24 +11,36 @@ import { DatabaseSeedService } from './database-seed.service';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        driver: pg,
-        host: configService.get<string>('database.host'),
-        port: configService.get<number>('database.port'),
-        username: configService.get<string>('database.username'),
-        password: configService.get<string>('database.password'),
-        database: configService.get<string>('database.name'),
-        ssl: configService.get<boolean>('database.ssl')
-          ? { rejectUnauthorized: false }
-          : false,
-        entities: ALL_ENTITIES,
-        synchronize: false,
-        logging:
-          configService.get<string>('nodeEnv') === 'development'
-            ? ['error', 'warn']
+      useFactory: (configService: ConfigService) => {
+        // TEMPORARY: proves which code runs on Vercel. Remove once resolved.
+        console.log(
+          '[boot] db factory: pg.Client =',
+          typeof pg.Client,
+          '| host =',
+          configService.get<string>('database.host'),
+          '| ssl =',
+          configService.get<boolean>('database.ssl'),
+        );
+
+        return {
+          type: 'postgres' as const,
+          driver: pg,
+          host: configService.get<string>('database.host'),
+          port: configService.get<number>('database.port'),
+          username: configService.get<string>('database.username'),
+          password: configService.get<string>('database.password'),
+          database: configService.get<string>('database.name'),
+          ssl: configService.get<boolean>('database.ssl')
+            ? { rejectUnauthorized: false }
             : false,
-      }),
+          entities: ALL_ENTITIES,
+          synchronize: false,
+          logging:
+            configService.get<string>('nodeEnv') === 'development'
+              ? (['error', 'warn'] as ('error' | 'warn')[])
+              : false,
+        };
+      },
     }),
   ],
   providers: [DatabaseSeedService],

@@ -15,6 +15,7 @@ import {
 } from './core/swagger/openapi.config';
 import { PositiveIdParamPipe } from './core/validation/positive-id-param.pipe';
 
+console.log('[boot] main.ts e83a0e4, VERCEL =', process.env.VERCEL);
 const isVercel = !!process.env.VERCEL;
 
 async function createApp(): Promise<NestExpressApplication> {
