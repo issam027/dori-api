@@ -9,6 +9,8 @@ import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { ClockModule } from '../../core/clock/clock.module';
 import { DatabaseModule } from '../../core/database/database.module';
 import { RbacModule } from '../../core/rbac/rbac.module';
+import { AuthRepository } from './auth.repository';
+import { JwtSessionRepository } from '../../core/auth/repositories/jwt-session.repository';
 
 @Module({
   imports: [
@@ -30,7 +32,13 @@ import { RbacModule } from '../../core/rbac/rbac.module';
     RbacModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard],
+  providers: [
+    AuthService,
+    AuthRepository,
+    JwtSessionRepository,
+    JwtStrategy,
+    JwtAuthGuard,
+  ],
   exports: [AuthService, JwtModule, JwtAuthGuard, JwtStrategy],
 })
 export class AuthModule {}

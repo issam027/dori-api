@@ -5,11 +5,12 @@ import { ClockModule } from '../../core/clock/clock.module';
 import { DatabaseModule } from '../../core/database/database.module';
 import { RbacModule } from '../../core/rbac/rbac.module';
 import { RealtimeModule } from '../../core/realtime/realtime.module';
+import { QueueEngineRepository } from './queue-engine.repository';
 
 @Module({
   imports: [DatabaseModule, ClockModule, RbacModule, RealtimeModule],
   controllers: [QueueEngineController],
-  providers: [QueueEngineService],
+  providers: [QueueEngineService, QueueEngineRepository],
   exports: [QueueEngineService],
 })
 export class QueueEngineModule {}

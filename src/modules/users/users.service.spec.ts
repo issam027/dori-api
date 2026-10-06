@@ -6,6 +6,7 @@ import { ClockService } from '../../core/clock/clock.service';
 import { ConfigService } from '@nestjs/config';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { DoriException } from '../../core/errors/dori.exception';
+import { UsersRepository } from './users.repository';
 
 describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
   let service: UsersService;
@@ -52,6 +53,22 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
               return undefined;
             }),
           },
+        },
+        {
+          provide: UsersRepository,
+          useFactory: (
+            dataSource: DataSource,
+            scopeService: ScopeService,
+            clockService: ClockService,
+            configService: ConfigService,
+          ) =>
+            new UsersRepository(
+              dataSource,
+              scopeService,
+              clockService,
+              configService,
+            ),
+          inject: [DataSource, ScopeService, ClockService, ConfigService],
         },
       ],
     }).compile();

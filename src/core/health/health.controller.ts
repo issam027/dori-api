@@ -1,6 +1,5 @@
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiProperty } from '@nestjs/swagger';
-import { DataSource } from 'typeorm';
 import { Response } from 'express';
 import { Public } from '../auth/decorators/public.decorator';
 import { ClockService } from '../clock/clock.service';
@@ -8,6 +7,7 @@ import {
   ApiDoriPublicErrorResponses,
   ApiDoriRawResponse,
 } from '../swagger/api-dori-response.decorator';
+import { HealthRepository } from './health.repository';
 
 class HealthMemoryUsageDto {
   @ApiProperty({ example: 12345678 }) rss: number;
@@ -46,7 +46,7 @@ class HealthResponseDto {
 @Controller('api/v1/health')
 export class HealthController {
   constructor(
-    private readonly dataSource: DataSource,
+    private readonly healthRepository: HealthRepository,
     private readonly clockService: ClockService,
   ) {}
 
@@ -103,13 +103,9 @@ export class HealthController {
     omit422: true,
   })
   async check(@Res() res: Response) {
-    let dbStatus = 'down';
-    try {
-      await this.dataSource.query('SELECT 1');
-      dbStatus = 'up';
-    } catch {
-      dbStatus = 'down';
-    }
+    const dbStatus = (await this.healthRepository.isDatabaseAvailable())
+      ? 'up'
+      : 'down';
 
     const isHealthy = dbStatus === 'up';
     const status = isHealthy ? 'ok' : 'degraded';

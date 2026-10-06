@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { DoriException } from '../../core/errors/dori.exception';
@@ -11,11 +10,12 @@ import {
   AuthenticatedUser,
   JwtPayload,
 } from '../../core/auth/interfaces/jwt-payload.interface';
+import { AuthRepository, AuthUserRow } from './auth.repository';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly dataSource: DataSource,
+    private readonly authRepository: AuthRepository,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly clockService: ClockService,
@@ -32,16 +32,13 @@ export class AuthService {
     userAgent?: string,
   ) {
     const now = this.clockService.now();
-    const users = await this.dataSource.query(
-      `SELECT * FROM dori_user WHERE username = $1 AND is_active = TRUE`,
-      [loginDto.username],
+    const user = await this.authRepository.findActiveUserByUsername(
+      loginDto.username,
     );
 
-    if (!users || users.length === 0) {
+    if (!user) {
       throw new DoriException('UNAUTHENTICATED');
     }
-
-    const user = users[0];
 
     // Check temporary lockout (§4.12 & §8.3)
     if (user.locked_until && this.clockService.parse(user.locked_until) > now) {
@@ -60,23 +57,18 @@ export class AuthService {
         lockedUntil = this.clockService.addMinutes(now, 15);
       }
 
-      await this.dataSource.query(
-        `UPDATE dori_user
-         SET failed_attempts = $1, locked_until = $2, updated_at = $3
-         WHERE user_id = $4`,
-        [failedAttempts, lockedUntil, now, user.user_id],
+      await this.authRepository.recordFailedLogin(
+        user.user_id,
+        failedAttempts,
+        lockedUntil,
+        now,
       );
 
       throw new DoriException('UNAUTHENTICATED');
     }
 
     // Reset failed attempts on success
-    await this.dataSource.query(
-      `UPDATE dori_user
-       SET failed_attempts = 0, locked_until = NULL, last_login = $1, updated_at = $1
-       WHERE user_id = $2`,
-      [now, user.user_id],
-    );
+    await this.authRepository.recordSuccessfulLogin(user.user_id, now);
 
     const { roles, permissions } = await this.getUserRolesAndPermissions(
       user.user_id,
@@ -111,24 +103,19 @@ export class AuthService {
     const tokenHash = this.hashToken(refreshToken);
     const now = this.clockService.now();
 
-    const sessions = await this.dataSource.query(
-      `SELECT * FROM dori_user_session WHERE refresh_token_hash = $1`,
-      [tokenHash],
-    );
+    const session =
+      await this.authRepository.findSessionByRefreshHash(tokenHash);
 
-    if (!sessions || sessions.length === 0) {
+    if (!session) {
       throw new DoriException('UNAUTHENTICATED');
     }
 
-    const session = sessions[0];
-
     // If session is already revoked, treat as breach and revoke ALL user sessions (§7.5)
     if (session.revoked_at) {
-      await this.dataSource.query(
-        `UPDATE dori_user_session
-         SET revoked_at = $1, revoked_reason = 'rotation'
-         WHERE user_id = $2 AND revoked_at IS NULL`,
-        [now, session.user_id],
+      await this.authRepository.revokeAllSessions(
+        session.user_id,
+        now,
+        'rotation',
       );
       throw new DoriException('UNAUTHENTICATED');
     }
@@ -137,23 +124,17 @@ export class AuthService {
       throw new DoriException('UNAUTHENTICATED');
     }
 
-    const users = await this.dataSource.query(
-      `SELECT * FROM dori_user WHERE user_id = $1 AND is_active = TRUE`,
-      [session.user_id],
-    );
+    const user = await this.authRepository.findActiveUserById(session.user_id);
 
-    if (!users || users.length === 0) {
+    if (!user) {
       throw new DoriException('UNAUTHENTICATED');
     }
 
-    const user = users[0];
-
     // Mark current session revoked with rotation
-    await this.dataSource.query(
-      `UPDATE dori_user_session
-       SET revoked_at = $1, revoked_reason = 'rotation'
-       WHERE session_id = $2`,
-      [now, session.session_id],
+    await this.authRepository.revokeSession(
+      session.session_id,
+      now,
+      'rotation',
     );
 
     const { roles, permissions } = await this.getUserRolesAndPermissions(
@@ -192,22 +173,19 @@ export class AuthService {
 
     // Cas 1 : Aucun userId fourni → déconnexion de la session courante uniquement
     if (targetUserId === undefined || targetUserId === null) {
-      await this.dataSource.query(
-        `UPDATE dori_user_session
-         SET revoked_at = $1, revoked_reason = 'logout'
-         WHERE session_id = $2 AND revoked_at IS NULL`,
-        [now, caller.sessionId],
-      );
+      if (!caller.sessionId) {
+        throw new DoriException('UNAUTHENTICATED');
+      }
+      await this.authRepository.revokeSession(caller.sessionId, now, 'logout');
       return { success: true };
     }
 
     // Cas 2 : userId == caller → global_logout (toutes les sessions du caller)
     if (targetUserId === caller.userId) {
-      await this.dataSource.query(
-        `UPDATE dori_user_session
-         SET revoked_at = $1, revoked_reason = 'global_logout'
-         WHERE user_id = $2 AND revoked_at IS NULL`,
-        [now, caller.userId],
+      await this.authRepository.revokeAllSessions(
+        caller.userId,
+        now,
+        'global_logout',
       );
       return { success: true };
     }
@@ -225,25 +203,12 @@ export class AuthService {
     }
 
     // Vérification hiérarchique : le caller ne peut pas déconnecter un user de rang >= le sien
-    const callerRankRes = await this.dataSource.query(
-      `SELECT MAX(r.rank) as max_rank
-       FROM dori_user_role ur
-       JOIN dori_role r ON r.role_id = ur.role_id
-       WHERE ur.user_id = $1`,
-      [caller.userId],
-    );
     const callerMaxRank = callerRoles.includes('root')
       ? 5
-      : Number(callerRankRes[0]?.max_rank || 0);
+      : await this.authRepository.getMaxRoleRank(caller.userId);
 
-    const targetRankRes = await this.dataSource.query(
-      `SELECT MAX(r.rank) as max_rank
-       FROM dori_user_role ur
-       JOIN dori_role r ON r.role_id = ur.role_id
-       WHERE ur.user_id = $1`,
-      [targetUserId],
-    );
-    const targetMaxRank = Number(targetRankRes[0]?.max_rank || 0);
+    const targetMaxRank =
+      await this.authRepository.getMaxRoleRank(targetUserId);
 
     // Un manager (rank 3) ne peut déconnecter que des users de rang < 3 (hôtesse, kiosk)
     // Un admin (rank 4) peut déconnecter jusqu'au rang 3 (manager)
@@ -256,20 +221,15 @@ export class AuthService {
     }
 
     // Vérifier que l'utilisateur cible existe et est actif
-    const targetUsers = await this.dataSource.query(
-      `SELECT user_id FROM dori_user WHERE user_id = $1 AND is_active = TRUE AND deleted_at IS NULL`,
-      [targetUserId],
-    );
-    if (!targetUsers || targetUsers.length === 0) {
+    if (!(await this.authRepository.activeUserExists(targetUserId))) {
       throw new DoriException('USER_NOT_FOUND', { userId: targetUserId });
     }
 
     // Force-disconnect : révoquer toutes les sessions actives de l'utilisateur cible
-    await this.dataSource.query(
-      `UPDATE dori_user_session
-       SET revoked_at = $1, revoked_reason = 'force_logout'
-       WHERE user_id = $2 AND revoked_at IS NULL`,
-      [now, targetUserId],
+    await this.authRepository.revokeAllSessions(
+      targetUserId,
+      now,
+      'force_logout',
     );
 
     return { success: true };
@@ -280,17 +240,11 @@ export class AuthService {
   }
 
   async me(currentUser: AuthenticatedUser) {
-    const users = await this.dataSource.query(
-      `SELECT user_id, username, email, user_type, language_preference, last_login, must_change_password
-       FROM dori_user WHERE user_id = $1`,
-      [currentUser.userId],
-    );
+    const user = await this.authRepository.findUserProfile(currentUser.userId);
 
-    if (!users || users.length === 0) {
+    if (!user) {
       throw new DoriException('USER_NOT_FOUND');
     }
-
-    const user = users[0];
     const { roles, permissions } = await this.getUserRolesAndPermissions(
       user.user_id,
     );
@@ -315,16 +269,11 @@ export class AuthService {
     dto: { currentPassword: string; newPassword: string },
   ) {
     const userId = typeof userOrId === 'number' ? userOrId : userOrId.userId;
-    const users = await this.dataSource.query(
-      `SELECT * FROM dori_user WHERE user_id = $1 AND is_active = TRUE`,
-      [userId],
-    );
+    const user = await this.authRepository.findActiveUserById(userId);
 
-    if (!users || users.length === 0) {
+    if (!user) {
       throw new DoriException('USER_NOT_FOUND');
     }
-
-    const user = users[0];
     const matches = await bcrypt.compare(
       dto.currentPassword,
       user.password_hash,
@@ -338,19 +287,10 @@ export class AuthService {
     const newHash = await bcrypt.hash(dto.newPassword, saltRounds);
     const now = this.clockService.now();
 
-    await this.dataSource.query(
-      `UPDATE dori_user
-       SET password_hash = $1, password_changed_at = $2, must_change_password = FALSE, updated_at = $2
-       WHERE user_id = $3`,
-      [newHash, now, userId],
-    );
-
-    // Revoke all sessions on password change (§4.12)
-    await this.dataSource.query(
-      `UPDATE dori_user_session
-       SET revoked_at = $1, revoked_reason = 'password_changed'
-       WHERE user_id = $2 AND revoked_at IS NULL`,
-      [now, userId],
+    await this.authRepository.changePasswordAndRevokeSessions(
+      userId,
+      newHash,
+      now,
     );
 
     return { success: true };
@@ -359,39 +299,11 @@ export class AuthService {
   private async getUserRolesAndPermissions(
     userId: number,
   ): Promise<{ roles: string[]; permissions: string[] }> {
-    const rolesRes = await this.dataSource.query(
-      `SELECT r.role_name, r.rank
-       FROM dori_user_role ur
-       JOIN dori_role r ON r.role_id = ur.role_id
-       WHERE ur.user_id = $1 AND r.is_active = TRUE`,
-      [userId],
-    );
-
-    const roles: string[] = rolesRes.map((r: any) => r.role_name);
-
-    let permissions: string[] = [];
-    if (roles.includes('root')) {
-      const allPerms = await this.dataSource.query(
-        `SELECT permission_name FROM dori_permission WHERE is_active = TRUE`,
-      );
-      permissions = allPerms.map((p: any) => p.permission_name);
-    } else {
-      const permsRes = await this.dataSource.query(
-        `SELECT DISTINCT p.permission_name
-         FROM dori_user_role ur
-         JOIN dori_role_permission rp ON rp.role_id = ur.role_id
-         JOIN dori_permission p ON p.permission_id = rp.permission_id
-         WHERE ur.user_id = $1 AND p.is_active = TRUE`,
-        [userId],
-      );
-      permissions = permsRes.map((p: any) => p.permission_name);
-    }
-
-    return { roles, permissions };
+    return this.authRepository.getRolesAndPermissions(userId);
   }
 
   private async generateTokens(
-    user: any,
+    user: AuthUserRow,
     roles: string[],
     permissions: string[],
     ipAddress?: string,
@@ -408,22 +320,14 @@ export class AuthService {
     const expiresAt = this.clockService.addDays(now, expiresDays);
 
     // SEC-02 : récupérer le session_id créé pour le lier au payload JWT
-    const inserted = await this.dataSource.query(
-      `INSERT INTO dori_user_session
-       (user_id, refresh_token_hash, issued_at, expires_at, user_agent, ip_address)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING session_id`,
-      [
-        user.user_id,
-        refreshTokenHash,
-        now,
-        expiresAt,
-        userAgent || null,
-        ipAddress || null,
-      ],
+    const sessionId = await this.authRepository.createSession(
+      user.user_id,
+      refreshTokenHash,
+      now,
+      expiresAt,
+      userAgent,
+      ipAddress,
     );
-
-    const sessionId: string = inserted[0].session_id;
 
     // SEC-02 : inclure sid (session UUID) dans le payload pour la vérification unitaire
     const payload: JwtPayload = {

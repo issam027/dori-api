@@ -12,7 +12,6 @@ import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { DataSource } from 'typeorm';
 import { ScopeService } from '../rbac/services/scope.service';
 import { RealtimeService } from './realtime.service';
 import { ClockService } from '../clock/clock.service';
@@ -21,6 +20,7 @@ import {
   AuthenticatedUser,
 } from '../auth/interfaces/jwt-payload.interface';
 import { JwtStrategy } from '../auth/strategies/jwt.strategy';
+import { RealtimeRepository } from './realtime.repository';
 
 interface AuthenticatedSocket extends Socket {
   user?: AuthenticatedUser;
@@ -40,7 +40,7 @@ export class RealtimeGateway
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly dataSource: DataSource,
+    private readonly realtimeRepository: RealtimeRepository,
     private readonly scopeService: ScopeService,
     private readonly realtimeService: RealtimeService,
     private readonly clockService: ClockService,
@@ -76,15 +76,12 @@ export class RealtimeGateway
 
       if (trackingToken) {
         // Resolve registration by token (§7.9, §4.14)
-        const rows = await this.dataSource.query(
-          `SELECT registration_id, registration_tracking_token_valid_until, is_active
-           FROM dori_registration
-           WHERE registration_tracking_token = $1`,
-          [trackingToken],
-        );
+        const reg =
+          await this.realtimeRepository.findRegistrationByTrackingToken(
+            String(trackingToken),
+          );
 
-        if (rows && rows.length > 0) {
-          const reg = rows[0];
+        if (reg) {
           const validUntil = this.clockService.parse(
             reg.registration_tracking_token_valid_until,
           );
@@ -191,16 +188,11 @@ export class RealtimeGateway
     }
 
     try {
-      await this.dataSource.query(
-        `UPDATE dori_queue_session
-         SET last_seen_at = $4
-         WHERE session_id = $1 AND queue_id = $2 AND user_id = $3 AND disconnected_at IS NULL`,
-        [
-          data.sessionId,
-          data.queueId,
-          client.user.userId,
-          this.clockService.now(),
-        ],
+      await this.realtimeRepository.touchQueueSession(
+        data.sessionId,
+        data.queueId,
+        client.user.userId,
+        this.clockService.now(),
       );
       return {
         acknowledged: true,

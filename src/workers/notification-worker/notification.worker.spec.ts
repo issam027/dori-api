@@ -1,27 +1,38 @@
-import { DataSource } from 'typeorm';
 import { ClockService } from '../../core/clock/clock.service';
+import { NotificationWorkerRepository } from './notification-worker.repository';
 import { NotificationWorker } from './notification.worker';
 
 describe('NotificationWorker', () => {
-  it('types the claim timestamp before subtracting the stale-processing interval', async () => {
-    const claimTime = new Date('2026-10-05T21:58:30.012Z');
-    const query = jest.fn().mockResolvedValue([]);
-    const dataSource = {
-      transaction: jest.fn(async (callback) => callback({ query })),
-    } as unknown as DataSource;
-    const clockService = {
-      now: jest.fn().mockReturnValue(claimTime),
+  it('dispatches claimed rows through the typed repository contract', async () => {
+    const now = new Date('2026-10-05T21:58:30.012Z');
+    const repository = {
+      claimPending: jest.fn().mockResolvedValue([
+        {
+          notification_id: 42,
+          channel: 'sms',
+          notification_type: 'welcome',
+          recipient: '+21600000000',
+          notification_content: 'Bienvenue',
+          attempt_count: 1,
+        },
+      ]),
+      markDelivered: jest.fn().mockResolvedValue(undefined),
+      markAttemptFailed: jest.fn(),
+    } as unknown as NotificationWorkerRepository;
+    const clock = {
+      now: jest.fn().mockReturnValue(now),
     } as unknown as ClockService;
 
-    const worker = new NotificationWorker(dataSource, clockService);
+    await new NotificationWorker(
+      repository,
+      clock,
+    ).processPendingNotifications();
 
-    await worker.processPendingNotifications();
-
-    expect(query).toHaveBeenCalledWith(
-      expect.stringContaining(
-        "processing_started_at < $1::timestamptz - INTERVAL '5 minutes'",
-      ),
-      [claimTime],
+    expect(repository.claimPending).toHaveBeenCalledWith(now);
+    expect(repository.markDelivered).toHaveBeenCalledWith(
+      42,
+      expect.stringMatching(/^msg_[a-f0-9]{16}$/),
+      now,
     );
   });
 });

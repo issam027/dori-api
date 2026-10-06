@@ -6,6 +6,7 @@ import { ClockService } from '../../core/clock/clock.service';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { RealtimeService } from '../../core/realtime/realtime.service';
+import { QueueEngineRepository } from './queue-engine.repository';
 
 describe('QueueEngineService — getSessions & getActiveSessions (VAL-04 Manquement A)', () => {
   let service: QueueEngineService;
@@ -35,6 +36,12 @@ describe('QueueEngineService — getSessions & getActiveSessions (VAL-04 Manquem
         {
           provide: DataSource,
           useValue: dataSourceMock,
+        },
+        {
+          provide: QueueEngineRepository,
+          useFactory: (dataSource: DataSource) =>
+            new QueueEngineRepository(dataSource),
+          inject: [DataSource],
         },
         {
           provide: ScopeService,
@@ -94,14 +101,14 @@ describe('QueueEngineService — getSessions & getActiveSessions (VAL-04 Manquem
     expect(result).toEqual({
       items: [
         {
-          session_id: 101,
-          queue_id: 1,
-          thread_number: 1,
-          user_id: 2,
+          sessionId: 101,
+          queueId: 1,
+          threadNumber: 1,
+          userId: 2,
           username: 'alice',
           mode: 'active',
-          connected_at: new Date('2026-09-29T08:00:00Z'),
-          disconnected_at: null,
+          connectedAt: new Date('2026-09-29T08:00:00Z'),
+          disconnectedAt: null,
         },
       ],
       page: 1,

@@ -12,47 +12,47 @@
 
 ## Synthèse
 
-| ID | Priorité | Zone | Constat |
-| --- | --- | --- | --- |
-| BOOT-001 | Corrigé | Bootstrap | Diagnostic temporaire supprimé. |
-| SEC-001 | Corrigé | JWT | Secret obligatoire et validé. |
-| SEC-002 | Corrigé | JWT | `sid` et session liée obligatoires. |
-| AUTH-001 | Corrigé | Auth | Cookie refresh parsé et durée centralisée. |
-| CFG-001 | Corrigé | Configuration | Validation fail-fast au bootstrap. |
-| DB-001 | Corrigé | Base | Échec schema/seed bloquant. |
-| TIME-001 | Corrigé | Temps | Horloge métier centralisée. |
-| TIME-002 | Corrigé | Temps | Conversion IANA/DST fiable. |
-| ERR-001 | Corrigé | Erreurs | Contrat public contrôlé et homogène. |
-| ARCH-001 | P2 | Persistance | Entités TypeORM factorisées mais services en SQL brut non typé. |
-| WEBHOOK-001 | Corrigé | Notifications | HMAC raw body, fenêtre temporelle et anti-rejeu. |
-| WEBHOOK-002 | Corrigé | Notifications | Accusé lié au fournisseur et contrôlé. |
-| WORKER-001 | Corrigé | Notifications | Claim atomique avec lease et `SKIP LOCKED`. |
-| WORKER-002 | P1 | Notifications | Livraison simulée comme succès en production. |
-| REG-001 | Corrigé | Inscriptions | Création transactionnelle complète. |
-| REG-002 | Corrigé | Rendez-vous | Capacité sérialisée par créneau. |
-| REG-003 | Corrigé | Disponibilités | Instants canoniques UTC depuis le fuseau du site. |
-| QUEUE-001 | Corrigé | Sessions | Conflits mappés et takeover verrouillé. |
-| WS-001 | Corrigé | WebSocket | Même validation session que HTTP. |
-| WS-002 | Corrigé | WebSocket | Allowlist CORS commune. |
-| RT-001 | Corrigé | Temps réel | Émissions métier centralisées branchées. |
-| AUTHZ-001 | Corrigé | RBAC | Sessions révoquées lors des changements d'autorisation. |
-| USER-001 | Corrigé | Utilisateurs | Mutations multi-écritures transactionnelles. |
-| USER-002 | Corrigé | Rôles | Ressources et permissions validées exhaustivement. |
-| PERSON-001 | P1 | Données personnelles | Corrigé : une personne et sa déduplication sont strictement rattachées à un site. |
-| RESET-001 | Corrigé | Worker quotidien | Marqueur dédié et atomique. |
-| RESET-002 | Corrigé | Worker quotidien | Reset découplé des compteurs. |
-| WORKER-003 | Corrigé | Workers | Coordination PostgreSQL distribuée. |
-| TRANS-001 | Corrigé | Traductions | Mutation/version atomiques et événement après commit. |
-| DB-002 | P1 | TLS PostgreSQL | Réouvert : chaîne auto-signée autorisée à la demande pour la base actuelle. |
-| VAL-001 | P2 | Validation | Corrigé : `limit` passe par le DTO core et le `ValidationPipe` global. |
-| PAG-001 | P3 | Pagination | Corrigé : construction des réponses centralisée dans `PaginationDto`. |
-| TEST-001 | P1 | Tests | Couverture globale \~14% et zones critiques non testées. |
-| TEST-002 | P1 | E2E | Le test e2e dépend d'une base externe et échoue sans environnement réseau/DB. |
-| QUAL-001 | P2 | Qualité | Corrigé : gates non mutantes centralisées dans `quality:check`. |
-| CORE-001 | Corrigé | Modules Nest | Les dépendances core sont désormais non globales et importées explicitement par chaque module consommateur. |
-| CORE-002 | Corrigé | Swagger | Les réponses Swagger standard et publiques passent désormais par les décorateurs core. |
-| CORE-003 | Corrigé | Sérialisation | Les conversions mécaniques de sortie passent désormais par `SerializationInterceptor`. |
-| CORE-004 | Corrigé | Configuration | `ConfigService` est désormais l'unique accès à la configuration hors du chargeur core. |
+| ID          | Priorité | Zone                 | Constat                                                                                                     |
+| ----------- | -------- | -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| BOOT-001    | Corrigé  | Bootstrap            | Diagnostic temporaire supprimé.                                                                             |
+| SEC-001     | Corrigé  | JWT                  | Secret obligatoire et validé.                                                                               |
+| SEC-002     | Corrigé  | JWT                  | `sid` et session liée obligatoires.                                                                         |
+| AUTH-001    | Corrigé  | Auth                 | Cookie refresh parsé et durée centralisée.                                                                  |
+| CFG-001     | Corrigé  | Configuration        | Validation fail-fast au bootstrap.                                                                          |
+| DB-001      | Corrigé  | Base                 | Échec schema/seed bloquant.                                                                                 |
+| TIME-001    | Corrigé  | Temps                | Horloge métier centralisée.                                                                                 |
+| TIME-002    | Corrigé  | Temps                | Conversion IANA/DST fiable.                                                                                 |
+| ERR-001     | Corrigé  | Erreurs              | Contrat public contrôlé et homogène.                                                                        |
+| ARCH-001    | Corrigé  | Persistance          | SQL encapsulé dans des repositories typés ; services et composants d'orchestration sans accès DB direct.     |
+| WEBHOOK-001 | Corrigé  | Notifications        | HMAC raw body, fenêtre temporelle et anti-rejeu.                                                            |
+| WEBHOOK-002 | Corrigé  | Notifications        | Accusé lié au fournisseur et contrôlé.                                                                      |
+| WORKER-001  | Corrigé  | Notifications        | Claim atomique avec lease et `SKIP LOCKED`.                                                                 |
+| WORKER-002  | P1       | Notifications        | Livraison simulée comme succès en production.                                                               |
+| REG-001     | Corrigé  | Inscriptions         | Création transactionnelle complète.                                                                         |
+| REG-002     | Corrigé  | Rendez-vous          | Capacité sérialisée par créneau.                                                                            |
+| REG-003     | Corrigé  | Disponibilités       | Instants canoniques UTC depuis le fuseau du site.                                                           |
+| QUEUE-001   | Corrigé  | Sessions             | Conflits mappés et takeover verrouillé.                                                                     |
+| WS-001      | Corrigé  | WebSocket            | Même validation session que HTTP.                                                                           |
+| WS-002      | Corrigé  | WebSocket            | Allowlist CORS commune.                                                                                     |
+| RT-001      | Corrigé  | Temps réel           | Émissions métier centralisées branchées.                                                                    |
+| AUTHZ-001   | Corrigé  | RBAC                 | Sessions révoquées lors des changements d'autorisation.                                                     |
+| USER-001    | Corrigé  | Utilisateurs         | Mutations multi-écritures transactionnelles.                                                                |
+| USER-002    | Corrigé  | Rôles                | Ressources et permissions validées exhaustivement.                                                          |
+| PERSON-001  | P1       | Données personnelles | Corrigé : une personne et sa déduplication sont strictement rattachées à un site.                           |
+| RESET-001   | Corrigé  | Worker quotidien     | Marqueur dédié et atomique.                                                                                 |
+| RESET-002   | Corrigé  | Worker quotidien     | Reset découplé des compteurs.                                                                               |
+| WORKER-003  | Corrigé  | Workers              | Coordination PostgreSQL distribuée.                                                                         |
+| TRANS-001   | Corrigé  | Traductions          | Mutation/version atomiques et événement après commit.                                                       |
+| DB-002      | P1       | TLS PostgreSQL       | Réouvert : chaîne auto-signée autorisée à la demande pour la base actuelle.                                 |
+| VAL-001     | P2       | Validation           | Corrigé : `limit` passe par le DTO core et le `ValidationPipe` global.                                      |
+| PAG-001     | P3       | Pagination           | Corrigé : construction des réponses centralisée dans `PaginationDto`.                                       |
+| TEST-001    | P1       | Tests                | Couverture globale \~14% et zones critiques non testées.                                                    |
+| TEST-002    | P1       | E2E                  | Le test e2e dépend d'une base externe et échoue sans environnement réseau/DB.                               |
+| QUAL-001    | P2       | Qualité              | Corrigé : gates non mutantes centralisées dans `quality:check`.                                             |
+| CORE-001    | Corrigé  | Modules Nest         | Les dépendances core sont désormais non globales et importées explicitement par chaque module consommateur. |
+| CORE-002    | Corrigé  | Swagger              | Les réponses Swagger standard et publiques passent désormais par les décorateurs core.                      |
+| CORE-003    | Corrigé  | Sérialisation        | Les conversions mécaniques de sortie passent désormais par `SerializationInterceptor`.                      |
+| CORE-004    | Corrigé  | Configuration        | `ConfigService` est désormais l'unique accès à la configuration hors du chargeur core.                      |
 
 ## Constats détaillés
 
@@ -129,7 +129,7 @@
 - **Validation :** tests du filtre pour 400/401/403/404/409/429/500.
 - **Résolution (2026-10-05) :** ajout des erreurs transverses manquantes au catalogue et mapping explicite des statuts Nest vers le contrat Dori. Les réponses inconnues et erreurs 500 ne republient plus `HttpException.getResponse()`; la normalisation validation reste uniquement dans `DoriException`/le chemin `ValidationPipe`.
 
-### \[ \] ARCH-001 — Homogénéiser la persistance
+### \[x\] ARCH-001 — Homogénéiser la persistance
 
 - **Preuve :** `entities.ts` centralise 21 entités, mais les services injectent presque tous `DataSource` et manipulent des résultats `any` issus de SQL brut.
 - **Impact :** double modèle entités/schema, renommages non typés et duplication pagination/CRUD.
@@ -149,6 +149,21 @@
 
 - **Avancement (2026-10-06, lot registrations terminé) :** toute la persistance de `RegistrationsService`, y compris les transactions de création et de replanification, les verrous de capacité, la pagination et les recherches publiques, est encapsulée dans `RegistrationsRepository` avec des contrats de lignes typés. Le service ne dépend plus de `DataSource` et ne contient plus de SQL. Dans le même lot, le domaine et le schéma ont été unifiés sous `registration` (`dori_registration`, `registration_id`, `registrationId`) dans les DTOs, entités, notifications, moteur de file, permissions et événements temps réel. `registrations` sort du périmètre restant d'ARCH-001, qui demeure ouvert pour `queues`, `queue-engine`, `users` et `auth`, ainsi que les accès techniques hors services métier.
 - **Validation du lot registrations (2026-10-06) :** `quality:check` complet réussi (22 suites, 109 tests), sans erreur de format, lint, typage ou build. La base Aiven `dori-dev` a ensuite été réinitialisée avec `--force --seed` : le schéma `public` a été supprimé/recréé, `schema.sql` et `seed.sql` ont été appliqués avec succès. La base repart donc exclusivement avec `dori_registration` et `registration_id`, sans table héritée de l'ancien vocabulaire.
+- **Durcissement SQL typé (2026-10-06) :** la création d'un site caste désormais explicitement en `time` les cinq paramètres horaires utilisés dans des `COALESCE`. Cela corrige l'erreur PostgreSQL `time without time zone` contre `text` observée en production. Un test de contrat du repository protège les cinq casts. L'audit des accès existants n'a trouvé aucun autre `COALESCE` heure/texte dans `src`; les insertions de file utilisent des paramètres directement contextualisés par leurs colonnes `TIME`. Cette correction renforce le lot `sites` mais ne ferme pas ARCH-001 : `queues`, `queue-engine`, `users`, `auth` et les workers restent à migrer.
+- **Avancement (2026-10-06, lot worker notifications) :** les requêtes de claim, livraison et échec ont été extraites de `NotificationWorker` vers `NotificationWorkerRepository`, avec un contrat de ligne explicite. Le repository normalise les deux formes rencontrées pour `UPDATE ... RETURNING` (`rows` et tuple TypeORM `[rows, affectedCount]`), ce qui corrige les logs et mises à jour utilisant des identifiants, canaux et destinataires `undefined`. Le worker ne contient plus de SQL ni de dépendance `DataSource`. Tests du worker et du repository ajoutés ; les workers `daily-reset` et `appointment-expiry` restent dans le périmètre ARCH-001.
+- **Avancement (2026-10-06, lot worker expiration des rendez-vous) :** le verrou transactionnel et l'expiration SQL ont été déplacés dans `AppointmentExpiryRepository`, avec un contrat explicite pour les inscriptions expirées. `AppointmentExpiryWorker` ne dépend plus de TypeORM et ne contient plus de SQL. La normalisation de `RETURNING` a été factorisée dans le core et est partagée avec le worker de notifications, afin de traiter uniformément les retours directs et tuples TypeORM. Les scénarios verrou acquis/refusé et la délégation du worker sont testés. Seul `daily-reset` reste à migrer parmi les workers.
+- **Avancement (2026-10-06, lot workers terminé) :** la sélection des files et toute la transaction de remise à zéro quotidienne ont été déplacées dans `DailyResetRepository`. Le worker conserve uniquement le calcul dans le fuseau de la file et l'orchestration. Les dates passées au SQL sont explicitement castées en `date`, les verrous et marqueurs idempotents utilisent la normalisation `RETURNING` commune, et les modes avec/sans report restent atomiques. Les trois workers ne contiennent désormais plus ni SQL ni dépendance `DataSource`; le sous-périmètre workers d'ARCH-001 est fermé. Tests de verrou, idempotence et typage SQL ajoutés.
+- **Préparation du lot queues (2026-10-06) :** l'inventaire du service confirme que CRUD, statut, affichage, reset et affectations opérateur doivent être séparés en contrats de repository cohérents. Avant extraction, les cinq paramètres `TIME` de l'INSERT de file (`working_hours_start/end`, pauses et `daily_reset_time`) ont été explicitement castés afin d'empêcher l'inférence `text` rencontrée sur les sites. Le module `queues` reste ouvert dans ARCH-001 tant que l'extraction complète n'est pas terminée.
+- **Avancement (2026-10-06, lot queues 1) :** création de `QueuesRepository` et extraction de la lecture détaillée active avec toute la configuration de site nécessaire au calcul d'héritage. Le repository est enregistré explicitement dans `QueuesModule`; `findQueueById` ne contient plus de SQL et dépend de ce contrat. Le mapping métier des valeurs effectives reste dans le service. Compilation et tests ciblés réussis. Le lot demeure partiel : liste, mutations et vues opérationnelles utilisent encore directement `DataSource`.
+- **Avancement (2026-10-06, lot queues 2) :** la liste filtrée et paginée a rejoint `QueuesRepository`. Le service ne compose plus de SQL : il traduit seulement le scope RBAC en identifiants de sites ou de files. Filtres, comptage, recherche et pagination sont encapsulés ; tableaux d'identifiants, `LIMIT` et `OFFSET` sont explicitement liés et le tri reste issu de l'allowlist commune. Test repository ajouté pour le scope, la recherche et les paramètres de pagination. Le lot reste ouvert pour les mutations et vues opérationnelles.
+- **Avancement (2026-10-06, lot queues 3) :** la vérification du site, la création de la file et l'association du forfait gratuit sont désormais regroupées dans une transaction de `QueuesRepository`. La création ne peut donc plus laisser une file partiellement initialisée. Les cinq paramètres horaires sont explicitement castés en `time` dans la nouvelle requête encapsulée. `QueuesService.createQueue` ne contient plus de SQL et recharge la représentation publique via le repository. Test transactionnel ajouté. Restent la modification, la suppression et les vues opérationnelles.
+- **Avancement (2026-10-06, lot queues 4) :** modification et désactivation ont rejoint `QueuesRepository`. La mise à jour repose sur une allowlist de colonnes issue du DTO et caste explicitement chaque colonne horaire en `time`. La désactivation de la file, de ses forfaits et de ses sessions est désormais atomique dans une transaction. Les méthodes correspondantes du service ne contiennent plus de SQL. Tests ajoutés pour les casts et la transaction. Restent statut, affichage, reset et opérateurs.
+- **Avancement (2026-10-06, lot queues terminé) :** statut, affichage sans données personnelles, reset manuel et gestion paginée des opérateurs ont rejoint `QueuesRepository`. Les dates métier du reset sont castées explicitement en `date`, la transaction de reset est atomique et les résultats opérationnels sont typés. `QueuesService` ne contient désormais plus aucun SQL, appel `query`/`transaction` ou dépendance `DataSource`; il conserve le scope, les calculs d'attente, l'horloge et les validations métier. Compilation et 11 tests du module réussis. `queues` sort du périmètre restant d'ARCH-001, désormais limité aux modules `queue-engine`, `users`, `auth` et au health check technique.
+- **Avancement (2026-10-06, lot queue-engine 1) :** création et enregistrement explicite de `QueueEngineRepository`. La lecture de l'état des guichets et la fermeture d'une session ont été extraites du service avec des contrats de lignes typés. `getThreads` et `closeSession` ne contiennent plus de SQL ; calcul d'inactivité, pagination et autorisations restent dans le service. Le module reste ouvert pour l'ouverture/reprise de session, l'appel suivant, les transitions servi/absent, les listes et prévisualisations.
+- **Avancement (2026-10-06, lot queue-engine 2 partiel) :** la lecture du nombre de guichets, la recherche de la session active d'un utilisateur, la détection d'un guichet occupé et les créations de sessions active/consultation ont rejoint `QueueEngineRepository`. Les conflits uniques restent traduits en erreurs métier par le service. La transaction de reprise est préparée dans le repository mais son branchement au service, puis les autres opérations du moteur, restent à terminer avant de fermer ce lot.
+- **Avancement (2026-10-06, lot queue-engine 3) :** les lectures de propriété d'une inscription en cours et les transitions contrôlées `served`/`no_show` ont rejoint le repository ; le service conserve les décisions d'autorisation. La liste paginée des sessions actives est également encapsulée avec `LIMIT`/`OFFSET` liés et tri allowlisté. Des tests repository couvrent les deux transitions terminales et la pagination. La reprise de guichet, l'algorithme atomique `next` et les prévisualisations restent à brancher/extracter.
+- **Avancement (2026-10-06, lot queue-engine 4) :** la reprise de guichet utilise désormais la transaction de `QueueEngineRepository` : verrou pessimiste du guichet, fermeture de l'ancienne session, ouverture de la nouvelle et transfert de l'inscription en cours sont atomiques. Restent l'extraction de `next` et des prévisualisations avant fermeture du module.
+- **Avancement (2026-10-06, lot queue-engine terminé) :** l'algorithme `next` complet a rejoint `QueueEngineRepository` avec ses deux passes, score pondéré, verrou `FOR UPDATE SKIP LOCKED`, transition vers `in_progress` et lecture détaillée dans la même transaction. Les prévisualisations et la résolution des files ont aussi été extraites ; les tableaux d'identifiants, limites et exclusions sont liés (`int[]`) sans interpolation. `QueueEngineService` ne contient plus aucun SQL, `DataSource`, `query` ou `transaction` et conserve uniquement scope, horloge, mapping et realtime. Compilation et tests du module réussis ; tests repository ajoutés pour la transaction concurrente et l'exclusion paramétrée. `queue-engine` sort du périmètre restant d'ARCH-001.
 
 ### \[x\] WEBHOOK-001 — Durcir la vérification HMAC
 
@@ -399,20 +414,20 @@
 
 ## Matrice d'utilisation du core
 
-| Composant core | État dans les modules |
-| --- | --- |
-| `DoriException` / `ERROR_CATALOG` | Très utilisé ; format générique encore divergent (ERR-001). |
-| `ScopeService` | Très utilisé ; invalidation présente, mais les permissions JWT restent périmées (AUTHZ-001). |
-| Guards/décorateurs JWT et permissions | Utilisés sur HTTP ; contournés par WebSocket (WS-001). |
-| `ClockService` | Injecté largement, mais contourné par `new Date()`/`CURRENT_TIMESTAMP` (TIME-001). |
-| `PaginationDto` / `PaginatedResult` / `LimitQueryDto` | Paramètres, limites, tri et réponses paginées centralisés. PAG-001 et VAL-001 corrigés. |
-| Intercepteurs réponse/sérialisation/correlation | Enregistrés globalement ; les conversions mécaniques sont centralisées dans `SerializationInterceptor` (CORE-003 corrigé). |
-| Décorateurs Swagger Dori | Utilisés pour toutes les réponses documentées ; variantes publique et brute centralisées (CORE-002 corrigé). |
-| Configuration core | Utilisée partout ; les lectures de l'environnement sont désormais confinées à `configuration.ts` (CORE-004 corrigé). |
-| `RealtimeService` | Émissions métier ops/display/suivi/traductions centralisées et branchées (RT-001 corrigé). |
-| Entités/`ALL_ENTITIES` | Chargées par TypeORM mais non utilisées comme repositories par les services (ARCH-001). |
-| `DatabaseSeedService` | Activé au bootstrap, avec erreur avalée (DB-001). |
-| `PersonsService` / `dori_person.site_id` | Identité, accès, déduplication et intégrité des inscriptions cloisonnés par site (PERSON-001 corrigé). |
+| Composant core                                        | État dans les modules                                                                                                      |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `DoriException` / `ERROR_CATALOG`                     | Très utilisé ; format générique encore divergent (ERR-001).                                                                |
+| `ScopeService`                                        | Très utilisé ; invalidation présente, mais les permissions JWT restent périmées (AUTHZ-001).                               |
+| Guards/décorateurs JWT et permissions                 | Utilisés sur HTTP ; contournés par WebSocket (WS-001).                                                                     |
+| `ClockService`                                        | Injecté largement, mais contourné par `new Date()`/`CURRENT_TIMESTAMP` (TIME-001).                                         |
+| `PaginationDto` / `PaginatedResult` / `LimitQueryDto` | Paramètres, limites, tri et réponses paginées centralisés. PAG-001 et VAL-001 corrigés.                                    |
+| Intercepteurs réponse/sérialisation/correlation       | Enregistrés globalement ; les conversions mécaniques sont centralisées dans `SerializationInterceptor` (CORE-003 corrigé). |
+| Décorateurs Swagger Dori                              | Utilisés pour toutes les réponses documentées ; variantes publique et brute centralisées (CORE-002 corrigé).               |
+| Configuration core                                    | Utilisée partout ; les lectures de l'environnement sont désormais confinées à `configuration.ts` (CORE-004 corrigé).       |
+| `RealtimeService`                                     | Émissions métier ops/display/suivi/traductions centralisées et branchées (RT-001 corrigé).                                 |
+| Entités/`ALL_ENTITIES`                                | Chargées par TypeORM ; le SQL spécifique est encapsulé dans des repositories typés (ARCH-001 corrigé).                    |
+| `DatabaseSeedService`                                 | Activé au bootstrap, avec erreur avalée (DB-001).                                                                          |
+| `PersonsService` / `dori_person.site_id`              | Identité, accès, déduplication et intégrité des inscriptions cloisonnés par site (PERSON-001 corrigé).                     |
 
 ## Points contrôlés sans anomalie confirmée
 
@@ -429,7 +444,6 @@
 
 1. **WORKER-002 :** sélectionner les fournisseurs SMS/e-mail et leurs contrats opérationnels.
 2. **TEST-002 puis TEST-001 :** sélectionner l'environnement PostgreSQL éphémère autorisé en CI, puis y exécuter les scénarios concurrents.
-3. **ARCH-001 :** valider la trajectoire de migration vers des repositories SQL typés ou TypeORM avant une réécriture transversale.
 
 ## Périmètre et vérifications exécutées
 
@@ -478,3 +492,39 @@
 <!-- CHECKPOINT id="ckpt_muwgkwot_hsuouj" time="2026-10-06T09:10:47.165Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 <!-- CHECKPOINT id="ckpt_muwo9gen_3erqt0" time="2026-10-06T12:45:49.775Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mux1g5mo_wffc10" time="2026-10-06T18:54:57.408Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mux1t0lj_t4za3m" time="2026-10-06T19:04:57.415Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mux25vkv_xav0sx" time="2026-10-06T19:14:57.439Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mux2iqjl_8suh38" time="2026-10-06T19:24:57.441Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mux2vli4_3c791s" time="2026-10-06T19:34:57.436Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mux38gh9_p5x22o" time="2026-10-06T19:44:57.453Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+### Mise à jour ARCH-001 - lot users (2026-10-06)
+
+- **Terminé :** toute la persistance des utilisateurs, rôles, permissions, scopes et révocation de sessions est regroupée dans `UsersRepository`, y compris les transactions de création, d'affectation de rôle et de remplacement des permissions.
+- `UsersService` est désormais une façade injectant uniquement ce repository et ne contient plus aucun SQL, appel `query`/`transaction` ni dépendance `DataSource`.
+- Le repository est enregistré explicitement dans `UsersModule`. Les tests existants traversent la façade jusqu'au repository et conservent la couverture des protections anti-escalade et du soft-delete.
+- **Validation :** Prettier, ESLint ciblé, compilation et 9 tests users réussis. `users` sort du périmètre restant d'ARCH-001, désormais limité à `auth` et au health check technique.
+
+### Mise à jour ARCH-001 - lot auth (2026-10-06)
+
+- **Terminé :** toutes les lectures et écritures d'authentification ont été extraites dans `AuthRepository` : utilisateurs actifs, verrouillage de connexion, sessions de rafraîchissement, rôles, permissions, déconnexions et création de session.
+- `AuthService` ne contient plus aucun SQL, appel `query`/`transaction` ni dépendance `DataSource`. Il conserve le hachage, les règles de sécurité, la hiérarchie d'autorisation, la génération JWT et l'orchestration.
+- Le changement du mot de passe et la révocation de toutes les sessions sont désormais exécutés dans une transaction unique. Une déconnexion sans `sessionId` authentifié est explicitement refusée.
+- Le repository est enregistré explicitement dans `AuthModule`. `auth` sort du périmètre des services métier d'ARCH-001 ; seul le health check technique reste à qualifier.
+- **Validation :** Prettier, ESLint ciblé, compilation et 4 tests auth réussis. Le scan statique de `AuthService` ne retourne aucun SQL, `DataSource`, `query` ou `transaction`.
+
+### Clôture ARCH-001 (2026-10-06)
+
+- Les trois derniers accès techniques ont été encapsulés : validation des sessions JWT dans `JwtSessionRepository`, suivi des inscriptions et heartbeat WebSocket dans `RealtimeRepository`, disponibilité PostgreSQL dans `HealthRepository`.
+- `JwtStrategy`, `RealtimeGateway` et `HealthController` ne contiennent plus aucun SQL, appel `query`/`transaction` ni dépendance `DataSource`. Chaque repository est enregistré explicitement dans le module Nest qui le consomme.
+- Le scan complet de `src` ne trouve plus aucun SQL ou appel `query` direct hors repositories et `DatabaseSeedService`. Ce dernier reste volontairement l'unique exception : il exécute les scripts d'initialisation du schéma et des données et constitue une infrastructure de bootstrap, pas une persistance applicative.
+- **Validation finale :** Prettier et ESLint ciblés réussis, typecheck réussi, build Nest réussi, 31 suites et 136 tests réussis. `ARCH-001` est fermé.
+
+<!-- CHECKPOINT id="ckpt_mux3lbfz_jbb58r" time="2026-10-06T19:54:57.455Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

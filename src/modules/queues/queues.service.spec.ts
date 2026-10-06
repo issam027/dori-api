@@ -5,10 +5,11 @@ import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { DoriException } from '../../core/errors/dori.exception';
+import { QueuesRepository } from './queues.repository';
 
 describe('QueuesService — SEC-04 assignOperator', () => {
   let service: QueuesService;
-  let dataSourceMock: { query: jest.Mock };
+  let dataSourceMock: { query: jest.Mock; transaction: jest.Mock };
   let scopeServiceMock: {
     checkQueueAccess: jest.Mock;
     checkSiteAccess: jest.Mock;
@@ -27,6 +28,9 @@ describe('QueuesService — SEC-04 assignOperator', () => {
   beforeEach(async () => {
     dataSourceMock = {
       query: jest.fn(),
+      transaction: jest.fn(async (callback) =>
+        callback({ query: dataSourceMock.query }),
+      ),
     };
 
     scopeServiceMock = {
@@ -42,6 +46,12 @@ describe('QueuesService — SEC-04 assignOperator', () => {
         {
           provide: DataSource,
           useValue: dataSourceMock,
+        },
+        {
+          provide: QueuesRepository,
+          useFactory: (dataSource: DataSource) =>
+            new QueuesRepository(dataSource),
+          inject: [DataSource],
         },
         {
           provide: ScopeService,

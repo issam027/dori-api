@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import { JwtStrategy } from './jwt.strategy';
 import { DoriException } from '../../errors/dori.exception';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { JwtSessionRepository } from '../repositories/jwt-session.repository';
 
 describe('JwtStrategy', () => {
   const payload: JwtPayload = {
@@ -23,7 +24,8 @@ describe('JwtStrategy', () => {
     const dataSource = {
       query: jest.fn().mockResolvedValue(rows),
     } as unknown as DataSource;
-    return { strategy: new JwtStrategy(config, dataSource), dataSource };
+    const repository = new JwtSessionRepository(dataSource);
+    return { strategy: new JwtStrategy(config, repository), dataSource };
   };
 
   it('rejects a token without sid even if another session could exist', async () => {

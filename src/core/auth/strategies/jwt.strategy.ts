@@ -2,18 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { DataSource } from 'typeorm';
 import {
   JwtPayload,
   AuthenticatedUser,
 } from '../interfaces/jwt-payload.interface';
 import { DoriException } from '../../errors/dori.exception';
+import { JwtSessionRepository } from '../repositories/jwt-session.repository';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     configService: ConfigService,
-    private readonly dataSource: DataSource,
+    private readonly jwtSessionRepository: JwtSessionRepository,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -27,18 +27,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new DoriException('UNAUTHENTICATED');
     }
 
-    const sessions = await this.dataSource.query(
-      `SELECT s.session_id
-       FROM dori_user_session s
-       JOIN dori_user u ON u.user_id = s.user_id
-       WHERE s.session_id = $1 AND s.user_id = $2
-         AND s.revoked_reason IS NULL AND s.revoked_at IS NULL
-         AND s.expires_at > NOW()
-         AND u.is_active = TRUE AND u.deleted_at IS NULL`,
-      [payload.sid, payload.sub],
+    const sessionId = await this.jwtSessionRepository.findValidSessionId(
+      payload.sid,
+      payload.sub,
     );
 
-    if (!sessions || sessions.length === 0) {
+    if (!sessionId) {
       throw new DoriException('UNAUTHENTICATED');
     }
 
@@ -48,7 +42,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       roles: payload.roles || [],
       permissions: payload.permissions || [],
       userType: payload.userType || 'human',
-      sessionId: sessions[0].session_id,
+      sessionId,
     };
   }
 }

@@ -6,10 +6,11 @@ import { RbacModule } from '../rbac/rbac.module';
 import { ClockModule } from '../clock/clock.module';
 import { DatabaseModule } from '../database/database.module';
 import { AuthModule } from '../../modules/auth/auth.module';
+import { RealtimeRepository } from './realtime.repository';
 
 @Module({
   imports: [ConfigModule, DatabaseModule, RbacModule, ClockModule, AuthModule],
-  providers: [RealtimeGateway, RealtimeService],
+  providers: [RealtimeGateway, RealtimeService, RealtimeRepository],
   exports: [RealtimeService],
 })
 export class RealtimeModule {}
