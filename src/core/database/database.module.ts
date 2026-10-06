@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import * as pg from 'pg';
 import { ALL_ENTITIES } from './entities';
 import { DatabaseSeedService } from './database-seed.service';
 
@@ -12,6 +13,7 @@ import { DatabaseSeedService } from './database-seed.service';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
+        driver: pg,
         host: configService.get<string>('database.host'),
         port: configService.get<number>('database.port'),
         username: configService.get<string>('database.username'),
@@ -32,4 +34,4 @@ import { DatabaseSeedService } from './database-seed.service';
   providers: [DatabaseSeedService],
   exports: [TypeOrmModule, DatabaseSeedService],
 })
-export class DatabaseModule {}
+export class DatabaseModule { }
