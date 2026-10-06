@@ -89,7 +89,7 @@ export class UpdateRegistrationDto {
   languagePreference?: string;
 }
 
-export class RescheduleDto {
+export class RescheduleRegistrationDto {
   @ApiProperty({
     example: '2026-10-02T10:30:00Z',
     description: 'Nouveau créneau RDV (ISO 8601)',
@@ -192,7 +192,7 @@ export class RegistrationFilterDto extends PaginationDto {
   search?: string;
 }
 
-export class AvailabilityQueryDto {
+export class RegistrationAvailabilityQueryDto {
   @ApiProperty({
     example: '2026-10-01',
     description: 'Date à consulter (YYYY-MM-DD)',

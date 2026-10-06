@@ -11,6 +11,25 @@ import {
 
 export const SERIALIZATION_DTO_KEY = 'dori:serialization-dto';
 
+const PUBLIC_RESPONSE_DTO_NAME = /(?:Response|Item)Dto$/;
+
+/**
+ * Public OpenAPI response schemas follow one global convention:
+ * - ResourceResponseDto
+ * - PaginatedResourceResponseDto
+ * - ActionResourceResponseDto
+ * - ConceptItemDto for an item returned inside an array
+ */
+export function assertPublicResponseDtoName(dto: Type<unknown>): void {
+  if (!PUBLIC_RESPONSE_DTO_NAME.test(dto.name)) {
+    throw new Error(
+      `Invalid public response DTO name "${dto.name}". ` +
+        'Use ResourceResponseDto, PaginatedResourceResponseDto, ' +
+        'ActionResourceResponseDto or ConceptItemDto.',
+    );
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ErrorResponseDto : forme exacte produite par GlobalExceptionFilter
 // ─────────────────────────────────────────────────────────────────────────────
@@ -183,6 +202,7 @@ export function ApiDoriRawResponse<T extends Type<unknown>>(
   const decorators: MethodDecorator[] = [];
 
   if (dto) {
+    assertPublicResponseDtoName(dto);
     decorators.push(ApiExtraModels(dto));
   }
 
@@ -244,8 +264,8 @@ function buildEnvelopeSchema(dataSchema: Record<string, unknown>) {
  * Use instead of @ApiOkResponse to correctly document the actual runtime response shape.
  *
  * @example
- *   @ApiDoriOkResponse(NotificationDetailDto)
- *   @ApiDoriOkResponse([NotificationDetailDto])          // array
+ *   @ApiDoriOkResponse(NotificationResponseDto)
+ *   @ApiDoriOkResponse([NotificationResponseDto])          // array
  *   @ApiDoriOkResponse(PaginatedNotificationResponseDto) // paginated
  */
 export function ApiDoriOkResponse<T extends Type<unknown>>(
@@ -255,6 +275,7 @@ export function ApiDoriOkResponse<T extends Type<unknown>>(
 ) {
   const isArray = Array.isArray(dto);
   const dtoClass = isArray ? (dto as [T])[0] : (dto as T);
+  assertPublicResponseDtoName(dtoClass);
 
   const dataSchema: Record<string, unknown> = isArray
     ? { type: 'array', items: { $ref: getSchemaPath(dtoClass) } }
@@ -279,6 +300,7 @@ export function ApiDoriCreatedResponse<T extends Type<unknown>>(
   dto: T,
   description = 'Créé avec succès',
 ) {
+  assertPublicResponseDtoName(dto);
   const dataSchema: Record<string, unknown> = { $ref: getSchemaPath(dto) };
 
   return applyDecorators(

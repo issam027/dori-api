@@ -33,12 +33,12 @@ import {
   CreateTranslationDto,
   UpdateTranslationDto,
   TranslationFilterDto,
-  BundleQueryDto,
+  TranslationBundleQueryDto,
 } from './dto/translation.dto';
 import {
   TranslationBundleResponseDto,
   PaginatedTranslationResponseDto,
-  TranslationDetailDto,
+  TranslationResponseDto,
   DeleteTranslationResponseDto,
 } from './dto/translation-response.dto';
 import { Public } from '../../core/auth/decorators/public.decorator';
@@ -80,7 +80,7 @@ export class TranslationsController {
     },
   })
   async getBundle(
-    @Query() query: BundleQueryDto,
+    @Query() query: TranslationBundleQueryDto,
     @Headers('if-none-match') ifNoneMatch: string,
     @Res({ passthrough: true }) res: Response,
   ) {
@@ -122,7 +122,7 @@ export class TranslationsController {
       'Enregistre une nouvelle traduction pour une clé et une locale données, avec validation des placeholders de gabarit.',
   })
   @ApiDoriCreatedResponse(
-    TranslationDetailDto,
+    TranslationResponseDto,
     'Traduction enregistrée avec succès',
   )
   async createTranslation(
@@ -145,7 +145,10 @@ export class TranslationsController {
     type: Number,
     description: 'ID de la traduction',
   })
-  @ApiDoriOkResponse(TranslationDetailDto, 'Traduction mise à jour avec succès')
+  @ApiDoriOkResponse(
+    TranslationResponseDto,
+    'Traduction mise à jour avec succès',
+  )
   async updateTranslation(
     @Param('translationId', ParseIntPipe) translationId: number,
     @Body() dto: UpdateTranslationDto,

@@ -30,12 +30,12 @@ import {
   AssignOperatorDto,
 } from './dto/update-queue.dto';
 import {
-  QueueDetailResponseDto,
+  QueueResponseDto,
   PaginatedQueueResponseDto,
   QueueStatusResponseDto,
   QueueDisplayResponseDto,
-  QueueDeleteResponseDto,
-  QueueResetResponseDto,
+  DeleteQueueResponseDto,
+  ResetQueueResponseDto,
   PaginatedQueueOperatorResponseDto,
   AssignOperatorResponseDto,
   RemoveOperatorResponseDto,
@@ -79,10 +79,7 @@ export class QueuesController {
       "Crée une nouvelle file d'attente rattachée au site spécifié en héritant ou surchargeant les configurations par défaut.",
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
-  @ApiDoriCreatedResponse(
-    QueueDetailResponseDto,
-    "File d'attente créée avec succès",
-  )
+  @ApiDoriCreatedResponse(QueueResponseDto, "File d'attente créée avec succès")
   async createForSite(
     @Param('siteId', ParseIntPipe) siteId: number,
     @Body() dto: CreateQueueDto,
@@ -99,7 +96,7 @@ export class QueuesController {
       "Retourne les paramètres complets d'une file d'attente par son ID.",
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse(QueueDetailResponseDto, "Détails de la file d'attente")
+  @ApiDoriOkResponse(QueueResponseDto, "Détails de la file d'attente")
   async findOne(
     @Param('queueId', ParseIntPipe) queueId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -115,7 +112,7 @@ export class QueuesController {
       "Met à jour les configurations horaires, de tolérance ou de priorités d'une file.",
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse(QueueDetailResponseDto, "File d'attente mise à jour")
+  @ApiDoriOkResponse(QueueResponseDto, "File d'attente mise à jour")
   async update(
     @Param('queueId', ParseIntPipe) queueId: number,
     @Body() dto: UpdateQueueDto,
@@ -131,7 +128,7 @@ export class QueuesController {
     description: "Désactive logiquement la file d'attente (soft-delete).",
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse(QueueDeleteResponseDto, 'File désactivée avec succès')
+  @ApiDoriOkResponse(DeleteQueueResponseDto, 'File désactivée avec succès')
   async remove(
     @Param('queueId', ParseIntPipe) queueId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -186,7 +183,7 @@ export class QueuesController {
       'Clôture les inscriptions en attente du jour selon le mode configuré.',
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse(QueueResetResponseDto, 'File réinitialisée avec succès')
+  @ApiDoriOkResponse(ResetQueueResponseDto, 'File réinitialisée avec succès')
   async reset(
     @Param('queueId', ParseIntPipe) queueId: number,
     @CurrentUser() user: AuthenticatedUser,

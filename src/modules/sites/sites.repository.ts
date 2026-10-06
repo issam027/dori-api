@@ -3,8 +3,8 @@ import { DataSource } from 'typeorm';
 import { CreateSiteDto } from './dto/create-site.dto';
 import { UpdateSiteDto } from './dto/update-site.dto';
 import {
-  SiteDetailResponseDto,
-  SiteManagerDetailDto,
+  SiteResponseDto,
+  SiteManagerResponseDto,
 } from './dto/site-response.dto';
 
 interface CountRow {
@@ -26,7 +26,7 @@ export class SitesRepository {
     sortOrder: 'ASC' | 'DESC',
     pageSize: number,
     offset: number,
-  ): Promise<{ items: SiteDetailResponseDto[]; total: number }> {
+  ): Promise<{ items: SiteResponseDto[]; total: number }> {
     let filter = 'WHERE is_active = TRUE';
     const params: unknown[] = [];
     if (siteIds) {
@@ -37,7 +37,7 @@ export class SitesRepository {
       `SELECT COUNT(*)::int AS total FROM dori_site ${filter}`,
       params,
     );
-    const items = await this.dataSource.query<SiteDetailResponseDto[]>(
+    const items = await this.dataSource.query<SiteResponseDto[]>(
       `SELECT * FROM dori_site ${filter}
        ORDER BY ${sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`,
       params,
@@ -49,8 +49,8 @@ export class SitesRepository {
     dto: CreateSiteDto,
     userId: number,
     now: Date,
-  ): Promise<SiteDetailResponseDto> {
-    const rows = await this.dataSource.query<SiteDetailResponseDto[]>(
+  ): Promise<SiteResponseDto> {
+    const rows = await this.dataSource.query<SiteResponseDto[]>(
       `INSERT INTO dori_site (
         site_name, site_location, site_logo_url, site_type, timezone, default_currency,
         default_appointments_enabled, default_appointment_slot_duration, default_slot_capacity,
@@ -97,8 +97,8 @@ export class SitesRepository {
     return rows[0];
   }
 
-  async findActiveById(siteId: number): Promise<SiteDetailResponseDto | null> {
-    const rows = await this.dataSource.query<SiteDetailResponseDto[]>(
+  async findActiveById(siteId: number): Promise<SiteResponseDto | null> {
+    const rows = await this.dataSource.query<SiteResponseDto[]>(
       'SELECT * FROM dori_site WHERE site_id = $1 AND is_active = TRUE',
       [siteId],
     );
@@ -110,7 +110,7 @@ export class SitesRepository {
     dto: UpdateSiteDto,
     userId: number,
     now: Date,
-  ): Promise<SiteDetailResponseDto> {
+  ): Promise<SiteResponseDto> {
     const fields: string[] = [];
     const values: unknown[] = [];
     const add = (column: string, value: unknown) => {
@@ -151,7 +151,7 @@ export class SitesRepository {
     add('updated_by_user_id', userId);
     add('updated_at', now);
     values.push(siteId);
-    const rows = await this.dataSource.query<SiteDetailResponseDto[]>(
+    const rows = await this.dataSource.query<SiteResponseDto[]>(
       `UPDATE dori_site SET ${fields.join(', ')} WHERE site_id = $${values.length} RETURNING *`,
       values,
     );
@@ -180,14 +180,14 @@ export class SitesRepository {
     sortOrder: 'ASC' | 'DESC',
     pageSize: number,
     offset: number,
-  ): Promise<{ items: SiteManagerDetailDto[]; total: number }> {
+  ): Promise<{ items: SiteManagerResponseDto[]; total: number }> {
     const from = `FROM dori_user_site us JOIN dori_user u ON u.user_id = us.user_id
       WHERE us.site_id = $1 AND u.is_active = TRUE`;
     const [count] = await this.dataSource.query<CountRow[]>(
       `SELECT COUNT(*)::int AS total ${from}`,
       [siteId],
     );
-    const items = await this.dataSource.query<SiteManagerDetailDto[]>(
+    const items = await this.dataSource.query<SiteManagerResponseDto[]>(
       `SELECT u.user_id, u.username, u.email, u.user_type, u.is_active, us.assigned_at
        ${from} ORDER BY ${sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`,
       [siteId],

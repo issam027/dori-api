@@ -137,11 +137,3 @@ export class UserFilterDto extends PaginationDto {
   @IsOptional()
   search?: string;
 }
-
-export class UserDeleteResponseDto {
-  @ApiProperty({ example: 5, description: "ID de l'utilisateur supprimé" })
-  userId: number;
-
-  @ApiProperty({ example: true, description: 'Confirmation de la suppression' })
-  deleted: boolean;
-}

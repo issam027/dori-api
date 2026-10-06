@@ -148,6 +148,7 @@ CREATE TABLE IF NOT EXISTS dori_site_queue_thread (
     average_wait_time INT NOT NULL DEFAULT 10,
     thread_count INT NOT NULL DEFAULT 1 CHECK (thread_count >= 1),
 
+    currency CHAR(3),
     appointments_enabled BOOLEAN,
     appointment_slot_duration INT,
     slot_capacity INT,
@@ -166,6 +167,7 @@ CREATE TABLE IF NOT EXISTS dori_site_queue_thread (
     daily_reset_mode VARCHAR(20)
         CHECK (daily_reset_mode IN ('close_all','close_served_only')),
     daily_reset_time TIME,
+    locale VARCHAR(10),
 
     created_by_user_id INT REFERENCES dori_user(user_id),
     updated_by_user_id INT REFERENCES dori_user(user_id),
@@ -173,6 +175,10 @@ CREATE TABLE IF NOT EXISTS dori_site_queue_thread (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uk_queue_code_site UNIQUE (queue_code, site_id)
 );
+
+-- Migration idempotente : toutes les valeurs default_* du site peuvent être surchargées par la file.
+ALTER TABLE dori_site_queue_thread ADD COLUMN IF NOT EXISTS currency CHAR(3);
+ALTER TABLE dori_site_queue_thread ADD COLUMN IF NOT EXISTS locale VARCHAR(10);
 
 -- 9. dori_user_queue (§3.14)
 CREATE TABLE IF NOT EXISTS dori_user_queue (
@@ -237,8 +243,9 @@ CREATE TABLE IF NOT EXISTS dori_queue_service_tier (
     queue_id INT NOT NULL REFERENCES dori_site_queue_thread(queue_id),
     tier_id INT NOT NULL REFERENCES dori_service_tier(tier_id),
     price NUMERIC(10,3) NOT NULL DEFAULT 0 CHECK (price >= 0),
-    currency CHAR(3) NOT NULL DEFAULT 'TND',
+    currency CHAR(3),
     display_order INT NOT NULL DEFAULT 0,
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     deleted_at TIMESTAMPTZ,
     created_by_user_id INT REFERENCES dori_user(user_id),
@@ -248,13 +255,37 @@ CREATE TABLE IF NOT EXISTS dori_queue_service_tier (
     PRIMARY KEY (queue_id, tier_id)
 );
 
+-- Migration idempotente : NULL conserve l'héritage dynamique queue -> site.
+ALTER TABLE dori_queue_service_tier ALTER COLUMN currency DROP NOT NULL;
+ALTER TABLE dori_queue_service_tier ALTER COLUMN currency DROP DEFAULT;
+ALTER TABLE dori_queue_service_tier ADD COLUMN IF NOT EXISTS is_default BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- Le forfait système existant devient le choix initial des files qui n'ont pas encore de défaut.
+WITH initial_defaults AS (
+  SELECT qt.queue_id, MIN(qt.tier_id) AS tier_id
+  FROM dori_queue_service_tier qt
+  JOIN dori_service_tier t ON t.tier_id = qt.tier_id
+  WHERE t.is_system = TRUE
+    AND qt.is_active = TRUE
+    AND NOT EXISTS (
+      SELECT 1 FROM dori_queue_service_tier current_default
+      WHERE current_default.queue_id = qt.queue_id
+        AND current_default.is_default = TRUE
+        AND current_default.is_active = TRUE
+    )
+  GROUP BY qt.queue_id
+)
+UPDATE dori_queue_service_tier qt
+SET is_default = TRUE
+FROM initial_defaults d
+WHERE qt.queue_id = d.queue_id AND qt.tier_id = d.tier_id;
+
 -- 14. dori_tier_notification_rule (§3.8)
 CREATE TABLE IF NOT EXISTS dori_tier_notification_rule (
     rule_id SERIAL PRIMARY KEY,
     queue_id INT NOT NULL,
     tier_id INT NOT NULL,
-    notification_type VARCHAR(20) NOT NULL
-        CHECK (notification_type IN ('welcome','threshold', 'trakingLink')),
+    notification_type VARCHAR(20) NOT NULL,
     channel VARCHAR(20) NOT NULL
         CHECK (channel IN ('sms','email')),
     threshold_position INT,
@@ -270,21 +301,55 @@ CREATE TABLE IF NOT EXISTS dori_tier_notification_rule (
     CONSTRAINT fk_rule_queue_tier FOREIGN KEY (queue_id, tier_id)
         REFERENCES dori_queue_service_tier(queue_id, tier_id),
     CONSTRAINT uk_rule_unique UNIQUE (queue_id, tier_id, notification_type, channel),
-
-    CONSTRAINT ck_rule_threshold CHECK (
-        notification_type <> 'threshold'
-        OR threshold_position IS NOT NULL
-        OR threshold_minutes IS NOT NULL
+    CONSTRAINT ck_rule_notification_type CHECK (
+        notification_type IN ('welcome', 'threshold')
     ),
 
-    CONSTRAINT ck_rule_tracking_link CHECK (
-        include_tracking_link = FALSE
-        OR (
-            notification_type IN ('welcome', 'trakingLink')
-            AND channel IN ('sms', 'email')
-        )
+    CONSTRAINT ck_rule_threshold CHECK (
+        (notification_type = 'welcome'
+            AND num_nonnulls(threshold_position, threshold_minutes) = 0)
+        OR
+        (notification_type = 'threshold'
+            AND num_nonnulls(threshold_position, threshold_minutes) = 1)
     )
 );
+
+-- SW-06: collapse the legacy tracking-link pseudo-type into the two business
+-- events. A legacy rule with a threshold remains a threshold; otherwise it is
+-- a welcome rule. The link itself remains an independent boolean option.
+ALTER TABLE dori_tier_notification_rule
+    DROP CONSTRAINT IF EXISTS dori_tier_notification_rule_notification_type_check;
+ALTER TABLE dori_tier_notification_rule
+    DROP CONSTRAINT IF EXISTS ck_rule_notification_type;
+ALTER TABLE dori_tier_notification_rule
+    DROP CONSTRAINT IF EXISTS ck_rule_threshold;
+ALTER TABLE dori_tier_notification_rule
+    DROP CONSTRAINT IF EXISTS ck_rule_tracking_link;
+UPDATE dori_tier_notification_rule
+SET notification_type = CASE
+    WHEN num_nonnulls(threshold_position, threshold_minutes) > 0 THEN 'threshold'
+    ELSE 'welcome'
+END
+WHERE notification_type = 'trakingLink';
+UPDATE dori_tier_notification_rule
+SET threshold_position = NULL, threshold_minutes = NULL
+WHERE notification_type = 'welcome';
+UPDATE dori_tier_notification_rule
+SET threshold_minutes = NULL
+WHERE notification_type = 'threshold'
+  AND threshold_position IS NOT NULL
+  AND threshold_minutes IS NOT NULL;
+ALTER TABLE dori_tier_notification_rule
+    ADD CONSTRAINT ck_rule_notification_type
+    CHECK (notification_type IN ('welcome', 'threshold'));
+ALTER TABLE dori_tier_notification_rule
+    ADD CONSTRAINT ck_rule_threshold CHECK (
+        (notification_type = 'welcome'
+            AND num_nonnulls(threshold_position, threshold_minutes) = 0)
+        OR
+        (notification_type = 'threshold'
+            AND num_nonnulls(threshold_position, threshold_minutes) = 1)
+    );
 
 -- 15. dori_queue_session (§3.9)
 CREATE TABLE IF NOT EXISTS dori_queue_session (
@@ -384,8 +449,7 @@ CREATE TABLE IF NOT EXISTS dori_notification (
     rule_id INT REFERENCES dori_tier_notification_rule(rule_id),
     channel VARCHAR(20) NOT NULL
         CHECK (channel IN ('sms','email')),
-    notification_type VARCHAR(20) NOT NULL
-        CHECK (notification_type IN ('welcome','threshold', 'trakingLink')),
+    notification_type VARCHAR(20) NOT NULL,
     locale VARCHAR(10) NOT NULL,
     recipient VARCHAR(255) NOT NULL,
     notification_content TEXT,
@@ -399,8 +463,21 @@ CREATE TABLE IF NOT EXISTS dori_notification (
     sent_at TIMESTAMPTZ,
     delivered_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ck_notification_type
+        CHECK (notification_type IN ('welcome', 'threshold'))
 );
+
+ALTER TABLE dori_notification
+    DROP CONSTRAINT IF EXISTS dori_notification_notification_type_check;
+ALTER TABLE dori_notification
+    DROP CONSTRAINT IF EXISTS ck_notification_type;
+UPDATE dori_notification
+SET notification_type = 'welcome'
+WHERE notification_type = 'trakingLink';
+ALTER TABLE dori_notification
+    ADD CONSTRAINT ck_notification_type
+    CHECK (notification_type IN ('welcome', 'threshold'));
 
 CREATE TABLE IF NOT EXISTS dori_webhook_event (
     provider VARCHAR(50) NOT NULL,
@@ -615,6 +692,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_queue_thread_active ON dori_queue_session (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_queue_user_active ON dori_queue_session (queue_id, user_id) WHERE disconnected_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_registration_person_open ON dori_registration (queue_id, person_id) WHERE status IN ('booked','waiting','in_progress') AND is_active;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_notification_once ON dori_notification (registration_id, notification_type, channel) WHERE notification_status <> 'failed';
+CREATE UNIQUE INDEX IF NOT EXISTS uk_queue_tier_default ON dori_queue_service_tier (queue_id) WHERE is_default AND is_active;
 DROP INDEX IF EXISTS idx_notification_provider_msg;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_notification_provider_msg ON dori_notification (provider, provider_message_id) WHERE provider IS NOT NULL AND provider_message_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_user_email_active ON dori_user (LOWER(email)) WHERE email IS NOT NULL AND is_active;

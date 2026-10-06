@@ -94,7 +94,7 @@ export class PersonFilterDto extends PaginationDto {
   search?: string;
 }
 
-export class CreateNoteDto {
+export class CreatePersonNoteDto {
   @ApiProperty({
     example: 'Client VIP – priorité maximale',
     description: 'Contenu de la note',
@@ -104,7 +104,7 @@ export class CreateNoteDto {
   content: string;
 }
 
-export class UpdateNoteDto {
+export class UpdatePersonNoteDto {
   @ApiProperty({
     example: 'Note mise à jour',
     description: 'Nouveau contenu de la note',

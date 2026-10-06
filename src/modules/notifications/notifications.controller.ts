@@ -32,9 +32,9 @@ import {
   WebhookDeliveryDto,
 } from './dto/notification.dto';
 import {
-  NotificationDetailDto,
+  NotificationResponseDto,
   PaginatedNotificationResponseDto,
-  WebhookResponseDto,
+  NotificationWebhookResponseDto,
 } from './dto/notification-response.dto';
 import { Public } from '../../core/auth/decorators/public.decorator';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
@@ -80,7 +80,7 @@ export class NotificationsController {
     type: Number,
     description: 'ID de la notification',
   })
-  @ApiDoriOkResponse(NotificationDetailDto, 'Détails de la notification')
+  @ApiDoriOkResponse(NotificationResponseDto, 'Détails de la notification')
   async findNotificationById(
     @Param('notificationId', ParseIntPipe) notificationId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -97,7 +97,7 @@ export class NotificationsController {
       "Permet à un opérateur d'envoyer un SMS ou un e-mail personnalisé à un client.",
   })
   @ApiDoriCreatedResponse(
-    NotificationDetailDto,
+    NotificationResponseDto,
     "Notification enregistrée et mise en file d'envoi",
   )
   async sendManual(
@@ -120,7 +120,7 @@ export class NotificationsController {
     type: Number,
     description: 'ID de la notification à renvoyer',
   })
-  @ApiDoriOkResponse(NotificationDetailDto, 'Notification réémise')
+  @ApiDoriOkResponse(NotificationResponseDto, 'Notification réémise')
   async resend(
     @Param('notificationId', ParseIntPipe) notificationId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -166,7 +166,10 @@ export class NotificationsController {
     required: true,
     example: 'evt_01J9Z7V3M2Y8N4Q6R0T1',
   })
-  @ApiDoriOkResponse(WebhookResponseDto, 'Accusé de réception du webhook')
+  @ApiDoriOkResponse(
+    NotificationWebhookResponseDto,
+    'Accusé de réception du webhook',
+  )
   async handleWebhook(
     @Param('provider') provider: string,
     @Headers('x-signature') signature: string,

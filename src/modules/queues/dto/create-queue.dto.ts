@@ -6,6 +6,8 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsISO4217CurrencyCode,
+  IsLocale,
   Matches,
   MaxLength,
   Min,
@@ -48,6 +50,16 @@ export class CreateQueueDto {
   @Min(1)
   @IsOptional()
   threadCount?: number;
+
+  @ApiPropertyOptional({
+    example: 'EUR',
+    nullable: true,
+    description:
+      'Surcharge de la devise ISO 4217 du site ; null ou absence = héritage du site',
+  })
+  @IsISO4217CurrencyCode()
+  @IsOptional()
+  currency?: string | null;
 
   @ApiPropertyOptional({ example: false })
   @IsBoolean()
@@ -135,4 +147,15 @@ export class CreateQueueDto {
   @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
   @IsOptional()
   dailyResetTime?: string;
+
+  @ApiPropertyOptional({
+    example: 'fr-FR',
+    nullable: true,
+    description:
+      'Surcharge de la locale du site ; null ou absence = héritage du site',
+  })
+  @IsLocale()
+  @MaxLength(10)
+  @IsOptional()
+  locale?: string | null;
 }

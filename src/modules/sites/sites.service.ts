@@ -9,8 +9,8 @@ import {
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { CreateSiteDto } from './dto/create-site.dto';
 import {
-  SiteDetailResponseDto,
-  SiteManagerDetailDto,
+  SiteResponseDto,
+  SiteManagerResponseDto,
 } from './dto/site-response.dto';
 import { UpdateSiteDto } from './dto/update-site.dto';
 import { SitesRepository } from './sites.repository';
@@ -26,7 +26,7 @@ export class SitesService {
   async findSites(
     pagination: PaginationDto,
     user: AuthenticatedUser,
-  ): Promise<PaginatedResult<SiteDetailResponseDto>> {
+  ): Promise<PaginatedResult<SiteResponseDto>> {
     const scope = await this.scopeService.getUserScope(user);
     if (!scope.isGlobal && scope.siteIds.length === 0) {
       return pagination.createResponse([], 0);
@@ -93,7 +93,7 @@ export class SitesService {
     siteId: number,
     pagination: PaginationDto,
     user: AuthenticatedUser,
-  ): Promise<PaginatedResult<SiteManagerDetailDto>> {
+  ): Promise<PaginatedResult<SiteManagerResponseDto>> {
     await this.scopeService.checkSiteAccess(user, siteId);
     const { pageSize, offset, sortOrder } = pagination.getParams();
     const sortField = pagination.getSafeSortField(
@@ -114,7 +114,7 @@ export class SitesService {
     siteId: number,
     paginationOrUser?: PaginationDto | AuthenticatedUser,
     maybeUser?: AuthenticatedUser,
-  ): Promise<PaginatedResult<SiteManagerDetailDto>> {
+  ): Promise<PaginatedResult<SiteManagerResponseDto>> {
     const isUser = paginationOrUser && 'userId' in paginationOrUser;
     return this.findSiteManagers(
       siteId,

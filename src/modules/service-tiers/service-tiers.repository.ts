@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import {
   AssociateQueueTierDto,
   CreateNotificationRuleDto,
-  UpdateNotificationRuleDto,
   UpdateQueueTierDto,
   UpdateTierDto,
 } from './dto/service-tier.dto';
@@ -18,7 +17,10 @@ export type QueueTierRow = Record<string, unknown> & {
   tier_id: number;
   price: string | number;
   currency: string;
+  currency_override?: string | null;
+  currency_origin: 'association' | 'queue' | 'site';
   is_active: boolean;
+  is_default: boolean;
   display_order: number;
   tier_code: string;
   tier_name: string;
@@ -31,12 +33,21 @@ export type NotificationRuleRow = Record<string, unknown> & {
   rule_id: number;
   queue_id: number;
   tier_id: number;
-  notification_type: string;
+  notification_type: 'welcome' | 'threshold';
   channel: string;
   threshold_position?: number | null;
   threshold_minutes?: number | null;
   include_tracking_link: boolean;
   is_active: boolean;
+};
+
+type NotificationRulePersistenceUpdate = {
+  notificationType: 'welcome' | 'threshold';
+  channel?: 'sms' | 'email';
+  thresholdPosition: number | null;
+  thresholdMinutes: number | null;
+  includeTrackingLink?: boolean;
+  isActive?: boolean;
 };
 
 @Injectable()
@@ -106,7 +117,7 @@ export class ServiceTiersRepository {
       entries,
       userId,
       now,
-      ['tier_id', tierId],
+      [['tier_id', tierId]],
     );
   }
 
@@ -127,9 +138,16 @@ export class ServiceTiersRepository {
     tierId: number,
   ): Promise<QueueTierRow | null> {
     const rows: QueueTierRow[] = await this.dataSource.query(
-      `SELECT qt.queue_id, qt.tier_id, qt.price, qt.currency, qt.is_active,
-              qt.display_order, t.tier_code, t.tier_name, t.description, t.is_system
-       FROM dori_queue_service_tier qt JOIN dori_service_tier t ON t.tier_id = qt.tier_id
+      `SELECT qt.queue_id, qt.tier_id, qt.price, qt.currency AS currency_override,
+              COALESCE(qt.currency, q.currency, s.default_currency) AS currency,
+              CASE WHEN qt.currency IS NOT NULL THEN 'association'
+                   WHEN q.currency IS NOT NULL THEN 'queue' ELSE 'site' END AS currency_origin,
+              qt.is_active, qt.is_default, qt.display_order,
+              t.tier_code, t.tier_name, t.description, t.is_system
+       FROM dori_queue_service_tier qt
+       JOIN dori_service_tier t ON t.tier_id = qt.tier_id
+       JOIN dori_site_queue_thread q ON q.queue_id = qt.queue_id
+       JOIN dori_site s ON s.site_id = q.site_id
        WHERE qt.queue_id = $1 AND qt.tier_id = $2`,
       [queueId, tierId],
     );
@@ -149,8 +167,17 @@ export class ServiceTiersRepository {
       [input.queueId],
     );
     const items: QueueTierRow[] = await this.dataSource.query(
-      `SELECT qt.*, t.tier_code, t.tier_name, t.description AS tier_description, t.is_system
-       FROM dori_queue_service_tier qt JOIN dori_service_tier t ON t.tier_id = qt.tier_id
+      `SELECT qt.queue_id, qt.tier_id, qt.price, qt.is_active, qt.is_default,
+              qt.display_order, qt.created_at, qt.updated_at,
+              qt.currency AS currency_override,
+              COALESCE(qt.currency, q.currency, s.default_currency) AS currency,
+              CASE WHEN qt.currency IS NOT NULL THEN 'association'
+                   WHEN q.currency IS NOT NULL THEN 'queue' ELSE 'site' END AS currency_origin,
+              t.tier_code, t.tier_name, t.description AS tier_description, t.is_system
+       FROM dori_queue_service_tier qt
+       JOIN dori_service_tier t ON t.tier_id = qt.tier_id
+       JOIN dori_site_queue_thread q ON q.queue_id = qt.queue_id
+       JOIN dori_site s ON s.site_id = q.site_id
        WHERE qt.queue_id = $1 AND qt.is_active = TRUE
        ORDER BY qt.${input.sortField} ${input.sortOrder}, qt.tier_id ASC LIMIT $2 OFFSET $3`,
       [input.queueId, input.pageSize, input.offset],
@@ -158,40 +185,42 @@ export class ServiceTiersRepository {
     return { items, total: counts[0]?.total ?? 0 };
   }
 
-  async findQueueCurrency(queueId: number): Promise<string> {
-    const rows: Array<{ default_currency: string }> =
-      await this.dataSource.query(
-        `SELECT s.default_currency FROM dori_site_queue_thread q
-       JOIN dori_site s ON s.site_id = q.site_id WHERE q.queue_id = $1`,
-        [queueId],
-      );
-    return rows[0]?.default_currency ?? 'TND';
-  }
-
   async upsertQueueTier(
     queueId: number,
     dto: AssociateQueueTierDto,
-    currency: string,
     userId: number,
     now: Date,
   ) {
-    await this.dataSource.query(
-      `INSERT INTO dori_queue_service_tier
-       (queue_id, tier_id, price, currency, display_order, created_by_user_id, updated_by_user_id, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, COALESCE($5, 0), $6, $6, $7, $7)
-       ON CONFLICT (queue_id, tier_id) DO UPDATE SET price = $3, currency = $4,
-       display_order = COALESCE($5, dori_queue_service_tier.display_order), is_active = TRUE,
-       deleted_at = NULL, updated_by_user_id = $6, updated_at = $7`,
-      [
-        queueId,
-        dto.tierId,
-        dto.price,
-        currency,
-        dto.displayOrder ?? null,
-        userId,
-        now,
-      ],
-    );
+    await this.dataSource.transaction(async (manager) => {
+      if (dto.isDefault === true) {
+        await manager.query(
+          `UPDATE dori_queue_service_tier SET is_default = FALSE,
+           updated_by_user_id = $2, updated_at = $3
+           WHERE queue_id = $1 AND is_default = TRUE`,
+          [queueId, userId, now],
+        );
+      }
+      await manager.query(
+        `INSERT INTO dori_queue_service_tier
+         (queue_id, tier_id, price, currency, display_order, is_default,
+          created_by_user_id, updated_by_user_id, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, COALESCE($5, 0), COALESCE($6, FALSE), $7, $7, $8, $8)
+         ON CONFLICT (queue_id, tier_id) DO UPDATE SET price = $3, currency = $4,
+         display_order = COALESCE($5, dori_queue_service_tier.display_order),
+         is_default = COALESCE($6, dori_queue_service_tier.is_default), is_active = TRUE,
+         deleted_at = NULL, updated_by_user_id = $7, updated_at = $8`,
+        [
+          queueId,
+          dto.tierId,
+          dto.price,
+          dto.currency ?? null,
+          dto.displayOrder ?? null,
+          dto.isDefault ?? null,
+          userId,
+          now,
+        ],
+      );
+    });
   }
 
   async updateQueueTier(
@@ -201,20 +230,34 @@ export class ServiceTiersRepository {
     userId: number,
     now: Date,
   ) {
-    const entries: Array<[string, unknown]> = [
-      ['price', dto.price],
-      ['currency', dto.currency],
-      ['display_order', dto.displayOrder],
-      ['is_active', dto.isActive],
-    ];
-    await this.dynamicUpdate<QueueTierRow>(
-      'dori_queue_service_tier',
-      entries,
-      userId,
-      now,
-      ['queue_id', queueId],
-      ['tier_id', tierId],
-    );
+    await this.dataSource.transaction(async (manager) => {
+      if (dto.isDefault === true) {
+        await manager.query(
+          `UPDATE dori_queue_service_tier SET is_default = FALSE,
+           updated_by_user_id = $2, updated_at = $3
+           WHERE queue_id = $1 AND is_default = TRUE`,
+          [queueId, userId, now],
+        );
+      }
+      const entries: Array<[string, unknown]> = [
+        ['price', dto.price],
+        ['currency', dto.currency],
+        ['display_order', dto.displayOrder],
+        ['is_active', dto.isActive],
+        ['is_default', dto.isDefault],
+      ];
+      await this.dynamicUpdate<QueueTierRow>(
+        'dori_queue_service_tier',
+        entries,
+        userId,
+        now,
+        [
+          ['queue_id', queueId],
+          ['tier_id', tierId],
+        ],
+        manager,
+      );
+    });
   }
 
   async removeQueueTier(
@@ -285,6 +328,15 @@ export class ServiceTiersRepository {
     userId: number,
     now: Date,
   ): Promise<NotificationRuleRow> {
+    const thresholdPosition =
+      dto.notificationType === 'threshold' && dto.thresholdType === 'position'
+        ? (dto.thresholdValue ?? null)
+        : null;
+    const thresholdMinutes =
+      dto.notificationType === 'threshold' &&
+      dto.thresholdType === 'estimatedTime'
+        ? (dto.thresholdValue ?? null)
+        : null;
     const rows: NotificationRuleRow[] = await this.dataSource.query(
       `INSERT INTO dori_tier_notification_rule (
         queue_id, tier_id, notification_type, channel, threshold_position,
@@ -297,8 +349,8 @@ export class ServiceTiersRepository {
         tierId,
         dto.notificationType,
         dto.channel,
-        dto.thresholdPosition ?? null,
-        dto.thresholdMinutes ?? null,
+        thresholdPosition,
+        thresholdMinutes,
         dto.includeTrackingLink ?? false,
         userId,
         now,
@@ -311,7 +363,7 @@ export class ServiceTiersRepository {
     queueId: number,
     tierId: number,
     ruleId: number,
-    dto: UpdateNotificationRuleDto,
+    dto: NotificationRulePersistenceUpdate,
     userId: number,
     now: Date,
   ): Promise<NotificationRuleRow> {
@@ -328,9 +380,11 @@ export class ServiceTiersRepository {
       entries,
       userId,
       now,
-      ['rule_id', ruleId],
-      ['queue_id', queueId],
-      ['tier_id', tierId],
+      [
+        ['rule_id', ruleId],
+        ['queue_id', queueId],
+        ['tier_id', tierId],
+      ],
     );
   }
 
@@ -354,7 +408,8 @@ export class ServiceTiersRepository {
     entries: Array<[string, unknown]>,
     userId: number,
     now: Date,
-    ...keys: Array<[string, number]>
+    keys: Array<[string, number]>,
+    executor: DataSource | EntityManager = this.dataSource,
   ): Promise<T> {
     const values: unknown[] = [];
     const fields = entries
@@ -373,7 +428,7 @@ export class ServiceTiersRepository {
         return `${column} = $${values.length}`;
       })
       .join(' AND ');
-    const rows: T[] = await this.dataSource.query(
+    const rows: T[] = await executor.query(
       `UPDATE ${table} SET ${fields.join(', ')} WHERE ${where} RETURNING *`,
       values,
     );

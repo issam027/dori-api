@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
-export class TranslationDetailDto {
+export class TranslationResponseDto {
   @ApiProperty({ example: 1, description: 'ID unique de la traduction' })
   translationId: number;
 
@@ -52,10 +52,10 @@ export class TranslationDetailDto {
 
 export class PaginatedTranslationResponseDto extends PaginatedResponseDto {
   @ApiProperty({
-    type: [TranslationDetailDto],
+    type: [TranslationResponseDto],
     description: 'Liste des traductions',
   })
-  items: TranslationDetailDto[];
+  items: TranslationResponseDto[];
 
   @ApiProperty({ example: 1, description: 'Page actuelle' })
   page: number;

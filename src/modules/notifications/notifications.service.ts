@@ -10,7 +10,7 @@ import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { DoriException } from '../../core/errors/dori.exception';
 import { PaginatedResult } from '../../core/pagination/pagination.dto';
-import { NotificationDetailDto } from './dto/notification-response.dto';
+import { NotificationResponseDto } from './dto/notification-response.dto';
 import { ConfigService } from '@nestjs/config';
 import {
   NotificationsRepository,
@@ -31,7 +31,7 @@ export class NotificationsService {
   async findNotifications(
     filter: NotificationFilterDto,
     user: AuthenticatedUser,
-  ): Promise<PaginatedResult<NotificationDetailDto>> {
+  ): Promise<PaginatedResult<NotificationResponseDto>> {
     const scope = await this.scopeService.getUserScope(user);
     const { pageSize, offset, sortOrder } = filter.getParams();
     const safeSortField = filter.getSafeSortField(
@@ -56,8 +56,8 @@ export class NotificationsService {
       pageSize,
       offset,
     });
-    return filter.createResponse<NotificationDetailDto>(
-      result.items as unknown as NotificationDetailDto[],
+    return filter.createResponse<NotificationResponseDto>(
+      result.items as unknown as NotificationResponseDto[],
       result.total,
     );
   }

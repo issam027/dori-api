@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
-export class PersonDetailDto {
+export class PersonResponseDto {
   @ApiProperty({ example: 45, description: 'ID de la personne' })
   personId: number;
 
@@ -46,8 +46,8 @@ export class PersonDetailDto {
 }
 
 export class PaginatedPersonResponseDto extends PaginatedResponseDto {
-  @ApiProperty({ type: [PersonDetailDto], description: 'Personnes trouvées' })
-  items: PersonDetailDto[];
+  @ApiProperty({ type: [PersonResponseDto], description: 'Personnes trouvées' })
+  items: PersonResponseDto[];
 
   @ApiProperty({ example: 1, description: 'Page' })
   page: number;
@@ -62,7 +62,7 @@ export class PaginatedPersonResponseDto extends PaginatedResponseDto {
   totalPages: number;
 }
 
-export class PersonNoteDetailDto {
+export class PersonNoteResponseDto {
   @ApiProperty({ example: 5, description: 'ID de la note' })
   noteId: number;
 
@@ -99,10 +99,10 @@ export class PersonNoteDetailDto {
 
 export class PaginatedPersonNoteResponseDto extends PaginatedResponseDto {
   @ApiProperty({
-    type: [PersonNoteDetailDto],
+    type: [PersonNoteResponseDto],
     description: 'Liste paginée des notes de la personne',
   })
-  items: PersonNoteDetailDto[];
+  items: PersonNoteResponseDto[];
 
   @ApiProperty({ example: 1, description: 'Page actuelle' })
   page: number;
@@ -117,7 +117,7 @@ export class PaginatedPersonNoteResponseDto extends PaginatedResponseDto {
   totalPages: number;
 }
 
-export class PersonDeleteResponseDto {
+export class DeleteItemResponseDto {
   @ApiProperty({ example: 5, description: "ID de l'élément supprimé" })
   id: number;
 

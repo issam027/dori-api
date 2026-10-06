@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 import {
   CreateRegistrationDto,
   UpdateRegistrationDto,
-  RescheduleDto,
+  RescheduleRegistrationDto,
   LookupRegistrationDto,
   RegistrationFilterDto,
-  AvailabilityQueryDto,
+  RegistrationAvailabilityQueryDto,
 } from './dto/registration.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ScopeService } from '../../core/rbac/services/scope.service';
@@ -14,8 +14,8 @@ import { DoriException } from '../../core/errors/dori.exception';
 import { PersonsService } from '../persons/persons.service';
 import { PaginatedResult } from '../../core/pagination/pagination.dto';
 import {
-  RegistrationDetailResponseDto,
-  SlotAvailabilityDto,
+  RegistrationResponseDto,
+  SlotAvailabilityItemDto,
 } from './dto/registration-response.dto';
 import { RegistrationsRepository } from './registrations.repository';
 
@@ -201,7 +201,7 @@ export class RegistrationsService {
 
   async getAvailability(
     queueId: number,
-    queryDto: AvailabilityQueryDto,
+    queryDto: RegistrationAvailabilityQueryDto,
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkQueueAccess(user, queueId);
@@ -228,7 +228,7 @@ export class RegistrationsService {
     const breakEndStr = q.break_end ?? q.default_break_end;
 
     // Generate slots
-    const slots: SlotAvailabilityDto[] = [];
+    const slots: SlotAvailabilityItemDto[] = [];
     const [startH, startM] = startStr.split(':').map(Number);
     const [endH, endM] = endStr.split(':').map(Number);
 
@@ -325,7 +325,7 @@ export class RegistrationsService {
 
   async reschedule(
     registrationId: number,
-    dto: RescheduleDto,
+    dto: RescheduleRegistrationDto,
     user: AuthenticatedUser,
   ) {
     const reg =
@@ -426,7 +426,7 @@ export class RegistrationsService {
   async findRegistrations(
     filter: RegistrationFilterDto,
     user: AuthenticatedUser,
-  ): Promise<PaginatedResult<RegistrationDetailResponseDto>> {
+  ): Promise<PaginatedResult<RegistrationResponseDto>> {
     const scope = await this.scopeService.getUserScope(user);
     const { pageSize, offset, sortOrder } = filter.getParams();
     const safeSortField = filter.getSafeSortField(
@@ -459,8 +459,8 @@ export class RegistrationsService {
       pageSize,
       offset,
     );
-    return filter.createResponse<RegistrationDetailResponseDto>(
-      result.items as RegistrationDetailResponseDto[],
+    return filter.createResponse<RegistrationResponseDto>(
+      result.items as RegistrationResponseDto[],
       result.total,
     );
   }

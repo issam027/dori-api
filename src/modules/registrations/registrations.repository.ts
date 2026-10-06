@@ -45,8 +45,12 @@ export class RegistrationsTransaction {
 
   async findOfferedTier(queueId: number, tierId: number) {
     const rows = await this.manager.query(
-      `SELECT qt.price, qt.currency, t.tier_code, t.tier_name
-       FROM dori_queue_service_tier qt JOIN dori_service_tier t ON t.tier_id = qt.tier_id
+      `SELECT qt.price, COALESCE(qt.currency, q.currency, s.default_currency) AS currency,
+              t.tier_code, t.tier_name
+       FROM dori_queue_service_tier qt
+       JOIN dori_service_tier t ON t.tier_id = qt.tier_id
+       JOIN dori_site_queue_thread q ON q.queue_id = qt.queue_id
+       JOIN dori_site s ON s.site_id = q.site_id
        WHERE qt.queue_id = $1 AND qt.tier_id = $2 AND qt.is_active = TRUE`,
       [queueId, tierId],
     );

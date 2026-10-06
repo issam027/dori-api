@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { OpenSessionDto } from './dto/session.dto';
-import { QueueSessionDetailDto } from './dto/engine-response.dto';
+import { OpenQueueSessionDto } from './dto/session.dto';
+import { QueueSessionResponseDto } from './dto/engine-response.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
@@ -100,7 +100,7 @@ export class QueueEngineService {
   // 2. Open or Take Over Session (§6.2, §4.6)
   async openSession(
     queueId: number,
-    dto: OpenSessionDto,
+    dto: OpenQueueSessionDto,
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkQueueAccess(user, queueId);
@@ -611,7 +611,7 @@ export class QueueEngineService {
     queueId: number,
     paginationOrUser?: PaginationDto | AuthenticatedUser,
     maybeUser?: AuthenticatedUser,
-  ): Promise<PaginatedResult<QueueSessionDetailDto>> {
+  ): Promise<PaginatedResult<QueueSessionResponseDto>> {
     let pagination: PaginationDto;
     let user: AuthenticatedUser;
 
@@ -656,7 +656,7 @@ export class QueueEngineService {
       [queueId],
     );
 
-    return pagination.createResponse<QueueSessionDetailDto>(sessions, total);
+    return pagination.createResponse<QueueSessionResponseDto>(sessions, total);
   }
 
   // 6. Next Preview (§10.2)
@@ -840,7 +840,7 @@ export class QueueEngineService {
     queueId: number,
     paginationOrUser?: PaginationDto | AuthenticatedUser,
     maybeUser?: AuthenticatedUser,
-  ): Promise<PaginatedResult<QueueSessionDetailDto>> {
+  ): Promise<PaginatedResult<QueueSessionResponseDto>> {
     return this.getSessions(queueId, paginationOrUser, maybeUser);
   }
 

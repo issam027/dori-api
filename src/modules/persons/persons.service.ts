@@ -4,16 +4,16 @@ import {
   PersonIdentityDto,
   UpdatePersonDto,
   PersonFilterDto,
-  CreateNoteDto,
-  UpdateNoteDto,
+  CreatePersonNoteDto,
+  UpdatePersonNoteDto,
 } from './dto/person.dto';
 import {
   PaginationDto,
   PaginatedResult,
 } from '../../core/pagination/pagination.dto';
 import {
-  PersonNoteDetailDto,
-  PersonDetailDto,
+  PersonNoteResponseDto,
+  PersonResponseDto,
 } from './dto/person-response.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ScopeService } from '../../core/rbac/services/scope.service';
@@ -47,7 +47,7 @@ export class PersonsService {
   async findPersons(
     filter: PersonFilterDto,
     user: AuthenticatedUser,
-  ): Promise<PaginatedResult<PersonDetailDto>> {
+  ): Promise<PaginatedResult<PersonResponseDto>> {
     await this.scopeService.checkSiteAccess(user, filter.siteId);
     const { pageSize, offset, sortOrder } = filter.getParams();
     const safeSortField = filter.getSafeSortField(
@@ -71,8 +71,8 @@ export class PersonsService {
       pageSize,
       offset,
     });
-    return filter.createResponse<PersonDetailDto>(
-      result.items as unknown as PersonDetailDto[],
+    return filter.createResponse<PersonResponseDto>(
+      result.items as unknown as PersonResponseDto[],
       result.total,
     );
   }
@@ -146,7 +146,7 @@ export class PersonsService {
     personId: number,
     pagination: PaginationDto,
     user: AuthenticatedUser,
-  ): Promise<PaginatedResult<PersonNoteDetailDto>> {
+  ): Promise<PaginatedResult<PersonNoteResponseDto>> {
     await this.checkPersonScope(personId, user);
     const { pageSize, offset, sortOrder } = pagination.getParams();
     const sortField = pagination.getSafeSortField(
@@ -161,15 +161,15 @@ export class PersonsService {
       pageSize,
       offset,
     });
-    return pagination.createResponse<PersonNoteDetailDto>(
-      result.items as unknown as PersonNoteDetailDto[],
+    return pagination.createResponse<PersonNoteResponseDto>(
+      result.items as unknown as PersonNoteResponseDto[],
       result.total,
     );
   }
 
   async createPersonNote(
     personId: number,
-    dto: CreateNoteDto,
+    dto: CreatePersonNoteDto,
     user: AuthenticatedUser,
   ) {
     await this.checkPersonScope(personId, user);
@@ -186,7 +186,7 @@ export class PersonsService {
   async updatePersonNote(
     personId: number,
     noteId: number,
-    dto: UpdateNoteDto,
+    dto: UpdatePersonNoteDto,
     user: AuthenticatedUser,
   ) {
     await this.checkPersonScope(personId, user);
@@ -231,7 +231,7 @@ export class PersonsService {
     personId: number,
     paginationOrUser?: PaginationDto | AuthenticatedUser,
     maybeUser?: AuthenticatedUser,
-  ): Promise<PaginatedResult<PersonNoteDetailDto>> {
+  ): Promise<PaginatedResult<PersonNoteResponseDto>> {
     let pagination: PaginationDto;
     let user: AuthenticatedUser;
 
@@ -248,7 +248,7 @@ export class PersonsService {
 
   async createNote(
     personId: number,
-    dto: CreateNoteDto,
+    dto: CreatePersonNoteDto,
     user: AuthenticatedUser,
   ) {
     return this.createPersonNote(personId, dto, user);
@@ -257,7 +257,7 @@ export class PersonsService {
   async updateNote(
     personId: number,
     noteId: number,
-    dto: UpdateNoteDto,
+    dto: UpdatePersonNoteDto,
     user: AuthenticatedUser,
   ) {
     return this.updatePersonNote(personId, noteId, dto, user);

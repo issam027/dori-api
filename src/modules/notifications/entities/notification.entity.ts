@@ -21,7 +21,7 @@ export class DoriNotification {
   channel: 'sms' | 'email';
 
   @Column({ type: 'varchar', length: 20 })
-  notification_type: 'welcome' | 'threshold' | 'trakingLink';
+  notification_type: 'welcome' | 'threshold';
 
   @Column({ type: 'varchar', length: 10 })
   locale: string;

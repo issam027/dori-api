@@ -29,19 +29,19 @@ import { RegistrationsService } from './registrations.service';
 import {
   CreateRegistrationDto,
   UpdateRegistrationDto,
-  RescheduleDto,
+  RescheduleRegistrationDto,
   LookupRegistrationDto,
   RegistrationFilterDto,
-  AvailabilityQueryDto,
+  RegistrationAvailabilityQueryDto,
 } from './dto/registration.dto';
 import {
-  RegistrationDetailResponseDto,
-  RegistrationCreatedResponseDto,
-  RegistrationTransitionResponseDto,
+  RegistrationResponseDto,
+  CreateRegistrationResponseDto,
+  RescheduleRegistrationResponseDto,
   PaginatedRegistrationResponseDto,
-  AvailabilityResponseDto,
-  PublicPositionResponseDto,
-  RegistrationDeleteResponseDto,
+  RegistrationAvailabilityResponseDto,
+  RegistrationPositionResponseDto,
+  DeleteRegistrationResponseDto,
 } from './dto/registration-response.dto';
 import { Public } from '../../core/auth/decorators/public.decorator';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
@@ -63,10 +63,13 @@ export class RegistrationsController {
       "Retourne la liste des créneaux horaires d'une date donnée avec leur capacité restante.",
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse(AvailabilityResponseDto, 'Disponibilités des créneaux')
+  @ApiDoriOkResponse(
+    RegistrationAvailabilityResponseDto,
+    'Disponibilités des créneaux',
+  )
   async getAvailability(
     @Param('queueId', ParseIntPipe) queueId: number,
-    @Query() query: AvailabilityQueryDto,
+    @Query() query: RegistrationAvailabilityQueryDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.registrationsService.getAvailability(queueId, query, user);
@@ -101,7 +104,7 @@ export class RegistrationsController {
       'Génère un nouveau ticket pour un client présent sur place ou réserve un créneau de rendez-vous.',
   })
   @ApiDoriCreatedResponse(
-    RegistrationCreatedResponseDto,
+    CreateRegistrationResponseDto,
     'Inscription effectuée avec ticket généré',
   )
   async register(
@@ -119,7 +122,7 @@ export class RegistrationsController {
     description:
       "Retrouve un rendez-vous par son numéro de ticket ou par le nom et l'heure exacte.",
   })
-  @ApiDoriOkResponse(RegistrationDetailResponseDto, 'Rendez-vous trouvé')
+  @ApiDoriOkResponse(RegistrationResponseDto, 'Rendez-vous trouvé')
   async lookup(
     @Query() dto: LookupRegistrationDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -140,7 +143,7 @@ export class RegistrationsController {
     type: Number,
     description: "ID de l'inscription",
   })
-  @ApiDoriOkResponse(RegistrationDetailResponseDto, "Détails de l'inscription")
+  @ApiDoriOkResponse(RegistrationResponseDto, "Détails de l'inscription")
   async findOne(
     @Param('registrationId', ParseIntPipe) registrationId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -161,7 +164,7 @@ export class RegistrationsController {
     type: Number,
     description: "ID de l'inscription",
   })
-  @ApiDoriOkResponse(RegistrationDetailResponseDto, 'Inscription mise à jour')
+  @ApiDoriOkResponse(RegistrationResponseDto, 'Inscription mise à jour')
   async update(
     @Param('registrationId', ParseIntPipe) registrationId: number,
     @Body() dto: UpdateRegistrationDto,
@@ -189,12 +192,12 @@ export class RegistrationsController {
     description: "ID de l'inscription",
   })
   @ApiDoriOkResponse(
-    RegistrationTransitionResponseDto,
+    RescheduleRegistrationResponseDto,
     'Rendez-vous reprogrammé',
   )
   async reschedule(
     @Param('registrationId', ParseIntPipe) registrationId: number,
-    @Body() dto: RescheduleDto,
+    @Body() dto: RescheduleRegistrationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.registrationsService.reschedule(registrationId, dto, user);
@@ -214,7 +217,7 @@ export class RegistrationsController {
     type: Number,
     description: "ID de l'inscription",
   })
-  @ApiDoriOkResponse(RegistrationDetailResponseDto, 'Arrivée validée')
+  @ApiDoriOkResponse(RegistrationResponseDto, 'Arrivée validée')
   async checkIn(
     @Param('registrationId', ParseIntPipe) registrationId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -235,7 +238,7 @@ export class RegistrationsController {
     description: "ID de l'inscription",
   })
   @ApiDoriOkResponse(
-    RegistrationDeleteResponseDto,
+    DeleteRegistrationResponseDto,
     'Inscription annulée avec succès',
   )
   async remove(
@@ -260,7 +263,7 @@ export class RegistrationsController {
       "Permet à un client muni de son jeton de suivi (transmis par SMS ou via la propriété `registrationTrackingToken` retournée par `POST /registrations`) de connaître son rang et son temps d'attente estimé sans JWT utilisateur.",
   })
   @ApiDoriOkResponse(
-    PublicPositionResponseDto,
+    RegistrationPositionResponseDto,
     'Position actuelle dans la file',
   )
   async getPublicPosition(@Headers('X-Registration-Token') token: string) {

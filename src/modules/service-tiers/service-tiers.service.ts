@@ -12,8 +12,8 @@ import {
   PaginatedResult,
 } from '../../core/pagination/pagination.dto';
 import {
-  QueueTierDetailDto,
-  ServiceTierDetailDto,
+  QueueTierResponseDto,
+  ServiceTierResponseDto,
 } from './dto/tier-response.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ScopeService } from '../../core/rbac/services/scope.service';
@@ -30,38 +30,59 @@ export class ServiceTiersService {
   ) {}
 
   private validateNotificationRule(rule: {
-    notificationType: string;
-    thresholdPosition?: number | null;
-    thresholdMinutes?: number | null;
-    includeTrackingLink?: boolean;
+    notificationType: 'welcome' | 'threshold';
+    thresholdType?: 'position' | 'estimatedTime' | null;
+    thresholdValue?: number | null;
   }) {
+    const hasThreshold =
+      rule.thresholdType != null && rule.thresholdValue != null;
+    if (rule.notificationType === 'threshold' && !hasThreshold) {
+      throw new DoriException(
+        'VALIDATION_ERROR',
+        {},
+        { errors: ['Threshold rules require thresholdType and thresholdValue'] },
+      );
+    }
     if (
-      rule.notificationType === 'threshold' &&
-      rule.thresholdPosition == null &&
-      rule.thresholdMinutes == null
+      rule.notificationType === 'welcome' &&
+      (rule.thresholdType != null || rule.thresholdValue != null)
     ) {
       throw new DoriException(
         'VALIDATION_ERROR',
         {},
-        {
-          errors: ['Threshold rule requires position or minutes'],
-        },
+        { errors: ['Welcome rules cannot define a threshold'] },
       );
     }
-    if (
-      rule.includeTrackingLink &&
-      !['welcome', 'trakingLink'].includes(rule.notificationType)
-    ) {
-      throw new DoriException(
-        'VALIDATION_ERROR',
-        {},
-        {
-          errors: [
-            'Tracking link allowed only on welcome or trakingLink rules',
-          ],
-        },
-      );
-    }
+  }
+
+  private toNotificationRuleResponse(rule: {
+    rule_id: number;
+    queue_id: number;
+    tier_id: number;
+    notification_type: 'welcome' | 'threshold';
+    channel: string;
+    threshold_position?: number | null;
+    threshold_minutes?: number | null;
+    include_tracking_link: boolean;
+    is_active: boolean;
+  }) {
+    return {
+      ruleId: rule.rule_id,
+      queueId: rule.queue_id,
+      tierId: rule.tier_id,
+      notificationType: rule.notification_type,
+      channel: rule.channel,
+      thresholdType:
+        rule.threshold_position != null
+          ? ('position' as const)
+          : rule.threshold_minutes != null
+            ? ('estimatedTime' as const)
+            : null,
+      thresholdValue:
+        rule.threshold_position ?? rule.threshold_minutes ?? null,
+      includeTrackingLink: rule.include_tracking_link,
+      isActive: rule.is_active,
+    };
   }
 
   private async getQueueTierRepresentation(queueId: number, tierId: number) {
@@ -75,8 +96,10 @@ export class ServiceTiersService {
       tierId: row.tier_id,
       price: Number(row.price),
       currency: row.currency,
-      isEnabled: row.is_active,
-      isDefault: row.is_system || false,
+      currencyOverride: row.currency_override ?? null,
+      currencyOrigin: row.currency_origin,
+      isActive: row.is_active,
+      isDefault: row.is_default,
       displayOrder: row.display_order,
       tier: {
         tierId: row.tier_id,
@@ -93,7 +116,7 @@ export class ServiceTiersService {
   async findTiers(
     pagination: PaginationDto,
     _user?: AuthenticatedUser,
-  ): Promise<PaginatedResult<ServiceTierDetailDto>> {
+  ): Promise<PaginatedResult<ServiceTierResponseDto>> {
     const { pageSize, offset, sortOrder } = pagination.getParams();
     const safeSortField = pagination.getSafeSortField(
       ['tier_id', 'tier_name', 'tier_code', 'created_at', 'updated_at'],
@@ -105,8 +128,8 @@ export class ServiceTiersService {
       pageSize,
       offset,
     });
-    return pagination.createResponse<ServiceTierDetailDto>(
-      result.items as unknown as ServiceTierDetailDto[],
+    return pagination.createResponse<ServiceTierResponseDto>(
+      result.items as unknown as ServiceTierResponseDto[],
       result.total,
     );
   }
@@ -160,7 +183,7 @@ export class ServiceTiersService {
     queueId: number,
     pagination: PaginationDto,
     user: AuthenticatedUser,
-  ): Promise<PaginatedResult<QueueTierDetailDto>> {
+  ): Promise<PaginatedResult<QueueTierResponseDto>> {
     await this.scopeService.checkQueueAccess(user, queueId);
     const { pageSize, offset, sortOrder } = pagination.getParams();
     const sortField = pagination.getSafeSortField(
@@ -181,8 +204,10 @@ export class ServiceTiersService {
       tierId: qt.tier_id,
       price: Number(qt.price),
       currency: qt.currency,
-      isEnabled: qt.is_active,
-      isDefault: qt.is_system || false,
+      currencyOverride: qt.currency_override ?? null,
+      currencyOrigin: qt.currency_origin,
+      isActive: qt.is_active,
+      isDefault: qt.is_default,
       displayOrder: qt.display_order,
       tier: {
         tierId: qt.tier_id,
@@ -194,7 +219,7 @@ export class ServiceTiersService {
       },
     }));
 
-    return pagination.createResponse<QueueTierDetailDto>(
+    return pagination.createResponse<QueueTierResponseDto>(
       formattedItems,
       result.total,
     );
@@ -209,16 +234,9 @@ export class ServiceTiersService {
     await this.findTierById(dto.tierId);
     const now = this.clockService.now();
 
-    // Default currency from site if not provided
-    let currency = dto.currency;
-    if (!currency) {
-      currency = await this.serviceTiersRepository.findQueueCurrency(queueId);
-    }
-
     await this.serviceTiersRepository.upsertQueueTier(
       queueId,
       dto,
-      currency,
       user.userId,
       now,
     );
@@ -297,7 +315,10 @@ export class ServiceTiersService {
       pageSize,
       offset,
     });
-    return pagination.createResponse(result.items, result.total);
+    return pagination.createResponse(
+      result.items.map((rule) => this.toNotificationRuleResponse(rule)),
+      result.total,
+    );
   }
 
   async createNotificationRule(
@@ -309,42 +330,15 @@ export class ServiceTiersService {
     await this.scopeService.checkQueueAccess(user, queueId);
     const now = this.clockService.now();
 
-    // Check threshold criteria invariant (§3.8)
-    if (
-      dto.notificationType === 'threshold' &&
-      dto.thresholdPosition == null &&
-      dto.thresholdMinutes == null
-    ) {
-      throw new DoriException(
-        'VALIDATION_ERROR',
-        {},
-        { errors: ['Threshold rule requires position or minutes'] },
-      );
-    }
-
-    // Check tracking link invariant (§3.8): tracking link can only be on welcome or trakingLink
-    if (
-      dto.includeTrackingLink &&
-      !['welcome', 'trakingLink'].includes(dto.notificationType)
-    ) {
-      throw new DoriException(
-        'VALIDATION_ERROR',
-        {},
-        {
-          errors: [
-            'Tracking link allowed only on welcome or trakingLink rules',
-          ],
-        },
-      );
-    }
-
-    return this.serviceTiersRepository.createNotificationRule(
+    this.validateNotificationRule(dto);
+    const rule = await this.serviceTiersRepository.createNotificationRule(
       queueId,
       tierId,
       dto,
       user.userId,
       now,
     );
+    return this.toNotificationRuleResponse(rule);
   }
 
   async updateNotificationRule(
@@ -367,22 +361,49 @@ export class ServiceTiersService {
         notificationId: ruleId,
       });
     }
+    const notificationType = dto.notificationType ?? current.notification_type;
+    const currentThresholdType =
+      current.threshold_position != null
+        ? ('position' as const)
+        : current.threshold_minutes != null
+          ? ('estimatedTime' as const)
+          : null;
+    const thresholdType =
+      notificationType === 'welcome'
+        ? (dto.thresholdType ?? null)
+        : dto.thresholdType !== undefined
+          ? dto.thresholdType
+          : currentThresholdType;
+    const thresholdValue =
+      notificationType === 'welcome'
+        ? (dto.thresholdValue ?? null)
+        : dto.thresholdValue !== undefined
+          ? dto.thresholdValue
+          : (current.threshold_position ?? current.threshold_minutes ?? null);
     this.validateNotificationRule({
-      notificationType: dto.notificationType ?? current.notification_type,
-      thresholdPosition: dto.thresholdPosition ?? current.threshold_position,
-      thresholdMinutes: dto.thresholdMinutes ?? current.threshold_minutes,
-      includeTrackingLink:
-        dto.includeTrackingLink ?? current.include_tracking_link,
+      notificationType,
+      thresholdType,
+      thresholdValue,
     });
 
-    return this.serviceTiersRepository.updateNotificationRule(
+    const rule = await this.serviceTiersRepository.updateNotificationRule(
       queueId,
       tierId,
       ruleId,
-      dto,
+      {
+        notificationType,
+        channel: dto.channel,
+        thresholdPosition:
+          thresholdType === 'position' ? thresholdValue : null,
+        thresholdMinutes:
+          thresholdType === 'estimatedTime' ? thresholdValue : null,
+        includeTrackingLink: dto.includeTrackingLink,
+        isActive: dto.isActive,
+      },
       user.userId,
       now,
     );
+    return this.toNotificationRuleResponse(rule);
   }
 
   async deleteNotificationRule(
@@ -409,7 +430,7 @@ export class ServiceTiersService {
     queueId: number,
     paginationOrUser?: PaginationDto | AuthenticatedUser,
     maybeUser?: AuthenticatedUser,
-  ): Promise<PaginatedResult<QueueTierDetailDto>> {
+  ): Promise<PaginatedResult<QueueTierResponseDto>> {
     let pagination: PaginationDto;
     let user: AuthenticatedUser;
 
@@ -435,25 +456,6 @@ export class ServiceTiersService {
       tierId,
     );
 
-    return items.map((r) => ({
-      ruleId: r.rule_id,
-      queueId: r.queue_id,
-      tierId: r.tier_id,
-      triggerEvent: r.notification_type,
-      thresholdType:
-        r.threshold_position != null
-          ? 'position'
-          : r.threshold_minutes != null
-            ? 'estimated_time'
-            : 'position',
-      thresholdValue: r.threshold_position ?? r.threshold_minutes ?? 0,
-      channel: r.channel,
-      templateKey: undefined,
-      isActive: r.is_active,
-      notificationType: r.notification_type,
-      thresholdPosition: r.threshold_position,
-      thresholdMinutes: r.threshold_minutes,
-      includeTrackingLink: r.include_tracking_link,
-    }));
+    return items.map((rule) => this.toNotificationRuleResponse(rule));
   }
 }

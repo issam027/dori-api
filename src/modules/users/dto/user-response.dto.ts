@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
-export class UserSummaryDto {
+export class UserSummaryItemDto {
   @ApiProperty({ example: 1, description: "ID unique de l'utilisateur" })
   userId: number;
 
@@ -48,10 +48,10 @@ export class UserSummaryDto {
 
 export class PaginatedUserResponseDto extends PaginatedResponseDto {
   @ApiProperty({
-    type: [UserSummaryDto],
+    type: [UserSummaryItemDto],
     description: 'Liste des utilisateurs',
   })
-  items: UserSummaryDto[];
+  items: UserSummaryItemDto[];
 
   @ApiProperty({ example: 1, description: 'Page actuelle' })
   page: number;
@@ -66,7 +66,7 @@ export class PaginatedUserResponseDto extends PaginatedResponseDto {
   totalPages: number;
 }
 
-export class UserRoleDetailDto {
+export class UserRoleItemDto {
   @ApiProperty({ example: 2, description: 'ID du rôle' })
   roleId: number;
 
@@ -83,7 +83,7 @@ export class UserRoleDetailDto {
   description?: string;
 }
 
-export class UserSiteDetailDto {
+export class UserSiteItemDto {
   @ApiProperty({ example: 1, description: 'ID du site' })
   siteId: number;
 
@@ -94,7 +94,7 @@ export class UserSiteDetailDto {
   siteType: string;
 }
 
-export class UserQueueDetailDto {
+export class UserQueueItemDto {
   @ApiProperty({ example: 1, description: 'ID de la file' })
   queueId: number;
 
@@ -108,7 +108,7 @@ export class UserQueueDetailDto {
   siteId: number;
 }
 
-export class UserDetailResponseDto {
+export class UserResponseDto {
   @ApiProperty({ example: 1, description: "ID unique de l'utilisateur" })
   userId: number;
 
@@ -152,14 +152,14 @@ export class UserDetailResponseDto {
   })
   updatedAt: string;
 
-  @ApiProperty({ type: [UserRoleDetailDto], description: 'Rôles attribués' })
-  roles: UserRoleDetailDto[];
+  @ApiProperty({ type: [UserRoleItemDto], description: 'Rôles attribués' })
+  roles: UserRoleItemDto[];
 
-  @ApiProperty({ type: [UserSiteDetailDto], description: 'Sites rattachés' })
-  sites: UserSiteDetailDto[];
+  @ApiProperty({ type: [UserSiteItemDto], description: 'Sites rattachés' })
+  sites: UserSiteItemDto[];
 
-  @ApiProperty({ type: [UserQueueDetailDto], description: 'Files affectées' })
-  queues: UserQueueDetailDto[];
+  @ApiProperty({ type: [UserQueueItemDto], description: 'Files affectées' })
+  queues: UserQueueItemDto[];
 }
 
 export class CreateUserResponseDto {
@@ -269,7 +269,7 @@ export class RemoveUserRoleResponseDto {
   removed: boolean;
 }
 
-export class RoleDetailResponseDto {
+export class RoleResponseDto {
   @ApiProperty({ example: 1, description: 'ID unique du rôle' })
   roleId: number;
 
@@ -310,10 +310,10 @@ export class RoleDetailResponseDto {
 
 export class PaginatedRoleResponseDto extends PaginatedResponseDto {
   @ApiProperty({
-    type: [RoleDetailResponseDto],
+    type: [RoleResponseDto],
     description: 'Liste des rôles',
   })
-  items: RoleDetailResponseDto[];
+  items: RoleResponseDto[];
 
   @ApiProperty({ example: 1, description: 'Page actuelle' })
   page: number;
@@ -339,7 +339,7 @@ export class UpdateRolePermissionsResponseDto {
   permissionsUpdated: boolean;
 }
 
-export class UserDeleteResponseDto {
+export class DeleteUserResponseDto {
   @ApiProperty({ example: 1, description: "ID de l'utilisateur supprimé" })
   userId: number;
 

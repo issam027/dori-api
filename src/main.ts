@@ -47,11 +47,9 @@ async function createApp(): Promise<NestExpressApplication> {
     }),
   );
 
-  const allowedOrigins = configService.get<string[]>('cors.allowedOrigins') || [
-    'http://localhost:3000',
-    'https://dori-api-dev.vercel.app',
-    'https://dori-api.vercel.app',
-  ];
+  const allowedOrigins = configService.getOrThrow<string[]>(
+    'cors.allowedOrigins',
+  );
 
   // WebSockets can't run on serverless functions
   if (!isVercel) {
@@ -133,12 +131,9 @@ export default async function handler(
 // Local / traditional hosting: keep the normal listen behaviour
 if (!isVercel) {
   void getApp().then(async (app) => {
-    const logger = new Logger('Bootstrap');
+    const logger = new Logger('DoriApi');
     const port = app.get(ConfigService).get<number>('port') || 3000;
     await app.listen(port);
-    logger.log(`Dori API server successfully started on port ${port}`);
-    logger.log(
-      `OpenAPI documentation available at http://localhost:${port}/api/docs`,
-    );
+    logger.log(`OpenAPI documentation available at http://localhost:${port}/api/docs`);
   });
 }

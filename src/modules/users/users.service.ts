@@ -13,7 +13,7 @@ import {
   PaginationDto,
   PaginatedResult,
 } from '../../core/pagination/pagination.dto';
-import { UserSummaryDto, RoleDetailResponseDto } from './dto/user-response.dto';
+import { UserSummaryItemDto, RoleResponseDto } from './dto/user-response.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
@@ -178,7 +178,7 @@ export class UsersService {
   async findUsers(
     filter: UserFilterDto,
     user: AuthenticatedUser,
-  ): Promise<PaginatedResult<UserSummaryDto>> {
+  ): Promise<PaginatedResult<UserSummaryItemDto>> {
     const scope = await this.scopeService.getUserScope(user);
     const { pageSize, offset, sortOrder } = filter.getParams();
     // VAL-01 : allowlist des colonnes autorisées pour dori_user (alias u)
@@ -552,7 +552,7 @@ export class UsersService {
   // Roles and Permissions (§5.9, §4.9)
   async getRoles(
     pagination: PaginationDto,
-  ): Promise<PaginatedResult<RoleDetailResponseDto>> {
+  ): Promise<PaginatedResult<RoleResponseDto>> {
     const { pageSize, offset } = pagination.getParams();
 
     const countRes = await this.dataSource.query(
