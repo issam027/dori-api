@@ -19,13 +19,13 @@ import {
   ApiOperation,
   ApiParam,
   ApiHeader,
-  ApiResponse,
 } from '@nestjs/swagger';
 import {
   ApiDoriOkResponse,
   ApiDoriCreatedResponse,
   ApiDoriErrorResponses,
   ApiDoriPublicErrorResponses,
+  ApiDoriNotModifiedResponse,
 } from '../../core/swagger/api-dori-response.decorator';
 import { Response } from 'express';
 import { TranslationsService } from './translations.service';
@@ -69,10 +69,7 @@ export class TranslationsController {
     required: false,
     description: 'ETag reçu lors du dernier téléchargement du bundle',
   })
-  @ApiResponse({
-    status: HttpStatus.NOT_MODIFIED,
-    description: "Le bundle n'a pas changé; réponse sans corps.",
-  })
+  @ApiDoriNotModifiedResponse("Le bundle n'a pas changé; réponse sans corps.")
   @ApiDoriOkResponse(TranslationBundleResponseDto, 'Bundle de traductions', {
     ETag: {
       description: 'Version faible du bundle retourné',

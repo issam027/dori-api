@@ -1,55 +1,65 @@
-﻿import { Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import * as bcrypt from 'bcryptjs';
-import {
-  CreateUserDto,
-  UpdateUserDto,
-  UpdateUserStatusDto,
-  SetUserPasswordDto,
-  UpdateRolePermissionsDto,
-  UserFilterDto,
-} from './dto/user.dto';
+import { UpdateUserDto, UserFilterDto } from './dto/user.dto';
 import {
   PaginationDto,
   PaginatedResult,
 } from '../../core/pagination/pagination.dto';
 import { UserSummaryItemDto, RoleResponseDto } from './dto/user-response.dto';
-import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
-import { ScopeService } from '../../core/rbac/services/scope.service';
-import { ClockService } from '../../core/clock/clock.service';
-import { ConfigService } from '@nestjs/config';
-import { DoriException } from '../../core/errors/dori.exception';
+
+export interface UserDetailsResult {
+  user_id: number;
+  username: string;
+  email: string | null;
+  user_type: string;
+  is_active: boolean;
+  language_preference: string;
+  last_login: Date | null;
+  created_at: Date;
+  updated_at: Date;
+  roles: Array<{
+    role_id: number;
+    role_name: string;
+    rank: number;
+    description: string;
+  }>;
+  sites: Array<{
+    site_id: number;
+    site_name: string;
+    site_type: string;
+  }>;
+  queues: Array<{
+    queue_id: number;
+    queue_code: string;
+    queue_name: string;
+    site_id: number;
+  }>;
+}
 
 @Injectable()
 export class UsersRepository {
-  constructor(
-    private readonly dataSource: DataSource,
-    private readonly scopeService: ScopeService,
-    private readonly clockService: ClockService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly dataSource: DataSource) {}
 
-  private async getCallerMaxRank(user: AuthenticatedUser): Promise<number> {
-    if (user.roles?.includes('root')) {
-      return 5;
-    }
+  async getCallerMaxRank(userId: number): Promise<number> {
     const rolesRes = await this.dataSource.query(
       `SELECT MAX(r.rank) as max_rank
        FROM dori_user_role ur
        JOIN dori_role r ON r.role_id = ur.role_id
        WHERE ur.user_id = $1`,
-      [user.userId],
+      [userId],
     );
     return Number(rolesRes[0]?.max_rank || 0);
   }
 
-  private async getUserMaxRank(targetUserId: number): Promise<number> {
+  async getUserMaxRank(
+    userId: number,
+  ): Promise<{ exists: boolean; maxRank: number; userType?: string }> {
     const userRes = await this.dataSource.query(
       `SELECT user_id, user_type FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL`,
-      [targetUserId],
+      [userId],
     );
     if (!userRes || userRes.length === 0) {
-      throw new DoriException('USER_NOT_FOUND', { userId: targetUserId });
+      return { exists: false, maxRank: 0 };
     }
 
     const rolesRes = await this.dataSource.query(
@@ -57,131 +67,45 @@ export class UsersRepository {
        FROM dori_user_role ur
        JOIN dori_role r ON r.role_id = ur.role_id
        WHERE ur.user_id = $1`,
-      [targetUserId],
+      [userId],
     );
     const maxRank = Number(rolesRes[0]?.max_rank || 0);
-    if (maxRank > 0) return maxRank;
 
-    if (userRes[0].user_type === 'kiosk') {
-      return 1;
-    }
-    return 0;
+    return {
+      exists: true,
+      maxRank,
+      userType: userRes[0].user_type,
+    };
   }
 
-  private async getCallerMaxManageRank(
-    user: AuthenticatedUser,
-  ): Promise<number> {
-    if (user.roles?.includes('root')) {
-      return 5;
-    }
-
+  async getUserPermissionNames(userId: number): Promise<string[]> {
     const permsRes = await this.dataSource.query(
       `SELECT DISTINCT p.permission_name
        FROM dori_user_role ur
        JOIN dori_role_permission rp ON rp.role_id = ur.role_id
        JOIN dori_permission p ON p.permission_id = rp.permission_id
        WHERE ur.user_id = $1 AND p.is_active = TRUE`,
-      [user.userId],
+      [userId],
     );
-
-    const permissions = new Set<string>([
-      ...(user.permissions || []),
-      ...permsRes.map((r: any) => r.permission_name),
-    ]);
-
-    if (
-      permissions.has('system_manage') ||
-      permissions.has('user_manage_admin')
-    ) {
-      return 4;
-    }
-    if (permissions.has('user_manage_manager')) {
-      return 3;
-    }
-    if (permissions.has('user_manage_hostess')) {
-      return 2;
-    }
-    if (permissions.has('user_manage_kiosk')) {
-      return 1;
-    }
-
-    return 0;
+    return permsRes.map((r: any) => r.permission_name);
   }
 
-  private async checkAntiEscalation(
-    caller: AuthenticatedUser,
-    targetUserId?: number,
-    targetRoleId?: number,
-  ) {
-    if (caller.roles?.includes('root')) {
-      return; // root can manage anything
+  async getRoleRank(roleId: number): Promise<number | null> {
+    const roleRes = await this.dataSource.query(
+      `SELECT rank FROM dori_role WHERE role_id = $1 AND is_active = TRUE`,
+      [roleId],
+    );
+    if (!roleRes || roleRes.length === 0) {
+      return null;
     }
-
-    const callerRank = await this.getCallerMaxRank(caller);
-
-    // BUG1 : Une hÃ´tesse ne peut rien modifier (ni kiosk, ni tout rÃ´le infÃ©rieur Ã  manager)
-    if (
-      callerRank < 3 ||
-      caller.roles?.includes('hotesse') ||
-      caller.roles?.includes('kiosk')
-    ) {
-      throw new DoriException('FORBIDDEN_PERMISSION');
-    }
-
-    // BUG1 : Plafond des profils modifiables selon le rÃ´le et les permissions de l'appelant
-    // - Un manager (rank 3) peut modifier son user et les users hotesse (2) et kioske (1)
-    // - Les admin (rank 4) peuvent faire ce que le manager peut et aussi modifier les managers (3)
-    let maxManageRank = 2; // hotesse & kiosk par dÃ©faut pour manager
-    if (callerRank >= 4 || caller.roles?.includes('admin')) {
-      maxManageRank = 3; // admin peut aussi modifier les managers
-    }
-    const callerMaxManagePerm = await this.getCallerMaxManageRank(caller);
-    if (callerMaxManagePerm > 0 && callerMaxManagePerm < maxManageRank) {
-      maxManageRank = callerMaxManagePerm;
-    }
-
-    if (targetUserId) {
-      // Un manager ou admin peut modifier son propre compte
-      if (caller.userId === targetUserId) {
-        return;
-      }
-
-      const targetRank = await this.getUserMaxRank(targetUserId);
-
-      // Si le profil cible dÃ©passe le plafond autorisÃ© pour le rÃ´le du modificateur
-      if (targetRank > maxManageRank) {
-        if (targetRank >= callerRank) {
-          throw new DoriException('FORBIDDEN_ROLE_ESCALATION');
-        }
-        throw new DoriException('FORBIDDEN_PERMISSION');
-      }
-    }
-
-    if (targetRoleId) {
-      const roleRes = await this.dataSource.query(
-        `SELECT rank FROM dori_role WHERE role_id = $1 AND is_active = TRUE`,
-        [targetRoleId],
-      );
-      if (roleRes && roleRes.length > 0) {
-        const roleRank = Number(roleRes[0].rank);
-
-        if (roleRank > maxManageRank) {
-          if (roleRank >= callerRank) {
-            throw new DoriException('FORBIDDEN_ROLE_ESCALATION');
-          }
-          throw new DoriException('FORBIDDEN_PERMISSION');
-        }
-      }
-    }
+    return Number(roleRes[0].rank);
   }
 
   async findUsers(
     filter: UserFilterDto,
-    user: AuthenticatedUser,
+    scope: { isGlobal: boolean; siteIds: number[] },
   ): Promise<PaginatedResult<UserSummaryItemDto>> {
-    const scope = await this.scopeService.getUserScope(user);
     const { pageSize, offset, sortOrder } = filter.getParams();
-    // VAL-01 : allowlist des colonnes autorisÃ©es pour dori_user (alias u)
     const sortField = filter.getSafeSortField(
       [
         'u.user_id',
@@ -209,8 +133,6 @@ export class UsersRepository {
     `;
     const params: any[] = [];
 
-    // BUG1 : Le listing est compartimentÃ© par "site" auquel le user qui fait appel est affectÃ©.
-    // Il est total pour ce site (hÃ´tesses, managers du site) ainsi que les administrateurs et root.
     if (!scope.isGlobal) {
       if (scope.siteIds.length === 0) {
         query += ` AND r.role_name IN ('admin', 'root')`;
@@ -244,9 +166,7 @@ export class UsersRepository {
     return filter.createResponse(items, total);
   }
 
-  async findUserById(userId: number, user: AuthenticatedUser) {
-    const scope = await this.scopeService.getUserScope(user);
-
+  async findUserById(userId: number): Promise<UserDetailsResult | null> {
     const users = await this.dataSource.query(
       `SELECT user_id, username, email, user_type, is_active, language_preference, last_login, created_at, updated_at
        FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL`,
@@ -254,44 +174,11 @@ export class UsersRepository {
     );
 
     if (!users || users.length === 0) {
-      throw new DoriException('USER_NOT_FOUND', { userId });
-    }
-
-    // BUG1 : Le listing/dÃ©tail est total : une hÃ´tesse ou un manager peut voir les managers et admins.
-    // Si l'utilisateur n'est pas global et consulte un tiers, on s'assure qu'il est rattachÃ© aux mÃªmes sites ou admin/root.
-    if (!scope.isGlobal && user.userId !== userId) {
-      if (scope.siteIds.length === 0) {
-        const isAdminOrRoot = await this.dataSource.query(
-          `SELECT 1 FROM dori_user_role ur
-           JOIN dori_role r ON r.role_id = ur.role_id
-           WHERE ur.user_id = $1 AND r.role_name IN ('admin', 'root')
-           LIMIT 1`,
-          [userId],
-        );
-        if (!isAdminOrRoot || isAdminOrRoot.length === 0) {
-          throw new DoriException('USER_NOT_FOUND', { userId });
-        }
-      } else {
-        const inScope = await this.dataSource.query(
-          `SELECT 1 FROM dori_user u
-           LEFT JOIN dori_user_site us ON us.user_id = u.user_id
-           LEFT JOIN dori_user_queue uq ON uq.user_id = u.user_id
-           LEFT JOIN dori_site_queue_thread sqt ON sqt.queue_id = uq.queue_id
-           LEFT JOIN dori_user_role ur ON ur.user_id = u.user_id
-           LEFT JOIN dori_role r ON r.role_id = ur.role_id
-           WHERE u.user_id = $1 AND (us.site_id = ANY($2) OR sqt.site_id = ANY($2) OR r.role_name IN ('admin', 'root'))
-           LIMIT 1`,
-          [userId, scope.siteIds],
-        );
-        if (!inScope || inScope.length === 0) {
-          throw new DoriException('USER_NOT_FOUND', { userId });
-        }
-      }
+      return null;
     }
 
     const targetUser = users[0];
 
-    // Roles
     const roles = await this.dataSource.query(
       `SELECT r.role_id, r.role_name, r.rank, r.description
        FROM dori_user_role ur
@@ -300,7 +187,6 @@ export class UsersRepository {
       [userId],
     );
 
-    // Sites
     const sites = await this.dataSource.query(
       `SELECT s.site_id, s.site_name, s.site_type
        FROM dori_user_site us
@@ -309,7 +195,6 @@ export class UsersRepository {
       [userId],
     );
 
-    // Queues
     const queues = await this.dataSource.query(
       `SELECT q.queue_id, q.queue_code, q.queue_name, q.site_id
        FROM dori_user_queue uq
@@ -326,51 +211,50 @@ export class UsersRepository {
     };
   }
 
-  async createUser(dto: CreateUserDto, user: AuthenticatedUser) {
-    if (dto.roleId) {
-      await this.checkAntiEscalation(user, undefined, dto.roleId);
-    } else {
-      await this.checkAntiEscalation(user);
-    }
-
-    const saltRounds =
-      this.configService?.get<number>('security.bcryptRounds') || 12;
-    const hash = await bcrypt.hash(dto.password, saltRounds);
-    const now = this.clockService.now();
-
+  async createUser(params: {
+    username: string;
+    email?: string;
+    passwordHash: string;
+    userType?: string;
+    languagePreference?: string;
+    roleId?: number;
+    creatorUserId: number;
+    now: Date;
+  }): Promise<any | null> {
     return this.dataSource.transaction(async (manager) => {
-      if (dto.roleId) {
+      if (params.roleId) {
         const roles = await manager.query(
           `SELECT role_id FROM dori_role WHERE role_id = $1 AND is_active = TRUE FOR SHARE`,
-          [dto.roleId],
+          [params.roleId],
         );
-        if (roles.length === 0) throw new DoriException('ROLE_NOT_FOUND');
+        if (roles.length === 0) return null;
       }
+
       const res = await manager.query(
         `INSERT INTO dori_user (
-        username, email, password_hash, user_type, language_preference,
-        created_by_user_id, updated_by_user_id, created_at, updated_at
-      ) VALUES ($1, $2, $3, COALESCE($4, 'human'), COALESCE($5, 'fr'), $6, $6, $7, $7)
-      RETURNING user_id, username, email, user_type, is_active, language_preference, created_at`,
+          username, email, password_hash, user_type, language_preference,
+          created_by_user_id, updated_by_user_id, created_at, updated_at
+        ) VALUES ($1, $2, $3, COALESCE($4, 'human'), COALESCE($5, 'fr'), $6, $6, $7, $7)
+        RETURNING user_id, username, email, user_type, is_active, language_preference, created_at`,
         [
-          dto.username,
-          dto.email || null,
-          hash,
-          dto.userType || null,
-          dto.languagePreference || null,
-          user.userId,
-          now,
+          params.username,
+          params.email || null,
+          params.passwordHash,
+          params.userType || null,
+          params.languagePreference || null,
+          params.creatorUserId,
+          params.now,
         ],
       );
 
       const newUser = res[0];
 
-      if (dto.roleId) {
+      if (params.roleId) {
         await manager.query(
           `INSERT INTO dori_user_role (user_id, role_id, assigned_at, assigned_by_user_id)
-         VALUES ($1, $2, $3, $4)
-         ON CONFLICT DO NOTHING`,
-          [newUser.user_id, dto.roleId, now, user.userId],
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT DO NOTHING`,
+          [newUser.user_id, params.roleId, params.now, params.creatorUserId],
         );
       }
 
@@ -381,12 +265,9 @@ export class UsersRepository {
   async updateUser(
     userId: number,
     dto: UpdateUserDto,
-    user: AuthenticatedUser,
-  ) {
-    await this.checkAntiEscalation(user, userId);
-    await this.findUserById(userId, user);
-
-    const now = this.clockService.now();
+    updaterUserId: number,
+    now: Date,
+  ): Promise<any> {
     const fields: string[] = [];
     const values: any[] = [];
     let idx = 1;
@@ -401,7 +282,7 @@ export class UsersRepository {
     }
 
     fields.push(`updated_by_user_id = $${idx++}`);
-    values.push(user.userId);
+    values.push(updaterUserId);
     fields.push(`updated_at = $${idx++}`);
     values.push(now);
 
@@ -418,96 +299,80 @@ export class UsersRepository {
 
   async updateUserStatus(
     userId: number,
-    dto: UpdateUserStatusDto,
-    user: AuthenticatedUser,
-  ) {
-    await this.checkAntiEscalation(user, userId);
-    await this.findUserById(userId, user);
-
-    const now = this.clockService.now();
-
+    isActive: boolean,
+    updaterUserId: number,
+    now: Date,
+  ): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
       await manager.query(
         `UPDATE dori_user
-       SET is_active = $1, updated_by_user_id = $2, updated_at = $3
-       WHERE user_id = $4`,
-        [dto.isActive, user.userId, now, userId],
+         SET is_active = $1, updated_by_user_id = $2, updated_at = $3
+         WHERE user_id = $4`,
+        [isActive, updaterUserId, now, userId],
       );
 
-      // If deactivating: immediately revoke all sessions (Â§4.12)
-      if (!dto.isActive) {
+      if (!isActive) {
         await manager.query(
           `UPDATE dori_user_session
-         SET revoked_at = $1, revoked_reason = 'account_disabled'
-         WHERE user_id = $2 AND revoked_at IS NULL`,
+           SET revoked_at = $1, revoked_reason = 'account_disabled'
+           WHERE user_id = $2 AND revoked_at IS NULL`,
           [now, userId],
         );
       }
     });
-
-    return { userId, isActive: dto.isActive };
   }
 
   async setUserPassword(
     userId: number,
-    dto: SetUserPasswordDto,
-    user: AuthenticatedUser,
-  ) {
-    await this.checkAntiEscalation(user, userId);
-    await this.findUserById(userId, user);
-
-    const saltRounds =
-      this.configService?.get<number>('security.bcryptRounds') || 12;
-    const hash = await bcrypt.hash(dto.newPassword, saltRounds);
-    const now = this.clockService.now();
-
+    passwordHash: string,
+    updaterUserId: number,
+    now: Date,
+  ): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
       await manager.query(
         `UPDATE dori_user
-       SET password_hash = $1, must_change_password = TRUE, password_changed_at = $2,
-           updated_by_user_id = $3, updated_at = $2
-       WHERE user_id = $4`,
-        [hash, now, user.userId, userId],
+         SET password_hash = $1, must_change_password = TRUE, password_changed_at = $2,
+             updated_by_user_id = $3, updated_at = $2
+         WHERE user_id = $4`,
+        [passwordHash, now, updaterUserId, userId],
       );
 
-      // Revoke all sessions on admin password change (Â§4.12)
       await manager.query(
         `UPDATE dori_user_session
-       SET revoked_at = $1, revoked_reason = 'password_changed'
-       WHERE user_id = $2 AND revoked_at IS NULL`,
+         SET revoked_at = $1, revoked_reason = 'password_changed'
+         WHERE user_id = $2 AND revoked_at IS NULL`,
         [now, userId],
       );
     });
-
-    return { userId, passwordUpdated: true };
   }
 
   async assignUserRole(
     userId: number,
     roleId: number,
-    user: AuthenticatedUser,
-  ) {
-    await this.checkAntiEscalation(user, userId, roleId);
-    const now = this.clockService.now();
-
-    const assigned = await this.dataSource.transaction(async (manager) => {
+    assignedByUserId: number,
+    now: Date,
+  ): Promise<{ userExists: boolean; roleExists: boolean; assigned: boolean }> {
+    return this.dataSource.transaction(async (manager) => {
       const resources = await manager.query(
         `SELECT
            EXISTS(SELECT 1 FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL) AS user_exists,
            EXISTS(SELECT 1 FROM dori_role WHERE role_id = $2 AND is_active = TRUE) AS role_exists`,
         [userId, roleId],
       );
-      if (!resources[0]?.user_exists)
-        throw new DoriException('USER_NOT_FOUND', { userId });
-      if (!resources[0]?.role_exists)
-        throw new DoriException('ROLE_NOT_FOUND', { roleId });
+      const userExists = !!resources[0]?.user_exists;
+      const roleExists = !!resources[0]?.role_exists;
+      if (!userExists || !roleExists) {
+        return { userExists, roleExists, assigned: false };
+      }
+
       const rows = await manager.query(
         `INSERT INTO dori_user_role (user_id, role_id, assigned_at, assigned_by_user_id)
          VALUES ($1, $2, $3, $4)
          ON CONFLICT (user_id, role_id) DO NOTHING
          RETURNING role_id`,
-        [userId, roleId, now, user.userId],
+        [userId, roleId, now, assignedByUserId],
       );
+
       if (rows.length > 0) {
         await manager.query(
           `UPDATE dori_user_session SET revoked_at = $1, revoked_reason = 'admin'
@@ -515,22 +380,17 @@ export class UsersRepository {
           [now, userId],
         );
       }
-      return rows.length > 0;
-    });
 
-    this.scopeService.invalidateUserScope(userId);
-    return { userId, roleId, assigned };
+      return { userExists: true, roleExists: true, assigned: rows.length > 0 };
+    });
   }
 
   async removeUserRole(
     userId: number,
     roleId: number,
-    user: AuthenticatedUser,
-  ) {
-    await this.checkAntiEscalation(user, userId, roleId);
-
-    const now = this.clockService.now();
-    const removed = await this.dataSource.transaction(async (manager) => {
+    now: Date,
+  ): Promise<boolean> {
+    return this.dataSource.transaction(async (manager) => {
       const rows = await manager.query(
         `DELETE FROM dori_user_role WHERE user_id = $1 AND role_id = $2 RETURNING role_id`,
         [userId, roleId],
@@ -544,12 +404,8 @@ export class UsersRepository {
       }
       return rows.length > 0;
     });
-
-    this.scopeService.invalidateUserScope(userId);
-    return { userId, roleId, removed };
   }
 
-  // Roles and Permissions (Â§5.9, Â§4.9)
   async getRoles(
     pagination: PaginationDto,
   ): Promise<PaginatedResult<RoleResponseDto>> {
@@ -567,7 +423,6 @@ export class UsersRepository {
        LIMIT ${pageSize} OFFSET ${offset}`,
     );
 
-    // Attach permissions
     for (const r of roles) {
       const perms = await this.dataSource.query(
         `SELECT p.permission_name, p.description
@@ -582,54 +437,45 @@ export class UsersRepository {
     return pagination.createResponse(roles, total);
   }
 
+  async roleExists(roleId: number): Promise<boolean> {
+    const res = await this.dataSource.query(
+      `SELECT 1 FROM dori_role WHERE role_id = $1 AND is_active = TRUE`,
+      [roleId],
+    );
+    return res.length > 0;
+  }
+
+  async findActivePermissionNames(names: string[]): Promise<string[]> {
+    const res = await this.dataSource.query(
+      `SELECT permission_name FROM dori_permission
+       WHERE permission_name = ANY($1) AND is_active = TRUE`,
+      [names],
+    );
+    return res.map((item: any) => item.permission_name);
+  }
+
   async updateRolePermissions(
     roleId: number,
-    dto: UpdateRolePermissionsDto,
-    user: AuthenticatedUser,
-  ) {
-    const now = this.clockService.now();
-
+    permissionNames: string[],
+    updaterUserId: number,
+    now: Date,
+  ): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
-      const roles = await manager.query(
-        `SELECT role_id FROM dori_role WHERE role_id = $1 AND is_active = TRUE FOR UPDATE`,
-        [roleId],
-      );
-      if (roles.length === 0)
-        throw new DoriException('ROLE_NOT_FOUND', { roleId });
-
-      const requested = Array.from(new Set(dto.permissionNames || []));
-      const permissions = requested.length
-        ? await manager.query(
-            `SELECT permission_name FROM dori_permission
-             WHERE permission_name = ANY($1) AND is_active = TRUE`,
-            [requested],
-          )
-        : [];
-      const found = new Set(
-        permissions.map((item: any) => item.permission_name),
-      );
-      const unknown = requested.filter((name) => !found.has(name));
-      if (unknown.length > 0) {
-        throw new DoriException('PERMISSION_NOT_FOUND', {
-          permissions: unknown,
-        });
-      }
-
-      // Clear existing
       await manager.query(
         `DELETE FROM dori_role_permission WHERE role_id = $1`,
         [roleId],
       );
 
-      if (requested.length > 0) {
+      if (permissionNames.length > 0) {
         await manager.query(
           `INSERT INTO dori_role_permission (role_id, permission_id, assigned_at, assigned_by_user_id)
            SELECT $1, permission_id, $2, $3
            FROM dori_permission
            WHERE permission_name = ANY($4)`,
-          [roleId, now, user.userId, requested],
+          [roleId, now, updaterUserId, permissionNames],
         );
       }
+
       await manager.query(
         `UPDATE dori_user_session s
          SET revoked_at = $1, revoked_reason = 'admin'
@@ -638,36 +484,27 @@ export class UsersRepository {
         [now, roleId],
       );
     });
-
-    this.scopeService.clearAllScopeCache();
-    return { roleId, permissionsUpdated: true };
   }
 
-  async deleteUser(userId: number, user: AuthenticatedUser) {
-    await this.checkAntiEscalation(user, userId);
-    await this.findUserById(userId, user);
-
-    const now = this.clockService.now();
-
+  async deleteUser(
+    userId: number,
+    deleterUserId: number,
+    now: Date,
+  ): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
       await manager.query(
         `UPDATE dori_user
-       SET is_active = FALSE, deleted_at = $1, updated_by_user_id = $2, updated_at = $1
-       WHERE user_id = $3`,
-        [now, user.userId, userId],
+         SET is_active = FALSE, deleted_at = $1, updated_by_user_id = $2, updated_at = $1
+         WHERE user_id = $3`,
+        [now, deleterUserId, userId],
       );
 
-      // 2. RÃ©vocation immÃ©diate de toutes les sessions actives (Â§4.12)
       await manager.query(
         `UPDATE dori_user_session
-       SET revoked_at = $1, revoked_reason = 'account_deleted'
-       WHERE user_id = $2 AND revoked_at IS NULL`,
+         SET revoked_at = $1, revoked_reason = 'account_deleted'
+         WHERE user_id = $2 AND revoked_at IS NULL`,
         [now, userId],
       );
     });
-
-    this.scopeService.invalidateUserScope(userId);
-
-    return { userId, deleted: true };
   }
 }

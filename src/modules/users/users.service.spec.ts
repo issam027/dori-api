@@ -56,19 +56,9 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
         },
         {
           provide: UsersRepository,
-          useFactory: (
-            dataSource: DataSource,
-            scopeService: ScopeService,
-            clockService: ClockService,
-            configService: ConfigService,
-          ) =>
-            new UsersRepository(
-              dataSource,
-              scopeService,
-              clockService,
-              configService,
-            ),
-          inject: [DataSource, ScopeService, ClockService, ConfigService],
+          useFactory: (dataSource: DataSource) =>
+            new UsersRepository(dataSource),
+          inject: [DataSource],
         },
       ],
     }).compile();

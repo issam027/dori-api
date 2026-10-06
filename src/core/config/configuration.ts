@@ -84,6 +84,10 @@ export default () => {
     port: parseInteger('PORT', process.env.PORT, 3000),
     nodeEnv: process.env.NODE_ENV ?? 'development',
 
+    platform: {
+      isVercel: !!process.env.VERCEL,
+    },
+
     database: {
       host: dbHost,
       port: dbPort,

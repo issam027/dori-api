@@ -224,6 +224,19 @@ export function ApiDoriRawResponse<T extends Type<unknown>>(
   return applyDecorators(...decorators);
 }
 
+/**
+ * @ApiDoriNotModifiedResponse — documente une réponse 304 Not Modified (sans corps).
+ * Utilisé pour les endpoints avec cache HTTP / ETag.
+ */
+export function ApiDoriNotModifiedResponse(
+  description = "Le contenu n'a pas changé ; réponse sans corps.",
+) {
+  return ApiResponse({
+    status: 304,
+    description,
+  });
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers pour les réponses de succès (inchangés)
 // ─────────────────────────────────────────────────────────────────────────────

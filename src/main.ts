@@ -15,14 +15,13 @@ import {
 } from './core/swagger/openapi.config';
 import { PositiveIdParamPipe } from './core/validation/positive-id-param.pipe';
 
-const isVercel = !!process.env.VERCEL;
-
 async function createApp(): Promise<NestExpressApplication> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
   });
 
   const configService = app.get(ConfigService);
+  const isVercel = configService.get<boolean>('platform.isVercel') ?? false;
   app.use(cookieParser());
 
   app.use(
@@ -128,13 +127,15 @@ export default async function handler(
 }
 
 // Local / traditional hosting: keep the normal listen behaviour
-if (!isVercel) {
-  void getApp().then(async (app) => {
+void getApp().then(async (app) => {
+  const configService = app.get(ConfigService);
+  const isVercel = configService.get<boolean>('platform.isVercel') ?? false;
+  if (!isVercel) {
     const logger = new Logger('DoriApi');
-    const port = app.get(ConfigService).get<number>('port') || 3000;
+    const port = configService.get<number>('port') || 3000;
     await app.listen(port);
     logger.log(
       `OpenAPI documentation available at http://localhost:${port}/api/docs`,
     );
-  });
-}
+  }
+});

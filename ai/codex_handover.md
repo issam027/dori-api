@@ -21,10 +21,6 @@ Ce document décrit l'état réellement observé dans le code. Les anciens journ
 | 2 | DB-002 | P1 | Ouvert, décision requise | Fournir la CA PostgreSQL correcte avant de réactiver `rejectUnauthorized`. |
 | 3 | TEST-002 | P1 | Ouvert, décision requise | Choisir et provisionner un PostgreSQL éphémère pour les tests e2e/concurrents. |
 | 4 | TEST-001 | P1 | Partiel | Étendre la couverture des chemins critiques ; couverture actuelle : 24,86 % statements. |
-| 5 | ARCH-001 | P2 | Partiel | La séparation SQL est terminée, mais `UsersRepository` contient encore des règles métier et dépendances applicatives. |
-| 6 | CORE-004 | P2 | Régression | Faire passer la détection Vercel de `main.ts` par la configuration centralisée. |
-| 7 | TIME-001 | P2 | Régression limitée | Remplacer `NOW()` dans la validation de session JWT par l'heure injectée. |
-| 8 | CORE-002 | P3 | Régression limitée | Remplacer le `@ApiResponse` local du contrôleur de traductions par le décorateur core adapté. |
 
 Les autres points ont été revérifiés et sont détaillés ci-dessous.
 
@@ -36,8 +32,8 @@ Les autres points ont été revérifiés et sont détaillés ci-dessous.
 - Couverture Jest : **24,86 % statements, 30,25 % branches, 27,94 % fonctions, 24,19 % lignes**.
 - `npm run format:check` / `npm run lint` : réussis sans erreur après standardisation LF (`.gitattributes` et `.prettierrc`).
 - Scan de persistance : aucun SQL direct dans les services, workers, contrôleurs, gateways ou stratégies. `DatabaseSeedService` reste l'exception volontaire d'infrastructure.
-- Scan de configuration : accès direct à `process.env` limité à `configuration.ts`, sauf `main.ts` pour `VERCEL`.
-- Scan Swagger : un `ApiResponse` natif subsiste dans `translations.controller.ts`.
+- Scan de configuration : accès direct à `process.env` strictement limité à `src/core/config/configuration.ts`. Aucun appel direct dans `main.ts` ni dans le reste de l'application.
+- Scan Swagger : aucun décorateur de réponse natif (`@ApiResponse`, `@ApiOkResponse`, etc.) hors de `core/swagger`.
 
 ## Contrôle point par point
 
@@ -84,12 +80,15 @@ Les autres points ont été revérifiés et sont détaillés ci-dessous.
 - **État vérifié : corrigé.** `DatabaseSeedService` journalise puis relance l'exception.
 - **Reste à faire :** ajouter ultérieurement un test bootstrap avec SQL invalide dans TEST-001 ; aucun changement fonctionnel requis ici.
 
-### [ ] TIME-001 — Faire respecter l'horloge injectée
+### [x] TIME-001 — Faire respecter l'horloge injectée
 
-- **État vérifié : régression limitée.** Les services et workers utilisent `ClockService`, mais `JwtSessionRepository` compare encore `expires_at > NOW()`.
-- **Risque :** validation JWT non pilotable par l'horloge de test et divergence possible entre horloge applicative et PostgreSQL.
-- **Reste à faire :** passer `ClockService.now()` depuis `JwtStrategy` au repository et comparer `expires_at > $3`.
-- **Test requis :** session valide puis expirée avec une horloge figée, sans dépendre de l'heure réelle de la base.
+- **État vérifié : corrigé (2026-10-06).** L'ensemble des services, workers et contrôles de sécurité utilisent désormais l'horloge injectée `ClockService`.
+- **Modifications apportées :**
+  - `JwtSessionRepository.findValidSessionId` prend désormais en paramètre `now: Date` et compare `s.expires_at > $3` (suppression complète de `NOW()` en SQL).
+  - `JwtStrategy` injecte `ClockService` et transmet `this.clockService.now()` au repository lors de la validation du JWT.
+  - Tests unitaires mis à jour dans `src/core/auth/strategies/jwt.strategy.spec.ts` pour valider l'utilisation de l'horloge injectée.
+  - Ajout de `src/core/auth/repositories/jwt-session.repository.spec.ts` garantissant que la requête utilise `$3` et ne contient aucun appel natif `NOW()`.
+- **Reste à faire :** rien pour ce point.
 
 ### [x] TIME-002 — Corriger la fin de journée locale
 
@@ -103,14 +102,15 @@ Les autres points ont été revérifiés et sont détaillés ci-dessous.
 - **Lacune :** le filtre lui-même n'a pas de spec dédié couvrant 400/401/403/404/409/429/500.
 - **Reste à faire :** ajouter ces tests dans TEST-001, sans rouvrir le contrat d'erreur.
 
-### [ ] ARCH-001 — Homogénéiser la persistance
+### [x] ARCH-001 — Homogénéiser la persistance
 
-- **État vérifié : partiel avancé.** Toutes les requêtes applicatives sont encapsulées dans des repositories typés. Aucun service, worker, contrôleur, gateway ou stratégie ne dépend directement de `DataSource`.
-- **Exception volontaire :** `DatabaseSeedService` exécute `schema.sql` et `seed.sql` au bootstrap ; ce n'est pas une persistance métier.
-- **Écart restant :** `UsersRepository` dépend de `ScopeService`, `ClockService`, `ConfigService`, bcrypt et lève des exceptions métier. Il contient donc aussi orchestration, sécurité et règles anti-escalade au lieu d'être une couche de persistance homogène.
-- **Écart secondaire :** `TranslationsRepository.update` reçoit un callback métier de validation, ce qui inverse ponctuellement la dépendance repository → service.
-- **Correction recommandée :** laisser uniquement les lectures/écritures et transactions atomiques dans les repositories ; remonter hachage, scope, validations, hiérarchie et décisions métier dans les services. Introduire de petits contrats transactionnels lorsque plusieurs écritures doivent rester atomiques.
-- **Terminé lorsque :** repositories dépendants uniquement de la DB et de types de données, services sans SQL mais propriétaires des règles métier.
+- **État vérifié : corrigé (2026-10-06).** Tous les repositories applicatifs sont des couches pures d'accès aux données dépendant uniquement de `DataSource` et manipulant du SQL typé.
+- **Modifications apportées :**
+  - **`UsersRepository` :** suppression de toutes les dépendances applicatives (`ScopeService`, `ClockService`, `ConfigService`, `bcryptjs`, `DoriException`). Le repository ne dépend plus que de `DataSource` et fournit des méthodes d'accès brut aux données et transactions atomiques.
+  - **`UsersService` :** prise en charge complète de la logique métier, des règles anti-escalade de privilèges, du hachage de mot de passe bcrypt, de la résolution des scopes et de l'invalidation de cache.
+  - **`TranslationsRepository` :** suppression de l'inversion de dépendance via le callback métier `validate`. La validation des paramètres de template est désormais effectuée directement par `TranslationsService`.
+  - **Tests :** ajout de suites dédiées ([`users.repository.spec.ts`](file:///d:/work/workspaces/dori/dori-api/src/modules/users/users.repository.spec.ts), [`translations.service.spec.ts`](file:///d:/work/workspaces/dori/dori-api/src/modules/translations/translations.service.spec.ts)) et mise à jour de [`users.service.spec.ts`](file:///d:/work/workspaces/dori/dori-api/src/modules/users/users.service.spec.ts).
+- **Reste à faire :** rien pour ce point.
 
 ### [x] WEBHOOK-001 — Durcir la vérification HMAC
 
@@ -265,11 +265,11 @@ Les autres points ont été revérifiés et sont détaillés ci-dessous.
 - **Validation :** compilation complète réussie après ajout des repositories JWT, realtime et health.
 - **Reste à faire :** rien pour ce point.
 
-### [ ] CORE-002 — Utiliser les décorateurs Swagger centralisés
+### [x] CORE-002 — Utiliser les décorateurs Swagger centralisés
 
-- **État vérifié : régression limitée.** La majorité des contrôleurs utilise les décorateurs Dori, mais `translations.controller.ts` importe et emploie encore `ApiResponse` directement pour la réponse 304.
-- **Reste à faire :** ajouter ou étendre un décorateur core pour la réponse `304 Not Modified`, puis supprimer l'import Swagger local.
-- **Test requis :** snapshot OpenAPI confirmant la réponse 304 et l'absence de décorateurs natifs de réponse hors `core/swagger`.
+- **État vérifié : corrigé (2026-10-06).** Le décorateur `ApiDoriNotModifiedResponse` a été ajouté dans `src/core/swagger/api-dori-response.decorator.ts`. `translations.controller.ts` l'utilise désormais pour la réponse 304 de l'endpoint bundle et n'importe plus `ApiResponse` directement.
+- **Tests de non-régression :** `src/core/swagger/api-dori-response.decorator.spec.ts` valide les métadonnées de la réponse 304 et intègre un scan architectural garantissant qu'aucun contrôleur métier n'importe de décorateur de réponse natif Swagger.
+- **Reste à faire :** rien pour ce point.
 
 ### [x] CORE-003 — Centraliser la sérialisation mécanique
 
@@ -278,24 +278,27 @@ Les autres points ont été revérifiés et sont détaillés ci-dessous.
 - **Tests présents :** objets/tableaux imbriqués, dates, casse et champs sensibles.
 - **Reste à faire :** renforcer les tests HTTP de contrat dans TEST-001.
 
-### [ ] CORE-004 — Faire de `ConfigService` l'unique accès à l'environnement
+### [x] CORE-004 — Faire de `ConfigService` l'unique accès à l'environnement
 
-- **État vérifié : régression.** `configuration.ts` centralise bien la configuration métier, mais `main.ts` lit directement `process.env.VERCEL`.
-- **Déjà correct :** CORS, base, JWT, webhook, cookie, workers et seed passent par `ConfigService`.
-- **Reste à faire :** exposer une clé telle que `platform.isVercel` dans `configuration.ts`, l'injecter après création de l'application et supprimer tout accès `process.env` de `main.ts`.
-- **Point lié :** le log de BOOT-001 a été supprimé (2026-10-06).
+- **État vérifié : corrigé (2026-10-06).** `process.env` est strictement cantonné à `src/core/config/configuration.ts`.
+- **Modifications apportées :**
+  - Ajout de la clé `platform.isVercel` dans `src/core/config/configuration.ts`.
+  - Suppression de tout accès direct à `process.env` dans `src/main.ts` : la détection Vercel (pour le bootstrap sans `listen` et l'exportation du handler serveur) interroge `configService.get<boolean>('platform.isVercel')`.
+  - Ajout d'un test unitaire dans `src/core/config/configuration.spec.ts` pour la clé `platform.isVercel`.
+  - Ajout d'un test architectural de non-régression dans `src/main.spec.ts` validant qu'aucun appel à `process.env` n'est présent dans `src/main.ts`.
+- **Reste à faire :** rien pour ce point.
 
 ## Matrice finale des composants core
 
 | Composant | État vérifié | Observation |
 | --- | --- | --- |
-| Configuration | Partiel | Centralisée sauf détection Vercel dans `main.ts` (CORE-004). |
-| Horloge | Partiel | Centralisée sauf `NOW()` dans le repository de session JWT (TIME-001). |
+| Configuration | Conforme | Centralisée via `ConfigService` (`platform.isVercel` inclus), sans accès direct dans `main.ts`. |
+| Horloge | Conforme | Centralisée via `ClockService` partout, aucun `NOW()` SQL résiduel. |
 | Pagination | Conforme | DTO central utilisé pour validation, tri et réponses. |
 | Erreurs | Conforme, tests incomplets | Contrat central actif ; ajouter des tests directs du filtre. |
-| Swagger | Partiel | Une réponse 304 reste déclarée localement dans translations (CORE-002). |
+| Swagger | Conforme | Réponses documentées via les décorateurs core (dont 304 Not Modified). |
 | Sérialisation/réponse | Conforme | Intercepteurs globaux enregistrés dans `AppModule`. |
-| Persistance | Partiel | SQL encapsulé partout ; frontière métier du repository users à nettoyer. |
+| Persistance | Conforme | Couche repository 100 % pure (SQL/DataSource), règles métier, sécurité et orchestration isolées dans les services. |
 | RBAC | Conforme | Guard, scope et invalidation des sessions/cache branchés. |
 | Realtime | Conforme, tests incomplets | Auth HTTP réutilisée, CORS commun et émissions centralisées. |
 | Validation | Conforme | Pipe global, identifiants positifs et DTOs communs. |
@@ -315,3 +318,17 @@ Tous les autres travaux ouverts peuvent être réalisés sans nouvelle décision
 <!-- CHECKPOINT id="ckpt_mux5dmah_dihv1x" time="2026-10-06T20:44:57.497Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 <!-- CHECKPOINT id="ckpt_mux5qh9h_a585ln" time="2026-10-06T20:54:57.509Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mux63c8c_ra41tn" time="2026-10-06T21:04:57.516Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mux6g776_50cbz8" time="2026-10-06T21:14:57.522Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mux6t25z_q5rmac" time="2026-10-06T21:24:57.527Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mux75x4z_r2m9bf" time="2026-10-06T21:34:57.539Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mux7is41_vcdj4j" time="2026-10-06T21:44:57.553Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mux7vn30_6yf24s" time="2026-10-06T21:54:57.564Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mux88i1s_w4rruv" time="2026-10-06T22:04:57.568Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

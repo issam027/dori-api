@@ -77,12 +77,22 @@ export class TranslationsService {
     dto: UpdateTranslationDto,
     user: AuthenticatedUser,
   ) {
+    const existing = await this.translationsRepository.findById(translationId);
+    if (!existing) {
+      throw new DoriException('TRANSLATION_NOT_FOUND', { translationId });
+    }
+    const contentToValidate = dto.content ?? existing.content;
+    const paramsToValidate =
+      dto.expectedParams !== undefined
+        ? dto.expectedParams
+        : (existing.expected_params ?? undefined);
+    this.validateParams(contentToValidate, paramsToValidate);
+
     const result = await this.translationsRepository.update(
       translationId,
       dto,
       user.userId,
       this.clockService.now(),
-      (content, expected) => this.validateParams(content, expected),
     );
     if (!result) {
       throw new DoriException('TRANSLATION_NOT_FOUND', { translationId });

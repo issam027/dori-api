@@ -95,12 +95,19 @@ export class TranslationsRepository {
     });
   }
 
+  async findById(translationId: number): Promise<TranslationRow | null> {
+    const rows = await this.dataSource.query<TranslationRow[]>(
+      `SELECT * FROM dori_translation WHERE translation_id = $1 AND is_active = TRUE`,
+      [translationId],
+    );
+    return rows[0] ?? null;
+  }
+
   update(
     translationId: number,
     dto: UpdateTranslationDto,
     userId: number,
     now: Date,
-    validate: (content: string, expected: string[] | undefined) => void,
   ): Promise<VersionedResult<TranslationRow> | null> {
     return this.dataSource.transaction(async (manager) => {
       const existing = await manager.query<TranslationRow[]>(
@@ -110,10 +117,6 @@ export class TranslationsRepository {
       );
       const current = existing[0];
       if (!current) return null;
-      validate(
-        dto.content ?? current.content,
-        dto.expectedParams ?? current.expected_params ?? undefined,
-      );
       const fields: string[] = [];
       const values: unknown[] = [];
       const add = (column: string, value: unknown) => {

@@ -8,12 +8,14 @@ import {
 } from '../interfaces/jwt-payload.interface';
 import { DoriException } from '../../errors/dori.exception';
 import { JwtSessionRepository } from '../repositories/jwt-session.repository';
+import { ClockService } from '../../clock/clock.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     configService: ConfigService,
     private readonly jwtSessionRepository: JwtSessionRepository,
+    private readonly clockService: ClockService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -30,6 +32,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const sessionId = await this.jwtSessionRepository.findValidSessionId(
       payload.sid,
       payload.sub,
+      this.clockService.now(),
     );
 
     if (!sessionId) {
