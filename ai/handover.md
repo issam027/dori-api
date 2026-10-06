@@ -29,7 +29,7 @@
 | **SEC-04** | Sécurité | Asymétrie rôle manager vs opérateur lors de l'assignation | **Élevé** | Assignation illégitime d'opérateurs sur les files |
 | **SEC-05** | Sécurité | WebSocket accepte les utilisateurs dont la session est révoquée | **Moyen** | Fuite d'événements temps réel |
 | **DAT-01** | Données | `DailyResetWorker` saute la réinitialisation si un RDV existe demain | **Critique** | Blocage complet du reset quotidien |
-| **DAT-02** | Données | Absence de transaction sur l'inscription client (`registerCustomer`) | **Élevé** | Incohérence des compteurs et états orphelins |
+| **DAT-02** | Données | Absence de transaction sur l'inscription client (`registerRegistration`) | **Élevé** | Incohérence des compteurs et états orphelins |
 | **DAT-03** | Données | Race condition sur la capacité des créneaux de RDV | **Élevé** | Surréservation de créneaux |
 | **DAT-04** | Données | Entités TypeORM définies mais inutilisées (100% SQL brut) | **Moyen** | Dette technique et maintenance confuse |
 | **DAT-05** | Données | Soft delete incomplet (User et Person non supprimables) | **Moyen** | Impossibilité de supprimer comptes et profils |
@@ -136,10 +136,10 @@
 ### DAT-02 — Absence de transaction sur l'inscription client
 * **Fichier impacté** : `src/modules/registrations/registrations.service.ts` (lignes 154–220)
 * **Problème constaté** :  
-  `registerCustomer` enchaîne :
+  `registerRegistration` enchaîne :
   1. Incrément du compteur (`dori_queue_counter`)
   2. Création éventuelle de la personne (`dori_person`)
-  3. Insertion de l'inscription (`dori_customer`)
+  3. Insertion de l'inscription (`dori_registration`)
   4. Création de la notification de bienvenue (`dori_notification`)
   Ces opérations ne sont pas entourées d'un `this.dataSource.transaction(...)`. Si l'étape 3 ou 4 échoue, le numéro de ticket a déjà été consommé et les entités restent désynchronisées.
 * **Comportement attendu** :  
@@ -148,7 +148,7 @@
 ### DAT-03 — Surréservation concurrente des créneaux de RDV
 * **Fichier impacté** : `src/modules/registrations/registrations.service.ts` (lignes 135–146)
 * **Problème constaté** :  
-  Le contrôle `SELECT COUNT(*)::int as count FROM dori_customer WHERE queue_id = $1 AND scheduled_time = $2 ...` est exécuté sans verrouillage. Deux requêtes simultanées liront le même effectif sous le seuil et réserveront en parallèle, violant `slot_capacity`.
+  Le contrôle `SELECT COUNT(*)::int as count FROM dori_registration WHERE queue_id = $1 AND scheduled_time = $2 ...` est exécuté sans verrouillage. Deux requêtes simultanées liront le même effectif sous le seuil et réserveront en parallèle, violant `slot_capacity`.
 * **Comportement attendu** :  
   Utiliser un verrou applicatif ou transactionnel (`SELECT ... FOR UPDATE` sur le créneau ou contrainte d'exclusion).
 
@@ -167,7 +167,7 @@
 
 * **Fichiers modifiés** :
   * `src/modules/queues/queues.service.ts` (`deleteQueue`) — vérifie l'existence active via `findQueueById`, applique le soft delete (`is_active = FALSE, deleted_at = now`), cascade la désactivation sur les forfaits de file (`dori_queue_service_tier`) et force la clôture des sessions guichet ouvertes (`dori_queue_session`).
-  * `src/modules/persons/persons.service.ts` & `persons.controller.ts` (`deletePerson`, `DELETE /api/v1/persons/:personId`) — vérifie le scope et l'existence active via `findPersonById`, applique le soft delete (`is_active = FALSE, deleted_at = now`) et cascade la désactivation sur les notes rattachées (`dori_person_note`). Protégé par `@RequirePermission('customer_delete')`.
+  * `src/modules/persons/persons.service.ts` & `persons.controller.ts` (`deletePerson`, `DELETE /api/v1/persons/:personId`) — vérifie le scope et l'existence active via `findPersonById`, applique le soft delete (`is_active = FALSE, deleted_at = now`) et cascade la désactivation sur les notes rattachées (`dori_person_note`). Protégé par `@RequirePermission('registration_delete')`.
   * `src/modules/users/users.service.ts`, `users.controller.ts` & `dto/user.dto.ts` (`deleteUser`, `DELETE /api/v1/users/:userId`, `UserDeleteResponseDto`) — vérifie la hiérarchie anti-escalade (`checkAntiEscalation`) et l'existence active (`findUserById`), applique le soft delete (`is_active = FALSE, deleted_at = now`), révoque immédiatement toutes les sessions actives en base (`dori_user_session`) et invalide le scope. Protégé par `@RequireAnyPermission('user_manage_kiosk', 'user_manage_hostess', 'user_manage_manager', 'user_manage_admin')`.
   * Suites de tests unitaires dédiées dans `queues.service.spec.ts`, `persons.service.spec.ts` et `users.service.spec.ts`.
 
@@ -276,7 +276,7 @@ La majorité des modules utilise déjà `PaginationDto` comme classe de base pou
   * **Fichiers modifiés** :
     * `src/modules/service-tiers/service-tiers.service.ts` — `findTiers` : allowlist `['tier_id', 'tier_name', 'tier_code', 'created_at', 'updated_at']`, défaut `tier_id`.
     * `src/modules/persons/persons.service.ts` — `findPersons` : allowlist `['person_id', 'first_name', 'last_name', 'email', 'phone_number', 'created_at', 'updated_at']`, défaut `person_id`.
-    * `src/modules/registrations/registrations.service.ts` — `findRegistrations` : allowlist `['customer_id', 'ticket_number', 'business_date', 'status', 'scheduled_time', 'created_at', 'priority_reference_time']`, défaut `customer_id`.
+    * `src/modules/registrations/registrations.service.ts` — `findRegistrations` : allowlist `['registration_id', 'ticket_number', 'business_date', 'status', 'scheduled_time', 'created_at', 'priority_reference_time']`, défaut `registration_id`.
     * `src/modules/notifications/notifications.service.ts` — `findNotifications` : allowlist `['notification_id', 'channel', 'notification_status', 'sent_at', 'created_at']`, défaut `notification_id`.
     * `src/modules/translations/translations.service.ts` — `findTranslations` : allowlist `['translation_id', 'category', 'locale', 'translation_key', 'created_at', 'updated_at']`, défaut `translation_id`.
 
@@ -383,7 +383,7 @@ La majorité des modules utilise déjà `PaginationDto` comme classe de base pou
 * **Fichier créé** :
   * `src/modules/registrations/registrations.service.spec.ts` — tests unitaires validant la levée de 404 `PERSON_NOT_FOUND` pour un `personId` inexistant ou inactif/supprimé.
 * **Problème constaté** :  
-  Dans `registerCustomer` (`createRegistration`), si le client fournit un `dto.personId = 999999` qui n'existe pas en base, aucune vérification n'était faite. La tentative d'insertion dans `dori_customer` échouait sur la contrainte `fk_customer_person` et renvoyait une erreur 500 `INTERNAL_ERROR`.
+  Dans `registerRegistration` (`createRegistration`), si le client fournit un `dto.personId = 999999` qui n'existe pas en base, aucune vérification n'était faite. La tentative d'insertion dans `dori_registration` échouait sur la contrainte `fk_registration_person` et renvoyait une erreur 500 `INTERNAL_ERROR`.
 * **Comportement attendu** :  
   Vérifier l'existence de la personne et lever `PERSON_NOT_FOUND` (404).
 
@@ -459,7 +459,7 @@ Cette checklist est prête pour l'exécution tâche par tâche par un agent IA :
 
 - [ ] **Phase 2 — Workers & Robustesse Données**
   - [ ] DAT-01 : Corriger l'idempotence du `DailyResetWorker` (découpler de `dori_queue_counter`).
-  - [ ] DAT-02 : Envelopper `RegistrationsService.registerCustomer` dans une transaction atomique.
+  - [ ] DAT-02 : Envelopper `RegistrationsService.registerRegistration` dans une transaction atomique.
   - [ ] DAT-03 : Verrouiller la vérification de capacité des créneaux de RDV (`FOR UPDATE`).
   - [ ] WRK-01 : Corriger la lecture du résultat de la requête SQL dans `AppointmentExpiryWorker`.
   - [ ] WRK-02 : Conserver `req.rawBody` et l'utiliser pour la signature HMAC dans `NotificationsController`.
@@ -471,7 +471,7 @@ Cette checklist est prête pour l'exécution tâche par tâche par un agent IA :
   - [x] VAL-02 : Transformer `getNotes`, `getSiteManagers`, `getQueueTiers` pour accepter la pagination ou renvoyer un contrat explicite. ✅ *2026-09-29*
   - [x] VAL-03 : Créer les DTOs de filtres validés pour `ReportsController`. ✅ *2026-09-29*
   - [x] ERR-01 : Standardiser le format de l'erreur `VALIDATION_ERROR` pour toujours peupler `data.errors`. ✅ *2026-09-29*
-  - [x] ERR-02 : Vérifier l'existence de `personId` dans `registerCustomer` et renvoyer 404 si inexistant. ✅ *2026-09-29*
+  - [x] ERR-02 : Vérifier l'existence de `personId` dans `registerRegistration` et renvoyer 404 si inexistant. ✅ *2026-09-29*
   - [x] ERR-03 : Utiliser la configuration `bcryptRounds` dans `UsersService`. ✅ *2026-09-29*
   - [x] VAL-04 : Harmoniser l'adoption globale de `PaginationDto` (sessions actives `queue-engine`, allowlists `getSafeSortField` sur les 5 services restants). ✅ *2026-09-29*
 

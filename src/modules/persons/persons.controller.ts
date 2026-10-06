@@ -27,15 +27,15 @@ import {
   CreatePersonDto,
   UpdatePersonDto,
   PersonFilterDto,
-  CreateNoteDto,
-  UpdateNoteDto,
+  CreatePersonNoteDto,
+  UpdatePersonNoteDto,
 } from './dto/person.dto';
 import {
-  PersonDetailDto,
+  PersonResponseDto,
   PaginatedPersonResponseDto,
-  PersonNoteDetailDto,
+  PersonNoteResponseDto,
   PaginatedPersonNoteResponseDto,
-  PersonDeleteResponseDto,
+  DeleteItemResponseDto,
 } from './dto/person-response.dto';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
@@ -50,7 +50,7 @@ export class PersonsController {
   constructor(private readonly personsService: PersonsService) {}
 
   @Get()
-  @RequirePermission('customer_view')
+  @RequirePermission('registration_view')
   @ApiOperation({
     summary: 'Lister les personnes / clients',
     description: 'Recherche paginée de personnes par nom, téléphone ou email.',
@@ -64,13 +64,13 @@ export class PersonsController {
   }
 
   @Post()
-  @RequirePermission('customer_register')
+  @RequirePermission('registration_register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Créer une fiche personne',
     description: 'Enregistre une nouvelle personne dans la base de données.',
   })
-  @ApiDoriCreatedResponse(PersonDetailDto, 'Personne créée avec succès')
+  @ApiDoriCreatedResponse(PersonResponseDto, 'Personne créée avec succès')
   async createPerson(
     @Body() dto: CreatePersonDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -79,7 +79,7 @@ export class PersonsController {
   }
 
   @Get(':personId')
-  @RequirePermission('customer_view')
+  @RequirePermission('registration_view')
   @ApiOperation({
     summary: "Détails d'une personne",
     description:
@@ -90,7 +90,7 @@ export class PersonsController {
     type: Number,
     description: 'ID de la personne',
   })
-  @ApiDoriOkResponse(PersonDetailDto, 'Détails de la personne')
+  @ApiDoriOkResponse(PersonResponseDto, 'Détails de la personne')
   async findOne(
     @Param('personId', ParseIntPipe) personId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -99,7 +99,7 @@ export class PersonsController {
   }
 
   @Patch(':personId')
-  @RequirePermission('customer_edit')
+  @RequirePermission('registration_edit')
   @ApiOperation({
     summary: 'Modifier une fiche personne',
     description: "Met à jour les coordonnées ou informations d'une personne.",
@@ -109,7 +109,7 @@ export class PersonsController {
     type: Number,
     description: 'ID de la personne',
   })
-  @ApiDoriOkResponse(PersonDetailDto, 'Fiche modifiée')
+  @ApiDoriOkResponse(PersonResponseDto, 'Fiche modifiée')
   async updatePerson(
     @Param('personId', ParseIntPipe) personId: number,
     @Body() dto: UpdatePersonDto,
@@ -155,10 +155,10 @@ export class PersonsController {
     type: Number,
     description: 'ID de la personne',
   })
-  @ApiDoriCreatedResponse(PersonNoteDetailDto, 'Note ajoutée')
+  @ApiDoriCreatedResponse(PersonNoteResponseDto, 'Note ajoutée')
   async createNote(
     @Param('personId', ParseIntPipe) personId: number,
-    @Body() dto: CreateNoteDto,
+    @Body() dto: CreatePersonNoteDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.personsService.createNote(personId, dto, user);
@@ -176,11 +176,11 @@ export class PersonsController {
     description: 'ID de la personne',
   })
   @ApiParam({ name: 'noteId', type: Number, description: 'ID de la note' })
-  @ApiDoriOkResponse(PersonNoteDetailDto, 'Note mise à jour')
+  @ApiDoriOkResponse(PersonNoteResponseDto, 'Note mise à jour')
   async updateNote(
     @Param('personId', ParseIntPipe) personId: number,
     @Param('noteId', ParseIntPipe) noteId: number,
-    @Body() dto: UpdateNoteDto,
+    @Body() dto: UpdatePersonNoteDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.personsService.updateNote(personId, noteId, dto, user);
@@ -198,7 +198,7 @@ export class PersonsController {
     description: 'ID de la personne',
   })
   @ApiParam({ name: 'noteId', type: Number, description: 'ID de la note' })
-  @ApiDoriOkResponse(PersonDeleteResponseDto, 'Note supprimée')
+  @ApiDoriOkResponse(DeleteItemResponseDto, 'Note supprimée')
   async deleteNote(
     @Param('personId', ParseIntPipe) personId: number,
     @Param('noteId', ParseIntPipe) noteId: number,
@@ -208,7 +208,7 @@ export class PersonsController {
   }
 
   @Delete(':personId')
-  @RequirePermission('customer_delete')
+  @RequirePermission('registration_delete')
   @ApiOperation({
     summary: 'Supprimer une personne',
     description: 'Supprime logiquement une personne et ses notes associées.',
@@ -218,7 +218,7 @@ export class PersonsController {
     type: Number,
     description: 'ID de la personne',
   })
-  @ApiDoriOkResponse(PersonDeleteResponseDto, 'Personne supprimée avec succès')
+  @ApiDoriOkResponse(DeleteItemResponseDto, 'Personne supprimée avec succès')
   async deletePerson(
     @Param('personId', ParseIntPipe) personId: number,
     @CurrentUser() user: AuthenticatedUser,

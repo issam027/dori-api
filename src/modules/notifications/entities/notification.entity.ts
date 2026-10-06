@@ -12,7 +12,7 @@ export class DoriNotification {
   notification_id: number;
 
   @Column({ type: 'int' })
-  customer_id: number;
+  registration_id: number;
 
   @Column({ type: 'int', nullable: true })
   rule_id: number | null;
@@ -21,7 +21,7 @@ export class DoriNotification {
   channel: 'sms' | 'email';
 
   @Column({ type: 'varchar', length: 20 })
-  notification_type: 'welcome' | 'threshold' | 'trakingLink';
+  notification_type: 'welcome' | 'threshold';
 
   @Column({ type: 'varchar', length: 10 })
   locale: string;

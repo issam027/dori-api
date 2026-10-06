@@ -17,11 +17,14 @@ export class DoriQueueServiceTier {
   @Column({ type: 'numeric', precision: 10, scale: 3, default: 0 })
   price: number;
 
-  @Column({ type: 'char', length: 3, default: 'TND' })
-  currency: string;
+  @Column({ type: 'char', length: 3, nullable: true })
+  currency: string | null;
 
   @Column({ type: 'int', default: 0 })
   display_order: number;
+
+  @Column({ type: 'boolean', default: false })
+  is_default: boolean;
 
   @Column({ type: 'boolean', default: true })
   is_active: boolean;

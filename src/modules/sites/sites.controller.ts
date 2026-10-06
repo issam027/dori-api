@@ -26,9 +26,9 @@ import { SitesService } from './sites.service';
 import { CreateSiteDto } from './dto/create-site.dto';
 import { UpdateSiteDto, AssignManagerDto } from './dto/update-site.dto';
 import {
-  SiteDetailResponseDto,
+  SiteResponseDto,
   PaginatedSiteResponseDto,
-  SiteDeleteResponseDto,
+  DeleteSiteResponseDto,
   PaginatedSiteManagerResponseDto,
   AssignManagerResponseDto,
   RemoveManagerResponseDto,
@@ -68,7 +68,7 @@ export class SitesController {
     description:
       'Crée un nouveau site avec ses paramètres horaires, de fuseau horaire et de tolérance.',
   })
-  @ApiDoriCreatedResponse(SiteDetailResponseDto, 'Site créé avec succès')
+  @ApiDoriCreatedResponse(SiteResponseDto, 'Site créé avec succès')
   async createSite(
     @Body() createSiteDto: CreateSiteDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -83,7 +83,7 @@ export class SitesController {
     description: "Retourne la configuration complète d'un site spécifique.",
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
-  @ApiDoriOkResponse(SiteDetailResponseDto, 'Détails du site')
+  @ApiDoriOkResponse(SiteResponseDto, 'Détails du site')
   async findSite(
     @Param('siteId', ParseIntPipe) siteId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -99,7 +99,7 @@ export class SitesController {
       'Met à jour la configuration générale, les horaires ou les poids de priorité du site.',
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
-  @ApiDoriOkResponse(SiteDetailResponseDto, 'Site mis à jour avec succès')
+  @ApiDoriOkResponse(SiteResponseDto, 'Site mis à jour avec succès')
   async updateSite(
     @Param('siteId', ParseIntPipe) siteId: number,
     @Body() updateSiteDto: UpdateSiteDto,
@@ -115,7 +115,7 @@ export class SitesController {
     description: 'Désactive logiquement le site et ses files associées.',
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
-  @ApiDoriOkResponse(SiteDeleteResponseDto, 'Site désactivé avec succès')
+  @ApiDoriOkResponse(DeleteSiteResponseDto, 'Site désactivé avec succès')
   async deleteSite(
     @Param('siteId', ParseIntPipe) siteId: number,
     @CurrentUser() user: AuthenticatedUser,

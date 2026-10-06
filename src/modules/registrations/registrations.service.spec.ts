@@ -6,6 +6,7 @@ import { ClockService } from '../../core/clock/clock.service';
 import { PersonsService } from '../persons/persons.service';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { DoriException } from '../../core/errors/dori.exception';
+import { RegistrationsRepository } from './registrations.repository';
 
 describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
   let service: RegistrationsService;
@@ -35,6 +36,12 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
       providers: [
         RegistrationsService,
         { provide: DataSource, useValue: dataSourceMock },
+        {
+          provide: RegistrationsRepository,
+          useFactory: (dataSource: DataSource) =>
+            new RegistrationsRepository(dataSource),
+          inject: [DataSource],
+        },
         {
           provide: ScopeService,
           useValue: {

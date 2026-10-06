@@ -19,8 +19,6 @@ export class DailyQueueReportQueryDto {
   date: string;
 }
 
-export class ReportQueryDto extends DailyQueueReportQueryDto {}
-
 export class DashboardSummaryQueryDto {
   @ApiPropertyOptional({
     type: Number,

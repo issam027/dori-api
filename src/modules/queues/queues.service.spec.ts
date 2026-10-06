@@ -132,6 +132,65 @@ describe('QueuesService — SEC-04 assignOperator', () => {
     expect(scopeServiceMock.invalidateUserScope).toHaveBeenCalledWith(2);
   });
 
+  it('resolves site defaults and queue overrides, including currency and locale', async () => {
+    dataSourceMock.query.mockResolvedValue([
+      {
+        queue_id: 5,
+        queue_code: 'CARDIO',
+        site_id: 10,
+        queue_name: 'Cardiologie',
+        average_wait_time: 10,
+        thread_count: 2,
+        currency: 'EUR',
+        default_currency: 'TND',
+        locale: null,
+        default_locale: 'fr',
+        appointments_enabled: null,
+        default_appointments_enabled: true,
+        appointment_slot_duration: null,
+        default_appointment_slot_duration: 15,
+        slot_capacity: null,
+        default_slot_capacity: 2,
+        working_hours_start: null,
+        default_working_hours_start: '08:00:00',
+        working_hours_end: null,
+        default_working_hours_end: '17:00:00',
+        break_start: null,
+        default_break_start: '12:00:00',
+        break_end: null,
+        default_break_end: '14:00:00',
+        late_tolerance_minutes: null,
+        default_late_tolerance_minutes: 60,
+        base_weight_walkin: null,
+        default_base_weight_walkin: '0',
+        base_weight_appointment: null,
+        default_base_weight_appointment: '60',
+        escalation_rate_walkin: null,
+        default_escalation_rate_walkin: '1',
+        escalation_rate_appointment: null,
+        default_escalation_rate_appointment: '1',
+        carry_over_waiting: null,
+        default_carry_over_waiting: false,
+        daily_reset_mode: null,
+        default_daily_reset_mode: 'close_all',
+        daily_reset_time: null,
+        default_daily_reset_time: '03:00:00',
+        is_active: true,
+        created_at: new Date('2026-10-06T10:00:00Z'),
+        updated_at: new Date('2026-10-06T10:00:00Z'),
+      },
+    ]);
+
+    const result = await service.findQueueById(5, managerUser);
+
+    expect(result.currency).toBe('EUR');
+    expect(result.locale).toBe('fr');
+    expect(result.appointmentsEnabled).toBe(true);
+    expect(result.configOrigins.currency).toBe('overridden');
+    expect(result.configOrigins.locale).toBe('inherited');
+    expect(result.configOrigins.appointmentsEnabled).toBe('inherited');
+  });
+
   describe('deleteQueue (DAT-05)', () => {
     it('should throw QUEUE_NOT_FOUND when queue does not exist or is inactive', async () => {
       dataSourceMock.query.mockImplementation(async (sql: string) => {

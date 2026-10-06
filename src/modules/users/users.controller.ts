@@ -31,11 +31,10 @@ import {
   AssignUserRoleDto,
   UpdateRolePermissionsDto,
   UserFilterDto,
-  UserDeleteResponseDto,
 } from './dto/user.dto';
 import {
   PaginatedUserResponseDto,
-  UserDetailResponseDto,
+  UserResponseDto,
   CreateUserResponseDto,
   UpdateUserResponseDto,
   UpdateUserStatusResponseDto,
@@ -44,6 +43,7 @@ import {
   RemoveUserRoleResponseDto,
   PaginatedRoleResponseDto,
   UpdateRolePermissionsResponseDto,
+  DeleteUserResponseDto,
 } from './dto/user-response.dto';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
@@ -124,7 +124,7 @@ export class UsersController {
     type: Number,
     description: "ID de l'utilisateur",
   })
-  @ApiDoriOkResponse(UserDetailResponseDto, "Détails de l'utilisateur")
+  @ApiDoriOkResponse(UserResponseDto, "Détails de l'utilisateur")
   async findUserById(
     @Param('userId', ParseIntPipe) userId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -207,7 +207,7 @@ export class UsersController {
     type: Number,
     description: "ID de l'utilisateur",
   })
-  @ApiDoriOkResponse(UserDeleteResponseDto, 'Utilisateur supprimé avec succès')
+  @ApiDoriOkResponse(DeleteUserResponseDto, 'Utilisateur supprimé avec succès')
   async deleteUser(
     @Param('userId', ParseIntPipe) userId: number,
     @CurrentUser() user: AuthenticatedUser,

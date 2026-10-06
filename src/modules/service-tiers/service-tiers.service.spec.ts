@@ -63,7 +63,7 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
   });
 
   describe('findQueueTiers and getQueueTiers', () => {
-    it('should return paginated queue tiers mapped to QueueTierDetailDto', async () => {
+    it('should return paginated queue tiers mapped to QueueTierResponseDto', async () => {
       dataSourceMock.query.mockImplementation(async (sql: string) => {
         if (sql.includes('COUNT(*)')) {
           return [{ total: 1 }];
@@ -75,7 +75,10 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
               tier_id: 2,
               price: '15.50',
               currency: 'TND',
+              currency_override: null,
+              currency_origin: 'site',
               is_active: true,
+              is_default: false,
               is_system: false,
               display_order: 1,
               tier_code: 'VIP',
@@ -100,7 +103,9 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
         tierId: 2,
         price: 15.5,
         currency: 'TND',
-        isEnabled: true,
+        currencyOverride: null,
+        currencyOrigin: 'site',
+        isActive: true,
         isDefault: false,
         displayOrder: 1,
         tier: {
@@ -126,7 +131,10 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
               tier_id: 1,
               price: '0',
               currency: 'TND',
+              currency_override: null,
+              currency_origin: 'site',
               is_active: true,
+              is_default: true,
               is_system: true,
               display_order: 0,
               tier_code: 'FREE',
@@ -178,17 +186,80 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
         ruleId: 1,
         queueId: 10,
         tierId: 2,
-        triggerEvent: 'threshold',
+        notificationType: 'threshold',
         thresholdType: 'position',
         thresholdValue: 3,
         channel: 'sms',
-        templateKey: undefined,
         isActive: true,
-        notificationType: 'threshold',
-        thresholdPosition: 3,
-        thresholdMinutes: null,
         includeTrackingLink: true,
       });
+    });
+
+    it('allows a tracking link on both welcome and threshold rules', async () => {
+      dataSourceMock.query
+        .mockResolvedValueOnce([
+          {
+            rule_id: 1,
+            queue_id: 10,
+            tier_id: 2,
+            notification_type: 'welcome',
+            channel: 'sms',
+            threshold_position: null,
+            threshold_minutes: null,
+            include_tracking_link: true,
+            is_active: true,
+          },
+        ])
+        .mockResolvedValueOnce([
+          {
+            rule_id: 2,
+            queue_id: 10,
+            tier_id: 2,
+            notification_type: 'threshold',
+            channel: 'email',
+            threshold_position: null,
+            threshold_minutes: 10,
+            include_tracking_link: true,
+            is_active: true,
+          },
+        ]);
+
+      const welcome = await service.createNotificationRule(
+        10,
+        2,
+        { notificationType: 'welcome', channel: 'sms', includeTrackingLink: true },
+        adminUser,
+      );
+      const threshold = await service.createNotificationRule(
+        10,
+        2,
+        {
+          notificationType: 'threshold',
+          channel: 'email',
+          thresholdType: 'estimatedTime',
+          thresholdValue: 10,
+          includeTrackingLink: true,
+        },
+        adminUser,
+      );
+
+      expect(welcome.thresholdType).toBeNull();
+      expect(welcome.includeTrackingLink).toBe(true);
+      expect(threshold.thresholdType).toBe('estimatedTime');
+      expect(threshold.includeTrackingLink).toBe(true);
+      expect(dataSourceMock.query.mock.calls[1][1][5]).toBe(10);
+    });
+
+    it('rejects a threshold rule without a complete threshold', async () => {
+      await expect(
+        service.createNotificationRule(
+          10,
+          2,
+          { notificationType: 'threshold', channel: 'sms' },
+          adminUser,
+        ),
+      ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+      expect(dataSourceMock.query).not.toHaveBeenCalled();
     });
   });
 });

@@ -31,7 +31,7 @@ export class AppointmentExpiryWorker {
         if (!lock[0]?.acquired) return [];
         return manager.query(
           `
-        UPDATE dori_customer c
+        UPDATE dori_registration c
         SET status = 'expired',
             appointment_status = 'expired',
             closed_at = $1,
@@ -44,7 +44,7 @@ export class AppointmentExpiryWorker {
           AND c.status IN ('booked', 'rescheduled')
           AND c.is_active = TRUE
           AND (c.scheduled_time + (COALESCE(q.late_tolerance_minutes, s.default_late_tolerance_minutes, 60) * INTERVAL '1 minute')) < $1
-        RETURNING c.customer_id, c.ticket_number
+        RETURNING c.registration_id, c.ticket_number
           `,
           [now],
         );

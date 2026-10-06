@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { OpenSessionDto } from './dto/session.dto';
-import { QueueSessionDetailDto } from './dto/engine-response.dto';
+import { OpenQueueSessionDto } from './dto/session.dto';
+import { QueueSessionResponseDto } from './dto/engine-response.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
@@ -44,10 +44,10 @@ export class QueueEngineService {
     // Fetch active sessions on this queue
     const activeSessions = await this.dataSource.query(
       `SELECT qs.*, u.username,
-              c.customer_id as current_registration_id
+              c.registration_id as current_registration_id
        FROM dori_queue_session qs
        JOIN dori_user u ON u.user_id = qs.user_id
-       LEFT JOIN dori_customer c ON c.current_session_id = qs.session_id AND c.status = 'in_progress' AND c.is_active = TRUE
+       LEFT JOIN dori_registration c ON c.current_session_id = qs.session_id AND c.status = 'in_progress' AND c.is_active = TRUE
        WHERE qs.queue_id = $1 AND qs.disconnected_at IS NULL AND qs.mode = 'active'`,
       [queueId],
     );
@@ -100,7 +100,7 @@ export class QueueEngineService {
   // 2. Open or Take Over Session (§6.2, §4.6)
   async openSession(
     queueId: number,
-    dto: OpenSessionDto,
+    dto: OpenQueueSessionDto,
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkQueueAccess(user, queueId);
@@ -251,17 +251,17 @@ export class QueueEngineService {
         // 3. Reassign client in_progress if any (§4.6)
         let reassignedId: number | null = null;
         const currentClient = await manager.query(
-          `SELECT customer_id FROM dori_customer
+          `SELECT registration_id FROM dori_registration
            WHERE current_session_id = $1 AND status = 'in_progress' AND is_active = TRUE`,
           [lockedSession.session_id],
         );
 
         if (currentClient && currentClient.length > 0) {
-          reassignedId = currentClient[0].customer_id;
+          reassignedId = currentClient[0].registration_id;
           await manager.query(
-            `UPDATE dori_customer
+            `UPDATE dori_registration
              SET current_session_id = $1, updated_at = $2
-             WHERE customer_id = $3`,
+             WHERE registration_id = $3`,
             [newSession.session_id, now, reassignedId],
           );
         }
@@ -391,14 +391,14 @@ export class QueueEngineService {
       // Pass 1: Eligible waiting clients ordered by priority score (§4.4, §7.6)
       const pass1Sql = `
         WITH eligible AS (
-          SELECT c.customer_id,
+          SELECT c.registration_id,
                  ROUND(
                    (CASE WHEN c.entry_type = 'appointment'
                          THEN $1 + EXTRACT(EPOCH FROM ($7 - c.priority_reference_time))/60 * $2
                          ELSE $3 + EXTRACT(EPOCH FROM ($7 - c.priority_reference_time))/60 * $4
                     END)::numeric, 2
                  ) AS score
-          FROM dori_customer c
+          FROM dori_registration c
           WHERE c.queue_id = $5
             AND c.business_date = $6
             AND c.status = 'waiting'
@@ -408,7 +408,7 @@ export class QueueEngineService {
               OR (c.appointment_status = 'checked_in' AND c.scheduled_time <= $7)
             )
         )
-        SELECT customer_id, score FROM eligible
+        SELECT registration_id, score FROM eligible
         ORDER BY score DESC
         FOR UPDATE SKIP LOCKED
         LIMIT 1
@@ -430,8 +430,8 @@ export class QueueEngineService {
       // Pass 2: Fallback to checked-in appointments not yet at their time (§4.4, §7.6)
       if (!selectedRows || selectedRows.length === 0) {
         const pass2Sql = `
-          SELECT customer_id, 0 as score
-          FROM dori_customer
+          SELECT registration_id, 0 as score
+          FROM dori_registration
           WHERE queue_id = $1
             AND business_date = $2
             AND status = 'waiting'
@@ -459,35 +459,35 @@ export class QueueEngineService {
       }
 
       const candidate = selectedRows[0];
-      const customerId = candidate.customer_id;
+      const registrationId = candidate.registration_id;
       finalScore = Number(candidate.score || 0);
 
-      // Transition customer to in_progress
+      // Transition registration to in_progress
       await manager.query(
-        `UPDATE dori_customer
+        `UPDATE dori_registration
          SET status = 'in_progress', current_session_id = $1, called_at = $2, updated_at = $2
-         WHERE customer_id = $3`,
-        [session.session_id, now, customerId],
+         WHERE registration_id = $3`,
+        [session.session_id, now, registrationId],
       );
 
       // Fetch complete details for response (§6.3)
       const detailRows = await manager.query(
-        `SELECT c.customer_id, c.ticket_number, c.entry_type, c.scheduled_time, c.status, c.called_at,
+        `SELECT c.registration_id, c.ticket_number, c.entry_type, c.scheduled_time, c.status, c.called_at,
                 c.registration_tracking_token,
                 t.tier_id, t.tier_code, t.tier_name,
                 p.person_id, p.first_name, p.last_name, p.phone_number,
                 (SELECT COUNT(*)::int FROM dori_person_note n WHERE n.person_id = p.person_id AND n.is_active = TRUE) as notes_count
-         FROM dori_customer c
+         FROM dori_registration c
          JOIN dori_service_tier t ON t.tier_id = c.tier_id
          JOIN dori_person p ON p.person_id = c.person_id
-         WHERE c.customer_id = $1`,
-        [customerId],
+         WHERE c.registration_id = $1`,
+        [registrationId],
       );
 
       const d = detailRows[0];
 
       return {
-        registrationId: d.customer_id,
+        registrationId: d.registration_id,
         ticketNumber: d.ticket_number,
         entryType: d.entry_type,
         scheduledTime: d.scheduled_time,
@@ -512,8 +512,8 @@ export class QueueEngineService {
         trackingToken: d.registration_tracking_token,
       };
     });
-    this.realtimeService.emitQueueOps(queueId, 'customer_called', result);
-    this.realtimeService.emitQueueDisplay(queueId, 'customer_called', {
+    this.realtimeService.emitQueueOps(queueId, 'registration_called', result);
+    this.realtimeService.emitQueueDisplay(queueId, 'registration_called', {
       ticketNumber: result.ticketNumber,
       threadNumber: result.threadNumber,
     });
@@ -525,16 +525,16 @@ export class QueueEngineService {
     return response;
   }
 
-  // 5. Close Customer Served / No-Show (§6.4)
+  // 5. Close Registration Served / No-Show (§6.4)
   async markServed(registrationId: number, user: AuthenticatedUser) {
     const now = this.clockService.now();
 
     // Verify registration is in_progress on a session owned by caller (§6.4)
     const rows = await this.dataSource.query(
       `SELECT c.*, qs.user_id as session_user_id
-       FROM dori_customer c
+       FROM dori_registration c
        JOIN dori_queue_session qs ON qs.session_id = c.current_session_id
-       WHERE c.customer_id = $1 AND c.status = 'in_progress' AND c.is_active = TRUE`,
+       WHERE c.registration_id = $1 AND c.status = 'in_progress' AND c.is_active = TRUE`,
       [registrationId],
     );
 
@@ -550,9 +550,9 @@ export class QueueEngineService {
     }
 
     await this.dataSource.query(
-      `UPDATE dori_customer
+      `UPDATE dori_registration
        SET status = 'served', served_at = $1, closed_at = $1, updated_at = $1
-       WHERE customer_id = $2`,
+       WHERE registration_id = $2`,
       [now, registrationId],
     );
 
@@ -571,9 +571,9 @@ export class QueueEngineService {
 
     const rows = await this.dataSource.query(
       `SELECT c.*, qs.user_id as session_user_id
-       FROM dori_customer c
+       FROM dori_registration c
        JOIN dori_queue_session qs ON qs.session_id = c.current_session_id
-       WHERE c.customer_id = $1 AND c.status = 'in_progress' AND c.is_active = TRUE`,
+       WHERE c.registration_id = $1 AND c.status = 'in_progress' AND c.is_active = TRUE`,
       [registrationId],
     );
 
@@ -590,9 +590,9 @@ export class QueueEngineService {
 
     // no-show is terminal and sets is_active = FALSE (§4.7)
     await this.dataSource.query(
-      `UPDATE dori_customer
+      `UPDATE dori_registration
        SET status = 'no_show', closed_at = $1, is_active = FALSE, updated_at = $1
-       WHERE customer_id = $2`,
+       WHERE registration_id = $2`,
       [now, registrationId],
     );
 
@@ -611,7 +611,7 @@ export class QueueEngineService {
     queueId: number,
     paginationOrUser?: PaginationDto | AuthenticatedUser,
     maybeUser?: AuthenticatedUser,
-  ): Promise<PaginatedResult<QueueSessionDetailDto>> {
+  ): Promise<PaginatedResult<QueueSessionResponseDto>> {
     let pagination: PaginationDto;
     let user: AuthenticatedUser;
 
@@ -656,7 +656,7 @@ export class QueueEngineService {
       [queueId],
     );
 
-    return pagination.createResponse<QueueSessionDetailDto>(sessions, total);
+    return pagination.createResponse<QueueSessionResponseDto>(sessions, total);
   }
 
   // 6. Next Preview (§10.2)
@@ -701,7 +701,7 @@ export class QueueEngineService {
     const candidates = await this.dataSource.query(
       `
       WITH eligible AS (
-        SELECT c.customer_id,
+        SELECT c.registration_id,
                c.ticket_number,
                c.entry_type,
                c.scheduled_time,
@@ -724,7 +724,7 @@ export class QueueEngineService {
                   END)::numeric, 2
                ) AS score,
                FALSE as called_early
-        FROM dori_customer c
+        FROM dori_registration c
         JOIN dori_site_queue_thread q ON q.queue_id = c.queue_id
         JOIN dori_site s ON s.site_id = q.site_id
         JOIN dori_person p ON p.person_id = c.person_id
@@ -744,7 +744,7 @@ export class QueueEngineService {
     );
 
     let results = candidates.map((c: any) => ({
-      registrationId: c.customer_id,
+      registrationId: c.registration_id,
       ticketNumber: c.ticket_number,
       queueId: c.queue_id,
       queueCode: c.queue_code,
@@ -766,7 +766,7 @@ export class QueueEngineService {
       const existingIds = results.map((r: any) => r.registrationId);
       const earlyCandidates = await this.dataSource.query(
         `
-        SELECT c.customer_id,
+        SELECT c.registration_id,
                c.ticket_number,
                c.entry_type,
                c.scheduled_time,
@@ -778,7 +778,7 @@ export class QueueEngineService {
                p.person_id,
                p.first_name,
                p.last_name
-        FROM dori_customer c
+        FROM dori_registration c
         JOIN dori_site_queue_thread q ON q.queue_id = c.queue_id
         JOIN dori_site s ON s.site_id = q.site_id
         JOIN dori_person p ON p.person_id = c.person_id
@@ -788,7 +788,7 @@ export class QueueEngineService {
           AND c.entry_type = 'appointment'
           AND c.appointment_status = 'checked_in'
           AND c.scheduled_time > $2
-          ${existingIds.length > 0 ? `AND c.customer_id NOT IN (${existingIds.join(',')})` : ''}
+          ${existingIds.length > 0 ? `AND c.registration_id NOT IN (${existingIds.join(',')})` : ''}
         ORDER BY c.scheduled_time ASC
         LIMIT $3
         `,
@@ -796,7 +796,7 @@ export class QueueEngineService {
       );
 
       const earlyResults = earlyCandidates.map((c: any) => ({
-        registrationId: c.customer_id,
+        registrationId: c.registration_id,
         ticketNumber: c.ticket_number,
         queueId: c.queue_id,
         queueCode: c.queue_code,
@@ -840,7 +840,7 @@ export class QueueEngineService {
     queueId: number,
     paginationOrUser?: PaginationDto | AuthenticatedUser,
     maybeUser?: AuthenticatedUser,
-  ): Promise<PaginatedResult<QueueSessionDetailDto>> {
+  ): Promise<PaginatedResult<QueueSessionResponseDto>> {
     return this.getSessions(queueId, paginationOrUser, maybeUser);
   }
 

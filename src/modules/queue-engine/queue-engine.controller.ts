@@ -22,15 +22,15 @@ import {
   ApiDoriErrorResponses,
 } from '../../core/swagger/api-dori-response.decorator';
 import { QueueEngineService } from './queue-engine.service';
-import { OpenSessionDto } from './dto/session.dto';
+import { OpenQueueSessionDto } from './dto/session.dto';
 import {
-  QueuePreviewResponseDto,
+  QueuePreviewItemDto,
   PaginatedQueueThreadResponseDto,
-  QueueSessionDetailDto,
+  QueueSessionResponseDto,
   PaginatedQueueSessionResponseDto,
-  CalledNextCustomerResponseDto,
+  CallNextRegistrationResponseDto,
   CloseSessionResponseDto,
-  CustomerActionResponseDto,
+  UpdateRegistrationStatusResponseDto,
 } from './dto/engine-response.dto';
 import {
   LimitQueryDto,
@@ -61,7 +61,7 @@ export class QueueEngineController {
     description: 'ID du site',
   })
   @ApiDoriOkResponse(
-    [QueuePreviewResponseDto],
+    [QueuePreviewItemDto],
     'Prévisualisation des prochains appels',
   )
   async nextPreview(
@@ -118,10 +118,10 @@ export class QueueEngineController {
       "Ouvre un guichet pour l'opérateur connecté et l'active pour recevoir les appels de clients.",
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriCreatedResponse(QueueSessionDetailDto, 'Session de guichet ouverte')
+  @ApiDoriCreatedResponse(QueueSessionResponseDto, 'Session de guichet ouverte')
   async openSession(
     @Param('queueId', ParseIntPipe) queueId: number,
-    @Body() dto: OpenSessionDto,
+    @Body() dto: OpenQueueSessionDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.engineService.openSession(queueId, dto, user);
@@ -150,7 +150,7 @@ export class QueueEngineController {
   }
 
   @Post('queues/:queueId/next')
-  @RequirePermission('customer_call')
+  @RequirePermission('registration_call')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Appeler le prochain ticket',
@@ -159,7 +159,7 @@ export class QueueEngineController {
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
   @ApiDoriOkResponse(
-    CalledNextCustomerResponseDto,
+    CallNextRegistrationResponseDto,
     'Prochain ticket appelé au guichet',
   )
   async callNext(
@@ -170,7 +170,7 @@ export class QueueEngineController {
   }
 
   @Post('registrations/:registrationId/served')
-  @RequirePermission('customer_call')
+  @RequirePermission('registration_call')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Marquer un client comme servi',
@@ -182,7 +182,7 @@ export class QueueEngineController {
     type: Number,
     description: "ID de l'inscription cliente",
   })
-  @ApiDoriOkResponse(CustomerActionResponseDto, 'Client marqué servi')
+  @ApiDoriOkResponse(UpdateRegistrationStatusResponseDto, 'Client marqué servi')
   async markServed(
     @Param('registrationId', ParseIntPipe) registrationId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -191,7 +191,7 @@ export class QueueEngineController {
   }
 
   @Post('registrations/:registrationId/no-show')
-  @RequirePermission('customer_call')
+  @RequirePermission('registration_call')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Déclarer un client absent (No-show)',
@@ -203,7 +203,10 @@ export class QueueEngineController {
     type: Number,
     description: "ID de l'inscription cliente",
   })
-  @ApiDoriOkResponse(CustomerActionResponseDto, 'Client marqué absent')
+  @ApiDoriOkResponse(
+    UpdateRegistrationStatusResponseDto,
+    'Client marqué absent',
+  )
   async markNoShow(
     @Param('registrationId', ParseIntPipe) registrationId: number,
     @CurrentUser() user: AuthenticatedUser,

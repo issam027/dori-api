@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
-export class SiteDetailResponseDto {
+export class SiteResponseDto {
   @ApiProperty({ example: 1, description: 'ID unique du site' })
   siteId: number;
 
@@ -127,10 +127,10 @@ export class SiteDetailResponseDto {
 
 export class PaginatedSiteResponseDto extends PaginatedResponseDto {
   @ApiProperty({
-    type: [SiteDetailResponseDto],
+    type: [SiteResponseDto],
     description: 'Liste des sites',
   })
-  items: SiteDetailResponseDto[];
+  items: SiteResponseDto[];
 
   @ApiProperty({ example: 1, description: 'Page actuelle' })
   page: number;
@@ -145,7 +145,7 @@ export class PaginatedSiteResponseDto extends PaginatedResponseDto {
   totalPages: number;
 }
 
-export class SiteDeleteResponseDto {
+export class DeleteSiteResponseDto {
   @ApiProperty({ example: 1, description: 'ID du site supprimé' })
   siteId: number;
 
@@ -153,7 +153,7 @@ export class SiteDeleteResponseDto {
   deleted: boolean;
 }
 
-export class SiteManagerDetailDto {
+export class SiteManagerResponseDto {
   @ApiProperty({ example: 2, description: 'ID utilisateur du manager' })
   userId: number;
 
@@ -185,10 +185,10 @@ export class SiteManagerDetailDto {
 
 export class PaginatedSiteManagerResponseDto extends PaginatedResponseDto {
   @ApiProperty({
-    type: [SiteManagerDetailDto],
+    type: [SiteManagerResponseDto],
     description: 'Liste des managers du site',
   })
-  items: SiteManagerDetailDto[];
+  items: SiteManagerResponseDto[];
 
   @ApiProperty({ example: 1, description: 'Page actuelle' })
   page: number;

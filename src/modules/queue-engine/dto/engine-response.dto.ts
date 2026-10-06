@@ -1,13 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
-export class QueueCandidatePersonDto {
+export class QueueCandidatePersonItemDto {
   @ApiProperty({ minimum: 1 }) personId: number;
   @ApiPropertyOptional() firstName?: string;
   @ApiPropertyOptional() lastName?: string;
 }
 
-export class QueuePreviewResponseDto {
+export class QueuePreviewItemDto {
   @ApiProperty({ minimum: 1 }) registrationId: number;
   @ApiProperty() ticketNumber: string;
   @ApiProperty({ minimum: 1 }) queueId: number;
@@ -19,11 +19,11 @@ export class QueuePreviewResponseDto {
     string | null;
   @ApiProperty() priorityScore: number;
   @ApiProperty() calledEarly: boolean;
-  @ApiProperty({ type: QueueCandidatePersonDto })
-  person: QueueCandidatePersonDto;
+  @ApiProperty({ type: QueueCandidatePersonItemDto })
+  person: QueueCandidatePersonItemDto;
 }
 
-export class ThreadSessionDto {
+export class ThreadSessionItemDto {
   @ApiProperty({ minimum: 1 }) sessionId: number;
   @ApiProperty({ minimum: 1 }) userId: number;
   @ApiProperty() username: string;
@@ -34,18 +34,19 @@ export class ThreadSessionDto {
     number | null;
 }
 
-export class QueueThreadDetailDto {
+export class QueueThreadResponseDto {
   @ApiProperty({ minimum: 1 }) threadNumber: number;
   @ApiProperty({ enum: ['occupied', 'free'] }) status: string;
-  @ApiPropertyOptional({ type: ThreadSessionDto, nullable: true })
-  session: ThreadSessionDto | null;
+  @ApiPropertyOptional({ type: ThreadSessionItemDto, nullable: true })
+  session: ThreadSessionItemDto | null;
 }
 
 export class PaginatedQueueThreadResponseDto extends PaginatedResponseDto {
-  @ApiProperty({ type: [QueueThreadDetailDto] }) items: QueueThreadDetailDto[];
+  @ApiProperty({ type: [QueueThreadResponseDto] })
+  items: QueueThreadResponseDto[];
 }
 
-export class QueueSessionDetailDto {
+export class QueueSessionResponseDto {
   @ApiProperty({ minimum: 1 }) sessionId: number;
   @ApiProperty({ minimum: 1 }) queueId: number;
   @ApiPropertyOptional({ minimum: 1, nullable: true }) threadNumber?:
@@ -63,11 +64,11 @@ export class QueueSessionDetailDto {
 }
 
 export class PaginatedQueueSessionResponseDto extends PaginatedResponseDto {
-  @ApiProperty({ type: [QueueSessionDetailDto] })
-  items: QueueSessionDetailDto[];
+  @ApiProperty({ type: [QueueSessionResponseDto] })
+  items: QueueSessionResponseDto[];
 }
 
-export class CalledNextCustomerResponseDto {
+export class CallNextRegistrationResponseDto {
   @ApiProperty({ minimum: 1 }) registrationId: number;
   @ApiProperty() ticketNumber: string;
   @ApiProperty({ enum: ['walkin', 'appointment'] }) entryType: string;
@@ -88,7 +89,7 @@ export class CloseSessionResponseDto {
   @ApiProperty() closed: boolean;
 }
 
-export class CustomerActionResponseDto {
+export class UpdateRegistrationStatusResponseDto {
   @ApiProperty({ minimum: 1 }) registrationId: number;
   @ApiProperty({ enum: ['served', 'no_show'] }) status: string;
   @ApiPropertyOptional({ format: 'date-time', nullable: true }) servedAt?:

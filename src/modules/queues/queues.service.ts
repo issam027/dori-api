@@ -6,7 +6,7 @@ import {
   PaginationDto,
   PaginatedResult,
 } from '../../core/pagination/pagination.dto';
-import { QueueDetailResponseDto } from './dto/queue-response.dto';
+import { QueueResponseDto } from './dto/queue-response.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
@@ -20,10 +20,98 @@ export class QueuesService {
     private readonly clockService: ClockService,
   ) {}
 
+  private mapQueueResponse(row: Record<string, any>): QueueResponseDto {
+    const effective = (queueField: string, siteField: string) =>
+      row[queueField] !== null && row[queueField] !== undefined
+        ? row[queueField]
+        : row[siteField];
+    const origin = (queueField: string): 'inherited' | 'overridden' =>
+      row[queueField] !== null && row[queueField] !== undefined
+        ? 'overridden'
+        : 'inherited';
+
+    return {
+      queueId: row.queue_id,
+      queueCode: row.queue_code,
+      siteId: row.site_id,
+      queueName: row.queue_name,
+      averageWaitTime: row.average_wait_time,
+      threadCount: row.thread_count,
+      currency: effective('currency', 'default_currency'),
+      locale: effective('locale', 'default_locale'),
+      appointmentsEnabled: effective(
+        'appointments_enabled',
+        'default_appointments_enabled',
+      ),
+      appointmentSlotDuration: effective(
+        'appointment_slot_duration',
+        'default_appointment_slot_duration',
+      ),
+      slotCapacity: effective('slot_capacity', 'default_slot_capacity'),
+      workingHoursStart: effective(
+        'working_hours_start',
+        'default_working_hours_start',
+      ),
+      workingHoursEnd: effective(
+        'working_hours_end',
+        'default_working_hours_end',
+      ),
+      breakStart: effective('break_start', 'default_break_start'),
+      breakEnd: effective('break_end', 'default_break_end'),
+      lateToleranceMinutes: effective(
+        'late_tolerance_minutes',
+        'default_late_tolerance_minutes',
+      ),
+      baseWeightWalkin: Number(
+        effective('base_weight_walkin', 'default_base_weight_walkin'),
+      ),
+      baseWeightAppointment: Number(
+        effective('base_weight_appointment', 'default_base_weight_appointment'),
+      ),
+      escalationRateWalkin: Number(
+        effective('escalation_rate_walkin', 'default_escalation_rate_walkin'),
+      ),
+      escalationRateAppointment: Number(
+        effective(
+          'escalation_rate_appointment',
+          'default_escalation_rate_appointment',
+        ),
+      ),
+      carryOverWaiting: effective(
+        'carry_over_waiting',
+        'default_carry_over_waiting',
+      ),
+      dailyResetMode: effective('daily_reset_mode', 'default_daily_reset_mode'),
+      dailyResetTime: effective('daily_reset_time', 'default_daily_reset_time'),
+      isActive: row.is_active,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      configOrigins: {
+        currency: origin('currency'),
+        locale: origin('locale'),
+        appointmentsEnabled: origin('appointments_enabled'),
+        appointmentSlotDuration: origin('appointment_slot_duration'),
+        slotCapacity: origin('slot_capacity'),
+        workingHoursStart: origin('working_hours_start'),
+        workingHoursEnd: origin('working_hours_end'),
+        breakStart: origin('break_start'),
+        breakEnd: origin('break_end'),
+        lateToleranceMinutes: origin('late_tolerance_minutes'),
+        baseWeightWalkin: origin('base_weight_walkin'),
+        baseWeightAppointment: origin('base_weight_appointment'),
+        escalationRateWalkin: origin('escalation_rate_walkin'),
+        escalationRateAppointment: origin('escalation_rate_appointment'),
+        carryOverWaiting: origin('carry_over_waiting'),
+        dailyResetMode: origin('daily_reset_mode'),
+        dailyResetTime: origin('daily_reset_time'),
+      },
+    };
+  }
+
   async findQueues(
     filter: QueueFilterDto,
     user: AuthenticatedUser,
-  ): Promise<PaginatedResult<QueueDetailResponseDto>> {
+  ): Promise<PaginatedResult<QueueResponseDto>> {
     const scope = await this.scopeService.getUserScope(user);
     const { pageSize, offset, sortOrder } = filter.getParams();
     // VAL-01 : allowlist des colonnes autorisées pour dori_site_queue_thread (alias q)
@@ -40,7 +128,13 @@ export class QueuesService {
     );
 
     let query = `
-      SELECT q.*, s.site_name, s.timezone, s.default_currency
+      SELECT q.*, s.site_name, s.timezone, s.default_currency, s.default_locale,
+             s.default_appointments_enabled, s.default_appointment_slot_duration, s.default_slot_capacity,
+             s.default_working_hours_start, s.default_working_hours_end, s.default_break_start,
+             s.default_break_end, s.default_late_tolerance_minutes, s.default_base_weight_walkin,
+             s.default_base_weight_appointment, s.default_escalation_rate_walkin,
+             s.default_escalation_rate_appointment, s.default_carry_over_waiting,
+             s.default_daily_reset_mode, s.default_daily_reset_time
       FROM dori_site_queue_thread q
       JOIN dori_site s ON s.site_id = q.site_id
       WHERE 1=1
@@ -84,14 +178,17 @@ export class QueuesService {
     query += ` ORDER BY ${sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`;
     const items = await this.dataSource.query(query, params);
 
-    return filter.createResponse(items, total);
+    return filter.createResponse(
+      items.map((row: Record<string, any>) => this.mapQueueResponse(row)),
+      total,
+    );
   }
 
   async findQueueById(queueId: number, user: AuthenticatedUser) {
     await this.scopeService.checkQueueAccess(user, queueId);
 
     const rows = await this.dataSource.query(
-      `SELECT q.*, s.site_name, s.timezone as site_timezone, s.default_currency as site_default_currency,
+      `SELECT q.*, s.site_name, s.timezone as site_timezone, s.default_currency, s.default_locale,
               s.default_appointments_enabled, s.default_appointment_slot_duration, s.default_slot_capacity,
               s.default_working_hours_start, s.default_working_hours_end, s.default_break_start, s.default_break_end,
               s.default_late_tolerance_minutes, s.default_base_weight_walkin, s.default_base_weight_appointment,
@@ -107,85 +204,7 @@ export class QueuesService {
       throw new DoriException('QUEUE_NOT_FOUND', { queueId });
     }
 
-    const row = rows[0];
-
-    // Inheritance resolution (§4.5): resolve effective values & origins
-    const resolveField = (queueVal: any, siteVal: any) => ({
-      value: queueVal !== null && queueVal !== undefined ? queueVal : siteVal,
-      origin:
-        queueVal !== null && queueVal !== undefined
-          ? 'overridden'
-          : 'inherited',
-    });
-
-    return {
-      queueId: row.queue_id,
-      queueCode: row.queue_code,
-      siteId: row.site_id,
-      siteName: row.site_name,
-      queueName: row.queue_name,
-      isActive: row.is_active,
-      averageWaitTime: row.average_wait_time,
-      threadCount: row.thread_count,
-      config: {
-        appointmentsEnabled: resolveField(
-          row.appointments_enabled,
-          row.default_appointments_enabled,
-        ),
-        appointmentSlotDuration: resolveField(
-          row.appointment_slot_duration,
-          row.default_appointment_slot_duration,
-        ),
-        slotCapacity: resolveField(
-          row.slot_capacity,
-          row.default_slot_capacity,
-        ),
-        workingHoursStart: resolveField(
-          row.working_hours_start,
-          row.default_working_hours_start,
-        ),
-        workingHoursEnd: resolveField(
-          row.working_hours_end,
-          row.default_working_hours_end,
-        ),
-        breakStart: resolveField(row.break_start, row.default_break_start),
-        breakEnd: resolveField(row.break_end, row.default_break_end),
-        lateToleranceMinutes: resolveField(
-          row.late_tolerance_minutes,
-          row.default_late_tolerance_minutes,
-        ),
-        baseWeightWalkin: resolveField(
-          row.base_weight_walkin,
-          row.default_base_weight_walkin,
-        ),
-        baseWeightAppointment: resolveField(
-          row.base_weight_appointment,
-          row.default_base_weight_appointment,
-        ),
-        escalationRateWalkin: resolveField(
-          row.escalation_rate_walkin,
-          row.default_escalation_rate_walkin,
-        ),
-        escalationRateAppointment: resolveField(
-          row.escalation_rate_appointment,
-          row.default_escalation_rate_appointment,
-        ),
-        carryOverWaiting: resolveField(
-          row.carry_over_waiting,
-          row.default_carry_over_waiting,
-        ),
-        dailyResetMode: resolveField(
-          row.daily_reset_mode,
-          row.default_daily_reset_mode,
-        ),
-        dailyResetTime: resolveField(
-          row.daily_reset_time,
-          row.default_daily_reset_time,
-        ),
-      },
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-    };
+    return this.mapQueueResponse(rows[0]);
   }
 
   async createQueue(
@@ -197,27 +216,25 @@ export class QueuesService {
     const now = this.clockService.now();
 
     const siteRes = await this.dataSource.query(
-      `SELECT default_currency FROM dori_site WHERE site_id = $1 AND is_active = TRUE`,
+      `SELECT site_id FROM dori_site WHERE site_id = $1 AND is_active = TRUE`,
       [siteId],
     );
     if (!siteRes || siteRes.length === 0) {
       throw new DoriException('SITE_NOT_FOUND', { siteId });
     }
-    const defaultCurrency = siteRes[0].default_currency || 'TND';
-
     const insertQuery = `
       INSERT INTO dori_site_queue_thread (
-        queue_code, site_id, queue_name, average_wait_time, thread_count,
+        queue_code, site_id, queue_name, average_wait_time, thread_count, currency,
         appointments_enabled, appointment_slot_duration, slot_capacity,
         working_hours_start, working_hours_end, break_start, break_end, late_tolerance_minutes,
         base_weight_walkin, base_weight_appointment, escalation_rate_walkin, escalation_rate_appointment,
-        carry_over_waiting, daily_reset_mode, daily_reset_time, created_by_user_id, updated_by_user_id,
+        carry_over_waiting, daily_reset_mode, daily_reset_time, locale, created_by_user_id, updated_by_user_id,
         created_at, updated_at
       ) VALUES (
         $1, $2, $3, COALESCE($4, 10), COALESCE($5, 1),
-        $6, $7, $8, $9, $10, $11, $12, $13,
-        $14, $15, $16, $17, $18, $19, $20, $21, $21,
-        $22, $22
+        $6, $7, $8, $9, $10, $11, $12, $13, $14,
+        $15, $16, $17, $18, $19, $20, $21, $22, $23, $23,
+        $24, $24
       ) RETURNING *
     `;
 
@@ -227,6 +244,7 @@ export class QueuesService {
       dto.queueName || null,
       dto.averageWaitTime ?? null,
       dto.threadCount ?? null,
+      dto.currency ?? null,
       dto.appointmentsEnabled ?? null,
       dto.appointmentSlotDuration ?? null,
       dto.slotCapacity ?? null,
@@ -242,6 +260,7 @@ export class QueuesService {
       dto.carryOverWaiting ?? null,
       dto.dailyResetMode || null,
       dto.dailyResetTime || null,
+      dto.locale ?? null,
       user.userId,
       now,
     ];
@@ -255,20 +274,14 @@ export class QueuesService {
     );
     if (freeTier && freeTier.length > 0) {
       await this.dataSource.query(
-        `INSERT INTO dori_queue_service_tier (queue_id, tier_id, price, currency, display_order, created_by_user_id, updated_by_user_id, created_at, updated_at)
-         VALUES ($1, $2, 0, $3, 0, $4, $4, $5, $5)
+        `INSERT INTO dori_queue_service_tier (queue_id, tier_id, price, currency, display_order, is_default, created_by_user_id, updated_by_user_id, created_at, updated_at)
+         VALUES ($1, $2, 0, NULL, 0, TRUE, $3, $3, $4, $4)
          ON CONFLICT (queue_id, tier_id) DO NOTHING`,
-        [
-          newQueue.queue_id,
-          freeTier[0].tier_id,
-          defaultCurrency,
-          user.userId,
-          now,
-        ],
+        [newQueue.queue_id, freeTier[0].tier_id, user.userId, now],
       );
     }
 
-    return newQueue;
+    return this.findQueueById(newQueue.queue_id, user);
   }
 
   async updateQueue(
@@ -294,6 +307,7 @@ export class QueuesService {
     mapField('queue_name', dto.queueName);
     mapField('average_wait_time', dto.averageWaitTime);
     mapField('thread_count', dto.threadCount);
+    mapField('currency', dto.currency);
     mapField('appointments_enabled', dto.appointmentsEnabled);
     mapField('appointment_slot_duration', dto.appointmentSlotDuration);
     mapField('slot_capacity', dto.slotCapacity);
@@ -309,6 +323,7 @@ export class QueuesService {
     mapField('carry_over_waiting', dto.carryOverWaiting);
     mapField('daily_reset_mode', dto.dailyResetMode);
     mapField('daily_reset_time', dto.dailyResetTime);
+    mapField('locale', dto.locale);
     mapField('is_active', dto.isActive);
 
     fields.push(`updated_by_user_id = $${idx++}`);
@@ -322,7 +337,8 @@ export class QueuesService {
       `UPDATE dori_site_queue_thread SET ${fields.join(', ')} WHERE queue_id = $${idx} RETURNING *`,
       values,
     );
-    return result[0];
+    if (!result[0]) throw new DoriException('QUEUE_NOT_FOUND', { queueId });
+    return this.findQueueById(queueId, user);
   }
 
   async deleteQueue(queueId: number, user: AuthenticatedUser) {
@@ -381,7 +397,7 @@ export class QueuesService {
     // Count waiting clients
     const waitingRes = await this.dataSource.query(
       `SELECT COUNT(*)::int as count
-       FROM dori_customer
+       FROM dori_registration
        WHERE queue_id = $1 AND business_date = $2 AND status = 'waiting' AND is_active = TRUE`,
       [queueId, businessDate],
     );
@@ -398,8 +414,8 @@ export class QueuesService {
 
     // Next appointments today
     const appts = await this.dataSource.query(
-      `SELECT customer_id, ticket_number, scheduled_time, appointment_status, status
-       FROM dori_customer
+      `SELECT registration_id, ticket_number, scheduled_time, appointment_status, status
+       FROM dori_registration
        WHERE queue_id = $1 AND business_date = $2 AND entry_type = 'appointment' AND is_active = TRUE
          AND status IN ('booked', 'waiting')
        ORDER BY scheduled_time ASC
@@ -441,9 +457,9 @@ export class QueuesService {
 
     // Current called ticket per active thread (threadNumber, ticketNumber only)
     const activeSessions = await this.dataSource.query(
-      `SELECT qs.thread_number, c.ticket_number, c.customer_id
+      `SELECT qs.thread_number, c.ticket_number, c.registration_id
        FROM dori_queue_session qs
-       LEFT JOIN dori_customer c ON c.current_session_id = qs.session_id AND c.status = 'in_progress' AND c.is_active = TRUE
+       LEFT JOIN dori_registration c ON c.current_session_id = qs.session_id AND c.status = 'in_progress' AND c.is_active = TRUE
        WHERE qs.queue_id = $1 AND qs.disconnected_at IS NULL AND qs.mode = 'active'
        ORDER BY qs.thread_number ASC`,
       [queueId],
@@ -452,7 +468,7 @@ export class QueuesService {
     // Next waiting tickets (only ticket numbers, no personal info!)
     const nextTickets = await this.dataSource.query(
       `SELECT ticket_number
-       FROM dori_customer
+       FROM dori_registration
        WHERE queue_id = $1 AND business_date = $2 AND status = 'waiting' AND is_active = TRUE
        ORDER BY priority_reference_time ASC
        LIMIT 10`,
@@ -514,7 +530,7 @@ export class QueuesService {
       // 2. Process waiting/booked of the closed day
       if (!shouldCarryOver) {
         await manager.query(
-          `UPDATE dori_customer
+          `UPDATE dori_registration
            SET status = 'expired', closed_at = $1, is_active = FALSE, updated_at = $1
            WHERE queue_id = $2 AND business_date = $3 AND status = 'waiting' AND is_active = TRUE`,
           [now, queueId, businessDate],
@@ -522,7 +538,7 @@ export class QueuesService {
       } else {
         // Carry over: tickets already OLD- expire
         await manager.query(
-          `UPDATE dori_customer
+          `UPDATE dori_registration
            SET status = 'expired', closed_at = $1, is_active = FALSE, updated_at = $1
            WHERE queue_id = $2 AND business_date = $3 AND status = 'waiting' AND is_active = TRUE
              AND ticket_number LIKE 'OLD-%'`,
@@ -531,7 +547,7 @@ export class QueuesService {
 
         // Tickets not OLD- get carry over: ticket_number = OLD-...
         await manager.query(
-          `UPDATE dori_customer
+          `UPDATE dori_registration
            SET business_date = $1, carried_over_from_date = $2, ticket_number = 'OLD-' || ticket_number,
                registration_tracking_token_valid_until = $3, updated_at = $4
            WHERE queue_id = $5 AND business_date = $2 AND status = 'waiting' AND is_active = TRUE
@@ -549,14 +565,14 @@ export class QueuesService {
       // 3. Neutralize closed registrations per resetMode
       if (resetMode === 'close_all') {
         await manager.query(
-          `UPDATE dori_customer
+          `UPDATE dori_registration
            SET is_active = FALSE, deleted_at = $1, updated_at = $1
            WHERE queue_id = $2 AND business_date = $3 AND status IN ('served', 'no_show', 'expired', 'cancelled') AND is_active = TRUE`,
           [now, queueId, businessDate],
         );
       } else {
         await manager.query(
-          `UPDATE dori_customer
+          `UPDATE dori_registration
            SET is_active = FALSE, deleted_at = $1, updated_at = $1
            WHERE queue_id = $2 AND business_date = $3 AND status = 'served' AND is_active = TRUE`,
           [now, queueId, businessDate],

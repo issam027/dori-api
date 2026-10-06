@@ -115,7 +115,7 @@ export class AssignUserRoleDto {
 export class UpdateRolePermissionsDto {
   @ApiProperty({
     type: [String],
-    example: ['site_view', 'queue_view', 'customer_register'],
+    example: ['site_view', 'queue_view', 'registration_register'],
     description: 'Liste complète des noms de permissions à attribuer au rôle',
   })
   @IsArray()
@@ -136,12 +136,4 @@ export class UserFilterDto extends PaginationDto {
   @IsString()
   @IsOptional()
   search?: string;
-}
-
-export class UserDeleteResponseDto {
-  @ApiProperty({ example: 5, description: "ID de l'utilisateur supprimé" })
-  userId: number;
-
-  @ApiProperty({ example: true, description: 'Confirmation de la suppression' })
-  deleted: boolean;
 }

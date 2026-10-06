@@ -12,7 +12,7 @@
 | :--- | :--- | :--- | :--- |
 | **SEC-05** | Sécurité | WebSocket accepte les utilisateurs dont la session est révoquée | **Moyen** |
 | **DAT-01** | Données | `DailyResetWorker` saute la réinitialisation si un RDV existe demain | **Critique** |
-| **DAT-02** | Données | Absence de transaction sur l'inscription client (`registerCustomer`) | **Élevé** |
+| **DAT-02** | Données | Absence de transaction sur l'inscription client (`registerRegistration`) | **Élevé** |
 | **DAT-03** | Données | Race condition sur la capacité des créneaux de RDV | **Élevé** |
 | **DAT-04** | Données | Entités TypeORM définies mais inutilisées (100% SQL brut) | **Moyen** |
 | **WRK-01** | Workers | `AppointmentExpiryWorker` : variable `affected` toujours `undefined` | **Moyen** |
@@ -73,10 +73,10 @@
 
 * **Fichier impacté** : `src/modules/registrations/registrations.service.ts` (méthode `createRegistration`, lignes ~45–220)
 * **Problème** :  
-  `registerCustomer` enchaîne sans transaction :
+  `registerRegistration` enchaîne sans transaction :
   1. Incrément du compteur (`dori_queue_counter`)
   2. Création éventuelle de la personne (`dori_person`)
-  3. Insertion de l'inscription (`dori_customer`)
+  3. Insertion de l'inscription (`dori_registration`)
   4. Création de la notification de bienvenue (`dori_notification`)
 
   Si l'étape 3 ou 4 échoue, le numéro de ticket est déjà consommé et les entités restent désynchronisées.
@@ -93,7 +93,7 @@
 * **Problème** :  
   Le contrôle de capacité :
   ```sql
-  SELECT COUNT(*)::int as count FROM dori_customer
+  SELECT COUNT(*)::int as count FROM dori_registration
   WHERE queue_id = $1 AND scheduled_time = $2 ...
   ```
   est exécuté **sans verrou**. Deux requêtes simultanées lisent le même effectif sous le seuil et réservent en parallèle, violant `slot_capacity`.
@@ -231,7 +231,7 @@
 
 - [ ] **Phase 2 — Workers & Robustesse Données**
   - [ ] DAT-01 : Corriger l'idempotence du `DailyResetWorker` (découpler de `dori_queue_counter`).
-  - [ ] DAT-02 : Envelopper `RegistrationsService.registerCustomer` dans une transaction atomique.
+  - [ ] DAT-02 : Envelopper `RegistrationsService.registerRegistration` dans une transaction atomique.
   - [ ] DAT-03 : Verrouiller la vérification de capacité des créneaux de RDV (`FOR UPDATE`).
   - [ ] DAT-04 : Décider et homogénéiser TypeORM vs SQL brut (dette technique — décision stratégique).
   - [ ] WRK-01 : Corriger la lecture du résultat SQL dans `AppointmentExpiryWorker`.

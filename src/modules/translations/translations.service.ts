@@ -5,12 +5,12 @@ import { DoriException } from '../../core/errors/dori.exception';
 import { PaginatedResult } from '../../core/pagination/pagination.dto';
 import { RealtimeService } from '../../core/realtime/realtime.service';
 import {
-  BundleQueryDto,
+  TranslationBundleQueryDto,
   CreateTranslationDto,
   TranslationFilterDto,
   UpdateTranslationDto,
 } from './dto/translation.dto';
-import { TranslationDetailDto } from './dto/translation-response.dto';
+import { TranslationResponseDto } from './dto/translation-response.dto';
 import { TranslationsRepository } from './translations.repository';
 
 @Injectable()
@@ -21,7 +21,7 @@ export class TranslationsService {
     private readonly realtimeService: RealtimeService,
   ) {}
 
-  async getBundle(query: BundleQueryDto) {
+  async getBundle(query: TranslationBundleQueryDto) {
     const category = query.category || 'ihm';
     const { version, rows } = await this.translationsRepository.getBundle(
       category,
@@ -39,7 +39,7 @@ export class TranslationsService {
 
   async findTranslations(
     filter: TranslationFilterDto,
-  ): Promise<PaginatedResult<TranslationDetailDto>> {
+  ): Promise<PaginatedResult<TranslationResponseDto>> {
     const sortField = filter.getSafeSortField(
       [
         'translation_id',
@@ -56,7 +56,7 @@ export class TranslationsService {
       sortField,
     );
     return filter.createResponse(
-      items as unknown as TranslationDetailDto[],
+      items as unknown as TranslationResponseDto[],
       total,
     );
   }

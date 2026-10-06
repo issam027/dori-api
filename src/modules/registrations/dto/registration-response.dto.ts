@@ -1,9 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
-export class RegistrationDetailResponseDto {
+export class RegistrationResponseDto {
   @ApiProperty({ example: 101, description: "ID de l'inscription" })
-  customerId: number;
+  registrationId: number;
 
   @ApiProperty({ example: 1, description: 'ID de la file' })
   queueId: number;
@@ -69,7 +69,7 @@ export class RegistrationDetailResponseDto {
   updatedAt: string;
 }
 
-export class RegistrationCreatedResponseDto {
+export class CreateRegistrationResponseDto {
   @ApiProperty({ minimum: 1 }) registrationId: number;
   @ApiProperty() ticketNumber: string;
   @ApiProperty({ format: 'date' }) businessDate: string;
@@ -85,7 +85,7 @@ export class RegistrationCreatedResponseDto {
   registrationTrackingTokenValidUntil?: string | null;
 }
 
-export class RegistrationTransitionResponseDto {
+export class RescheduleRegistrationResponseDto {
   @ApiProperty({ minimum: 1 }) registrationId: number;
   @ApiProperty() status: string;
   @ApiPropertyOptional({ nullable: true }) appointmentStatus?: string | null;
@@ -96,10 +96,10 @@ export class RegistrationTransitionResponseDto {
 
 export class PaginatedRegistrationResponseDto extends PaginatedResponseDto {
   @ApiProperty({
-    type: [RegistrationDetailResponseDto],
+    type: [RegistrationResponseDto],
     description: 'Inscriptions trouvées',
   })
-  items: RegistrationDetailResponseDto[];
+  items: RegistrationResponseDto[];
 
   @ApiProperty({ example: 1, description: 'Page courante' })
   page: number;
@@ -114,7 +114,7 @@ export class PaginatedRegistrationResponseDto extends PaginatedResponseDto {
   totalPages: number;
 }
 
-export class SlotAvailabilityDto {
+export class SlotAvailabilityItemDto {
   @ApiProperty({
     example: '2026-10-01T09:00:00',
     description: 'Heure de début du créneau (ISO 8601 local)',
@@ -137,7 +137,7 @@ export class SlotAvailabilityDto {
   isAvailable: boolean;
 }
 
-export class AvailabilityResponseDto {
+export class RegistrationAvailabilityResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la file' })
   queueId: number;
 
@@ -145,13 +145,13 @@ export class AvailabilityResponseDto {
   date: string;
 
   @ApiProperty({
-    type: [SlotAvailabilityDto],
+    type: [SlotAvailabilityItemDto],
     description: 'Créneaux horaires et disponibilités',
   })
-  slots: SlotAvailabilityDto[];
+  slots: SlotAvailabilityItemDto[];
 }
 
-export class PublicPositionResponseDto {
+export class RegistrationPositionResponseDto {
   @ApiPropertyOptional({ example: 'A-012', description: 'Numéro de ticket' })
   ticketNumber?: string;
 
@@ -183,7 +183,7 @@ export class PublicPositionResponseDto {
   queueName?: string;
 }
 
-export class RegistrationDeleteResponseDto {
+export class DeleteRegistrationResponseDto {
   @ApiProperty({ example: 101, description: "ID de l'inscription annulée" })
   registrationId: number;
 

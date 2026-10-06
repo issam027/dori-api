@@ -46,9 +46,9 @@ Sévérité : **[C]** Critique · **[I]** Important · **[M]** Mineur
 - [ ] 🟡 #21 — SW-10 · Fixer les formats de dates/heures et documenter les fuseaux
 - [ ] 🟡 #22 — DAT-01 · Corriger l'idempotence du DailyResetWorker
 - [ ] 🟠 #23 — SW-06 · Unifier les règles de notification (vocabulaire + corriger `trakingLink`)
-- [ ] 🟠 #24 — SW-08 · Clarifier `customerId` vs `registrationId`
+- [ ] 🟠 #24 — SW-08 · Clarifier `registrationId` vs `registrationId`
 - [ ] 🟠 #25 — SW-09 · Unifier les 7 formats de réponse d'action
-- [ ] 🟠 #26 — DAT-02 + DAT-03 · Transaction atomique + `FOR UPDATE` sur `registerCustomer`
+- [ ] 🟠 #26 — DAT-02 + DAT-03 · Transaction atomique + `FOR UPDATE` sur `registerRegistration`
 - [ ] 🟠 #27 — SW-14 · Factoriser l'enveloppe de réponse `StandardResponseDto<T>`
 - [x] 🟠 #28 — SW-01 · Définir le contrat d'erreur global (400/401/403/404/409/422/423/429) ✅ *2026-10-05*
 - [x] 🟠 #29 — SW-16 · Rationaliser les endpoints redondants ✅ *2026-10-01*
@@ -57,7 +57,7 @@ Sévérité : **[C]** Critique · **[I]** Important · **[M]** Mineur
 
 ---
 
-## 🟢 Trivial (< 5 min chacun)
+## ðŸŸ¢ Trivial (< 5 min chacun)
 
 ### #01 — API-04 · `@Public()` sur `GET /translations/bundle` [I]
 > ✅ **RÉSOLU le 2026-10-01** — Ajout du décorateur `@Public()` sur `getBundle` et déplacement de `@ApiBearerAuth('bearer')` uniquement sur les routes protégées dans `TranslationsController`.
@@ -363,12 +363,12 @@ Corriger `trakingLink` → `trackingLink`. Aligner `notificationType`/`triggerEv
 
 ---
 
-### #24 — SW-08 · `customerId` vs `registrationId` [I]
+### #24 — SW-08 · `registrationId` vs `registrationId` [I]
 
 **Source** : api_analysis.md  
 **~8 fichiers DTOs**
 
-Mapper `customerId` (DB) → `registrationId` (API) dans tous les DTOs de réponse. Corriger la description contradictoire de `SendManualNotificationDto.customerId`.
+Mapper `registrationId` (DB) → `registrationId` (API) dans tous les DTOs de réponse. Corriger la description contradictoire de `SendManualNotificationDto.registrationId`.
 
 ---
 
@@ -381,7 +381,7 @@ Définir `ActionResponseDto` standard ou adopter `204 No Content`. Uniformiser `
 
 ---
 
-### #26 — DAT-02 + DAT-03 · Transaction atomique + FOR UPDATE sur `registerCustomer` [I]
+### #26 — DAT-02 + DAT-03 · Transaction atomique + FOR UPDATE sur `registerRegistration` [I]
 
 **Source** : handover_2.md  
 **1 fichier + tests**
@@ -423,7 +423,7 @@ Définir `StandardResponseDto<T>` comme composant réutilisable. Utiliser `$ref`
 
 ---
 
-## 🔴 Lourd (> 1 jour)
+## ðŸ”´ Lourd (> 1 jour)
 
 ### #30 — DAT-04 · Homogénéiser TypeORM vs SQL brut [M]
 

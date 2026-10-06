@@ -102,7 +102,7 @@ export class TranslationFilterDto extends PaginationDto {
   key?: string;
 }
 
-export class BundleQueryDto {
+export class TranslationBundleQueryDto {
   @ApiProperty({ example: 'fr', description: 'Locale demandée pour le bundle' })
   @IsString()
   @IsNotEmpty()

@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
-export class NotificationDetailDto {
+export class NotificationResponseDto {
   @ApiProperty({ example: 1, description: 'ID unique de la notification' })
   notificationId: number;
 
@@ -9,7 +9,7 @@ export class NotificationDetailDto {
     example: 42,
     description: "ID de l'inscription client associée",
   })
-  customerId: number;
+  registrationId: number;
 
   @ApiProperty({
     enum: ['sms', 'email'],
@@ -19,11 +19,11 @@ export class NotificationDetailDto {
   channel: string;
 
   @ApiProperty({
-    enum: ['welcome', 'threshold', 'trakingLink'],
+    enum: ['welcome', 'threshold'],
     example: 'threshold',
     description: 'Type de notification',
   })
-  notificationType: string;
+  notificationType: 'welcome' | 'threshold';
 
   @ApiProperty({ example: 'fr', description: 'Code langue de la notification' })
   locale: string;
@@ -97,10 +97,10 @@ export class NotificationDetailDto {
 
 export class PaginatedNotificationResponseDto extends PaginatedResponseDto {
   @ApiProperty({
-    type: [NotificationDetailDto],
+    type: [NotificationResponseDto],
     description: 'Notifications trouvées',
   })
-  items: NotificationDetailDto[];
+  items: NotificationResponseDto[];
 
   @ApiProperty({ example: 1, description: 'Numéro de page courante' })
   page: number;
@@ -115,7 +115,7 @@ export class PaginatedNotificationResponseDto extends PaginatedResponseDto {
   totalPages: number;
 }
 
-export class WebhookResponseDto {
+export class NotificationWebhookResponseDto {
   @ApiProperty({ example: true, description: 'Accusé de réception du webhook' })
   received: boolean;
 }

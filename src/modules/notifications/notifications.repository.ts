@@ -20,8 +20,8 @@ export interface NotificationListQuery {
   offset: number;
 }
 
-export interface NotificationCustomerRow extends Record<string, unknown> {
-  customer_id: number;
+export interface NotificationRegistrationRow extends Record<string, unknown> {
+  registration_id: number;
   queue_id: number;
   phone_number?: string;
   email?: string;
@@ -29,7 +29,7 @@ export interface NotificationCustomerRow extends Record<string, unknown> {
   person_lang?: string;
 }
 
-export interface WaitingCustomerRow extends NotificationCustomerRow {
+export interface WaitingRegistrationRow extends NotificationRegistrationRow {
   ticket_number: string;
   tier_id: number;
   first_name?: string;
@@ -60,7 +60,7 @@ export class NotificationsRepository {
       where += ` AND c.queue_id = ANY($${params.length})`;
     }
     const filters: Array<[unknown, string]> = [
-      [query.filter.registrationId, 'n.customer_id'],
+      [query.filter.registrationId, 'n.registration_id'],
       [query.filter.channel, 'n.channel'],
       [query.filter.status, 'n.notification_status'],
       [query.filter.businessDate, 'c.business_date'],
@@ -72,7 +72,7 @@ export class NotificationsRepository {
       }
     }
     const from = `FROM dori_notification n
-      JOIN dori_customer c ON c.customer_id = n.customer_id
+      JOIN dori_registration c ON c.registration_id = n.registration_id
       JOIN dori_person p ON p.person_id = c.person_id
       JOIN dori_site_queue_thread q ON q.queue_id = c.queue_id
       WHERE ${where}`;
@@ -93,21 +93,21 @@ export class NotificationsRepository {
     const rows: NotificationRow[] = await this.dataSource.query(
       `SELECT n.*, c.queue_id, c.ticket_number, c.business_date
        FROM dori_notification n
-       JOIN dori_customer c ON c.customer_id = n.customer_id
+       JOIN dori_registration c ON c.registration_id = n.registration_id
        WHERE n.notification_id = $1`,
       [notificationId],
     );
     return rows[0] ?? null;
   }
 
-  async findActiveCustomer(
-    customerId: number,
-  ): Promise<NotificationCustomerRow | null> {
-    const rows: NotificationCustomerRow[] = await this.dataSource.query(
+  async findActiveRegistration(
+    registrationId: number,
+  ): Promise<NotificationRegistrationRow | null> {
+    const rows: NotificationRegistrationRow[] = await this.dataSource.query(
       `SELECT c.*, p.phone_number, p.email, p.language_preference AS person_lang
-       FROM dori_customer c JOIN dori_person p ON p.person_id = c.person_id
-       WHERE c.customer_id = $1 AND c.is_active = TRUE`,
-      [customerId],
+       FROM dori_registration c JOIN dori_person p ON p.person_id = c.person_id
+       WHERE c.registration_id = $1 AND c.is_active = TRUE`,
+      [registrationId],
     );
     return rows[0] ?? null;
   }
@@ -120,10 +120,10 @@ export class NotificationsRepository {
   ): Promise<NotificationRow> {
     const rows: NotificationRow[] = await this.dataSource.query(
       `INSERT INTO dori_notification (
-        customer_id, channel, notification_type, locale, recipient, notification_content,
+        registration_id, channel, notification_type, locale, recipient, notification_content,
         notification_status, attempt_count, created_at, updated_at
       ) VALUES ($1, $2, 'welcome', $3, $4, $5, 'pending', 0, $6, $6) RETURNING *`,
-      [dto.customerId, dto.channel, locale, recipient, dto.content, now],
+      [dto.registrationId, dto.channel, locale, recipient, dto.content, now],
     );
     return rows[0];
   }
@@ -168,12 +168,14 @@ export class NotificationsRepository {
     });
   }
 
-  async findWaitingCustomers(queueId: number): Promise<WaitingCustomerRow[]> {
+  async findWaitingRegistrations(
+    queueId: number,
+  ): Promise<WaitingRegistrationRow[]> {
     return this.dataSource.query(
-      `SELECT c.customer_id, c.ticket_number, c.tier_id, c.language_preference,
+      `SELECT c.registration_id, c.ticket_number, c.tier_id, c.language_preference,
               p.first_name, p.last_name, p.phone_number, p.email, p.language_preference AS p_lang,
               q.average_wait_time, s.timezone, s.default_locale
-       FROM dori_customer c
+       FROM dori_registration c
        JOIN dori_person p ON p.person_id = c.person_id
        JOIN dori_site_queue_thread q ON q.queue_id = c.queue_id
        JOIN dori_site s ON s.site_id = q.site_id
@@ -201,7 +203,7 @@ export class NotificationsRepository {
   }
 
   async createThresholdIfAbsent(input: {
-    customerId: number;
+    registrationId: number;
     ruleId: number;
     channel: string;
     locale: string;
@@ -211,13 +213,13 @@ export class NotificationsRepository {
   }): Promise<void> {
     await this.dataSource.query(
       `INSERT INTO dori_notification (
-        customer_id, rule_id, channel, notification_type, locale, recipient,
+        registration_id, rule_id, channel, notification_type, locale, recipient,
         notification_content, notification_status, attempt_count, created_at, updated_at
       ) VALUES ($1, $2, $3, 'threshold', $4, $5, $6, 'pending', 0, $7, $7)
-      ON CONFLICT (customer_id, notification_type, channel)
+      ON CONFLICT (registration_id, notification_type, channel)
       WHERE notification_status <> 'failed' DO NOTHING`,
       [
-        input.customerId,
+        input.registrationId,
         input.ruleId,
         input.channel,
         input.locale,
