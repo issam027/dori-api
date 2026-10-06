@@ -49,8 +49,9 @@ async function createApp(): Promise<NestExpressApplication> {
 
   const allowedOrigins = configService.get<string[]>('cors.allowedOrigins') || [
     'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:5173',
+    'https://dori-api-dev.vercel.app',
+    'https://dori-api.vercel.app',
+
   ];
 
   // WebSockets can't run on serverless functions
@@ -97,6 +98,12 @@ async function createApp(): Promise<NestExpressApplication> {
       urls: [{ url: '/api/docs-json', name: 'OpenAPI JSON' }],
     },
   });
+
+  // Redirige la racine vers la documentation Swagger
+  app.getHttpAdapter()
+    .get('/', (_req: unknown, res: { redirect: (url: string) => void }) => {
+      res.redirect('/api/docs');
+    });
 
   await app.init(); // init(), not listen(): Vercel owns the HTTP server
   return app;
