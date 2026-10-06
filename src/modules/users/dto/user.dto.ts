@@ -36,12 +36,13 @@ export class CreateUserDto {
 
   @ApiProperty({
     example: '••••••••••••',
-    description: 'Mot de passe (minimum 10 caractères)',
+    description: 'Mot de passe (entre 10 et 20 caractères)',
     minLength: 10,
+    maxLength: 20,
   })
-  @IsLocale()
-  @MaxLength(10)
+  @IsString()
   @MinLength(10)
+  @MaxLength(20)
   password: string;
 
   @ApiPropertyOptional({
@@ -97,11 +98,13 @@ export class UpdateUserStatusDto {
 export class SetUserPasswordDto {
   @ApiProperty({
     example: '••••••••••••',
-    description: 'Nouveau mot de passe (minimum 10 caractères)',
+    description: 'Nouveau mot de passe (entre 10 et 20 caractères)',
     minLength: 10,
+    maxLength: 20,
   })
   @IsString()
   @MinLength(10)
+  @MaxLength(20)
   newPassword: string;
 }
 

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsNotEmpty, IsString, MinLength, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ChangePasswordDto {
@@ -8,11 +8,13 @@ export class ChangePasswordDto {
   currentPassword: string;
 
   @ApiProperty({
-    description: 'Nouveau mot de passe (minimum 10 caractères)',
+    description: 'Nouveau mot de passe (entre 10 et 20 caractères)',
     example: '••••••••••••',
     minLength: 10,
+    maxLength: 20,
   })
   @IsString()
   @MinLength(10)
+  @MaxLength(20)
   newPassword: string;
 }
