@@ -40,7 +40,9 @@ export class ServiceTiersService {
       throw new DoriException(
         'VALIDATION_ERROR',
         {},
-        { errors: ['Threshold rules require thresholdType and thresholdValue'] },
+        {
+          errors: ['Threshold rules require thresholdType and thresholdValue'],
+        },
       );
     }
     if (
@@ -78,8 +80,7 @@ export class ServiceTiersService {
           : rule.threshold_minutes != null
             ? ('estimatedTime' as const)
             : null,
-      thresholdValue:
-        rule.threshold_position ?? rule.threshold_minutes ?? null,
+      thresholdValue: rule.threshold_position ?? rule.threshold_minutes ?? null,
       includeTrackingLink: rule.include_tracking_link,
       isActive: rule.is_active,
     };
@@ -393,8 +394,7 @@ export class ServiceTiersService {
       {
         notificationType,
         channel: dto.channel,
-        thresholdPosition:
-          thresholdType === 'position' ? thresholdValue : null,
+        thresholdPosition: thresholdType === 'position' ? thresholdValue : null,
         thresholdMinutes:
           thresholdType === 'estimatedTime' ? thresholdValue : null,
         includeTrackingLink: dto.includeTrackingLink,

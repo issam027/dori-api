@@ -15,7 +15,6 @@ import {
 } from './core/swagger/openapi.config';
 import { PositiveIdParamPipe } from './core/validation/positive-id-param.pipe';
 
-console.log('[boot] main.ts e83a0e4, VERCEL =', process.env.VERCEL);
 const isVercel = !!process.env.VERCEL;
 
 async function createApp(): Promise<NestExpressApplication> {
@@ -134,6 +133,8 @@ if (!isVercel) {
     const logger = new Logger('DoriApi');
     const port = app.get(ConfigService).get<number>('port') || 3000;
     await app.listen(port);
-    logger.log(`OpenAPI documentation available at http://localhost:${port}/api/docs`);
+    logger.log(
+      `OpenAPI documentation available at http://localhost:${port}/api/docs`,
+    );
   });
 }

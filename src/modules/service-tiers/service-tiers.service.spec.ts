@@ -227,7 +227,11 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
       const welcome = await service.createNotificationRule(
         10,
         2,
-        { notificationType: 'welcome', channel: 'sms', includeTrackingLink: true },
+        {
+          notificationType: 'welcome',
+          channel: 'sms',
+          includeTrackingLink: true,
+        },
         adminUser,
       );
       const threshold = await service.createNotificationRule(

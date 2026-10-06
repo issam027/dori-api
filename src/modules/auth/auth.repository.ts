@@ -21,6 +21,11 @@ export interface UserSessionRow {
   revoked_at?: Date | string | null;
 }
 
+export type RefreshRotationResult =
+  | { status: 'invalid' }
+  | { status: 'reused' }
+  | { status: 'rotated'; user: AuthUserRow; sessionId: string };
+
 @Injectable()
 export class AuthRepository {
   constructor(private readonly dataSource: DataSource) {}
@@ -73,12 +78,78 @@ export class AuthRepository {
     );
   }
 
-  async findSessionByRefreshHash(tokenHash: string) {
-    const rows = await this.dataSource.query<UserSessionRow[]>(
-      `SELECT * FROM dori_user_session WHERE refresh_token_hash = $1`,
-      [tokenHash],
-    );
-    return rows[0] ?? null;
+  rotateRefreshSession(input: {
+    currentTokenHash: string;
+    nextTokenHash: string;
+    now: Date;
+    expiresAt: Date;
+    userAgent?: string;
+    ipAddress?: string;
+  }): Promise<RefreshRotationResult> {
+    return this.dataSource.transaction(async (manager) => {
+      const sessions = await manager.query<UserSessionRow[]>(
+        `SELECT session_id, user_id, expires_at, revoked_at
+         FROM dori_user_session
+         WHERE refresh_token_hash = $1
+         FOR UPDATE`,
+        [input.currentTokenHash],
+      );
+      const session = sessions[0];
+      if (!session) return { status: 'invalid' };
+
+      if (session.revoked_at) {
+        await manager.query(
+          `UPDATE dori_user_session
+           SET revoked_at = $1, revoked_reason = 'rotation'
+           WHERE user_id = $2 AND revoked_at IS NULL`,
+          [input.now, session.user_id],
+        );
+        return { status: 'reused' };
+      }
+
+      if (new Date(session.expires_at).getTime() <= input.now.getTime()) {
+        return { status: 'invalid' };
+      }
+
+      const users = await manager.query<AuthUserRow[]>(
+        `SELECT * FROM dori_user
+         WHERE user_id = $1 AND is_active = TRUE AND deleted_at IS NULL
+         FOR SHARE`,
+        [session.user_id],
+      );
+      const user = users[0];
+      if (!user) return { status: 'invalid' };
+
+      const revoked = await manager.query<Array<{ session_id: string }>>(
+        `UPDATE dori_user_session
+         SET revoked_at = $1, revoked_reason = 'rotation'
+         WHERE session_id = $2 AND revoked_at IS NULL
+         RETURNING session_id`,
+        [input.now, session.session_id],
+      );
+      if (revoked.length === 0) return { status: 'reused' };
+
+      const inserted = await manager.query<Array<{ session_id: string }>>(
+        `INSERT INTO dori_user_session
+         (user_id, refresh_token_hash, issued_at, expires_at, user_agent, ip_address)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING session_id`,
+        [
+          user.user_id,
+          input.nextTokenHash,
+          input.now,
+          input.expiresAt,
+          input.userAgent || null,
+          input.ipAddress || null,
+        ],
+      );
+
+      return {
+        status: 'rotated',
+        user,
+        sessionId: inserted[0].session_id,
+      };
+    });
   }
 
   revokeAllSessions(userId: number, now: Date, reason: string) {

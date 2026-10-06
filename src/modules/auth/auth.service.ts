@@ -100,56 +100,38 @@ export class AuthService {
       throw new DoriException('UNAUTHENTICATED');
     }
 
-    const tokenHash = this.hashToken(refreshToken);
     const now = this.clockService.now();
-
-    const session =
-      await this.authRepository.findSessionByRefreshHash(tokenHash);
-
-    if (!session) {
-      throw new DoriException('UNAUTHENTICATED');
-    }
-
-    // If session is already revoked, treat as breach and revoke ALL user sessions (§7.5)
-    if (session.revoked_at) {
-      await this.authRepository.revokeAllSessions(
-        session.user_id,
-        now,
-        'rotation',
-      );
-      throw new DoriException('UNAUTHENTICATED');
-    }
-
-    if (this.clockService.parse(session.expires_at) <= now) {
-      throw new DoriException('UNAUTHENTICATED');
-    }
-
-    const user = await this.authRepository.findActiveUserById(session.user_id);
-
-    if (!user) {
-      throw new DoriException('UNAUTHENTICATED');
-    }
-
-    // Mark current session revoked with rotation
-    await this.authRepository.revokeSession(
-      session.session_id,
+    const nextRefreshToken = this.createRefreshToken();
+    const expiresDays =
+      this.configService.get<number>('jwt.refreshTokenExpiresInDays') || 30;
+    const rotation = await this.authRepository.rotateRefreshSession({
+      currentTokenHash: this.hashToken(refreshToken),
+      nextTokenHash: this.hashToken(nextRefreshToken),
       now,
-      'rotation',
-    );
+      expiresAt: this.clockService.addDays(now, expiresDays),
+      userAgent,
+      ipAddress,
+    });
+
+    if (rotation.status !== 'rotated') {
+      throw new DoriException('UNAUTHENTICATED');
+    }
+
+    const { user, sessionId } = rotation;
 
     const { roles, permissions } = await this.getUserRolesAndPermissions(
       user.user_id,
     );
-    const tokens = await this.generateTokens(
+    const accessToken = this.signAccessToken(
       user,
       roles,
       permissions,
-      ipAddress,
-      userAgent,
+      sessionId,
     );
 
     return {
-      ...tokens,
+      accessToken,
+      refreshToken: nextRefreshToken,
       user: {
         userId: user.user_id,
         username: user.username,
@@ -309,9 +291,7 @@ export class AuthService {
     ipAddress?: string,
     userAgent?: string,
   ) {
-    const jti = crypto.randomUUID();
-
-    const rawRefreshToken = `${crypto.randomUUID()}-${crypto.randomBytes(32).toString('hex')}`;
+    const rawRefreshToken = this.createRefreshToken();
     const refreshTokenHash = this.hashToken(rawRefreshToken);
 
     const expiresDays =
@@ -329,22 +309,39 @@ export class AuthService {
       ipAddress,
     );
 
-    // SEC-02 : inclure sid (session UUID) dans le payload pour la vérification unitaire
+    const accessToken = this.signAccessToken(
+      user,
+      roles,
+      permissions,
+      sessionId,
+    );
+
+    return {
+      accessToken,
+      refreshToken: rawRefreshToken,
+    };
+  }
+
+  private createRefreshToken() {
+    return `${crypto.randomUUID()}-${crypto.randomBytes(32).toString('hex')}`;
+  }
+
+  private signAccessToken(
+    user: AuthUserRow,
+    roles: string[],
+    permissions: string[],
+    sessionId: string,
+  ) {
     const payload: JwtPayload = {
       sub: user.user_id,
       username: user.username,
       roles,
       permissions,
       userType: user.user_type,
-      jti,
+      jti: crypto.randomUUID(),
       sid: sessionId,
     };
 
-    const accessToken = this.jwtService.sign(payload);
-
-    return {
-      accessToken,
-      refreshToken: rawRefreshToken,
-    };
+    return this.jwtService.sign(payload);
   }
 }
