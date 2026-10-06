@@ -88,7 +88,7 @@ export class DailyResetWorker {
           // 2. Process waiting/booked registrations of the closing day
           if (!shouldCarryOver) {
             await manager.query(
-              `UPDATE dori_customer
+              `UPDATE dori_registration
                SET status = 'expired', closed_at = $1, is_active = FALSE, updated_at = $1
                WHERE queue_id = $2 AND business_date = $3 AND status IN ('booked', 'waiting') AND is_active = TRUE`,
               [now, q.queue_id, businessDate],
@@ -96,7 +96,7 @@ export class DailyResetWorker {
           } else {
             // Carry over: tickets already OLD- expire
             await manager.query(
-              `UPDATE dori_customer
+              `UPDATE dori_registration
                SET status = 'expired', closed_at = $1, is_active = FALSE, updated_at = $1
                WHERE queue_id = $2 AND business_date = $3 AND status IN ('booked', 'waiting') AND is_active = TRUE
                  AND ticket_number LIKE 'OLD-%'`,
@@ -105,7 +105,7 @@ export class DailyResetWorker {
 
             // Remaining waiting tickets get carry over: ticket_number = 'OLD-' || ticket_number
             await manager.query(
-              `UPDATE dori_customer
+              `UPDATE dori_registration
                SET business_date = $1, carried_over_from_date = $2, ticket_number = 'OLD-' || ticket_number,
                    registration_tracking_token_valid_until = $3, updated_at = $4
                WHERE queue_id = $5 AND business_date = $2 AND status IN ('booked', 'waiting') AND is_active = TRUE
@@ -123,14 +123,14 @@ export class DailyResetWorker {
           // 3. Neutralize closed registrations per resetMode
           if (resetMode === 'close_all') {
             await manager.query(
-              `UPDATE dori_customer
+              `UPDATE dori_registration
                SET is_active = FALSE, deleted_at = $1, updated_at = $1
                WHERE queue_id = $2 AND business_date = $3 AND status IN ('served', 'no_show', 'expired', 'cancelled') AND is_active = TRUE`,
               [now, q.queue_id, businessDate],
             );
           } else if (resetMode === 'close_served_only') {
             await manager.query(
-              `UPDATE dori_customer
+              `UPDATE dori_registration
                SET is_active = FALSE, deleted_at = $1, updated_at = $1
                WHERE queue_id = $2 AND business_date = $3 AND status = 'served' AND is_active = TRUE`,
               [now, q.queue_id, businessDate],

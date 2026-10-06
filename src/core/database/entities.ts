@@ -8,7 +8,7 @@ import { DoriQueueServiceTier } from '../../modules/service-tiers/entities/queue
 import { DoriTierNotificationRule } from '../../modules/service-tiers/entities/tier-notification-rule.entity';
 import { DoriQueueSession } from '../../modules/queue-engine/entities/queue-session.entity';
 import { DoriQueueCounter } from '../../modules/queue-engine/entities/queue-counter.entity';
-import { DoriCustomer } from '../../modules/registrations/entities/customer.entity';
+import { DoriRegistration } from '../../modules/registrations/entities/registration.entity';
 import { DoriNotification } from '../../modules/notifications/entities/notification.entity';
 import { DoriTranslation } from '../../modules/translations/entities/translation.entity';
 import { DoriTranslationVersion } from '../../modules/translations/entities/translation-version.entity';
@@ -31,7 +31,7 @@ export const ALL_ENTITIES = [
   DoriTierNotificationRule,
   DoriQueueSession,
   DoriQueueCounter,
-  DoriCustomer,
+  DoriRegistration,
   DoriNotification,
   DoriTranslation,
   DoriTranslationVersion,
@@ -55,7 +55,7 @@ export {
   DoriTierNotificationRule,
   DoriQueueSession,
   DoriQueueCounter,
-  DoriCustomer,
+  DoriRegistration,
   DoriNotification,
   DoriTranslation,
   DoriTranslationVersion,

@@ -115,7 +115,7 @@ export class AssignUserRoleDto {
 export class UpdateRolePermissionsDto {
   @ApiProperty({
     type: [String],
-    example: ['site_view', 'queue_view', 'customer_register'],
+    example: ['site_view', 'queue_view', 'registration_register'],
     description: 'Liste complète des noms de permissions à attribuer au rôle',
   })
   @IsArray()

@@ -28,9 +28,9 @@ import {
   PaginatedQueueThreadResponseDto,
   QueueSessionDetailDto,
   PaginatedQueueSessionResponseDto,
-  CalledNextCustomerResponseDto,
+  CalledNextRegistrationResponseDto,
   CloseSessionResponseDto,
-  CustomerActionResponseDto,
+  RegistrationActionResponseDto,
 } from './dto/engine-response.dto';
 import {
   LimitQueryDto,
@@ -150,7 +150,7 @@ export class QueueEngineController {
   }
 
   @Post('queues/:queueId/next')
-  @RequirePermission('customer_call')
+  @RequirePermission('registration_call')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Appeler le prochain ticket',
@@ -159,7 +159,7 @@ export class QueueEngineController {
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
   @ApiDoriOkResponse(
-    CalledNextCustomerResponseDto,
+    CalledNextRegistrationResponseDto,
     'Prochain ticket appelé au guichet',
   )
   async callNext(
@@ -170,7 +170,7 @@ export class QueueEngineController {
   }
 
   @Post('registrations/:registrationId/served')
-  @RequirePermission('customer_call')
+  @RequirePermission('registration_call')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Marquer un client comme servi',
@@ -182,7 +182,7 @@ export class QueueEngineController {
     type: Number,
     description: "ID de l'inscription cliente",
   })
-  @ApiDoriOkResponse(CustomerActionResponseDto, 'Client marqué servi')
+  @ApiDoriOkResponse(RegistrationActionResponseDto, 'Client marqué servi')
   async markServed(
     @Param('registrationId', ParseIntPipe) registrationId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -191,7 +191,7 @@ export class QueueEngineController {
   }
 
   @Post('registrations/:registrationId/no-show')
-  @RequirePermission('customer_call')
+  @RequirePermission('registration_call')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Déclarer un client absent (No-show)',
@@ -203,7 +203,7 @@ export class QueueEngineController {
     type: Number,
     description: "ID de l'inscription cliente",
   })
-  @ApiDoriOkResponse(CustomerActionResponseDto, 'Client marqué absent')
+  @ApiDoriOkResponse(RegistrationActionResponseDto, 'Client marqué absent')
   async markNoShow(
     @Param('registrationId', ParseIntPipe) registrationId: number,
     @CurrentUser() user: AuthenticatedUser,

@@ -18,7 +18,7 @@ Gravité : **[C]** Critique (contrat faux ou inutilisable) · **[I]** Important 
 - [ ] **SW-05** [I] Aligner les forfaits par file (`isActive`/`isEnabled`, `currency`, `displayOrder`)
 - [ ] **SW-06** [I] Unifier les règles de notification (vocabulaire requête ↔ réponse, corriger `trakingLink`)
 - [ ] **SW-07** [I] Rendre la configuration des files relisible dans `QueueDetailResponseDto`
-- [ ] **SW-08** [I] Clarifier l'identifiant d'inscription (`customerId` vs `registrationId`)
+- [x] **SW-08** [I] Unifier l'identifiant d'inscription sous `registrationId` ✅ *2026-10-06*
 - [ ] **SW-09** [I] Unifier les réponses d'action (`deleted`/`removed`/`success`/`assigned`…)
 - [ ] **SW-10** [I] Fixer les formats de dates/heures et documenter les fuseaux horaires
 - [ ] **SW-11** [I] Choisir une casse unique (camelCase) — corriger Users et Translations
@@ -192,26 +192,14 @@ Gravité : **[C]** Critique (contrat faux ou inutilisable) · **[I]** Important 
 
 ## 6. Identifiants et nommage [I]
 
-### SW-08 — `customerId` vs `registrationId` : contradiction directe
+### SW-08 — Unifier l'identifiant sous `registrationId` [I]
 
-**Problème** : L'inscription est nommée :
-- `customerId` dans les tables et certains DTOs
-- `registrationId` dans les paths et filtres
-- `SendManualNotificationDto.customerId` = « ID de la **personne** »
-- `NotificationDetailDto.customerId` = « ID de l'**inscription** »
-
-→ Contradiction directe sur un champ de même nom.
-
-**Actions** :
-1. Choisir **un seul terme** public : `registrationId` (plus explicite côté API).
-2. Mapper `customerId` (interne DB) → `registrationId` (API) dans tous les DTOs de réponse.
-3. Corriger la description de `SendManualNotificationDto.customerId`.
-
-**Fichiers à modifier** :
-- DTOs de réponse de `registrations`, `notifications`, `queue-engine`
+**Résolution (2026-10-06)** : le domaine utilise désormais exclusivement le terme `registration`. Le contrat API,
+les DTOs, les services, les permissions, les événements temps réel, les entités et le schéma PostgreSQL exposent
+`registrationId` / `registration_id`. La table canonique est `dori_registration`; l'ancien modèle et ses noms ont
+été supprimés. La persistance du module est encapsulée dans `RegistrationsRepository`, conformément à ARCH-001.
 
 ---
-
 ### SW-11 — Casse mixte dans le même domaine [I]
 
 **Problème** :
@@ -440,7 +428,7 @@ La clé d'identifiant varie aussi : `siteId`, `queueId`, `id`, `registrationId`,
 | SW-05 | I | Tiers | `isActive`/`isEnabled`, currency, displayOrder incohérents | ⬜ À faire |
 | SW-06 | I | Notifs | Vocabulaire règles notif + faute `trakingLink` | ⬜ À faire |
 | SW-07 | I | Queues | Config files non relisible dans `QueueDetailResponseDto` | ⬜ À faire |
-| SW-08 | I | Registrations | `customerId` vs `registrationId` contradiction | ⬜ À faire |
+| SW-08 | I | Registrations | Identifiant unifié sous `registrationId` | ✅ Corrigé 2026-10-06 |
 | SW-09 | I | Tous | 7 formats de réponse d'action | ⬜ À faire |
 | SW-10 | I | Formats | Dates/heures incohérentes, fuseaux non documentés | ⬜ À faire |
 | SW-11 | I | Nommage | Casse mixte Users et Translations | ⬜ À faire |

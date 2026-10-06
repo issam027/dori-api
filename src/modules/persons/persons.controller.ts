@@ -50,7 +50,7 @@ export class PersonsController {
   constructor(private readonly personsService: PersonsService) {}
 
   @Get()
-  @RequirePermission('customer_view')
+  @RequirePermission('registration_view')
   @ApiOperation({
     summary: 'Lister les personnes / clients',
     description: 'Recherche paginée de personnes par nom, téléphone ou email.',
@@ -64,7 +64,7 @@ export class PersonsController {
   }
 
   @Post()
-  @RequirePermission('customer_register')
+  @RequirePermission('registration_register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Créer une fiche personne',
@@ -79,7 +79,7 @@ export class PersonsController {
   }
 
   @Get(':personId')
-  @RequirePermission('customer_view')
+  @RequirePermission('registration_view')
   @ApiOperation({
     summary: "Détails d'une personne",
     description:
@@ -99,7 +99,7 @@ export class PersonsController {
   }
 
   @Patch(':personId')
-  @RequirePermission('customer_edit')
+  @RequirePermission('registration_edit')
   @ApiOperation({
     summary: 'Modifier une fiche personne',
     description: "Met à jour les coordonnées ou informations d'une personne.",
@@ -208,7 +208,7 @@ export class PersonsController {
   }
 
   @Delete(':personId')
-  @RequirePermission('customer_delete')
+  @RequirePermission('registration_delete')
   @ApiOperation({
     summary: 'Supprimer une personne',
     description: 'Supprime logiquement une personne et ses notes associées.',

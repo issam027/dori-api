@@ -51,7 +51,6 @@ async function createApp(): Promise<NestExpressApplication> {
     'http://localhost:3000',
     'https://dori-api-dev.vercel.app',
     'https://dori-api.vercel.app',
-
   ];
 
   // WebSockets can't run on serverless functions
@@ -100,7 +99,8 @@ async function createApp(): Promise<NestExpressApplication> {
   });
 
   // Redirige la racine vers la documentation Swagger
-  app.getHttpAdapter()
+  app
+    .getHttpAdapter()
     .get('/', (_req: unknown, res: { redirect: (url: string) => void }) => {
       res.redirect('/api/docs');
     });

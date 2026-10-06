@@ -381,7 +381,7 @@ export class QueuesService {
     // Count waiting clients
     const waitingRes = await this.dataSource.query(
       `SELECT COUNT(*)::int as count
-       FROM dori_customer
+       FROM dori_registration
        WHERE queue_id = $1 AND business_date = $2 AND status = 'waiting' AND is_active = TRUE`,
       [queueId, businessDate],
     );
@@ -398,8 +398,8 @@ export class QueuesService {
 
     // Next appointments today
     const appts = await this.dataSource.query(
-      `SELECT customer_id, ticket_number, scheduled_time, appointment_status, status
-       FROM dori_customer
+      `SELECT registration_id, ticket_number, scheduled_time, appointment_status, status
+       FROM dori_registration
        WHERE queue_id = $1 AND business_date = $2 AND entry_type = 'appointment' AND is_active = TRUE
          AND status IN ('booked', 'waiting')
        ORDER BY scheduled_time ASC
@@ -441,9 +441,9 @@ export class QueuesService {
 
     // Current called ticket per active thread (threadNumber, ticketNumber only)
     const activeSessions = await this.dataSource.query(
-      `SELECT qs.thread_number, c.ticket_number, c.customer_id
+      `SELECT qs.thread_number, c.ticket_number, c.registration_id
        FROM dori_queue_session qs
-       LEFT JOIN dori_customer c ON c.current_session_id = qs.session_id AND c.status = 'in_progress' AND c.is_active = TRUE
+       LEFT JOIN dori_registration c ON c.current_session_id = qs.session_id AND c.status = 'in_progress' AND c.is_active = TRUE
        WHERE qs.queue_id = $1 AND qs.disconnected_at IS NULL AND qs.mode = 'active'
        ORDER BY qs.thread_number ASC`,
       [queueId],
@@ -452,7 +452,7 @@ export class QueuesService {
     // Next waiting tickets (only ticket numbers, no personal info!)
     const nextTickets = await this.dataSource.query(
       `SELECT ticket_number
-       FROM dori_customer
+       FROM dori_registration
        WHERE queue_id = $1 AND business_date = $2 AND status = 'waiting' AND is_active = TRUE
        ORDER BY priority_reference_time ASC
        LIMIT 10`,
@@ -514,7 +514,7 @@ export class QueuesService {
       // 2. Process waiting/booked of the closed day
       if (!shouldCarryOver) {
         await manager.query(
-          `UPDATE dori_customer
+          `UPDATE dori_registration
            SET status = 'expired', closed_at = $1, is_active = FALSE, updated_at = $1
            WHERE queue_id = $2 AND business_date = $3 AND status = 'waiting' AND is_active = TRUE`,
           [now, queueId, businessDate],
@@ -522,7 +522,7 @@ export class QueuesService {
       } else {
         // Carry over: tickets already OLD- expire
         await manager.query(
-          `UPDATE dori_customer
+          `UPDATE dori_registration
            SET status = 'expired', closed_at = $1, is_active = FALSE, updated_at = $1
            WHERE queue_id = $2 AND business_date = $3 AND status = 'waiting' AND is_active = TRUE
              AND ticket_number LIKE 'OLD-%'`,
@@ -531,7 +531,7 @@ export class QueuesService {
 
         // Tickets not OLD- get carry over: ticket_number = OLD-...
         await manager.query(
-          `UPDATE dori_customer
+          `UPDATE dori_registration
            SET business_date = $1, carried_over_from_date = $2, ticket_number = 'OLD-' || ticket_number,
                registration_tracking_token_valid_until = $3, updated_at = $4
            WHERE queue_id = $5 AND business_date = $2 AND status = 'waiting' AND is_active = TRUE
@@ -549,14 +549,14 @@ export class QueuesService {
       // 3. Neutralize closed registrations per resetMode
       if (resetMode === 'close_all') {
         await manager.query(
-          `UPDATE dori_customer
+          `UPDATE dori_registration
            SET is_active = FALSE, deleted_at = $1, updated_at = $1
            WHERE queue_id = $2 AND business_date = $3 AND status IN ('served', 'no_show', 'expired', 'cancelled') AND is_active = TRUE`,
           [now, queueId, businessDate],
         );
       } else {
         await manager.query(
-          `UPDATE dori_customer
+          `UPDATE dori_registration
            SET is_active = FALSE, deleted_at = $1, updated_at = $1
            WHERE queue_id = $2 AND business_date = $3 AND status = 'served' AND is_active = TRUE`,
           [now, queueId, businessDate],

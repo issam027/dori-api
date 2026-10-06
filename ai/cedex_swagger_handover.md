@@ -19,13 +19,13 @@
 | SW-AUTH-001 | P1 | Refresh | Swagger impose un body alors que le refresh par cookie HttpOnly est supporté. |
 | SW-CACHE-001 | P2 | Traductions | La réponse conditionnelle `304 Not Modified` et le header `ETag` ne sont pas documentés. |
 | SW-GEN-001 | P1 | Génération | Le script d’export et le Swagger servi utilisent deux configurations différentes. |
-| SW-VAL-001 | P1 | Persons | Une personne entièrement vide est acceptée par le schéma et la validation. |
+| SW-VAL-001 | Corrigé | Persons | Nom et téléphone obligatoires pour toute nouvelle personne. |
 | SW-VAL-002 | P1 | Registrations / sessions | Les invariants conditionnels ne sont pas exprimés dans les DTO/OpenAPI. |
 | SW-VAL-003 | P2 | Filtres | Plusieurs dates, statuts et identifiants sont documentés/validés comme chaînes ou entiers sans domaine précis. |
 | SW-TIER-001 | P1 | Notifications | La valeur publique `trakingLink` contient une faute et devient un contrat persistant. |
 | SW-ERR-001 | P1 | Erreurs | Le `500 INTERNAL_ERROR` réellement produit n’est documenté sur aucune route standard. |
 | SW-ERR-002 | P2 | Erreurs | Les mêmes statuts génériques sont annoncés presque partout sans correspondre aux erreurs réellement possibles. |
-| SW-NAME-001 | P1 | Registrations / notifications | La même ressource DB est appelée alternativement customer et registration, avec des IDs ambigus. |
+| SW-NAME-001 | Corrigé | Registrations / notifications | Ressource et identifiant unifiés sous `registration` / `registrationId`. |
 | SW-SCHEMA-001 | P1 | Queue sessions | L’enum de réponse des sessions ne correspond pas aux modes réellement persistés. |
 | SW-SCHEMA-002 | P1 | Notifications | Le statut `processing` existe dans le domaine mais manque dans le schéma de réponse. |
 | SW-FORMAT-001 | P2 | Schémas | Beaucoup de dates/heures et identifiants n’exposent ni format ni bornes OpenAPI. |
@@ -87,13 +87,15 @@
 - **Correction recommandée :** extraire une fabrique `createOpenApiConfig()` dans le core et l’utiliser dans les deux chemins. Ajouter un test/snapshot comparant les métadonnées structurantes.
 - **Validation attendue :** à code identique, export et `/api/docs-json` produisent le même document hors champs explicitement non déterministes.
 
-### [ ] SW-VAL-001 — Exiger une identité minimale pour une personne
+### [x] SW-VAL-001 — Exiger une identité minimale pour une personne
 
 - **Contrat observé :** toutes les propriétés de `PersonIdentityDto` sont optionnelles. `CreatePersonDto` exige seulement `siteId`.
 - **Implémentation observée :** le service insère effectivement une ligne dont nom, prénom, email, téléphone et date de naissance peuvent tous être nuls.
 - **Impact :** fiches impossibles à identifier, déduplication inopérante et inscriptions rattachées à des personnes vides.
 - **Correction recommandée :** définir l’invariant métier minimal (par exemple téléphone ou email, éventuellement identité nominative) et l’implémenter avec un validateur de classe réutilisé par la création directe et la création embarquée dans une inscription. Le représenter dans OpenAPI avec une description explicite et idéalement `oneOf`/`anyOf`.
 - **Validation attendue :** une identité vide est rejetée en 400 ; chaque combinaison autorisée est couverte.
+- **Décision validée (2026-10-06) :** toute personne doit avoir un nom (`lastName`) non vide et un numéro de téléphone au format E.164.
+- **Résolution (2026-10-06) :** `PersonIdentityDto` exige désormais `lastName` et `phoneNumber`. Ce DTO partagé applique la règle à `CreatePersonDto` et à `CreateRegistrationDto.person`. `UpdatePersonDto` repose sur `PartialType` pour rester partiel tout en validant chaque valeur fournie. PostgreSQL rend les deux colonnes `NOT NULL`, interdit les noms blancs et impose le format E.164. L'application du schéma échoue explicitement si des données historiques incomplètes doivent être corrigées. Sept tests couvrent les champs absents, le nom vide, la création directe, la création embarquée et la mise à jour partielle.
 
 ### [ ] SW-VAL-002 — Porter les invariants conditionnels dans la validation et OpenAPI
 
@@ -130,13 +132,11 @@
 - **Correction recommandée :** conserver un socle réellement transversal (`400/401/403/429/500`) et composer explicitement les erreurs métier (`404/409/422/423`) par décorateurs centralisés et codes applicatifs possibles.
 - **Validation attendue :** chaque statut documenté dispose d’un chemin d’exécution ou d’une règle transverse identifiable.
 
-### [ ] SW-NAME-001 — Unifier la ressource inscription/customer
+### [x] SW-NAME-001 — Unifier la ressource inscription sous `registration`
 
-- **Preuve :** l’API principale parle de `registrationId`, alors que les réponses du moteur et des notifications exposent `customerId`. `SendManualNotificationDto.customerId` est décrit comme « personne / client », mais le service l’utilise contre `dori_customer.customer_id`, donc l’identifiant de l’inscription. Le filtre équivalent s’appelle pourtant `registrationId`.
-- **Impact :** un client peut envoyer un `personId` valide à la place d’un identifiant d’inscription et cibler la mauvaise ressource ou recevoir un 404 incompréhensible.
-- **Correction recommandée :** choisir `registrationId` dans le contrat public, conserver `customer_id` comme détail interne si une migration DB n’est pas souhaitée, puis renommer DTO, réponses, descriptions et paramètres de service.
-- **Validation attendue :** un seul nom public désigne cette ressource sur Registrations, QueueEngine et Notifications.
-
+- **Résolution (2026-10-06) :** renommage transversal achevé dans le contrat public et la base. Registrations,
+  QueueEngine et Notifications emploient `registrationId`; PostgreSQL emploie `dori_registration.registration_id`.
+  Les permissions et événements temps réel suivent le même vocabulaire. Il n'existe plus de second nom de ressource.
 ### [x] SW-SCHEMA-001 — Corriger l’enum des modes de session
 
 - **Contrat observé :** `QueueSessionDetailDto.mode` annonce `active | paused | closed`.
@@ -172,8 +172,8 @@
 
 - **Threads :** `GET /queues/{queueId}/threads` est documenté comme un tableau de `QueueThreadDetailDto` (`isOpen`, `operatorUserId`, `currentTicketNumber`), alors que le service retourne une réponse paginée contenant `threadNumber`, `status` et un objet `session` imbriqué.
 - **Preview :** `GET /sites/{siteId}/next-preview` annonce un tableau de `QueuePreviewResponseDto` contenant lui-même `queueId` et `candidates`; le service retourne directement un tableau de candidats enrichis (`registrationId`, queue, site, personne, score, `calledEarly`).
-- **Call next :** `CalledNextCustomerResponseDto` annonce seulement `customerId`, ticket, thread, statut et date. Le service retourne `registrationId`, `entryType`, `scheduledTime`, `calledEarly`, `tier`, `sessionId`, `priorityScore` et `person` en plus, et ne retourne pas `customerId`.
-- **Served/no-show :** `CustomerActionResponseDto` annonce `customerId` et `completedAt`; le service retourne `registrationId`, `servedAt`, `closedAt`, `handledBySessionId` et `handledByUserId`.
+- **Call next :** `CalledNextRegistrationResponseDto` annonce seulement `registrationId`, ticket, thread, statut et date. Le service retourne `registrationId`, `entryType`, `scheduledTime`, `calledEarly`, `tier`, `sessionId`, `priorityScore` et `person` en plus, et ne retourne pas `registrationId`.
+- **Served/no-show :** `RegistrationActionResponseDto` annonce `registrationId` et `completedAt`; le service retourne `registrationId`, `servedAt`, `closedAt`, `handledBySessionId` et `handledByUserId`.
 - **Impact :** les clients générés désérialisent des propriétés absentes et ignorent des données essentielles. Le Swagger ne peut pas servir de contrat de référence.
 - **Correction recommandée :** créer des DTO correspondant aux modèles de sortie actuels, typer explicitement les retours des services et ajouter des tests de contrat sur les objets après `SerializationInterceptor`.
 - **Validation attendue :** snapshots JSON réels comparés aux schémas OpenAPI pour les quatre familles d’opérations.
@@ -229,7 +229,7 @@
 
 ### [x] SW-REG-002 — Définir des représentations cohérentes de l’inscription
 
-- **Contrat observé :** `RegistrationDetailResponseDto` exige `customerId`, `queueId`, `personId`, `tierId`, token de suivi, dates et timestamps. Il est utilisé pour create, lookup, get, update, reschedule et check-in.
+- **Contrat observé :** `RegistrationDetailResponseDto` exige `registrationId`, `queueId`, `personId`, `tierId`, token de suivi, dates et timestamps. Il est utilisé pour create, lookup, get, update, reschedule et check-in.
 - **Implémentation observée :** la création retourne notamment `registrationId`, un objet `tier`, `priorityReferenceTime`, `trackingUrl` et `registrationTrackingTokenValidUntil`, sans plusieurs champs exigés par le DTO. D’autres opérations retournent des lignes SQL ou des projections encore différentes.
 - **Token :** le schéma décrit un `registrationTrackingToken` d’exemple `trk_...`, alors que la donnée persistée est un UUID; la création retourne plutôt une URL conditionnelle et sa date d’expiration.
 - **Impact :** aucun type client unique ne peut correctement représenter toutes ces réponses.
@@ -307,9 +307,8 @@
 
 ## Décisions produit requises — non modifiées
 
-- **SW-VAL-001 :** définir l'identité minimale autorisée pour une personne (email, téléphone ou identité nominative).
 - **SW-TIER-001 :** choisir la stratégie de compatibilité/migration de la valeur publique persistée `trakingLink` vers `trackingLink`.
-- **SW-NAME-001 :** confirmer le renommage public transversal `customerId` vers `registrationId` et sa période de compatibilité.
+- **SW-NAME-001 :** décision appliquée transversalement le 2026-10-06 ; aucune période de compatibilité avec l'ancien vocabulaire.
 - **SW-HTTP-001 :** choisir les statuts et la stratégie de compatibilité pour les POST actuellement idempotents/upsert.
 
 ## Double contrôle du 2026-10-06
@@ -396,3 +395,9 @@
 <!-- CHECKPOINT id="ckpt_muwjukqa_7xlqur" time="2026-10-06T10:42:17.074Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 <!-- CHECKPOINT id="ckpt_muwk7foz_wy4z39" time="2026-10-06T10:52:17.075Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muwkx5mp_flqgt9" time="2026-10-06T11:12:17.089Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muwlc5wj_ijc5lz" time="2026-10-06T11:23:57.283Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muwnjqgp_w7y46s" time="2026-10-06T12:25:49.753Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

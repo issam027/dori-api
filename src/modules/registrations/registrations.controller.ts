@@ -56,7 +56,7 @@ export class RegistrationsController {
 
   @ApiBearerAuth('bearer')
   @Get('queues/:queueId/availability')
-  @RequirePermission('customer_register')
+  @RequirePermission('registration_register')
   @ApiOperation({
     summary: 'Disponibilité des créneaux de RDV',
     description:
@@ -74,7 +74,7 @@ export class RegistrationsController {
 
   @ApiBearerAuth('bearer')
   @Get('registrations')
-  @RequirePermission('customer_view')
+  @RequirePermission('registration_view')
   @ApiOperation({
     summary: 'Lister les inscriptions',
     description:
@@ -93,7 +93,7 @@ export class RegistrationsController {
 
   @ApiBearerAuth('bearer')
   @Post('registrations')
-  @RequirePermission('customer_register')
+  @RequirePermission('registration_register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Inscrire un client (Walk-in ou RDV)',
@@ -129,7 +129,7 @@ export class RegistrationsController {
 
   @ApiBearerAuth('bearer')
   @Get('registrations/:registrationId')
-  @RequirePermission('customer_view')
+  @RequirePermission('registration_view')
   @ApiOperation({
     summary: "Détails d'une inscription",
     description:
@@ -150,7 +150,7 @@ export class RegistrationsController {
 
   @ApiBearerAuth('bearer')
   @Patch('registrations/:registrationId')
-  @RequirePermission('customer_edit')
+  @RequirePermission('registration_edit')
   @ApiOperation({
     summary: 'Modifier une inscription',
     description:
@@ -224,7 +224,7 @@ export class RegistrationsController {
 
   @ApiBearerAuth('bearer')
   @Delete('registrations/:registrationId')
-  @RequirePermission('customer_delete')
+  @RequirePermission('registration_delete')
   @ApiOperation({
     summary: 'Annuler une inscription',
     description: "Annule l'inscription ou le rendez-vous.",

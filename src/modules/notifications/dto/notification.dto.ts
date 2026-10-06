@@ -19,7 +19,7 @@ export class SendManualNotificationDto {
   @IsInt()
   @Min(1)
   @IsNotEmpty()
-  customerId: number;
+  registrationId: number;
 
   @ApiProperty({
     enum: ['sms', 'email'],

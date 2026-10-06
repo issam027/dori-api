@@ -15,7 +15,7 @@ describe('PersonsService', () => {
     userId: 1,
     username: 'admin',
     roles: ['admin'],
-    permissions: ['customer_delete', 'customer_view'],
+    permissions: ['registration_delete', 'registration_view'],
     userType: 'human',
   };
 

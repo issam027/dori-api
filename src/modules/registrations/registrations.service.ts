@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
 import {
   CreateRegistrationDto,
   UpdateRegistrationDto,
@@ -14,12 +13,16 @@ import { ClockService } from '../../core/clock/clock.service';
 import { DoriException } from '../../core/errors/dori.exception';
 import { PersonsService } from '../persons/persons.service';
 import { PaginatedResult } from '../../core/pagination/pagination.dto';
-import { RegistrationDetailResponseDto } from './dto/registration-response.dto';
+import {
+  RegistrationDetailResponseDto,
+  SlotAvailabilityDto,
+} from './dto/registration-response.dto';
+import { RegistrationsRepository } from './registrations.repository';
 
 @Injectable()
 export class RegistrationsService {
   constructor(
-    private readonly dataSource: DataSource,
+    private readonly registrationsRepository: RegistrationsRepository,
     private readonly scopeService: ScopeService,
     private readonly clockService: ClockService,
     private readonly personsService: PersonsService,
@@ -42,26 +45,14 @@ export class RegistrationsService {
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkQueueAccess(user, dto.queueId);
-    return this.dataSource.transaction(async (manager) => {
+    return this.registrationsRepository.transaction(async (tx) => {
       const now = this.clockService.now();
 
       // 1. Fetch Queue and Site Configuration
-      const queueConfig = await manager.query(
-        `SELECT q.*, s.timezone, s.default_currency,
-              s.default_appointments_enabled, s.default_appointment_slot_duration, s.default_slot_capacity,
-              s.default_working_hours_start, s.default_working_hours_end, s.default_break_start, s.default_break_end,
-              s.default_late_tolerance_minutes
-       FROM dori_site_queue_thread q
-       JOIN dori_site s ON s.site_id = q.site_id
-       WHERE q.queue_id = $1 AND q.is_active = TRUE`,
-        [dto.queueId],
-      );
-
-      if (!queueConfig || queueConfig.length === 0) {
+      const q = await tx.findQueueConfig(dto.queueId);
+      if (!q) {
         throw new DoriException('QUEUE_NOT_FOUND', { queueId: dto.queueId });
       }
-
-      const q = queueConfig[0];
 
       // 2. Resolve a person strictly inside the queue's site.
       let personId = dto.personId;
@@ -77,17 +68,11 @@ export class RegistrationsService {
           dto.person,
           q.site_id,
           user,
-          manager,
+          tx.manager,
         );
         personId = createdPerson.person_id;
       } else {
-        const personRows = await manager.query(
-          `SELECT person_id FROM dori_person
-         WHERE person_id = $1 AND site_id = $2
-           AND is_active = TRUE AND deleted_at IS NULL`,
-          [personId, q.site_id],
-        );
-        if (!personRows || personRows.length === 0) {
+        if (!(await tx.personExistsInSite(personId, q.site_id))) {
           throw new DoriException('PERSON_NOT_FOUND', { personId });
         }
       }
@@ -98,31 +83,16 @@ export class RegistrationsService {
       const slotCapacity = q.slot_capacity ?? q.default_slot_capacity ?? 1;
 
       // 3. Verify Tier Offered By Queue (§4.1, §6.5)
-      const tierRows = await manager.query(
-        `SELECT qt.price, qt.currency, t.tier_code, t.tier_name
-       FROM dori_queue_service_tier qt
-       JOIN dori_service_tier t ON t.tier_id = qt.tier_id
-       WHERE qt.queue_id = $1 AND qt.tier_id = $2 AND qt.is_active = TRUE`,
-        [dto.queueId, dto.tierId],
-      );
-
-      if (!tierRows || tierRows.length === 0) {
+      const tierInfo = await tx.findOfferedTier(dto.queueId, dto.tierId);
+      if (!tierInfo) {
         throw new DoriException('TIER_NOT_OFFERED_BY_QUEUE', {
           tierId: dto.tierId,
           queueId: dto.queueId,
         });
       }
 
-      const tierInfo = tierRows[0];
-
       // 4. Duplicate Check (§3.10, §6.9)
-      const openRegs = await manager.query(
-        `SELECT customer_id FROM dori_customer
-       WHERE queue_id = $1 AND person_id = $2 AND status IN ('booked', 'waiting', 'in_progress') AND is_active = TRUE`,
-        [dto.queueId, personId],
-      );
-
-      if (openRegs && openRegs.length > 0) {
+      if (await tx.hasOpenRegistration(dto.queueId, personId)) {
         throw new DoriException('DUPLICATE_ACTIVE_REGISTRATION');
       }
 
@@ -158,16 +128,7 @@ export class RegistrationsService {
         priorityRefTime = scheduledTime;
 
         // Slot capacity check (§4.2, §6.5)
-        await manager.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [
-          `appointment-slot:${dto.queueId}:${scheduledTime.toISOString()}`,
-        ]);
-        const existingAppts = await manager.query(
-          `SELECT COUNT(*)::int as count FROM dori_customer
-         WHERE queue_id = $1 AND scheduled_time = $2 AND status IN ('booked', 'waiting', 'in_progress') AND is_active = TRUE`,
-          [dto.queueId, scheduledTime],
-        );
-
-        const count = existingAppts[0]?.count || 0;
+        const count = await tx.lockAndCountSlot(dto.queueId, scheduledTime);
         if (count >= slotCapacity) {
           throw new DoriException('APPOINTMENT_SLOT_FULL', {
             scheduledTime: dto.scheduledTime,
@@ -181,16 +142,11 @@ export class RegistrationsService {
       }
 
       // 6. Generate Ticket Number Atomically (§3.11, §7.6)
-      const counterRes = await manager.query(
-        `INSERT INTO dori_queue_counter (queue_id, business_date, last_number)
-       VALUES ($1, $2, 1)
-       ON CONFLICT (queue_id, business_date)
-       DO UPDATE SET last_number = dori_queue_counter.last_number + 1, updated_at = $3
-       RETURNING last_number`,
-        [dto.queueId, businessDate, now],
+      const lastNumber = await tx.nextTicketNumber(
+        dto.queueId,
+        businessDate,
+        now,
       );
-
-      const lastNumber = counterRes[0].last_number;
       const ticketNumber = this.formatTicketNumber(q.queue_code, lastNumber);
 
       // End of business date for tracking token
@@ -200,51 +156,28 @@ export class RegistrationsService {
       );
 
       // 7. Check if tier has includeTrackingLink rule
-      const rules = await manager.query(
-        `SELECT include_tracking_link FROM dori_tier_notification_rule
-       WHERE queue_id = $1 AND tier_id = $2 AND include_tracking_link = TRUE AND is_active = TRUE LIMIT 1`,
-        [dto.queueId, dto.tierId],
-      );
-      const hasTrackingRule = rules && rules.length > 0;
+      const hasTrackingRule = await tx.hasTrackingRule(dto.queueId, dto.tierId);
 
-      // 8. Insert dori_customer
-      const insertRes = await manager.query(
-        `INSERT INTO dori_customer (
-        person_id, queue_id, tier_id, business_date, ticket_number,
-        entry_type, scheduled_time, appointment_status, priority_reference_time,
-        status, registration_tracking_token_valid_until, language_preference,
-        created_by_user_id, updated_by_user_id, created_at, updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5,
-        $6, $7, $8, $9,
-        $10, $11, $12,
-        $13, $13, $14, $14
-      ) RETURNING *`,
-        [
-          personId,
-          dto.queueId,
-          dto.tierId,
-          businessDate,
-          ticketNumber,
-          dto.entryType,
-          scheduledTime,
-          appointmentStatus,
-          priorityRefTime,
-          status,
-          tokenValidUntil,
-          dto.languagePreference || null,
-          user.userId,
-          now,
-        ],
-      );
-
-      const created = insertRes[0];
+      // 8. Insert dori_registration
+      const created = await tx.create({
+        dto,
+        personId,
+        businessDate,
+        ticketNumber,
+        scheduledTime,
+        appointmentStatus,
+        priorityReferenceTime: priorityRefTime,
+        status,
+        tokenValidUntil,
+        userId: user.userId,
+        now,
+      });
       const trackingUrl = hasTrackingRule
         ? `https://suivi.dori.tn/#${created.registration_tracking_token}`
         : null;
 
       return {
-        registrationId: created.customer_id,
+        registrationId: created.registration_id,
         ticketNumber: created.ticket_number,
         businessDate: created.business_date,
         entryType: created.entry_type,
@@ -273,21 +206,11 @@ export class RegistrationsService {
   ) {
     await this.scopeService.checkQueueAccess(user, queueId);
 
-    const queueConfig = await this.dataSource.query(
-      `SELECT q.*, s.timezone,
-              s.default_appointments_enabled, s.default_appointment_slot_duration, s.default_slot_capacity,
-              s.default_working_hours_start, s.default_working_hours_end, s.default_break_start, s.default_break_end
-       FROM dori_site_queue_thread q
-       JOIN dori_site s ON s.site_id = q.site_id
-       WHERE q.queue_id = $1 AND q.is_active = TRUE`,
-      [queueId],
-    );
-
-    if (!queueConfig || queueConfig.length === 0) {
+    const q =
+      await this.registrationsRepository.findAvailabilityConfig(queueId);
+    if (!q) {
       throw new DoriException('QUEUE_NOT_FOUND', { queueId });
     }
-
-    const q = queueConfig[0];
     const appointmentsEnabled =
       q.appointments_enabled ?? q.default_appointments_enabled ?? false;
     if (!appointmentsEnabled) {
@@ -305,7 +228,7 @@ export class RegistrationsService {
     const breakEndStr = q.break_end ?? q.default_break_end;
 
     // Generate slots
-    const slots: any[] = [];
+    const slots: SlotAvailabilityDto[] = [];
     const [startH, startM] = startStr.split(':').map(Number);
     const [endH, endM] = endStr.split(':').map(Number);
 
@@ -322,12 +245,9 @@ export class RegistrationsService {
     }
 
     // Count existing bookings for this date and queue
-    const bookedCounts = await this.dataSource.query(
-      `SELECT scheduled_time, COUNT(*)::int as count
-       FROM dori_customer
-       WHERE queue_id = $1 AND business_date = $2 AND status IN ('booked', 'waiting', 'in_progress') AND is_active = TRUE
-       GROUP BY scheduled_time`,
-      [queueId, queryDto.date],
+    const bookedCounts = await this.registrationsRepository.findBookedSlots(
+      queueId,
+      queryDto.date,
     );
 
     const bookingMap = new Map<string, number>();
@@ -376,20 +296,12 @@ export class RegistrationsService {
   }
 
   async checkIn(registrationId: number, user: AuthenticatedUser) {
-    const regs = await this.dataSource.query(
-      `SELECT c.*, q.late_tolerance_minutes, s.default_late_tolerance_minutes
-       FROM dori_customer c
-       JOIN dori_site_queue_thread q ON q.queue_id = c.queue_id
-       JOIN dori_site s ON s.site_id = q.site_id
-       WHERE c.customer_id = $1 AND c.is_active = TRUE`,
-      [registrationId],
-    );
-
-    if (!regs || regs.length === 0) {
+    const reg =
+      await this.registrationsRepository.findForCheckIn(registrationId);
+    if (!reg) {
       throw new DoriException('REGISTRATION_NOT_FOUND', { registrationId });
     }
 
-    const reg = regs[0];
     await this.scopeService.checkQueueAccess(user, reg.queue_id);
 
     if (reg.entry_type !== 'appointment' || reg.status !== 'booked') {
@@ -404,24 +316,11 @@ export class RegistrationsService {
 
     // Late arrival beyond tolerance -> expired (§4.3)
     if (now > deadline) {
-      await this.dataSource.query(
-        `UPDATE dori_customer
-         SET status = 'expired', appointment_status = 'expired', closed_at = $1, is_active = FALSE, updated_at = $1
-         WHERE customer_id = $2`,
-        [now, registrationId],
-      );
+      await this.registrationsRepository.expire(registrationId, now);
       throw new DoriException('APPOINTMENT_EXPIRED');
     }
 
-    const updated = await this.dataSource.query(
-      `UPDATE dori_customer
-       SET status = 'waiting', appointment_status = 'checked_in', checked_in_at = $1, updated_at = $1
-       WHERE customer_id = $2
-       RETURNING *`,
-      [now, registrationId],
-    );
-
-    return updated[0];
+    return this.registrationsRepository.checkIn(registrationId, now);
   }
 
   async reschedule(
@@ -429,20 +328,12 @@ export class RegistrationsService {
     dto: RescheduleDto,
     user: AuthenticatedUser,
   ) {
-    const regs = await this.dataSource.query(
-      `SELECT c.*, q.slot_capacity, s.default_slot_capacity, s.timezone
-       FROM dori_customer c
-       JOIN dori_site_queue_thread q ON q.queue_id = c.queue_id
-       JOIN dori_site s ON s.site_id = q.site_id
-       WHERE c.customer_id = $1 AND c.is_active = TRUE`,
-      [registrationId],
-    );
-
-    if (!regs || regs.length === 0) {
+    const reg =
+      await this.registrationsRepository.findForReschedule(registrationId);
+    if (!reg) {
       throw new DoriException('REGISTRATION_NOT_FOUND', { registrationId });
     }
 
-    const reg = regs[0];
     await this.scopeService.checkQueueAccess(user, reg.queue_id);
 
     if (reg.entry_type !== 'appointment') {
@@ -463,18 +354,13 @@ export class RegistrationsService {
     );
     const slotCapacity = reg.slot_capacity ?? reg.default_slot_capacity ?? 1;
 
-    return this.dataSource.transaction(async (manager) => {
-      await manager.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [
-        `appointment-slot:${reg.queue_id}:${newTime.toISOString()}`,
-      ]);
-      const existing = await manager.query(
-        `SELECT COUNT(*)::int as count FROM dori_customer
-         WHERE queue_id = $1 AND scheduled_time = $2 AND status IN ('booked', 'waiting', 'in_progress') AND is_active = TRUE
-           AND customer_id <> $3`,
-        [reg.queue_id, newTime, registrationId],
+    return this.registrationsRepository.transaction(async (tx) => {
+      const existing = await tx.lockAndCountSlot(
+        reg.queue_id,
+        newTime,
+        registrationId,
       );
-
-      if ((existing[0]?.count || 0) >= slotCapacity) {
+      if (existing >= slotCapacity) {
         throw new DoriException('APPOINTMENT_SLOT_FULL', {
           scheduledTime: dto.scheduledTime,
         });
@@ -486,18 +372,14 @@ export class RegistrationsService {
         timezone,
       );
       const now = this.clockService.now();
-      const res = await manager.query(
-        `UPDATE dori_customer
-         SET scheduled_time = $1, priority_reference_time = $1, business_date = $2,
-             appointment_status = 'rescheduled', status = 'booked', checked_in_at = NULL, updated_at = $3
-         WHERE customer_id = $4
-         RETURNING *`,
-        [newTime, newBusinessDate, now, registrationId],
+      const updated = await tx.reschedule(
+        registrationId,
+        newTime,
+        newBusinessDate,
+        now,
       );
-
-      const updated = res[0];
       return {
-        registrationId: updated.customer_id,
+        registrationId: updated.registration_id,
         appointmentStatus: updated.appointment_status,
         status: updated.status,
         scheduledTime: updated.scheduled_time,
@@ -522,40 +404,23 @@ export class RegistrationsService {
       );
     }
 
-    let query = `
-      SELECT c.*, p.first_name, p.last_name, p.phone_number
-      FROM dori_customer c
-      JOIN dori_person p ON p.person_id = c.person_id
-      JOIN dori_site_queue_thread q ON q.queue_id = c.queue_id
-      JOIN dori_site s ON s.site_id = q.site_id
-      WHERE c.is_active = TRUE
-    `;
-    const params: any[] = [];
-
     if (!scope.isGlobal) {
       if (scope.queueIds.length === 0) {
         throw new DoriException('REGISTRATION_NOT_FOUND');
       }
-      params.push(scope.queueIds);
-      query += ` AND c.queue_id = ANY($${params.length})`;
     }
-
-    if (dto.ticketNumber) {
-      params.push(dto.ticketNumber);
-      query += ` AND c.ticket_number = $${params.length}`;
-    } else {
-      params.push(`%${dto.lastName}%`);
-      query += ` AND p.last_name ILIKE $${params.length}`;
-      params.push(this.clockService.parse(dto.scheduledTime!));
-      query += ` AND c.scheduled_time = $${params.length}`;
-    }
-
-    const rows = await this.dataSource.query(`${query} LIMIT 1`, params);
-    if (!rows || rows.length === 0) {
+    const registration = await this.registrationsRepository.lookup({
+      queueIds: scope.isGlobal ? undefined : scope.queueIds,
+      ticketNumber: dto.ticketNumber,
+      lastName: dto.lastName,
+      scheduledTime: dto.scheduledTime
+        ? this.clockService.parse(dto.scheduledTime)
+        : undefined,
+    });
+    if (!registration) {
       throw new DoriException('REGISTRATION_NOT_FOUND');
     }
-
-    return rows[0];
+    return registration;
   }
 
   async findRegistrations(
@@ -566,7 +431,7 @@ export class RegistrationsService {
     const { pageSize, offset, sortOrder } = filter.getParams();
     const safeSortField = filter.getSafeSortField(
       [
-        'customer_id',
+        'registration_id',
         'ticket_number',
         'business_date',
         'status',
@@ -574,93 +439,38 @@ export class RegistrationsService {
         'created_at',
         'priority_reference_time',
       ],
-      'customer_id',
+      'registration_id',
     );
-
-    let query = `
-      SELECT c.*, p.first_name, p.last_name, p.phone_number, p.email,
-             q.queue_name, q.queue_code, t.tier_code, t.tier_name
-      FROM dori_customer c
-      JOIN dori_person p ON p.person_id = c.person_id
-      JOIN dori_site_queue_thread q ON q.queue_id = c.queue_id
-      JOIN dori_service_tier t ON t.tier_id = c.tier_id
-      WHERE c.is_active = TRUE
-    `;
-    const params: any[] = [];
 
     if (filter.queueId) {
       await this.scopeService.checkQueueAccess(user, filter.queueId);
-      params.push(filter.queueId);
-      query += ` AND c.queue_id = $${params.length}`;
     } else if (filter.siteId) {
       await this.scopeService.checkSiteAccess(user, filter.siteId);
-      params.push(filter.siteId);
-      query += ` AND q.site_id = $${params.length}`;
     } else if (!scope.isGlobal) {
       if (scope.queueIds.length === 0) return filter.createResponse([], 0);
-      params.push(scope.queueIds);
-      query += ` AND c.queue_id = ANY($${params.length})`;
     }
-
-    if (filter.businessDate) {
-      params.push(filter.businessDate);
-      query += ` AND c.business_date = $${params.length}`;
-    }
-    if (filter.status) {
-      params.push(filter.status);
-      query += ` AND c.status = $${params.length}`;
-    }
-    if (filter.entryType) {
-      params.push(filter.entryType);
-      query += ` AND c.entry_type = $${params.length}`;
-    }
-    if (filter.appointmentStatus) {
-      params.push(filter.appointmentStatus);
-      query += ` AND c.appointment_status = $${params.length}`;
-    }
-    if (filter.personId) {
-      params.push(filter.personId);
-      query += ` AND c.person_id = $${params.length}`;
-    }
-    if (filter.tierId) {
-      params.push(filter.tierId);
-      query += ` AND c.tier_id = $${params.length}`;
-    }
-    if (filter.search) {
-      params.push(`%${filter.search}%`);
-      const pIdx = params.length;
-      query += ` AND (c.ticket_number ILIKE $${pIdx} OR p.last_name ILIKE $${pIdx} OR p.first_name ILIKE $${pIdx})`;
-    }
-
-    const countRes = await this.dataSource.query(
-      `SELECT COUNT(*)::int as total FROM (${query}) q_count`,
-      params,
+    const result = await this.registrationsRepository.findPage(
+      filter,
+      scope.isGlobal || filter.queueId || filter.siteId
+        ? undefined
+        : scope.queueIds,
+      safeSortField,
+      sortOrder,
+      pageSize,
+      offset,
     );
-    const total = countRes[0]?.total || 0;
-
-    query += ` ORDER BY c.${safeSortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`;
-    const items = await this.dataSource.query(query, params);
-
-    return filter.createResponse(items, total);
+    return filter.createResponse<RegistrationDetailResponseDto>(
+      result.items as RegistrationDetailResponseDto[],
+      result.total,
+    );
   }
 
   async findRegistrationById(registrationId: number, user: AuthenticatedUser) {
-    const rows = await this.dataSource.query(
-      `SELECT c.*, p.first_name, p.last_name, p.phone_number, p.email,
-              q.queue_name, q.queue_code, t.tier_code, t.tier_name
-       FROM dori_customer c
-       JOIN dori_person p ON p.person_id = c.person_id
-       JOIN dori_site_queue_thread q ON q.queue_id = c.queue_id
-       JOIN dori_service_tier t ON t.tier_id = c.tier_id
-       WHERE c.customer_id = $1 AND c.is_active = TRUE`,
-      [registrationId],
-    );
-
-    if (!rows || rows.length === 0) {
+    const reg = await this.registrationsRepository.findById(registrationId);
+    if (!reg) {
       throw new DoriException('REGISTRATION_NOT_FOUND', { registrationId });
     }
 
-    const reg = rows[0];
     await this.scopeService.checkQueueAccess(user, reg.queue_id);
     return reg;
   }
@@ -677,58 +487,32 @@ export class RegistrationsService {
       throw new DoriException('REGISTRATION_CLOSED');
     }
 
-    const fields: string[] = [];
-    const values: any[] = [];
-    let idx = 1;
-
     if (dto.tierId !== undefined) {
-      // Check if offered
-      const offered = await this.dataSource.query(
-        `SELECT 1 FROM dori_queue_service_tier WHERE queue_id = $1 AND tier_id = $2 AND is_active = TRUE`,
-        [reg.queue_id, dto.tierId],
-      );
-      if (!offered || offered.length === 0) {
+      if (
+        !(await this.registrationsRepository.isTierOffered(
+          reg.queue_id,
+          dto.tierId,
+        ))
+      ) {
         throw new DoriException('TIER_NOT_OFFERED_BY_QUEUE', {
           tierId: dto.tierId,
           queueId: reg.queue_id,
         });
       }
-      fields.push(`tier_id = $${idx++}`);
-      values.push(dto.tierId);
     }
-
-    if (dto.languagePreference !== undefined) {
-      fields.push(`language_preference = $${idx++}`);
-      values.push(dto.languagePreference);
-    }
-
-    fields.push(`updated_by_user_id = $${idx++}`);
-    values.push(user.userId);
-    fields.push(`updated_at = $${idx++}`);
-    values.push(now);
-
-    values.push(registrationId);
-
-    const res = await this.dataSource.query(
-      `UPDATE dori_customer SET ${fields.join(', ')} WHERE customer_id = $${idx} RETURNING *`,
-      values,
+    return this.registrationsRepository.update(
+      registrationId,
+      dto,
+      user.userId,
+      now,
     );
-
-    return res[0];
   }
 
   async cancelRegistration(registrationId: number, user: AuthenticatedUser) {
     await this.findRegistrationById(registrationId, user);
     const now = this.clockService.now();
 
-    await this.dataSource.query(
-      `UPDATE dori_customer
-       SET status = 'cancelled',
-           appointment_status = CASE WHEN entry_type = 'appointment' THEN 'cancelled' ELSE appointment_status END,
-           closed_at = $1, is_active = FALSE, deleted_at = $1, updated_by_user_id = $2, updated_at = $1
-       WHERE customer_id = $3`,
-      [now, user.userId, registrationId],
-    );
+    await this.registrationsRepository.cancel(registrationId, user.userId, now);
 
     return { registrationId, cancelled: true };
   }
@@ -740,19 +524,11 @@ export class RegistrationsService {
     }
 
     const now = this.clockService.now();
-    const rows = await this.dataSource.query(
-      `SELECT c.*, q.average_wait_time
-       FROM dori_customer c
-       JOIN dori_site_queue_thread q ON q.queue_id = c.queue_id
-       WHERE c.registration_tracking_token = $1`,
-      [trackingToken],
-    );
-
-    if (!rows || rows.length === 0) {
+    const reg =
+      await this.registrationsRepository.findByTrackingToken(trackingToken);
+    if (!reg) {
       throw new DoriException('TOKEN_EXPIRED');
     }
-
-    const reg = rows[0];
 
     // Check token expiration date (§4.14)
     if (
@@ -781,21 +557,14 @@ export class RegistrationsService {
 
     if (reg.status === 'waiting') {
       // Calculate position among waiting clients on the same queue and business day
-      const countBefore = await this.dataSource.query(
-        `SELECT COUNT(*)::int as count FROM dori_customer
-         WHERE queue_id = $1 AND business_date = $2 AND status = 'waiting' AND is_active = TRUE
-           AND priority_reference_time < $3`,
-        [reg.queue_id, reg.business_date, reg.priority_reference_time],
-      );
-      const position = (countBefore[0]?.count || 0) + 1;
+      const position =
+        (await this.registrationsRepository.countWaitingBefore(reg)) + 1;
 
       // Count active threads
-      const activeThreadsRes = await this.dataSource.query(
-        `SELECT COUNT(*)::int as count FROM dori_queue_session
-         WHERE queue_id = $1 AND disconnected_at IS NULL AND mode = 'active'`,
-        [reg.queue_id],
+      const activeThreads = Math.max(
+        1,
+        await this.registrationsRepository.countActiveThreads(reg.queue_id),
       );
-      const activeThreads = Math.max(1, activeThreadsRes[0]?.count || 1);
       const estimatedWaitMinutes = Math.round(
         (position * reg.average_wait_time) / activeThreads,
       );

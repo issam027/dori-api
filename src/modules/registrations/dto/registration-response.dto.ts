@@ -3,7 +3,7 @@ import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
 export class RegistrationDetailResponseDto {
   @ApiProperty({ example: 101, description: "ID de l'inscription" })
-  customerId: number;
+  registrationId: number;
 
   @ApiProperty({ example: 1, description: 'ID de la file' })
   queueId: number;

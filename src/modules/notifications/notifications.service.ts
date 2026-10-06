@@ -77,20 +77,21 @@ export class NotificationsService {
     dto: SendManualNotificationDto,
     user: AuthenticatedUser,
   ) {
-    const customer = await this.notificationsRepository.findActiveCustomer(
-      dto.customerId,
-    );
-    if (!customer) {
+    const registration =
+      await this.notificationsRepository.findActiveRegistration(
+        dto.registrationId,
+      );
+    if (!registration) {
       throw new DoriException('REGISTRATION_NOT_FOUND', {
-        registrationId: dto.customerId,
+        registrationId: dto.registrationId,
       });
     }
 
-    await this.scopeService.checkQueueAccess(user, customer.queue_id);
+    await this.scopeService.checkQueueAccess(user, registration.queue_id);
 
     const recipient =
       dto.recipient ||
-      (dto.channel === 'sms' ? customer.phone_number : customer.email);
+      (dto.channel === 'sms' ? registration.phone_number : registration.email);
 
     if (!recipient) {
       throw new DoriException(
@@ -98,13 +99,14 @@ export class NotificationsService {
         {},
         {
           errors: [
-            `Recipient ${dto.channel} address missing for this customer`,
+            `Recipient ${dto.channel} address missing for this registration`,
           ],
         },
       );
     }
 
-    const locale = customer.language_preference || customer.person_lang || 'fr';
+    const locale =
+      registration.language_preference || registration.person_lang || 'fr';
     const now = this.clockService.now();
 
     return this.notificationsRepository.createManual(
@@ -188,7 +190,7 @@ export class NotificationsService {
 
     // 1. Fetch active waiting clients for this queue
     const waitingClients =
-      await this.notificationsRepository.findWaitingCustomers(queueId);
+      await this.notificationsRepository.findWaitingRegistrations(queueId);
 
     if (!waitingClients || waitingClients.length === 0) return;
 
@@ -237,7 +239,7 @@ export class NotificationsService {
             const content =
               `${client.first_name || ''}, votre tour approche. Ticket ${client.ticket_number}.`.trim();
             await this.notificationsRepository.createThresholdIfAbsent({
-              customerId: client.customer_id,
+              registrationId: client.registration_id,
               ruleId: rule.rule_id,
               channel: rule.channel,
               locale,

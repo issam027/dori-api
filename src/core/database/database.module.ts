@@ -34,4 +34,4 @@ import { DatabaseSeedService } from './database-seed.service';
   providers: [DatabaseSeedService],
   exports: [TypeOrmModule, DatabaseSeedService],
 })
-export class DatabaseModule { }
+export class DatabaseModule {}

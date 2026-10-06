@@ -77,8 +77,8 @@ export class RealtimeGateway
       if (trackingToken) {
         // Resolve registration by token (§7.9, §4.14)
         const rows = await this.dataSource.query(
-          `SELECT customer_id, registration_tracking_token_valid_until, is_active
-           FROM dori_customer
+          `SELECT registration_id, registration_tracking_token_valid_until, is_active
+           FROM dori_registration
            WHERE registration_tracking_token = $1`,
           [trackingToken],
         );
@@ -90,11 +90,11 @@ export class RealtimeGateway
           );
           if (validUntil > this.clockService.now() && reg.is_active) {
             client.trackingToken = String(trackingToken);
-            client.registrationId = Number(reg.customer_id);
+            client.registrationId = Number(reg.registration_id);
             // Automatically join own registration room
             client.join(`registration:${trackingToken}`);
             this.logger.debug(
-              `Tracking token connected for customer ${client.registrationId}`,
+              `Tracking token connected for registration ${client.registrationId}`,
             );
             return;
           }

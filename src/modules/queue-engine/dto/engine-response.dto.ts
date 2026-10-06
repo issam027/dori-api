@@ -67,7 +67,7 @@ export class PaginatedQueueSessionResponseDto extends PaginatedResponseDto {
   items: QueueSessionDetailDto[];
 }
 
-export class CalledNextCustomerResponseDto {
+export class CalledNextRegistrationResponseDto {
   @ApiProperty({ minimum: 1 }) registrationId: number;
   @ApiProperty() ticketNumber: string;
   @ApiProperty({ enum: ['walkin', 'appointment'] }) entryType: string;
@@ -88,7 +88,7 @@ export class CloseSessionResponseDto {
   @ApiProperty() closed: boolean;
 }
 
-export class CustomerActionResponseDto {
+export class RegistrationActionResponseDto {
   @ApiProperty({ minimum: 1 }) registrationId: number;
   @ApiProperty({ enum: ['served', 'no_show'] }) status: string;
   @ApiPropertyOptional({ format: 'date-time', nullable: true }) servedAt?:

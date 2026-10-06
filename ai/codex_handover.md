@@ -147,9 +147,12 @@
 - **Avancement (2026-10-06, lot service-tiers 1/2) :** création de `ServiceTiersRepository` et migration complète du catalogue des niveaux ainsi que des rattachements file–niveau (lecture paginée, détail, création, modification, désactivation, devise par défaut et upsert). Les paramètres dynamiques de pagination sont désormais liés, les lignes sont typées et les mises à jour dynamiques sont centralisées dans le repository. Le repository est enregistré explicitement dans le module. Le service conserve encore la persistance des règles de notification : ce lot est donc volontairement noté partiel et `service-tiers` reste dans le périmètre ouvert jusqu'au lot 2/2. Test ciblé (3 tests) et typecheck réussis.
 - **Avancement (2026-10-06, lot service-tiers 2/2 terminé) :** les lectures paginées et exhaustives, la création, la lecture verrouillée par identité, la modification et la désactivation des règles de notification ont été déplacées dans `ServiceTiersRepository`. Les lignes de règles sont explicitement typées et les colonnes de tri restent limitées par `PaginationDto`. `ServiceTiersService` ne contient désormais plus aucun SQL, accès `DataSource` ou résultat `any` ; il conserve les contrôles de scope, invariants système et validations de règles. Test ciblé (3 tests) et typecheck réussis. `service-tiers` sort du périmètre restant d'`ARCH-001`, qui demeure ouvert pour `queues`, `registrations`, `queue-engine`, `users` et `auth`, ainsi que les accès techniques hors services métier.
 
+- **Avancement (2026-10-06, lot registrations terminé) :** toute la persistance de `RegistrationsService`, y compris les transactions de création et de replanification, les verrous de capacité, la pagination et les recherches publiques, est encapsulée dans `RegistrationsRepository` avec des contrats de lignes typés. Le service ne dépend plus de `DataSource` et ne contient plus de SQL. Dans le même lot, le domaine et le schéma ont été unifiés sous `registration` (`dori_registration`, `registration_id`, `registrationId`) dans les DTOs, entités, notifications, moteur de file, permissions et événements temps réel. `registrations` sort du périmètre restant d'ARCH-001, qui demeure ouvert pour `queues`, `queue-engine`, `users` et `auth`, ainsi que les accès techniques hors services métier.
+- **Validation du lot registrations (2026-10-06) :** `quality:check` complet réussi (22 suites, 109 tests), sans erreur de format, lint, typage ou build. La base Aiven `dori-dev` a ensuite été réinitialisée avec `--force --seed` : le schéma `public` a été supprimé/recréé, `schema.sql` et `seed.sql` ont été appliqués avec succès. La base repart donc exclusivement avec `dori_registration` et `registration_id`, sans table héritée de l'ancien vocabulaire.
+
 ### \[x\] WEBHOOK-001 — Durcir la vérification HMAC
 
-- **Preuve :** `notifications.service.ts:176-188` accepte `webhook-secret`, compare avec `!==` et ne valide pas l'âge du timestamp ; le contrôleur signe `JSON.stringify(dto)` après parsing, pas le corps brut.
+- **Preuve :** `notifications.service.ts:176-188` accepte `webhook-secret`, compare avec `!==` et ne valide pas l'�ge du timestamp ; le contr�leur signe `JSON.stringify(dto)` apr�s parsing, pas le corps brut.
 - **Impact :** signatures forgeables si config absente, rejeu illimité et incompatibilité avec la signature réelle du fournisseur.
 - **Correction :** fournisseurs/secrets obligatoires, raw body, fenêtre temporelle, `timingSafeEqual` et identifiant d'événement idempotent.
 - **Validation :** secret absent, corps modifié, timestamp périmé/futur, rejeu et fournisseur inconnu refusés.
@@ -357,7 +360,7 @@
 
 ### \[x\] CORE-001 — Choisir entre modules globaux et imports explicites
 
-- **Preuve :** `ClockModule` et `RbacModule` portent `@Global()`. Pourtant tous les modules métier importent `ClockModule`, tandis que seul `ReportsModule` importe explicitement `RbacModule` et les autres consomment `ScopeService` grâce au global. `RealtimeModule` réimporte les deux.
+- **Preuve :** `ClockModule` et `RbacModule` portent `@Global()`. Pourtant tous les modules m�tier importent `ClockModule`, tandis que seul `ReportsModule` importe explicitement `RbacModule` et les autres consomment `ScopeService` gr�ce au global. `RealtimeModule` r�importe les deux.
 - **Impact :** architecture DI non homogène, dépendances réelles difficiles à lire et imports redondants donnant une fausse impression d'isolation.
 - **Correction :** choisir une règle unique : soit core global importé une fois par `AppModule`, soit modules non globaux importés explicitement partout (préférable pour rendre les dépendances visibles et faciliter les tests).
 - **Validation :** matrice modules/providers cohérente et tests de compilation Nest par module.
@@ -473,3 +476,5 @@
 <!-- CHECKPOINT id="ckpt_muwg81pv_vorpji" time="2026-10-06T09:00:47.155Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 <!-- CHECKPOINT id="ckpt_muwgkwot_hsuouj" time="2026-10-06T09:10:47.165Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muwo9gen_3erqt0" time="2026-10-06T12:45:49.775Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

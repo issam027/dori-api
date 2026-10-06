@@ -12,7 +12,7 @@ export class DoriNotification {
   notification_id: number;
 
   @Column({ type: 'int' })
-  customer_id: number;
+  registration_id: number;
 
   @Column({ type: 'int', nullable: true })
   rule_id: number | null;

@@ -6,10 +6,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity('dori_customer')
-export class DoriCustomer {
+@Entity('dori_registration')
+export class DoriRegistration {
   @PrimaryGeneratedColumn()
-  customer_id: number;
+  registration_id: number;
 
   @Column({ type: 'int' })
   person_id: number;

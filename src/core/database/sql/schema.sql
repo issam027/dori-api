@@ -306,9 +306,9 @@ CREATE TABLE IF NOT EXISTS dori_queue_session (
     )
 );
 
--- 16. dori_customer (§3.10)
-CREATE TABLE IF NOT EXISTS dori_customer (
-    customer_id SERIAL PRIMARY KEY,
+-- 16. dori_registration (§3.10)
+CREATE TABLE IF NOT EXISTS dori_registration (
+    registration_id SERIAL PRIMARY KEY,
     person_id INT NOT NULL REFERENCES dori_person(person_id),
     queue_id INT NOT NULL REFERENCES dori_site_queue_thread(queue_id),
     tier_id INT NOT NULL,
@@ -351,10 +351,10 @@ CREATE TABLE IF NOT EXISTS dori_customer (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT uk_customer_ticket UNIQUE (queue_id, business_date, ticket_number),
-    CONSTRAINT fk_customer_tier FOREIGN KEY (queue_id, tier_id)
+    CONSTRAINT uk_registration_ticket UNIQUE (queue_id, business_date, ticket_number),
+    CONSTRAINT fk_registration_tier FOREIGN KEY (queue_id, tier_id)
         REFERENCES dori_queue_service_tier(queue_id, tier_id),
-    CONSTRAINT ck_customer_appointment CHECK (
+    CONSTRAINT ck_registration_appointment CHECK (
         (entry_type = 'walkin' AND scheduled_time IS NULL AND appointment_status = 'n/a')
         OR (entry_type = 'appointment' AND scheduled_time IS NOT NULL
             AND appointment_status <> 'n/a')
@@ -380,7 +380,7 @@ CREATE TABLE IF NOT EXISTS dori_queue_daily_reset (
 -- 18. dori_notification (§3.12)
 CREATE TABLE IF NOT EXISTS dori_notification (
     notification_id SERIAL PRIMARY KEY,
-    customer_id INT NOT NULL REFERENCES dori_customer(customer_id),
+    registration_id INT NOT NULL REFERENCES dori_registration(registration_id),
     rule_id INT REFERENCES dori_tier_notification_rule(rule_id),
     channel VARCHAR(20) NOT NULL
         CHECK (channel IN ('sms','email')),
@@ -491,8 +491,8 @@ DO $$ BEGIN
   DROP TRIGGER IF EXISTS trg_tier_notification_rule_updated_at ON dori_tier_notification_rule;
   CREATE TRIGGER trg_tier_notification_rule_updated_at BEFORE UPDATE ON dori_tier_notification_rule FOR EACH ROW EXECUTE FUNCTION dori_set_updated_at();
 
-  DROP TRIGGER IF EXISTS trg_customer_updated_at ON dori_customer;
-  CREATE TRIGGER trg_customer_updated_at BEFORE UPDATE ON dori_customer FOR EACH ROW EXECUTE FUNCTION dori_set_updated_at();
+  DROP TRIGGER IF EXISTS trg_registration_updated_at ON dori_registration;
+  CREATE TRIGGER trg_registration_updated_at BEFORE UPDATE ON dori_registration FOR EACH ROW EXECUTE FUNCTION dori_set_updated_at();
 
   DROP TRIGGER IF EXISTS trg_notification_updated_at ON dori_notification;
   CREATE TRIGGER trg_notification_updated_at BEFORE UPDATE ON dori_notification FOR EACH ROW EXECUTE FUNCTION dori_set_updated_at();
@@ -514,7 +514,7 @@ UPDATE dori_person p
 SET site_id = inferred.site_id
 FROM (
     SELECT c.person_id, MIN(q.site_id) AS site_id
-    FROM dori_customer c
+    FROM dori_registration c
     JOIN dori_site_queue_thread q ON q.queue_id = c.queue_id
     GROUP BY c.person_id
 ) inferred
@@ -527,7 +527,7 @@ DECLARE
 BEGIN
     FOR cross_site IN
         SELECT DISTINCT c.person_id, q.site_id
-        FROM dori_customer c
+        FROM dori_registration c
         JOIN dori_site_queue_thread q ON q.queue_id = c.queue_id
         JOIN dori_person p ON p.person_id = c.person_id
         WHERE p.site_id IS DISTINCT FROM q.site_id
@@ -553,7 +553,7 @@ BEGIN
         FROM dori_person_note
         WHERE person_id = cross_site.person_id;
 
-        UPDATE dori_customer c
+        UPDATE dori_registration c
         SET person_id = cloned_person_id
         FROM dori_site_queue_thread q
         WHERE c.queue_id = q.queue_id
@@ -591,7 +591,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_person_site_email_active ON dori_person (si
 CREATE UNIQUE INDEX IF NOT EXISTS uk_person_site_phone_active ON dori_person (site_id, phone_number) WHERE phone_number IS NOT NULL AND is_active;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_person_id_site ON dori_person (person_id, site_id);
 
-CREATE OR REPLACE FUNCTION dori_check_customer_person_site() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION dori_check_registration_person_site() RETURNS trigger AS $$
 DECLARE
     person_site_id INT;
     queue_site_id INT;
@@ -607,25 +607,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_customer_person_site ON dori_customer;
-CREATE TRIGGER trg_customer_person_site
-BEFORE INSERT OR UPDATE OF person_id, queue_id ON dori_customer
-FOR EACH ROW EXECUTE FUNCTION dori_check_customer_person_site();
+DROP TRIGGER IF EXISTS trg_registration_person_site ON dori_registration;
+CREATE TRIGGER trg_registration_person_site
+BEFORE INSERT OR UPDATE OF person_id, queue_id ON dori_registration
+FOR EACH ROW EXECUTE FUNCTION dori_check_registration_person_site();
 CREATE UNIQUE INDEX IF NOT EXISTS uk_queue_thread_active ON dori_queue_session (queue_id, thread_number) WHERE disconnected_at IS NULL AND thread_number IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_queue_user_active ON dori_queue_session (queue_id, user_id) WHERE disconnected_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_customer_person_open ON dori_customer (queue_id, person_id) WHERE status IN ('booked','waiting','in_progress') AND is_active;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_notification_once ON dori_notification (customer_id, notification_type, channel) WHERE notification_status <> 'failed';
+CREATE UNIQUE INDEX IF NOT EXISTS uk_registration_person_open ON dori_registration (queue_id, person_id) WHERE status IN ('booked','waiting','in_progress') AND is_active;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_notification_once ON dori_notification (registration_id, notification_type, channel) WHERE notification_status <> 'failed';
 DROP INDEX IF EXISTS idx_notification_provider_msg;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_notification_provider_msg ON dori_notification (provider, provider_message_id) WHERE provider IS NOT NULL AND provider_message_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_user_email_active ON dori_user (LOWER(email)) WHERE email IS NOT NULL AND is_active;
 
-CREATE INDEX IF NOT EXISTS idx_customer_queue_day_status ON dori_customer (queue_id, business_date, status) WHERE is_active;
-CREATE INDEX IF NOT EXISTS idx_customer_priority_ref ON dori_customer (priority_reference_time);
-CREATE INDEX IF NOT EXISTS idx_customer_scheduled_time ON dori_customer (scheduled_time) WHERE entry_type = 'appointment';
-CREATE INDEX IF NOT EXISTS idx_customer_appt_status ON dori_customer (appointment_status, scheduled_time) WHERE entry_type = 'appointment';
-CREATE UNIQUE INDEX IF NOT EXISTS idx_customer_registration_tracking_token ON dori_customer (registration_tracking_token);
-CREATE INDEX IF NOT EXISTS idx_customer_person ON dori_customer (person_id);
-CREATE INDEX IF NOT EXISTS idx_customer_session ON dori_customer (current_session_id);
+CREATE INDEX IF NOT EXISTS idx_registration_queue_day_status ON dori_registration (queue_id, business_date, status) WHERE is_active;
+CREATE INDEX IF NOT EXISTS idx_registration_priority_ref ON dori_registration (priority_reference_time);
+CREATE INDEX IF NOT EXISTS idx_registration_scheduled_time ON dori_registration (scheduled_time) WHERE entry_type = 'appointment';
+CREATE INDEX IF NOT EXISTS idx_registration_appt_status ON dori_registration (appointment_status, scheduled_time) WHERE entry_type = 'appointment';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_registration_registration_tracking_token ON dori_registration (registration_tracking_token);
+CREATE INDEX IF NOT EXISTS idx_registration_person ON dori_registration (person_id);
+CREATE INDEX IF NOT EXISTS idx_registration_session ON dori_registration (current_session_id);
 
 CREATE INDEX IF NOT EXISTS idx_queue_session_active ON dori_queue_session (queue_id) WHERE disconnected_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_user_queue_user ON dori_user_queue (user_id);
@@ -637,5 +637,5 @@ CREATE INDEX IF NOT EXISTS idx_translation_lookup ON dori_translation (category,
 CREATE INDEX IF NOT EXISTS idx_person_name ON dori_person (last_name, first_name);
 CREATE INDEX IF NOT EXISTS idx_person_site_name ON dori_person (site_id, last_name, first_name) WHERE is_active;
 CREATE INDEX IF NOT EXISTS idx_person_note_person ON dori_person_note (person_id) WHERE is_active;
-CREATE INDEX IF NOT EXISTS idx_notification_customer ON dori_notification (customer_id);
+CREATE INDEX IF NOT EXISTS idx_notification_registration ON dori_notification (registration_id);
 CREATE INDEX IF NOT EXISTS idx_site_type ON dori_site (site_type);

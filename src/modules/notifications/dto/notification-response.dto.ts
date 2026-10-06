@@ -9,7 +9,7 @@ export class NotificationDetailDto {
     example: 42,
     description: "ID de l'inscription client associée",
   })
-  customerId: number;
+  registrationId: number;
 
   @ApiProperty({
     enum: ['sms', 'email'],

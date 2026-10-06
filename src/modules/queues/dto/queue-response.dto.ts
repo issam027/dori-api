@@ -106,7 +106,7 @@ export class PaginatedQueueResponseDto extends PaginatedResponseDto {
 
 export class NextAppointmentItemDto {
   @ApiProperty({ example: 42, description: "ID de l'inscription client" })
-  customerId: number;
+  registrationId: number;
 
   @ApiProperty({ example: 'A-012', description: 'Numéro de ticket' })
   ticketNumber: string;
