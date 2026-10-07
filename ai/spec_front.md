@@ -836,3 +836,23 @@ Le front ne code pas ses menus sur le nom du rôle. Il part des permissions et s
 <!-- CHECKPOINT id="ckpt_muyiigwx_4324bf" time="2026-10-07T19:40:24.993Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 <!-- CHECKPOINT id="ckpt_muyivbvo_h08moa" time="2026-10-07T19:50:24.996Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyj86uj_02fvic" time="2026-10-07T20:00:25.003Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyjl1tf_5hofwn" time="2026-10-07T20:10:25.011Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyjxwrw_zd3shf" time="2026-10-07T20:20:25.005Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muykarqu_b017oj" time="2026-10-07T20:30:25.014Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyknmpf_bus6j7" time="2026-10-07T20:40:25.011Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyl0hod_gfcpv1" time="2026-10-07T20:50:25.021Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyldcmz_vyzz77" time="2026-10-07T21:00:25.019Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muylq7lt_13fpbw" time="2026-10-07T21:10:25.025Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muym32kv_j4cxro" time="2026-10-07T21:20:25.039Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muymfxk4_bdthy5" time="2026-10-07T21:30:25.060Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

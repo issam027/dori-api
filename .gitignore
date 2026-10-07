@@ -34,3 +34,5 @@ Thumbs.db
 .tmp-browser-profile-final/
 .tmp-cdp-9333/
 .tmp-edge-profile/
+.tmp-browser-profile-validation/
+.tmp-browser-profile-validation-2/

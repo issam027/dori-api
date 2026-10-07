@@ -26,7 +26,9 @@
       --shadow: 0 12px 34px rgba(16, 42, 67, .08);
       --radius: 16px;
     }
-    body.dark { --navy:#d9edf5; --navy-2:#1d526d; --ink:#dbe7ef; --muted:#9fb3c8; --line:#334e68; --bg:#0b1724; --surface:#132638; --teal:#24aaa8; --teal-dark:#72ddd3; --teal-soft:#123e42; --blue-soft:#172f4b; --amber-soft:#49351c; --red-soft:#482621; --green:#69d19a; --shadow:0 12px 34px rgba(0,0,0,.28); }
+    body.mid { --navy:#173852; --navy-2:#245875; --ink:#29465c; --muted:#617d91; --line:#bdcdd8; --bg:#e8eef2; --surface:#f8fbfc; --teal:#0d8587; --teal-dark:#086d70; --teal-soft:#d9f0ee; --blue-soft:#dfeafa; --amber-soft:#f7ead2; --red-soft:#f7e4e1; --shadow:0 12px 32px rgba(20,53,75,.12); }
+    body.mid-dark { --navy:#d4e6ef; --navy-2:#315f79; --ink:#d2e0e8; --muted:#94aebe; --line:#496174; --bg:#1b2935; --surface:#253746; --teal:#35b5b0; --teal-dark:#8be3db; --teal-soft:#204b4d; --blue-soft:#2b425d; --amber-soft:#594728; --red-soft:#5a3531; --green:#7bd5a6; --shadow:0 12px 34px rgba(4,15,24,.22); }
+    body.dark { --navy:#d9edf5; --navy-2:#1d526d; --ink:#dbe7ef; --muted:#a9bfd0; --line:#3d5b70; --bg:#0b1724; --surface:#132638; --teal:#24aaa8; --teal-dark:#82e8df; --teal-soft:#123e42; --blue-soft:#1d3958; --amber-soft:#513b1f; --red-soft:#512b26; --green:#76dda6; --shadow:0 12px 34px rgba(0,0,0,.28); }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
     body { margin: 0; color: var(--ink); background: var(--bg); font: 14px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
@@ -38,7 +40,13 @@
     .brand-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; color: #0d5960; background: #c5f4ef; font-weight: 900; font-size: 19px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.6); }
     .brand strong { display: block; font-size: 20px; letter-spacing: .12em; }
     .brand small { color: #9fb3c8; }
-    .nav-label { margin: 17px 10px 8px; color: #7fa5bb; font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .nav-label { margin:17px 10px 8px; color:#7fa5bb; font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
+    #mainNav .nav-section-toggle { display:flex; align-items:center; justify-content:space-between; width:100%; margin-top:9px; padding:9px 10px; border:0; border-radius:9px; color:#8fb1c4; background:transparent; font-size:10px; font-weight:850; letter-spacing:.13em; text-transform:uppercase; }
+    #mainNav .nav-section-toggle:hover { color:white; background:rgba(255,255,255,.06); }
+    #mainNav .nav-section-toggle::after { content:'›'; font-size:18px; line-height:1; transition:transform .18s ease; }
+    .nav-section.open .nav-section-toggle::after { transform:rotate(90deg); }
+    .nav-section-items { display:none; gap:4px; }
+    .nav-section.open .nav-section-items { display:grid; animation:reveal .18s ease; }
     .nav { display: grid; gap: 4px; }
     .nav button { display: flex; align-items: center; gap: 11px; width: 100%; padding: 11px 12px; border: 0; border-radius: 10px; color: #cbdbe8; background: transparent; text-align: left; transition: .18s ease; }
     .nav button:hover { color: white; background: rgba(255,255,255,.08); }
@@ -109,6 +117,8 @@
     .empty-ticket { display: grid; min-height: 194px; place-items: center; border: 1px dashed var(--line); border-radius: 14px; color: var(--muted); text-align: center; }
     .list { display: grid; gap: 9px; }
     .list-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 11px; padding: 12px; border: 1px solid #e7edf2; border-radius: 11px; background: white; }
+    button.list-row.selected, .selectable.selected, tr.selected { border-color:var(--teal); background:var(--teal-soft); box-shadow:0 0 0 3px color-mix(in srgb,var(--teal) 12%,transparent); }
+    tr.selected td { background:var(--teal-soft); }
     .ticket-chip { display: grid; place-items: center; min-width: 45px; height: 34px; border-radius: 9px; color: var(--navy); background: var(--blue-soft); font-weight: 900; }
     .metric { padding: 17px; border: 1px solid #e3eaf0; border-radius: 14px; background: white; }
     .metric strong { display: block; margin-top: 4px; color: var(--navy); font-size: 25px; }
@@ -148,12 +158,31 @@
     .qr-demo { display: grid; grid-template-columns: repeat(5, 9px); gap: 3px; width: max-content; margin: 15px auto; padding: 8px; background: white; }
     .qr-demo i { width: 9px; height: 9px; background: #142f43; }
     .qr-demo i:nth-child(3n) { opacity: .08; }
-    .display-shell { padding: 30px; border-radius: 20px; color: white; background: radial-gradient(circle at 80% 0%, #17656b, #102a43 58%); box-shadow: 0 22px 45px rgba(16,42,67,.22); }
-    .display-call { display: grid; grid-template-columns: 1fr auto; align-items: center; min-height: 235px; padding: 30px; border: 1px solid rgba(255,255,255,.18); border-radius: 17px; background: rgba(255,255,255,.08); }
+    .display-shell { padding:18px 22px; border-radius:20px; color:white; background:radial-gradient(circle at 80% 0%,#17656b,#102a43 58%); box-shadow:0 22px 45px rgba(16,42,67,.22); overflow:hidden; }
+    .display-device { width:min(1180px,100%); aspect-ratio:16/9; margin:auto; padding:10px; border-radius:25px; background:#0a1823; box-shadow:0 24px 55px rgba(16,42,67,.25); }
+    .display-screen { display:grid; grid-template-rows:45% 55%; height:100%; overflow:hidden; border-radius:15px; background:var(--surface); }
+    .display-screen .display-shell { display:flex; flex-direction:column; min-height:0; border-radius:0; box-shadow:none; }
+    .display-screen .display-shell > div:first-child { margin-bottom:12px !important; }
+    .display-light-panel { display:grid; grid-template-rows:auto auto auto minmax(72px,1fr); min-height:0; padding:10px 14px 12px; color:var(--ink); background:var(--surface); overflow:hidden; }
+    .display-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+    .display-summary .metric { padding:7px 11px; background:color-mix(in srgb,var(--surface) 90%,var(--teal-soft)); }
+    .display-summary .metric strong { margin-top:0; font-size:18px; }
+    .display-light-panel > .card { padding:7px 11px; margin-top:6px !important; }
+    .display-light-panel > .card .card-head { margin-bottom:0; }
+    .display-light-panel > .card p { margin:1px 0; }
+    .display-light-panel > .card-head { margin:5px 0 4px !important; }
+    .display-light-panel > .card-head p { margin:0; font-size:11px; }
+    #displayHistory { grid-template-columns:repeat(4,minmax(0,1fr)); align-items:stretch; min-height:72px; gap:8px; }
+    #displayHistory .station { height:100%; min-height:0; padding:7px 9px; overflow:hidden; }
+    #displayHistory .station h3 { margin-top:3px; font-size:15px; }
+    #displayHistory .station p, #displayHistory .station b { margin:1px 0; font-size:11px; }
+    .display-identity { margin-top:8px; color:#b9fff4; font-size:17px; font-weight:800; }
+    .display-next-person { color:var(--navy); font-size:13px; font-weight:800; }
+    .display-call { display:grid; grid-template-columns:1fr auto; align-items:center; flex:1; min-height:0; padding:16px 22px; border:1px solid rgba(255,255,255,.18); border-radius:17px; background:rgba(255,255,255,.08); }
     .display-call.flash { animation: callFlash .85s ease 2; }
     @keyframes callFlash { 50% { transform: scale(1.015); background: rgba(128,241,225,.22); box-shadow: 0 0 35px rgba(128,241,225,.25); } }
-    .display-call strong { display: block; font-size: clamp(54px, 9vw, 105px); line-height: 1; }
-    .counter { padding: 26px 35px; border-radius: 17px; color: #103b45; background: #9cf2e7; font-size: clamp(28px, 5vw, 58px); font-weight: 900; text-align: center; }
+    .display-call strong { display:block; font-size:clamp(45px,7vw,78px); line-height:1; }
+    .counter { padding:16px 25px; border-radius:17px; color:#103b45; background:#9cf2e7; font-size:clamp(24px,4vw,45px); font-weight:900; text-align:center; }
     .phone { max-width: 355px; margin: auto; padding: 11px; border-radius: 38px; background: #0f2536; box-shadow: 0 25px 48px rgba(16,42,67,.25); }
     .phone-screen { min-height: 625px; padding: 24px 19px; border-radius: 29px; background: linear-gradient(#f8fffe, #edf7f6); }
     .phone-notch { width: 95px; height: 20px; margin: -17px auto 23px; border-radius: 0 0 13px 13px; background: #0f2536; }
@@ -175,6 +204,12 @@
     .month-day.muted-day { opacity:.45 }
     .month-day strong { display:block;margin-bottom:7px }
     .month-event { display:block;margin-top:5px;padding:5px 7px;border-radius:7px;background:var(--teal-soft);color:var(--teal-dark);font-size:11px;font-weight:700 }
+    .month-day:not(.muted-day), .cal-cell[data-slot-date] { cursor:pointer; transition:.15s ease; }
+    .month-day:not(.muted-day):hover, .cal-cell[data-slot-date]:hover { background:color-mix(in srgb,var(--teal-soft) 62%,var(--surface)); }
+    .appointment, .month-event { cursor:pointer; }
+    .modal-step-nav { display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px }
+    .choice-card { border:2px solid var(--line);background:var(--surface);transition:.15s ease }
+    .choice-card.selected { border-color:var(--teal);background:var(--teal-soft);box-shadow:0 0 0 3px color-mix(in srgb,var(--teal) 12%,transparent) }
     .sla-alert { border-left:4px solid #d64545;background:rgba(214,69,69,.07) }
     .person-note { max-width:220px }
     .note-preview { display:block;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:help }
@@ -203,7 +238,11 @@
     .toast.show { opacity: 1; transform: translateY(0); }
     .modal-backdrop { position: fixed; z-index: 90; inset: 0; display: none; place-items: center; padding: 20px; background: rgba(10, 29, 44, .55); }
     .modal-backdrop.open { display: grid; }
-    .modal { width: min(480px, 100%); padding: 24px; border-radius: 17px; background: white; box-shadow: 0 25px 70px rgba(0,0,0,.24); }
+    .modal { width:min(820px,calc(100vw - 40px)) !important; max-height:calc(100vh - 40px); padding:24px; border-radius:17px; background:white; box-shadow:0 25px 70px rgba(0,0,0,.24); overflow-y:auto; overscroll-behavior:contain; }
+    .modal .card-head > .btn { flex:0 0 auto; }
+    .modal .actions { flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px; scrollbar-width:thin; }
+    .modal .actions .btn, .modal-step-nav .btn { flex:0 0 auto; white-space:nowrap; }
+    .modal-step-nav { flex-wrap:nowrap; }
     .mobile-nav { display: none; }
     .login-page { position:fixed; z-index:200; inset:0; display:grid; place-items:center; padding:25px; background:radial-gradient(circle at 15% 15%, #1a6670, #102a43 50%, #091d2f); overflow:auto; }
     .login-page.hidden { display:none; }
@@ -216,6 +255,8 @@
     .required { margin-left:2px; color:var(--red); font-size:16px; font-weight:900; line-height:1; }
     .optional { color:var(--muted); font-size:10px; font-weight:700; text-transform:uppercase; }
     .inherit { color:var(--teal-dark); font-size:10px; font-weight:800; text-transform:uppercase; }
+    body.mid input, body.mid select, body.mid textarea, body.mid .btn.outline, body.mid .list-row, body.mid .metric, body.mid .tabs, body.mid .tab.active, body.mid th { color:var(--ink); border-color:var(--line); background:var(--surface); }
+    body.mid-dark input, body.mid-dark select, body.mid-dark textarea, body.mid-dark .btn.outline, body.mid-dark .list-row, body.mid-dark .metric, body.mid-dark .tabs, body.mid-dark .tab.active, body.mid-dark th { color:var(--ink); border-color:var(--line); background:var(--surface); }
     body.dark input, body.dark select, body.dark textarea, body.dark .btn.outline, body.dark .list-row, body.dark .metric, body.dark .tabs, body.dark .tab.active, body.dark th { color:var(--ink); border-color:var(--line); background:var(--surface); }
     body.dark .modal, body.dark .login-card, body.dark .role-card, body.dark .kiosk-choice, body.dark .mobile-phone { color:var(--ink); border-color:var(--line); background:var(--surface); }
     body.dark .station, body.dark .card[style*="#f8fafc"] { background:#102333 !important; }
@@ -237,6 +278,24 @@
     body.dark .position-ring { background:conic-gradient(#49cfc5 0 74%,#314b5e 74%); }
     body.dark .position-ring > div { color:var(--ink); background:#172d3e; }
     body.dark .mobile-nav { border-color:var(--line); background:var(--surface); }
+    body.mid .modal, body.mid .login-card, body.mid .role-card, body.mid .kiosk-choice, body.mid .mobile-phone, body.mid .cal-cell, body.mid .month-day { color:var(--ink);border-color:var(--line);background:var(--surface); }
+    body.mid .card[style*="#f8fafc"], body.mid .station { background:#eef3f6 !important; }
+    body.mid-dark .modal, body.mid-dark .login-card, body.mid-dark .role-card, body.mid-dark .kiosk-choice, body.mid-dark .mobile-phone, body.mid-dark .cal-cell, body.mid-dark .month-day, body.mid-dark .choice-card { color:var(--ink);border-color:var(--line);background:var(--surface); }
+    body.mid-dark .card[style*="#f8fafc"], body.mid-dark .station { background:#2b3d4c !important; }
+    body.mid-dark .badge { color:#d6e4eb;background:#3b5161; }
+    body.mid-dark .badge.green { color:#9ae6bb;background:#28513e; }
+    body.mid-dark .badge.amber { color:#ffdaa0;background:#5a4528; }
+    body.mid-dark .badge.teal { color:#9aeee7;background:#245659; }
+    body.mid-dark .badge.red { color:#ffb5ad;background:#603832; }
+    body.mid-dark .cal-head { color:#e0edf3;background:#304756; }
+    body.mid-dark .appointment { color:#e8fbf9;border-color:#61d3ca;background:#285759; }
+    body.mid-dark .appointment.booked { color:#edf2ff;border-color:#91aeff;background:#344b6a; }
+    body.mid-dark .kiosk-shell { color:var(--ink);border-color:#152532;background:linear-gradient(155deg,#2c4452,#233743); }
+    body.mid-dark .kiosk-option, body.mid-dark .kiosk-ticket { color:var(--ink);border-color:var(--line);background:#2b4050; }
+    body.mid-dark .kiosk-choice.selected, body.mid-dark .kiosk-option:hover { border-color:#62d6ce;background:#285759; }
+    body.mid-dark .phone-screen { color:var(--ink);background:linear-gradient(#2c4553,#233844); }
+    body.mid-dark .position-ring > div, body.mid-dark .mobile-nav { color:var(--ink);border-color:var(--line);background:var(--surface); }
+    body.dark .month-day, body.dark .choice-card { color:var(--ink);border-color:var(--line);background:var(--surface); }
     @media (max-width: 1050px) { .grid-3 { grid-template-columns: 1fr 1fr; } .grid-3 > :last-child { grid-column: 1 / -1; } .grid-4 { grid-template-columns: repeat(2, 1fr); } .login-card > .grid-2 { grid-template-columns:1fr; } }
     @media (max-width: 760px) {
       .app { display: block; padding-bottom: 68px; }
@@ -251,11 +310,19 @@
       .kiosk-shell { padding: 20px; border-width: 7px; }
       .kiosk-options, .kiosk-grid, .kiosk-form { grid-template-columns: 1fr; }
       .display-call { grid-template-columns: 1fr; gap: 20px; }
+      .display-summary { grid-template-columns:1fr; }
+      .display-device { aspect-ratio:auto; }
+      .display-screen { display:block; }
+      .display-light-panel { display:block; overflow:visible; }
+      #displayHistory { grid-template-columns:1fr; }
       .bar-row { grid-template-columns: 100px 1fr; } .bar-row > :last-child { display: none; }
       .mobile-nav { position: fixed; z-index: 30; bottom: 0; display: grid; grid-template-columns: repeat(5, 1fr); width: 100%; padding: 7px; border-top: 1px solid var(--line); background: white; }
       .mobile-nav button { padding: 8px 2px; border: 0; color: var(--muted); background: transparent; font-size: 10px; }
       .mobile-nav button.active { color: var(--teal-dark); font-weight: 800; }
       .role-grid { grid-template-columns:1fr 1fr; }
+      .modal-backdrop { padding:12px; }
+      .modal { width:calc(100vw - 24px) !important; max-height:calc(100vh - 24px); padding:18px; }
+      .modal-step-nav { align-items:flex-end; }
     }
   </style>
 </head>
@@ -266,23 +333,10 @@
   <div class="app">
     <aside class="sidebar">
       <div class="brand"><div class="brand-mark">D</div><div><strong>DORI</strong><small>Flow management</small></div></div>
-      <div class="nav-label">Opérations</div>
       <nav class="nav" id="mainNav">
-        <button class="active" data-view="desk">▣ Cockpit guichet</button>
-        <button data-view="queue">☷ Mes files</button>
-        <button data-view="calendar">▦ Rendez-vous</button>
-        <button data-view="control">◉ Supervision</button>
-        <button data-view="portfolio">⌘ Portefeuille de sites</button>
-        <button data-view="reports">⌁ Rapports</button>
-        <button data-view="notifications">✉ Notifications</button>
-        <div class="nav-label">Expériences</div>
-        <button data-view="kiosk">▤ Borne kiosque</button>
-        <button data-view="display">▰ Écran salle</button>
-        <button data-view="mobile">◫ Tracking mobile</button>
-        <div class="nav-label">Administration</div>
-        <button data-view="onboarding">◇ Nouveau site</button>
-        <button data-view="settings">⚙ Configuration</button>
-        <button data-view="health">♡ Santé plateforme</button>
+        <section class="nav-section open" data-nav-section="operations"><button class="nav-section-toggle" type="button">Opérations</button><div class="nav-section-items"><button class="active" data-view="desk">▣ Cockpit guichet</button><button data-view="queue">☷ Mes files</button><button data-view="calendar">▦ Rendez-vous</button><button data-view="control">◉ Supervision</button><button data-view="portfolio">⌘ Portefeuille de sites</button><button data-view="reports">⌁ Rapports</button><button data-view="notifications">✉ Notifications</button></div></section>
+        <section class="nav-section" data-nav-section="experiences"><button class="nav-section-toggle" type="button">Expériences</button><div class="nav-section-items"><button data-view="kiosk">▤ Borne kiosque</button><button data-view="display">▰ Écran salle</button><button data-view="mobile">◫ Tracking mobile</button></div></section>
+        <section class="nav-section" data-nav-section="administration"><button class="nav-section-toggle" type="button">Administration</button><div class="nav-section-items"><button data-view="onboarding">◇ Nouveau site</button><button data-view="settings">⚙ Configuration</button><button data-view="health">♡ Santé plateforme</button></div></section>
       </nav>
     </aside>
 
@@ -466,9 +520,8 @@
         </section>
 
         <section class="view" id="display">
-          <div class="hero"><div><div class="eyebrow">Salle d'attente</div><h2>Affichage TV</h2><p class="muted">Vue sans donnée personnelle, synchronisée en temps réel.</p></div><div class="actions"><button class="btn primary" id="advanceDisplay">▶ Simuler l'appel suivant</button><button class="btn outline" id="resetDisplay">Réinitialiser</button><span class="badge green"><span class="dot"></span> Écran connecté</span></div></div>
-          <div class="display-shell"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:25px"><div><b style="font-size:22px">Clinique El Manar</b><div style="opacity:.7">Accueil général</div></div><div>10:42 · Français / العربية</div></div><div class="display-call" id="displayCall"><div><small style="letter-spacing:.12em">TICKET APPELÉ</small><strong id="displayTicket">A-042</strong><p style="font-size:20px;opacity:.8">Merci de vous présenter au poste indiqué</p></div><div class="counter">GUICHET<br><span id="displayCounter">03</span></div></div><div class="grid grid-3" style="margin-top:18px"><div class="card" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);color:white;box-shadow:none"><small>Dernier appel</small><h3 id="displayPrevious" style="color:white;font-size:28px">A-041 · 02</h3></div><div class="card" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);color:white;box-shadow:none"><small>En attente</small><h3 id="displayWaiting" style="color:white;font-size:28px">18 personnes</h3></div><div class="card" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);color:white;box-shadow:none"><small>Attente estimée</small><h3 id="displayEstimate" style="color:white;font-size:28px">~ 12 min</h3></div></div></div>
-          <div class="card" style="margin-top:18px"><div class="card-head"><div><h3>Historique des quatre derniers appels</h3><p class="muted">Numéros uniquement, sans aucune donnée personnelle.</p></div><span class="badge teal">Mis à jour en direct</span></div><div class="grid grid-4" id="displayHistory"><div class="station"><span class="badge green">À l'instant</span><h3>A-042</h3><p class="muted">Guichet 03 · Accueil</p></div><div class="station"><span class="badge">Il y a 2 min</span><h3>A-041</h3><p class="muted">Guichet 02 · Accueil</p></div><div class="station"><span class="badge">Il y a 4 min</span><h3>C-017</h3><p class="muted">Guichet 04 · Consultations</p></div><div class="station"><span class="badge">Il y a 7 min</span><h3>L-009</h3><p class="muted">Guichet 01 · Laboratoire</p></div></div></div>
+          <div class="hero"><div><div class="eyebrow">Salle d'attente</div><h2>Affichage écran</h2><p class="muted" id="displayPrivacyDescription">Vue publique sans donnée personnelle, synchronisée en temps réel.</p></div><div class="actions"><button class="btn primary" id="advanceDisplay">▶ Simuler l'appel suivant</button><button class="btn outline" id="resetDisplay">Réinitialiser</button><span class="badge green"><span class="dot"></span> Écran connecté</span></div></div>
+          <div class="display-device"><div class="display-screen"><div class="display-shell"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px"><div><b style="font-size:22px">Clinique El Manar</b><div style="opacity:.75">Accueil général · affichage en direct</div></div><div style="text-align:right"><b id="displayClock">10:42</b><div style="opacity:.7">Français / العربية</div></div></div><div class="display-call" id="displayCall"><div><small style="letter-spacing:.12em">TICKET APPELÉ</small><strong id="displayTicket">A-042</strong><div class="display-identity" data-display-identity id="displayCalledPerson">Amira Ben Salah</div><p style="font-size:18px;opacity:.82">Merci de vous présenter au poste indiqué</p></div><div class="counter">GUICHET<br><span id="displayCounter">03</span></div></div></div><div class="display-light-panel"><div class="display-summary"><div class="metric"><small>Dernier appel</small><strong id="displayPrevious">A-041 · 02</strong></div><div class="metric"><small>En attente</small><strong id="displayWaiting">18 personnes</strong></div><div class="metric"><small>Attente estimée</small><strong id="displayEstimate">~ 12 min</strong></div></div><div class="card" data-display-identity style="box-shadow:none;background:var(--teal-soft);margin-top:14px"><div class="card-head"><div><small class="muted">PROCHAINE PERSONNE À APPELER</small><h3 id="displayNextTicket">A-043 · Mohamed Gharbi</h3></div><span class="badge teal">Aperçu interne</span></div><p class="display-next-person" id="displayNextContext">Accueil général · ordre calculé par le moteur de file</p></div><div class="card-head" style="margin-top:18px"><div><h3>Historique des quatre derniers appels</h3><p class="muted" id="displayHistoryPrivacy">Tickets uniquement sur l'affichage public.</p></div><span class="badge teal">Mis à jour en direct</span></div><div class="grid grid-4" id="displayHistory"></div></div></div></div>
         </section>
 
         <section class="view" id="mobile">
@@ -544,13 +597,24 @@
     const toast = document.getElementById('toast');
     let toastTimer;
     function showToast(message) { toast.textContent = message; toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 2800); }
+    function refreshNavSections(activeView) {
+      const sections = [...document.querySelectorAll('#mainNav .nav-section')];
+      sections.forEach(section => { section.hidden = ![...section.querySelectorAll('[data-view]')].some(button => !button.hidden); });
+      const activeSection = document.querySelector(`#mainNav [data-view="${activeView}"]`)?.closest('.nav-section');
+      if (activeSection && !activeSection.hidden) sections.forEach(section => section.classList.toggle('open', section === activeSection));
+    }
     function showView(id) {
       document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === id));
       document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === id));
       document.getElementById('pageTitle').textContent = titles[id] || 'DORI';
+      refreshNavSections(id);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
+    document.querySelectorAll('#mainNav .nav-section-toggle').forEach(toggle => toggle.addEventListener('click', () => {
+      const selectedSection = toggle.closest('.nav-section');
+      document.querySelectorAll('#mainNav .nav-section').forEach(section => section.classList.toggle('open', section === selectedSection));
+    }));
     document.querySelectorAll('[data-toast]').forEach(b => b.addEventListener('click', () => showToast(b.dataset.toast)));
     document.querySelectorAll('[data-modal]').forEach(b => b.addEventListener('click', () => document.getElementById(b.dataset.modal).classList.add('open')));
     document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('.modal-backdrop').classList.remove('open')));
@@ -559,13 +623,15 @@
 
     const themeToggle = document.getElementById('themeToggle');
     function applyTheme(theme) {
-      const dark = theme === 'dark'; document.body.classList.toggle('dark', dark);
-      themeToggle.textContent = dark ? '☀' : '☾'; themeToggle.title = dark ? 'Activer le mode clair' : 'Activer le mode sombre'; themeToggle.setAttribute('aria-label', themeToggle.title);
-      try { localStorage.setItem('dori-demo-theme', theme); } catch (_) { /* La maquette reste fonctionnelle sans stockage local. */ }
+      const acceptedTheme = ['light', 'mid', 'mid-dark', 'dark'].includes(theme) ? theme : 'light';
+      document.body.classList.toggle('mid', acceptedTheme === 'mid'); document.body.classList.toggle('mid-dark', acceptedTheme === 'mid-dark'); document.body.classList.toggle('dark', acceptedTheme === 'dark');
+      const themeUi = { light:['◐','Mode intermédiaire clair'], mid:['◑','Mode intermédiaire sombre'], 'mid-dark':['☾','Mode sombre'], dark:['☀','Mode clair'] }[acceptedTheme];
+      themeToggle.textContent = themeUi[0]; themeToggle.title = `Activer le ${themeUi[1].toLowerCase()}`; themeToggle.setAttribute('aria-label', themeToggle.title); themeToggle.dataset.theme = acceptedTheme;
+      try { localStorage.setItem('dori-demo-theme', acceptedTheme); } catch (_) { /* La maquette reste fonctionnelle sans stockage local. */ }
     }
     let savedTheme = 'light'; try { savedTheme = localStorage.getItem('dori-demo-theme') || 'light'; } catch (_) { /* Contexte file:// restreint. */ }
     applyTheme(savedTheme);
-    themeToggle.addEventListener('click', () => applyTheme(document.body.classList.contains('dark') ? 'light' : 'dark'));
+    themeToggle.addEventListener('click', () => applyTheme({ light:'mid', mid:'mid-dark', 'mid-dark':'dark', dark:'light' }[themeToggle.dataset.theme || 'light']));
 
     const siteContextButton = document.getElementById('siteContextButton');
     const siteContextMenu = document.getElementById('siteContextMenu');
@@ -732,9 +798,9 @@
     for (let hour = 8; hour <= 17; hour++) {
       const timeCell = document.createElement('div'); timeCell.className = 'cal-cell'; timeCell.innerHTML = `<b>${String(hour).padStart(2, '0')}:00</b>${hour === 17 ? '<div class="muted">Fermeture</div>' : ''}`; weekGrid.appendChild(timeCell);
       for (let day = 0; day < 5; day++) {
-        const cell = document.createElement('div'); cell.className = 'cal-cell';
+        const cell = document.createElement('div'); cell.className = 'cal-cell'; cell.dataset.slotDate = `2026-10-${String(7 + day).padStart(2, '0')}`; cell.dataset.slotTime = `${String(hour).padStart(2, '0')}:00`;
         if (hour === 12 || hour === 13) { cell.classList.add('calendar-break'); cell.innerHTML = day === 0 && hour === 12 ? '<span class="muted">Pause du site · 12:00–14:00</span>' : '';
-        } else if (weeklyAppointments[`${hour}-${day}`]) { const appointment = document.createElement('div'); appointment.className = `appointment ${/Réservé/.test(weeklyAppointments[`${hour}-${day}`]) ? 'booked' : ''}`; appointment.innerHTML = weeklyAppointments[`${hour}-${day}`]; cell.appendChild(appointment); }
+        } else if (weeklyAppointments[`${hour}-${day}`]) { const appointment = document.createElement('div'); appointment.className = `appointment ${/Réservé/.test(weeklyAppointments[`${hour}-${day}`]) ? 'booked' : ''}`; appointment.dataset.appointmentDate = cell.dataset.slotDate; appointment.innerHTML = weeklyAppointments[`${hour}-${day}`]; cell.appendChild(appointment); }
         weekGrid.appendChild(cell);
       }
     }
@@ -827,7 +893,8 @@
 
     document.body.insertAdjacentHTML('beforeend', '<div class="modal-backdrop" id="appointmentActionModal"><div class="modal"><div class="card-head"><div><h3 id="appointmentActionTitle">Rendez-vous</h3><p class="muted" id="appointmentActionMeta">Consultations · Clinique El Manar</p></div><button class="btn outline" id="closeAppointmentAction">×</button></div><div class="card" style="box-shadow:none;background:var(--teal-soft)"><div class="check-row"><span>Statut</span><span class="badge" id="appointmentActionStatus">Réservé</span></div><div class="check-row"><span>Personne</span><b id="appointmentActionPerson">Sonia Mansour</b></div><div class="check-row"><span>Créneau</span><b id="appointmentActionSlot">09:30</b></div></div><div class="form-grid" id="appointmentRescheduleFields" hidden style="margin-top:14px"><label>Nouvelle date<input type="date" id="appointmentRescheduleDate" value="2026-10-08" /></label><label>Nouveau créneau<select id="appointmentRescheduleTime"><option>10:30</option><option>11:15</option></select></label></div><div class="actions" style="justify-content:flex-end;margin-top:18px"><button class="btn danger" id="cancelAppointmentAction">Annuler le rendez-vous</button><button class="btn outline" id="rescheduleAppointmentAction">Reprogrammer</button><button class="btn primary" id="checkinAppointmentAction">Faire le check-in</button></div></div></div>');
     let selectedCalendarAppointment = null;
-    document.querySelectorAll('#calendar .appointment').forEach(card => { card.style.cursor = 'pointer'; card.title = 'Ouvrir les actions du rendez-vous'; card.addEventListener('click', () => { selectedCalendarAppointment = card; const text = card.innerText.split('\n')[0]; document.getElementById('appointmentActionTitle').textContent = `Rendez-vous · ${text}`; document.getElementById('appointmentActionPerson').textContent = text.split('·')[1]?.trim() || 'Personne planifiée'; document.getElementById('appointmentActionSlot').textContent = text.split('·')[0]?.trim() || '—'; document.getElementById('appointmentActionStatus').textContent = card.classList.contains('booked') ? 'Réservé' : 'Présent'; document.getElementById('appointmentActionModal').classList.add('open'); }); });
+    function openAppointmentActions(card, date) { selectedCalendarAppointment = card; const text = card.innerText.split('\n')[0]; document.getElementById('appointmentActionTitle').textContent = `Rendez-vous · ${text}`; document.getElementById('appointmentActionPerson').textContent = text.split('·')[1]?.trim() || 'Personne planifiée'; document.getElementById('appointmentActionSlot').textContent = `${date} · ${text.split('·')[0]?.trim() || '—'}`; document.getElementById('appointmentActionStatus').textContent = card.classList.contains('booked') ? 'Réservé' : 'Présent'; document.getElementById('checkinAppointmentAction').hidden = date !== '2026-10-07'; document.getElementById('appointmentRescheduleFields').hidden = true; document.getElementById('rescheduleAppointmentAction').textContent = 'Reprogrammer'; document.getElementById('appointmentActionModal').classList.add('open'); }
+    document.querySelectorAll('#calendar .appointment').forEach(card => { card.title = 'Ouvrir les actions du rendez-vous'; card.addEventListener('click', event => { event.stopPropagation(); openAppointmentActions(card, card.dataset.appointmentDate); }); });
     document.getElementById('closeAppointmentAction').addEventListener('click', () => document.getElementById('appointmentActionModal').classList.remove('open'));
     document.getElementById('appointmentActionModal').addEventListener('click', event => { if (event.target.id === 'appointmentActionModal') event.currentTarget.classList.remove('open'); });
     document.getElementById('rescheduleAppointmentAction').addEventListener('click', event => { const fields = document.getElementById('appointmentRescheduleFields'); if (fields.hidden) { fields.hidden = false; event.currentTarget.textContent = 'Confirmer la reprogrammation'; return; } const time = document.getElementById('appointmentRescheduleTime').value; if (selectedCalendarAppointment) selectedCalendarAppointment.innerHTML = `${time} · ${document.getElementById('appointmentActionPerson').textContent}<br>Reprogrammé`; document.getElementById('appointmentActionModal').classList.remove('open'); fields.hidden = true; event.currentTarget.textContent = 'Reprogrammer'; showToast('Rendez-vous reprogrammé sur un créneau disponible.'); });
@@ -854,10 +921,10 @@
     notificationFilterToggle.addEventListener('click', () => { const opening = notificationFiltersForm.hidden; notificationFiltersForm.hidden = !opening; resetNotificationFilters.hidden = !opening; notificationFilterToggle.textContent = opening ? 'Masquer les filtres' : 'Afficher les filtres'; });
 
     const displayCalls = [
-      { ticket: 'A-042', counter: '03', previous: 'A-041 · 02', waiting: 18, estimate: 12 },
-      { ticket: 'A-043', counter: '01', previous: 'A-042 · 03', waiting: 17, estimate: 11 },
-      { ticket: 'A-044', counter: '04', previous: 'A-043 · 01', waiting: 16, estimate: 10 },
-      { ticket: 'A-045', counter: '02', previous: 'A-044 · 04', waiting: 15, estimate: 9 }
+      { ticket:'A-042', person:'Amira Ben Salah', counter:'03', previous:'A-041 · 02', waiting:18, estimate:12 },
+      { ticket:'A-043', person:'Mohamed Gharbi', counter:'01', previous:'A-042 · 03', waiting:17, estimate:11 },
+      { ticket:'A-044', person:'Leïla Kallel', counter:'04', previous:'A-043 · 01', waiting:16, estimate:10 },
+      { ticket:'A-045', person:'Rim Trabelsi', counter:'02', previous:'A-044 · 04', waiting:15, estimate:9 }
     ];
     let displayIndex = 0;
     function renderDisplayCall() {
@@ -867,10 +934,17 @@
       document.getElementById('displayPrevious').textContent = call.previous;
       document.getElementById('displayWaiting').textContent = `${call.waiting} personnes`;
       document.getElementById('displayEstimate').textContent = `~ ${call.estimate} min`;
+      const internalDisplay = selectedRole !== 'kiosk';
+      document.querySelectorAll('[data-display-identity]').forEach(element => element.hidden = !internalDisplay);
+      document.getElementById('displayCalledPerson').textContent = call.person;
+      const nextCall = displayCalls[(displayIndex + 1) % displayCalls.length];
+      document.getElementById('displayNextTicket').textContent = `${nextCall.ticket} · ${nextCall.person}`;
+      document.getElementById('displayPrivacyDescription').textContent = internalDisplay ? 'Aperçu interne sur le poste d’un membre du site, avec identités autorisées.' : 'Vue publique de salle sans donnée personnelle, synchronisée en temps réel.';
+      document.getElementById('displayHistoryPrivacy').textContent = internalDisplay ? 'Identités visibles uniquement dans cet aperçu interne.' : 'Tickets uniquement, sans donnée personnelle.';
       const history = document.getElementById('displayHistory');
       if (history) {
         const recent = [0, 1, 2, 3].map(offset => displayCalls[(displayIndex - offset + displayCalls.length) % displayCalls.length]);
-        history.innerHTML = recent.map((item, index) => `<div class="station"><span class="badge ${index === 0 ? 'green' : ''}">${index === 0 ? 'À l’instant' : `Il y a ${index * 2} min`}</span><h3>${item.ticket}</h3><p class="muted">Guichet ${item.counter} · Accueil</p></div>`).join('');
+        history.innerHTML = recent.map((item, index) => `<div class="station"><span class="badge ${index === 0 ? 'green' : ''}">${index === 0 ? 'À l’instant' : `Il y a ${index * 2} min`}</span><h3>${item.ticket}</h3>${internalDisplay ? `<b style="display:block;margin-top:5px">${item.person}</b>` : ''}<p class="muted">Guichet ${item.counter} · Accueil</p></div>`).join('');
       }
       const panel = document.getElementById('displayCall'); panel.classList.remove('flash'); void panel.offsetWidth; panel.classList.add('flash');
     }
@@ -1308,6 +1382,7 @@
       const allowed = roleAccess[role];
       document.querySelectorAll('#mainNav [data-view]').forEach(button => button.hidden = !allowed.includes(button.dataset.view));
       document.querySelectorAll('.mobile-nav [data-view]').forEach(button => button.hidden = !allowed.includes(button.dataset.view));
+      document.querySelectorAll('[data-view="onboarding"]').forEach(button => button.hidden = !['root','admin'].includes(role));
       const firstView = allowed[0]; showView(firstView);
       const identity = roleIdentities[role];
       document.getElementById('profileFirstName').value = identity.first; document.getElementById('profileLastName').value = identity.last; document.getElementById('profileEmail').value = identity.email;
@@ -1317,7 +1392,10 @@
       document.getElementById('profileScopeBadge').textContent = role === 'root' ? 'Global' : role === 'admin' ? 'Multi-sites' : role === 'manager' ? 'Site complet' : role === 'kiosk' ? 'Appareil' : '2 files';
       document.getElementById('profileButton').title = `Profil · ${roleNames[role]}`;
       document.querySelectorAll('.notification-send-action').forEach(action => action.hidden = !['root','admin','manager'].includes(role));
+      const translationTab = document.querySelector('[data-config-tab="translations"]'); if (translationTab) translationTab.hidden = !['root','admin'].includes(role);
+      const translationPanel = document.querySelector('[data-config-panel="translations"]'); if (translationPanel?.classList.contains('active') && !['root','admin'].includes(role)) document.querySelector('[data-config-tab="sites"]')?.click();
       document.getElementById('kioskStaffContext').hidden = role === 'kiosk';
+      renderDisplayCall();
       updateRoleGuard(role);
       configureSiteContext(role);
       showToast(`Session ouverte avec le profil ${roleNames[role]}.`);
@@ -1334,7 +1412,69 @@
     document.getElementById('setupNext').addEventListener('click', event => {
       if (setupStep === 1 && !document.getElementById('setupSiteName').value.trim()) { event.stopImmediatePropagation(); showToast('Le nom du site est le seul champ requis à cette étape.'); }
     }, true);
+
+    // Finalisation IHM : les champs non marqués sont optionnels. On conserve uniquement les contraintes utiles.
+    document.querySelectorAll('.optional').forEach(hint => { hint.textContent = hint.textContent.replace(/\bOptionnel\b\s*[·:]?\s*/gi, '').replace(/\boptionnel\b\s*[·:]?\s*/gi, '').trim(); if (!hint.textContent) hint.remove(); });
+
+    // Toute sélection interactive possède un état visuel explicite.
+    document.addEventListener('click', event => {
+      const selectable = event.target.closest('[data-select-group]');
+      if (!selectable) return;
+      document.querySelectorAll(`[data-select-group="${selectable.dataset.selectGroup}"]`).forEach(item => item.classList.toggle('selected', item === selectable));
+    });
+
+    // Calendrier : un espace libre préconfigure le formulaire ; les événements du mois ouvrent les mêmes actions.
+    function openAppointmentCreation(date, time = '10:30') {
+      document.getElementById('appointmentDate').value = date;
+      const timeSelect = document.getElementById('appointmentTime');
+      if (![...timeSelect.options].some(option => option.value === time)) timeSelect.add(new Option(`${time} — disponibilité simulée`, time));
+      timeSelect.value = time; showAppointmentStep(1); document.getElementById('appointmentModal').classList.add('open');
+      showToast(`Créneau du ${date} à ${time} préselectionné.`);
+    }
+    document.querySelectorAll('#calendar .cal-cell[data-slot-date]').forEach(cell => cell.addEventListener('click', event => { if (!event.target.closest('.appointment') && !cell.classList.contains('calendar-break')) openAppointmentCreation(cell.dataset.slotDate, cell.dataset.slotTime); }));
+    document.querySelectorAll('#calendarMonth .month-day:not(.muted-day)').forEach(day => {
+      const dayNumber = Number(day.querySelector('strong')?.textContent); const date = `2026-10-${String(dayNumber).padStart(2, '0')}`; day.dataset.slotDate = date;
+      day.querySelectorAll('.month-event').forEach(eventCard => { eventCard.classList.add('booked'); eventCard.addEventListener('click', event => { event.stopPropagation(); openAppointmentActions(eventCard, date); }); });
+      day.addEventListener('click', event => { if (!event.target.closest('.month-event')) openAppointmentCreation(date); });
+    });
+
+    // Les trois offres sont un catalogue global fixe ; l'administration d'un site ne fait que les associer aux files.
+    const tierMarkup = `<div class="card" style="box-shadow:none;background:var(--teal-soft);margin-bottom:16px"><b>Catalogue DORI fixe</b><p class="muted">Gratuit, Standard et Premium sont proposés par la plateforme. Sélectionnez une file puis associez une ou plusieurs offres et configurez chaque association.</p></div><label>File configurée<select class="tier-queue"><option>Accueil général</option><option>Consultations</option><option>Laboratoire</option></select></label><div class="grid grid-3" style="margin-top:16px"><button class="card choice-card selected" data-select-group="tier-offer" data-tier-code="free"><span class="badge green">Gratuit</span><h3 style="margin-top:10px">0 TND</h3><p class="muted">Sans notification automatique</p></button><button class="card choice-card" data-select-group="tier-offer" data-tier-code="standard"><span class="badge teal">Standard</span><h3 style="margin-top:10px">Tarif configurable</h3><p class="muted">Notification de seuil</p></button><button class="card choice-card" data-select-group="tier-offer" data-tier-code="premium"><span class="badge amber">Premium</span><h3 style="margin-top:10px">Tarif configurable</h3><p class="muted">Bienvenue, seuil et tracking</p></button></div><div class="card" style="box-shadow:none;margin-top:16px"><h3>Règles de l'association</h3><div class="form-grid" style="margin-top:12px"><label>Prix <span class="required" title="Champ requis">*</span><input class="tier-price" type="number" min="0" step="0.001" value="0" /></label><label>Devise<select class="tier-currency"><option value="">Hériter de la file puis du site</option><option>TND</option><option>EUR</option><option>USD</option></select></label><label>Ordre d'affichage<input class="tier-order" type="number" min="0" value="1" /></label><label>Choix par défaut<select class="tier-default"><option value="false">Non</option><option value="true">Oui</option></select></label></div><button class="btn primary save-fixed-tier" style="margin-top:14px">Associer l'offre à la file</button></div>`;
+    [document.querySelector('[data-setup-panel="4"]'), document.querySelector('[data-config-panel="tiers"]')].forEach(panel => { if (!panel) return; panel.innerHTML = `<div class="card-head"><div><h3>Forfaits par file</h3><p class="muted">Association et tarification des offres du catalogue DORI.</p></div></div>${tierMarkup}`; panel.querySelector('.save-fixed-tier').addEventListener('click', () => { const selected = panel.querySelector('[data-tier-code].selected'); const price = Number(panel.querySelector('.tier-price').value); if (!selected || !Number.isFinite(price) || price < 0) { showToast('Sélectionnez une offre et renseignez un prix valide.'); return; } showToast(`${selected.textContent.trim().split(/\s+/)[0]} associé à ${panel.querySelector('.tier-queue').value}.`); }); });
+    document.querySelectorAll('option, .badge, h3, p, td, b').forEach(node => { if (node.childElementCount === 0 && node.textContent.includes('Confort')) node.textContent = node.textContent.replaceAll('Confort', 'Premium'); });
+
+    // Éditeur de file unique pour l'onboarding et la configuration, en deux vues compactes.
+    document.body.insertAdjacentHTML('beforeend', `<div class="modal-backdrop" id="queueEditorModal"><div class="modal" style="width:min(720px,100%)"><div class="card-head"><div><h3 id="queueEditorTitle">Nouvelle file</h3><p class="muted" id="queueEditorStepLabel">Étape 1 sur 2 · Informations propres à la file</p></div><button class="btn outline" data-queue-close>×</button></div><div class="steps"><span class="step done" id="queueStepOne"></span><span class="step" id="queueStepTwo"></span></div><div id="queueSpecificStep"><div class="form-grid"><label>Code <span class="required" title="Champ requis">*</span><input id="queueEditorCode" maxlength="10" placeholder="ACC" /></label><label>Nom<input id="queueEditorName" maxlength="50" placeholder="Accueil général" /></label><label>Attente moyenne<input id="queueEditorWait" type="number" min="1" value="10" /></label><label>Nombre de guichets<input id="queueEditorThreads" type="number" min="1" value="1" /></label></div></div><div id="queueInheritanceStep" hidden><div class="card" style="box-shadow:none;background:var(--teal-soft);margin-bottom:14px"><b>Héritage site → file</b><p class="muted">Laissez « Hériter » pour reprendre le réglage du site. Une valeur choisie surcharge uniquement cette file.</p></div><div class="form-grid"><label>Devise<select id="queueEditorCurrency"><option value="">Hériter</option><option>TND</option><option>EUR</option></select></label><label>Locale<select id="queueEditorLocale"><option value="">Hériter</option><option>fr</option><option>ar</option><option>en</option></select></label><label>Rendez-vous<select id="queueEditorAppointments"><option value="">Hériter</option><option value="true">Activés</option><option value="false">Désactivés</option></select></label><label>Durée du créneau<input id="queueEditorDuration" type="number" min="1" placeholder="Hériter" /></label><label>Capacité du créneau<input id="queueEditorCapacity" type="number" min="1" placeholder="Hériter" /></label><label>Tolérance retard<input id="queueEditorTolerance" type="number" min="0" placeholder="Hériter" /></label><label>Ouverture<input id="queueEditorStart" type="time" /></label><label>Fermeture<input id="queueEditorEnd" type="time" /></label><label>Début interruption<input id="queueEditorBreakStart" type="time" /></label><label>Fin interruption<input id="queueEditorBreakEnd" type="time" /></label><label>Reset quotidien<select id="queueEditorReset"><option value="">Hériter</option><option value="close_all">Clôturer tous</option><option value="close_served_only">Clôturer les servis</option></select></label><label>Heure du reset<input id="queueEditorResetTime" type="time" /></label></div></div><div class="modal-step-nav"><button class="btn outline" id="queueEditorPrevious" disabled>← Retour</button><div class="actions"><button class="btn outline" data-queue-close>Annuler</button><button class="btn primary" id="queueEditorNext">Continuer →</button></div></div></div></div>`);
+    document.querySelector('#queueInheritanceStep .form-grid').insertAdjacentHTML('beforeend', '<label>Poids walk-in<input id="queueEditorWeightWalkin" type="number" step="any" placeholder="Hériter" /></label><label>Poids rendez-vous<input id="queueEditorWeightAppointment" type="number" step="any" placeholder="Hériter" /></label><label>Escalade walk-in<input id="queueEditorEscalationWalkin" type="number" step="any" placeholder="Hériter" /></label><label>Escalade rendez-vous<input id="queueEditorEscalationAppointment" type="number" step="any" placeholder="Hériter" /></label><label>Report des attentes<select id="queueEditorCarryOver"><option value="">Hériter</option><option value="true">Oui</option><option value="false">Non</option></select></label>');
+    let queueEditorStep = 1; let editedQueueRow = null;
+    function showQueueEditorStep(step) { queueEditorStep = step; document.getElementById('queueSpecificStep').hidden = step !== 1; document.getElementById('queueInheritanceStep').hidden = step !== 2; document.getElementById('queueStepTwo').classList.toggle('done', step === 2); document.getElementById('queueEditorPrevious').disabled = step === 1; document.getElementById('queueEditorNext').textContent = step === 1 ? 'Continuer vers héritage →' : 'Enregistrer la file'; document.getElementById('queueEditorStepLabel').textContent = step === 1 ? 'Étape 1 sur 2 · Informations propres à la file' : 'Étape 2 sur 2 · Héritage et surcharges'; }
+    function openQueueEditor(row = null) { editedQueueRow = row; const setupRow = row?.closest('[data-setup-panel="3"]'); const displayedName = row ? (setupRow ? row.cells[1].textContent.trim() : row.cells[0].textContent.trim().split('\n')[0]) : ''; const knownCodes = { 'Accueil général':'ACC', 'Consultations':'CONS', 'Laboratoire':'LAB' }; document.getElementById('queueEditorTitle').textContent = row ? 'Modifier la file' : 'Nouvelle file'; document.getElementById('queueEditorCode').value = row ? (setupRow ? row.cells[0].textContent.trim() : knownCodes[displayedName] || row.cells[1].textContent.trim()) : ''; document.getElementById('queueEditorName').value = displayedName; showQueueEditorStep(1); document.getElementById('queueEditorModal').classList.add('open'); }
+    document.querySelectorAll('[data-queue-close]').forEach(button => button.addEventListener('click', () => document.getElementById('queueEditorModal').classList.remove('open')));
+    document.getElementById('queueEditorPrevious').addEventListener('click', () => showQueueEditorStep(1));
+    document.getElementById('queueEditorNext').addEventListener('click', () => { if (queueEditorStep === 1) { if (!document.getElementById('queueEditorCode').value.trim()) { showToast('Le code de la file est requis.'); return; } showQueueEditorStep(2); return; } document.getElementById('queueEditorModal').classList.remove('open'); showToast(`File ${document.getElementById('queueEditorCode').value.trim().toUpperCase()} enregistrée avec ses règles d'héritage.`); });
+    document.addEventListener('click', event => { const create = event.target.closest('[data-setup-panel="3"] .card-head > .btn.primary, [data-config-panel="queues"] .demo-create'); const edit = event.target.closest('[data-config-panel="queues"] .admin-edit, [data-setup-panel="3"] .admin-edit'); if (!create && !edit) return; event.preventDefault(); event.stopImmediatePropagation(); openQueueEditor(edit?.closest('tr') || null); }, true);
+
+    // Éditeur de compte unique : création du compte, puis rôle et files du site.
+    const userModalElement = document.getElementById('userModal');
+    userModalElement.querySelector('.modal').innerHTML = `<div class="card-head"><div><h3 id="userEditorTitle">Nouveau compte</h3><p class="muted" id="userEditorStepLabel">Étape 1 sur 2 · Informations du compte</p></div><button class="btn outline" data-user-close>×</button></div><div class="steps"><span class="step done"></span><span class="step" id="userEditorProgressTwo"></span></div><div id="userAccountStep"><div class="form-grid"><label>Nom d'utilisateur <span class="required" title="Champ requis">*</span><input id="accountUsername" maxlength="50" /></label><label>Mot de passe <span class="required" title="Champ requis">*</span><input id="accountPassword" type="password" minlength="10" maxlength="20" /></label><label>Email<input id="accountEmail" type="email" maxlength="255" /></label><label>Type de compte<select id="accountType"><option value="human">Humain</option><option value="kiosk">Service · kiosque ou écran</option></select></label><label>Langue<select id="accountLanguage"><option>fr</option><option>ar</option><option>en</option></select></label></div></div><div id="userAssignmentStep" hidden><div class="card" style="box-shadow:none;background:var(--teal-soft);margin-bottom:14px"><b>Affectation sur le site en cours</b><p class="muted">Ces relations sont enregistrées après la création du compte.</p></div><label>Rôle sur le site <span class="required" title="Champ requis">*</span><select id="accountRole"><option value="manager">Manager du site</option><option value="operator">Opérateur</option><option value="kiosk">Compte kiosque</option></select></label><div id="accountQueueAssignments" class="card" style="box-shadow:none;margin-top:14px"><b>Files autorisées</b><label class="check-row"><span>Accueil général</span><input type="checkbox" checked /></label><label class="check-row"><span>Consultations</span><input type="checkbox" /></label><label class="check-row"><span>Laboratoire</span><input type="checkbox" /></label></div></div><div class="modal-step-nav"><button class="btn outline" id="userEditorPrevious" disabled>← Retour</button><div class="actions"><button class="btn outline" data-user-close>Annuler</button><button class="btn primary" id="userEditorNext">Continuer →</button></div></div>`;
+    let userEditorStep = 1; let editingUserAccount = false;
+    function showUserEditorStep(step) { userEditorStep = step; document.getElementById('userAccountStep').hidden = step !== 1; document.getElementById('userAssignmentStep').hidden = step !== 2; document.getElementById('userEditorProgressTwo').classList.toggle('done', step === 2); document.getElementById('userEditorPrevious').disabled = step === 1; document.getElementById('userEditorNext').textContent = step === 1 ? 'Continuer vers les affectations →' : 'Créer et affecter le compte'; document.getElementById('userEditorStepLabel').textContent = step === 1 ? 'Étape 1 sur 2 · Informations du compte' : 'Étape 2 sur 2 · Rôle et files du site'; }
+    function openUserEditor(row = null) { editingUserAccount = Boolean(row); document.getElementById('userEditorTitle').textContent = row ? 'Modifier le compte' : 'Nouveau compte'; document.getElementById('accountUsername').value = row?.querySelector('td b')?.textContent.trim().toLowerCase().replaceAll(' ', '.') || ''; document.getElementById('accountUsername').disabled = editingUserAccount; document.getElementById('accountPassword').closest('label').hidden = editingUserAccount; document.getElementById('accountPassword').value = ''; document.getElementById('accountEmail').value = row?.querySelector('td .muted')?.textContent.trim() || ''; showUserEditorStep(1); userModalElement.classList.add('open'); }
+    document.querySelectorAll('[data-user-close]').forEach(button => button.addEventListener('click', () => userModalElement.classList.remove('open')));
+    document.getElementById('userEditorPrevious').addEventListener('click', () => showUserEditorStep(1));
+    document.getElementById('accountRole').addEventListener('change', event => document.getElementById('accountQueueAssignments').hidden = event.target.value !== 'operator');
+    document.querySelector('[data-config-panel="users"] [data-modal="userModal"]')?.addEventListener('click', () => openUserEditor());
+    document.getElementById('userEditorNext').addEventListener('click', () => { if (userEditorStep === 1) { const username = document.getElementById('accountUsername').value.trim(); const password = document.getElementById('accountPassword').value; if (!username || (!editingUserAccount && (password.length < 10 || password.length > 20))) { showToast('Le nom utilisateur et un mot de passe de 10 à 20 caractères sont requis à la création.'); return; } showUserEditorStep(2); return; } userModalElement.classList.remove('open'); showToast(editingUserAccount ? 'Compte et affectations mis à jour.' : 'Compte créé puis affecté au site selon le rôle sélectionné.'); });
+    document.addEventListener('click', event => { const trigger = event.target.closest('[data-setup-panel="5"] .card-head > .btn.primary'); const edit = event.target.closest('[data-config-panel="users"] .admin-edit, [data-setup-panel="5"] .admin-edit'); if (!trigger && !edit) return; event.preventDefault(); event.stopImmediatePropagation(); openUserEditor(edit?.closest('tr') || null); }, true);
+
+    notificationPanel.insertAdjacentHTML('afterbegin', '<div class="card" style="box-shadow:none;background:var(--teal-soft);margin-bottom:16px"><b>Règles par offre associée à la file</b><p class="muted">Gratuit ne déclenche aucune notification. Standard configure une règle Threshold. Premium peut configurer Welcome et Threshold ; chaque règle choisit SMS ou email et peut inclure le lien de tracking.</p></div>');
+
+    // La recette technique était fictive : l'activation reste l'action utile et devient réversible.
+    const testCallRow = [...document.querySelectorAll('[data-setup-panel="6"] .check-row')].find(row => row.textContent.includes("Test d'appel complet")); testCallRow?.remove();
+    const activationButton = [...document.querySelectorAll('[data-setup-panel="6"] button')].find(button => ['Activer','Désactiver'].includes(button.textContent.trim()));
+    if (activationButton) { const cleanButton = activationButton.cloneNode(true); activationButton.replaceWith(cleanButton); let active = false; cleanButton.addEventListener('click', () => { active = !active; cleanButton.textContent = active ? 'Désactiver' : 'Activer'; cleanButton.classList.toggle('danger', active); cleanButton.classList.toggle('primary', !active); showToast(active ? 'Site activé dans la démonstration.' : 'Site désactivé dans la démonstration.'); }); }
     showSetupStep(1);
+    applyRole(selectedRole);
   </script>
 </body>
 </html>
