@@ -836,3 +836,5 @@ Le front ne code pas ses menus sur le nom du rôle. Il part des permissions et s
 <!-- CHECKPOINT id="ckpt_muyiigwx_4324bf" time="2026-10-07T19:40:24.993Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 <!-- CHECKPOINT id="ckpt_muyivbvo_h08moa" time="2026-10-07T19:50:24.996Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyn5nhx_49k3ag" time="2026-10-07T21:50:25.077Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
