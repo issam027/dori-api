@@ -7,7 +7,7 @@ describe('User DTOs Password Validation', () => {
     const dto = plainToInstance(CreateUserDto, {
       username: 'hostesse',
       email: 'hostesse@hopital.tn',
-      password: 'Root@123456', // 11 characters
+      password: 'Root@123456',
       userType: 'human',
       languagePreference: 'fr',
       roleId: 2,

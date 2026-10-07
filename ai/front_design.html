@@ -1,0 +1,2978 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>DORI — Plateforme SaaS de Gestion d'Accueil et Files d'Attente</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+Arabic:wght@500;700&display=swap">
+<style>
+/* ==========================================================================
+   DORI DESIGN SYSTEM & VARIABLES
+   ========================================================================== */
+:root{
+  --bg:#F2F5F5;--surface:#FFFFFF;--surface-2:#E9EEEE;--line:#D5DEDE;
+  --fg:#0E1B1D;--fg-2:#4B5E61;
+  --accent:#0B5C66;--accent-fg:#FFFFFF;--accent-soft:#D3EAEC;
+  --call:#F2A516;--call-fg:#2A1B00;
+  --ok:#1D8449;--ok-soft:#DCF2E4;--warn:#9A5B05;--warn-soft:#FAEACB;--bad:#BE3A2C;--bad-soft:#F8DAD6;
+  --font:'Schibsted Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  --ar:'Noto Sans Arabic','Segoe UI',Tahoma,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0A1214;--surface:#111C1F;--surface-2:#182629;--line:#25383C;--fg:#E6F0F0;--fg-2:#8FA6A9;
+  --accent:#4FC3CF;--accent-fg:#04282C;--accent-soft:#12363B;--call:#F5B33A;--call-fg:#2A1B00;
+  --ok:#4CC380;--ok-soft:#133323;--warn:#E8A94A;--warn-soft:#3A2A0C;--bad:#F07B6C;--bad-soft:#401C18;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0A1214;--surface:#111C1F;--surface-2:#182629;--line:#25383C;--fg:#E6F0F0;--fg-2:#8FA6A9;
+  --accent:#4FC3CF;--accent-fg:#04282C;--accent-soft:#12363B;--call:#F5B33A;--call-fg:#2A1B00;
+  --ok:#4CC380;--ok-soft:#133323;--warn:#E8A94A;--warn-soft:#3A2A0C;--bad:#F07B6C;--bad-soft:#401C18;color-scheme:dark}
+.dk{--bg:#0A1214;--surface:#111C1F;--surface-2:#182629;--line:#25383C;--fg:#E6F0F0;--fg-2:#8FA6A9;
+  --accent:#4FC3CF;--accent-fg:#04282C;--accent-soft:#12363B;--call:#F5B33A;--call-fg:#2A1B00;--ok:#4CC380;--ok-soft:#133323;color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;padding:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.45}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3,p{margin:0}
+.i{width:1.1em;height:1.1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:-.18em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.num{font-variant-numeric:tabular-nums}
+.grow{flex:1}
+
+/* App Shell */
+.app{display:grid;grid-template-columns:252px minmax(0,1fr);min-height:100%}
+.sidebar{position:sticky;top:0;align-self:start;max-height:100dvh;overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:6px;z-index:40}
+.sb-brand{display:flex;align-items:center;gap:10px;padding:4px 8px 14px}
+.logo{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--accent);color:var(--accent-fg);font-family:var(--mono);font-weight:700;font-size:17px;box-shadow:0 2px 8px rgba(11,92,102,.25)}
+.sb-brand b{display:block;font-size:17px;letter-spacing:.02em;line-height:1.1}
+.sb-brand span{font-size:12px;color:var(--fg-2)}
+.nlbl{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--fg-2);padding:14px 10px 4px}
+.nav{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:10px;color:var(--fg-2);font-weight:500;text-align:left;transition:all .15s}
+.nav:hover{background:var(--surface-2);color:var(--fg)}
+.nav[aria-current="page"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nav[hidden]{display:none}
+.usercard{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;border:1px solid var(--line);text-align:left;width:100%;background:var(--surface);transition:background .15s}
+.usercard:hover{background:var(--surface-2)}
+.av{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--accent-fg);font-weight:700;font-size:12px;flex:none}
+.av.sm{width:26px;height:26px;font-size:10px}
+.usercard b{display:block;line-height:1.2}
+.usercard small{color:var(--fg-2)}
+.main{min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 24px;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .menu{display:none}
+.sel{display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-weight:600;font-size:13px;transition:background .15s}
+.sel:hover{background:var(--surface-2)}
+.sel em{font-style:normal;font-weight:500;color:var(--fg-2);font-size:12px}
+.ibtn{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);color:var(--fg-2);position:relative;background:var(--surface);transition:background .15s}
+.ibtn:hover{background:var(--surface-2);color:var(--fg)}
+.ibtn .pin{position:absolute;top:6px;right:7px;width:8px;height:8px;border-radius:50%;background:var(--bad)}
+.views{padding:24px 24px 64px}
+.view{container-type:inline-size;display:flex;flex-direction:column;gap:16px}
+.scrim{display:none}
+.menu-pop{position:fixed;z-index:80;min-width:270px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 20px 50px -20px rgba(0,0,0,.5);animation:fadeIn .15s ease-out}
+.menu-pop button{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:8px;text-align:left;transition:background .12s}
+.menu-pop button:hover,.menu-pop button[aria-selected="true"]{background:var(--accent-soft);color:var(--accent)}
+.menu-pop small{margin-left:auto;color:var(--fg-2);font-family:var(--mono)}
+
+/* Page Header */
+.ph{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.ph .tile{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:var(--accent-soft);color:var(--accent)}
+.ph .tile .i{width:24px;height:24px}
+.ph h1{font-size:24px;letter-spacing:-.01em;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ph .sub{color:var(--fg-2);max-width:70ch}
+.ph .acts{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.route{font-family:var(--mono);font-size:12px;padding:2px 8px;border-radius:6px;background:var(--surface-2);color:var(--fg-2);font-weight:500}
+
+/* UI Elements */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:600;transition:all .15s}
+.btn:hover{background:var(--surface-2)}
+.btn.pri{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.bad{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}
+.btn.bad:hover{background:var(--bad-soft)}
+.btn.ok{background:var(--ok);color:#fff;border-color:var(--ok)}
+.btn.ok:hover{filter:brightness(1.08)}
+.btn.call{background:var(--call);color:var(--call-fg);border-color:var(--call)}
+.btn.call:hover{filter:brightness(1.08)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn[disabled]{opacity:.4;cursor:not-allowed;pointer-events:none}
+.ib{display:grid;place-items:center;width:32px;height:32px;border-radius:8px;border:1px solid var(--line);color:var(--fg-2);transition:all .15s}
+.ib:hover{background:var(--surface-2);color:var(--fg)}
+.ib.bad:hover{color:var(--bad);background:var(--bad-soft)}
+kbd{font-family:var(--mono);font-size:11px;padding:2px 6px;border-radius:5px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg-2)}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;background:var(--surface-2);color:var(--fg-2);white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}.pill.warn{background:var(--warn-soft);color:var(--warn)}.pill.bad{background:var(--bad-soft);color:var(--bad)}.pill.acc{background:var(--accent-soft);color:var(--accent)}
+.pill.vip{background:var(--call);color:var(--call-fg)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block}
+.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}
+.label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-2)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.box{padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.box h3{font-size:16px;display:flex;gap:8px;align-items:center}
+.box .hint{color:var(--fg-2);margin-top:-8px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;font-weight:600;color:var(--fg-2)}
+.in{width:100%;padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row>*{min-width:0}
+.form2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px}
+.form2 .full{grid-column:1/-1}
+table{border-collapse:collapse;width:100%}
+th{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--fg-2);text-align:left;font-weight:700;padding:8px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.scroll{overflow-x:auto}
+.seg{display:grid;grid-auto-flow:column;gap:4px;padding:3px;border-radius:11px;background:var(--surface-2)}
+.seg button{padding:7px 10px;border-radius:8px;font-weight:600;font-size:13px;color:var(--fg-2);transition:all .15s}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.note{padding:10px 14px;border-radius:10px;background:var(--accent-soft);color:var(--fg);font-size:13px;display:flex;gap:10px;align-items:flex-start}
+.note.warn{background:var(--warn-soft);color:var(--warn)}.note.bad{background:var(--bad-soft);color:var(--bad)}.note.ok{background:var(--ok-soft);color:var(--ok)}
+.note .i{margin-top:2px;flex:none}
+.toggle{width:40px;height:22px;border-radius:99px;background:var(--line);position:relative;flex:none;transition:background .2s;cursor:pointer}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}
+.toggle[aria-checked="true"]{background:var(--ok)}
+.toggle[aria-checked="true"]::after{transform:translateX(18px)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{font-family:var(--mono);font-size:12px;padding:3px 8px;border-radius:6px;border:1px dashed var(--accent);color:var(--accent);transition:background .15s}
+.chips button:hover{background:var(--accent-soft)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.kpi{padding:14px 16px;border-radius:14px;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
+.kpi .kt{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.kpi small{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-2)}
+.kpi b{font-size:30px;line-height:1.1;font-family:var(--mono);letter-spacing:-.02em;font-weight:600}
+.kpi b i{font-style:normal;font-size:14px;color:var(--fg-2);font-weight:500}
+.kic{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent)}
+.kic.ok{background:var(--ok-soft);color:var(--ok)}.kic.warn{background:var(--warn-soft);color:var(--warn)}.kic.bad{background:var(--bad-soft);color:var(--bad)}
+.dl{font-size:12px;font-weight:600;color:var(--fg-2)}.dl.good{color:var(--ok)}.dl.badt{color:var(--bad)}
+.autogrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px}
+.qb{--h:215;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;font-weight:700;font-family:var(--mono);background:color-mix(in srgb,hsl(var(--h) 65% 50%) 20%,var(--surface));color:color-mix(in srgb,hsl(var(--h) 65% 50%) 60%,var(--fg));flex:none}
+.cc{font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--surface-2);color:var(--fg-2)}
+
+/* ==========================================================================
+   COCKPIT (SMART DESK) & FLOATING VS OCCUPIED COUNTER
+   ========================================================================== */
+.cols{display:grid;grid-template-columns:310px minmax(0,1fr) 330px;gap:16px;align-items:start}
+@container (max-width:1050px){.cols{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.cols>:nth-child(2){order:3;grid-column:1/-1}}
+@container (max-width:680px){.cols{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+/* Floating Receptionist vs Counter State Banner */
+.desk-mode-bar{padding:12px 16px;border-radius:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid var(--line);background:var(--surface)}
+.desk-mode-bar.floating{border-left:5px solid var(--warn);background:color-mix(in srgb,var(--warn-soft) 30%,var(--surface))}
+.desk-mode-bar.active{border-left:5px solid var(--ok);background:color-mix(in srgb,var(--ok-soft) 30%,var(--surface))}
+
+.hero-g{padding:18px;border-radius:14px;background:linear-gradient(140deg,var(--accent),color-mix(in srgb,var(--accent) 60%,var(--bg)));color:var(--accent-fg);display:flex;flex-direction:column;gap:4px;box-shadow:0 6px 16px rgba(11,92,102,.15)}
+.hero-g.floating{background:linear-gradient(140deg,#3F4E50,#2A3436)}
+.hero-g .t{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
+.hero-g b{font-size:24px;letter-spacing:-.01em}
+.hero-g .pill{background:rgba(255,255,255,.2);color:inherit}
+
+.callbtn{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;padding:18px 12px;border-radius:14px;background:var(--call);color:var(--call-fg);font-weight:700;font-size:18px;box-shadow:0 4px 12px rgba(242,165,22,.25);transition:transform .1s,filter .15s}
+.callbtn:hover{filter:brightness(1.06)}
+.callbtn:active{transform:scale(.98)}
+.callbtn[disabled]{background:var(--surface-2);color:var(--fg-2);box-shadow:none;opacity:.5}
+.callbtn kbd{background:transparent;color:inherit;border-color:currentColor;opacity:.7}
+
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.duo .btn{flex-direction:column;gap:2px;padding:12px}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);padding:14px 6px}
+.trio div{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;color:var(--fg-2);font-size:12px}
+.trio div+div{border-left:1px solid var(--line)}
+.trio b{font-family:var(--mono);font-size:20px;color:var(--fg);font-weight:600}
+.trio .i{color:var(--accent);width:18px;height:18px}
+.nq{display:flex;flex-direction:column;gap:8px;list-style:none;margin:0;padding:0}
+.nq li{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);transition:background .15s}
+.nq li:first-child{border-color:var(--accent);background:var(--accent-soft)}
+.nq .ix{display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--surface-2);font-size:12px;font-weight:700;font-family:var(--mono)}
+.nq .tk{font-family:var(--mono);font-weight:700;font-size:16px}
+.nq .tag{font-size:11px;font-weight:700;padding:1px 7px;border-radius:5px;background:var(--surface-2);color:var(--fg-2);margin-left:6px}
+.nq .tag.rdvt{background:var(--accent-soft);color:var(--accent)}.nq .tag.vipt{background:var(--call);color:var(--call-fg)}
+.nq .m{font-size:12px;color:var(--fg-2);display:flex;gap:10px}
+
+.tcard{padding:18px;display:flex;flex-direction:column;gap:14px;border-top:4px solid var(--call)}
+.tcard .hd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.tcard .tk{font-family:var(--mono);font-size:46px;font-weight:700;line-height:1;letter-spacing:.02em}
+.score{text-align:right}
+.score b{display:block;font-family:var(--mono);font-size:30px;color:var(--accent);line-height:1.1}
+.score small{color:var(--fg-2);font-size:12px}
+.id{display:grid;grid-template-columns:auto 1fr;gap:6px 18px}
+.id dt{color:var(--fg-2)}.id dd{margin:0;font-weight:500}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.list li{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.list li:last-child{border:0}
+.list time{font-family:var(--mono);color:var(--fg-2);font-size:13px}
+.notes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.notes li{padding:10px 12px;border-radius:10px;background:var(--warn-soft);display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.notes li div{flex:1;min-width:0}
+.notes small{display:block;color:var(--fg-2)}
+.addnote{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;border-radius:10px;border:1px dashed var(--line);color:var(--fg-2);width:100%;background:none;transition:background .15s}
+.addnote:hover{background:var(--surface-2);color:var(--fg)}
+.pay{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;border-radius:14px;background:var(--ok-soft)}
+.pay b.pr{font-family:var(--mono);font-size:24px;color:var(--fg)}
+.search{display:flex;align-items:center;gap:8px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg-2)}
+.search input{border:0;background:none;color:var(--fg);font:inherit;flex:1;min-width:0;outline:none}
+.hit{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--accent-soft)}
+.rdvrow{display:flex;align-items:center;gap:12px;padding:8px 0;font-size:13px}
+
+/* ==========================================================================
+   MODALS, DRAWERS, PALETTE, TOASTS
+   ========================================================================== */
+.drawer{position:fixed;inset:0 0 0 auto;width:min(440px,100%);background:var(--surface);border-left:1px solid var(--line);box-shadow:-20px 0 50px -20px rgba(0,0,0,.4);padding:20px;display:flex;flex-direction:column;gap:14px;z-index:70;overflow-y:auto;transition:transform .25s}
+.drawer[hidden]{display:flex!important;transform:translateX(105%);visibility:hidden}
+
+.modal-backdrop{position:fixed;inset:0;background:rgba(5,12,14,.6);backdrop-filter:blur(3px);z-index:90;display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn .18s ease-out}
+.modal-backdrop[hidden]{display:none!important}
+.modal-box{width:min(520px,100%);background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:0 25px 60px -20px rgba(0,0,0,.6);overflow:hidden;display:flex;flex-direction:column;animation:slideUp .2s ease-out}
+.modal-hd{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.modal-bd{padding:20px;display:flex;flex-direction:column;gap:14px;max-height:80dvh;overflow-y:auto}
+.modal-ft{padding:14px 20px;border-top:1px solid var(--line);background:var(--surface-2);display:flex;align-items:center;justify-content:flex-end;gap:10px}
+
+.pal{position:fixed;inset:0;z-index:95;background:rgba(5,12,14,.55);backdrop-filter:blur(2px);display:flex;justify-content:center;align-items:flex-start;padding-top:90px}
+.pal[hidden]{display:none}
+.pal>div{width:min(560px,calc(100% - 24px));background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 24px 60px -20px rgba(0,0,0,.6)}
+.pal ul{list-style:none;margin:0;padding:6px;max-height:360px;overflow-y:auto}
+.pal li{display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;cursor:pointer;transition:background .12s}
+.pal li:hover,.pal li.on{background:var(--accent-soft);color:var(--accent)}
+.pal li kbd{margin-left:auto}
+
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:var(--fg);color:var(--bg);padding:11px 18px;border-radius:12px;font-weight:600;z-index:110;box-shadow:0 12px 30px -8px rgba(0,0,0,.4);transition:all .25s cubic-bezier(.2,.8,.2,1);max-width:calc(100% - 32px);display:flex;align-items:center;gap:10px}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+
+/* ==========================================================================
+   BORNE TACTILE (KIOSK)
+   ========================================================================== */
+.stage{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start;justify-content:center}
+.rail{display:flex;flex-direction:column;gap:6px;min-width:230px;flex:1;max-width:340px}
+.rail p{color:var(--fg-2);font-size:13px;margin-bottom:6px}
+.rail button{display:flex;gap:10px;align-items:center;text-align:left;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);transition:all .15s}
+.rail button[aria-current="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+.rail span{font-family:var(--mono);color:var(--fg-2);width:18px}
+
+.kiosk{width:min(440px,100%);aspect-ratio:9/16;min-height:810px;border-radius:32px;border:12px solid #1a2528;background:linear-gradient(165deg,var(--accent-soft),var(--bg) 55%);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 60px -30px rgba(0,0,0,.55);container-type:inline-size;position:relative}
+.kiosk.land{width:min(1000px,100%);aspect-ratio:16/10;min-height:0}
+.k-top{display:flex;align-items:center;gap:8px;padding:12px 16px;background:rgba(255,255,255,.5);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.k-top .bn{display:flex;align-items:center;gap:10px;margin-right:auto}
+.k-top .bn b{display:block;line-height:1.1}
+.k-top .bn small{color:var(--fg-2)}
+.kb{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:12px;border:2px solid var(--line);background:var(--surface);font-weight:700;min-height:44px;transition:all .15s}
+.kb[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+@container (max-width:600px){.kb .tx{display:none}}
+.langs{display:flex;gap:6px}
+.k-body{flex:1;padding:14px 20px 20px;display:flex;flex-direction:column;gap:14px;min-height:0;overflow-y:auto}
+.k-step{display:none;flex-direction:column;gap:14px;flex:1}
+.k-step.on{display:flex}
+.k-h{font-size:27px;line-height:1.15;font-weight:700;letter-spacing:-.015em;text-wrap:balance}
+.k-sub{color:var(--fg-2);font-size:15px}
+.giants{display:flex;flex-direction:column;gap:14px;flex:1}
+.land .giants{flex-direction:row}
+.giant{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;padding:22px;border-radius:22px;min-height:130px;text-align:start;flex:1;font-size:24px;font-weight:700;border:2px solid var(--line);background:var(--surface);transition:all .15s}
+.giant small{font-size:14px;font-weight:500;color:var(--fg-2)}
+.giant .gi{display:grid;place-items:center;width:56px;height:56px;border-radius:16px;background:var(--accent-soft);color:var(--accent)}
+.giant .gi .i{width:30px;height:30px}
+.giant.acc{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.giant.acc small{color:inherit;opacity:.85}
+.giant.acc .gi{background:rgba(255,255,255,.2);color:inherit}
+.giant:active{transform:scale(.98)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1;align-content:start}
+.land .tiles{grid-template-columns:repeat(3,1fr)}
+.tile{display:flex;flex-direction:column;justify-content:space-between;gap:10px;padding:16px;border-radius:18px;border:2px solid var(--line);background:var(--surface);text-align:start;min-height:130px;transition:all .15s}
+.tile:active{transform:scale(.98)}
+.tile .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.tile .ic .i{width:24px;height:24px}
+.tile b{font-size:18px}
+.tile small{color:var(--fg-2);font-size:13px;display:flex;gap:12px}
+.tier{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;border-radius:18px;border:2px solid var(--line);background:var(--surface);text-align:start;width:100%;transition:all .15s}
+.tier[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.tier b{font-size:19px;display:block}.tier small{color:var(--fg-2);font-size:13px}
+.tier .pr{font-family:var(--mono);font-weight:700;font-size:18px;white-space:nowrap}
+.k-g2{display:flex;flex-direction:column;gap:14px}
+.land .k-g2{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.pbox{display:flex;gap:8px}
+.pbox .cty{display:grid;place-items:center;padding:0 14px;border-radius:16px;background:var(--surface);border:2px solid var(--line);font-weight:700;white-space:nowrap}
+.phone-in{flex:1;padding:12px;border-radius:16px;background:var(--surface);border:2px solid var(--accent);font-family:var(--mono);font-size:26px;font-weight:700;letter-spacing:.04em;text-align:center;min-height:58px;direction:ltr}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pad button{min-height:56px;border-radius:16px;border:2px solid var(--line);background:var(--surface);font-size:24px;font-weight:700;font-family:var(--mono);display:grid;place-items:center;transition:all .1s}
+.pad button:active{background:var(--accent-soft);transform:scale(.96)}
+.cta{min-height:60px;border-radius:18px;background:var(--accent);color:var(--accent-fg);font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;box-shadow:0 6px 20px rgba(11,92,102,.3);transition:all .15s}
+.cta:active{transform:scale(.98)}
+.kin{width:100%;padding:14px;border-radius:16px;border:2px solid var(--line);background:var(--surface);color:var(--fg);font:inherit;font-size:20px}
+.qrbox{display:grid;place-items:center;aspect-ratio:1;width:min(160px,100%);margin-inline:auto;padding:14px;border-radius:18px;border:2px dashed var(--accent);color:var(--accent)}
+.qrbox .i{width:100%;height:100%;stroke-width:1.2}
+
+.ticket{background:var(--surface);border:2px solid var(--line);border-radius:22px;padding:22px;text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center;position:relative;border-top:6px solid var(--ok);box-shadow:0 10px 30px -10px rgba(0,0,0,.15)}
+.ticket .big{font-family:var(--mono);font-size:68px;font-weight:700;letter-spacing:.14em;line-height:1.1;margin-inline-end:-.14em;color:var(--accent)}
+.ticket hr{border:0;border-top:2px dashed var(--line);width:100%;margin:10px 0}
+.t3{display:grid;grid-template-columns:repeat(3,1fr);width:100%;gap:6px}
+.t3 div{display:flex;flex-direction:column;gap:2px;color:var(--fg-2);font-size:13px}
+.t3 b{color:var(--fg);font-size:18px}
+.ticket .qr{width:90px;height:90px}
+.ticket .qr .i{width:100%;height:100%;stroke-width:1.2}
+
+.idle{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--warn-soft);color:var(--warn);font-weight:600;font-size:14px}
+.idle .bar{flex:1;height:6px;border-radius:9px;background:color-mix(in srgb,var(--warn) 25%,transparent);overflow:hidden}
+.idle .bar i{display:block;height:100%;width:62%;background:var(--warn)}
+.kfoot{text-align:center;color:var(--fg-2);font-size:12px}
+.kiosk.a11y .k-h{font-size:32px}.kiosk.a11y .giant{font-size:28px;border-width:3px}.kiosk.a11y .tile b{font-size:22px}.kiosk.a11y .k-sub{font-size:18px}
+.ar{font-family:var(--ar)}
+
+/* ==========================================================================
+   AFFICHAGE DE SALLE (TV BROADCAST)
+   ========================================================================== */
+.tvwrap{container-type:inline-size;border-radius:18px;border:10px solid #1a2528;background:#000;box-shadow:0 30px 60px -30px rgba(0,0,0,.6);overflow:hidden}
+.tv{aspect-ratio:16/9;display:grid;grid-template-rows:auto 1fr auto;background:var(--bg);color:var(--fg);font-size:1.5cqw;overflow:hidden}
+.tv-h{display:flex;justify-content:space-between;align-items:center;padding:1.2cqw 2.4cqw;border-bottom:1px solid var(--line);font-weight:600;font-size:1.7cqw}
+.tv-h span:last-child{font-family:var(--mono);color:var(--fg-2)}
+.tv-m{display:grid;grid-template-columns:1.45fr 1fr;min-height:0}
+.hero{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.4cqw;overflow:hidden;border-right:1px solid var(--line)}
+.hero .lbl{letter-spacing:.3em;text-transform:uppercase;color:var(--fg-2);font-weight:700;font-size:1.5cqw}
+.hero .tk{font-family:var(--mono);font-weight:700;font-size:13cqw;line-height:1;letter-spacing:.08em;color:var(--call);position:relative;z-index:1}
+.hero .gx{font-size:4cqw;font-weight:700;position:relative;z-index:1}
+.hero .who{font-size:2cqw;color:var(--fg-2);position:relative;z-index:1}
+.ring{position:absolute;left:50%;top:50%;width:20cqw;height:20cqw;margin:-10cqw 0 0 -10cqw;border-radius:50%;border:.35cqw solid var(--call);opacity:0}
+.hero.pulse .ring{animation:ripple 2.4s ease-out 3}
+.hero.pulse .ring:nth-child(2){animation-delay:.5s}.hero.pulse .ring:nth-child(3){animation-delay:1s}
+.hero.pulse .tk{animation:rise .7s cubic-bezier(.2,.9,.3,1)}
+@keyframes ripple{0%{transform:scale(.4);opacity:.7}100%{transform:scale(3.4);opacity:0}}
+@keyframes rise{from{transform:translateY(2cqw) scale(.9);opacity:0}to{transform:none;opacity:1}}
+.tside{display:flex;flex-direction:column;min-height:0}
+.tside>div{padding:1.6cqw 2cqw}
+.tside .last{flex:1;border-bottom:1px solid var(--line)}
+.tside .lbl{letter-spacing:.14em;text-transform:uppercase;color:var(--fg-2);font-weight:700;font-size:1.1cqw;margin-bottom:.8cqw}
+.last ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.7cqw}
+.last li{display:flex;align-items:baseline;gap:1.2cqw;font-size:1.9cqw}
+.last li .t{font-family:var(--mono);font-weight:700;width:7cqw}
+.last li .g{font-weight:600}
+.last li small{color:var(--fg-2);font-size:1.3cqw;margin-left:auto}
+.glob{display:grid;grid-template-columns:1fr 1fr;gap:1cqw}
+.glob b{display:block;font-family:var(--mono);font-size:3.2cqw;line-height:1.1}
+.glob span{color:var(--fg-2);font-size:1.3cqw}
+.tv-f{display:flex;align-items:center;gap:1cqw;padding:1cqw 2.4cqw;background:var(--surface-2);color:var(--fg-2);font-size:1.4cqw;overflow:hidden;white-space:nowrap}
+.tv-f .i{color:var(--call)}
+
+/* ==========================================================================
+   MOBILE TRACKER (PATIENT PWA)
+   ========================================================================== */
+.phones{display:flex;gap:32px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.phone{width:min(350px,100%);border:10px solid #1a2528;border-radius:40px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;min-height:680px;box-shadow:0 30px 60px -30px rgba(0,0,0,.55);position:relative}
+.m-bar{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;font-weight:700;background:var(--surface);border-bottom:1px solid var(--line)}
+.m-body{flex:1;padding:18px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+.m-site{display:flex;flex-direction:column}
+.m-site b{font-size:17px}.m-site span{color:var(--fg-2)}
+.m-tk{padding:12px;border-radius:14px;background:var(--surface);border:1px solid var(--line);text-align:center;font-family:var(--mono);font-size:32px;font-weight:700;letter-spacing:.18em;color:var(--accent)}
+.gauge{position:relative;width:200px;height:200px;margin-inline:auto}
+.gauge svg{width:100%;height:100%;transform:rotate(-90deg)}
+.gauge circle{fill:none;stroke-width:14;stroke-linecap:round}
+.gauge .bg{stroke:var(--surface-2)}.gauge .fg{stroke:var(--accent);transition:stroke-dashoffset .7s cubic-bezier(.2,.8,.2,1)}
+.gauge div{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge b{font-size:50px;line-height:1;font-family:var(--mono)}
+.gauge span{font-size:11px;letter-spacing:.12em;font-weight:700;color:var(--fg-2)}
+.m-eta{display:flex;justify-content:space-between;padding:12px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.m-tip{padding:12px 14px;border-radius:12px;background:var(--accent-soft);font-size:13px}
+.m-tip b{display:block;color:var(--accent);margin-bottom:2px;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.m-called{position:absolute;inset:0;z-index:10;background:#0E9F63;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:24px}
+.m-called[hidden]{display:none}
+.m-called .ring{border-color:#fff;margin:-90px 0 0 -90px;width:180px;height:180px;animation:ripple 2s ease-out infinite;opacity:0;top:36%}
+.m-called h3{font-size:34px;line-height:1.05;letter-spacing:-.01em;position:relative}
+.m-called .g{font-family:var(--mono);font-size:70px;font-weight:700;position:relative;line-height:1}
+.m-called .btn{background:#fff;color:#075F3C;border-color:#fff;position:relative}
+.simctl{display:flex;flex-direction:column;gap:10px;max-width:300px;flex:1;min-width:240px}
+.simctl p{color:var(--fg-2)}
+
+/* CSAT Survey inside Mobile */
+.csat-box{padding:16px;border-radius:14px;background:var(--surface);border:1px solid var(--line);text-align:center;display:flex;flex-direction:column;gap:10px}
+.csat-stars{display:flex;justify-content:center;gap:8px;font-size:24px;cursor:pointer}
+.csat-stars span:hover,.csat-stars span.active{color:var(--call)}
+
+/* ==========================================================================
+   DASHBOARD & ANALYTICS
+   ========================================================================== */
+.load{display:grid;grid-template-columns:minmax(150px,220px) minmax(80px,1fr) auto;align-items:center;gap:12px 14px;font-size:13px}
+.load .nm{display:flex;align-items:center;gap:10px;font-weight:600}
+.load .track{height:12px;border-radius:99px;background:var(--surface-2);position:relative;overflow:hidden}
+.load .track i{position:absolute;inset:0 auto 0 0;border-radius:99px;background:var(--accent)}
+.load .track i.hot{background:var(--bad)}
+.load .meta{display:flex;gap:10px;align-items:center;justify-content:flex-end;white-space:nowrap;color:var(--fg-2)}
+@container (max-width:760px){.load{grid-template-columns:1fr}.load .meta{justify-content:flex-start;flex-wrap:wrap}}
+.chart text{fill:var(--fg-2);font-size:11px;font-family:var(--font)}
+.chart .gl{stroke:var(--line);stroke-width:1}
+.heat{display:grid;grid-template-columns:44px repeat(12,minmax(34px,1fr));gap:4px;align-items:center;font-size:11px;color:var(--fg-2);min-width:520px}
+.heat i{height:30px;border-radius:6px;display:block}
+.heat i.pred{outline:2px dashed var(--call);outline-offset:-2px}
+.heat .hl{text-align:center;font-family:var(--mono)}
+.legend{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg-2)}
+.legend i{width:110px;height:8px;border-radius:9px;background:linear-gradient(90deg,var(--surface-2),var(--accent))}
+.opr{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:var(--bg);flex-wrap:wrap}
+.opr .who{flex:1;min-width:140px}.opr .who b{display:flex;gap:6px;align-items:center}.opr small{color:var(--fg-2)}
+.opr .sv{text-align:right}.opr .sv b{display:block;color:var(--ok);font-family:var(--mono)}
+
+/* ==========================================================================
+   ADMIN SCREENS: SITES, FILES, FORFAITS, NOTIFICATIONS, USERS, TRADUCTIONS
+   ========================================================================== */
+.steps{display:flex;gap:6px;flex-wrap:wrap}
+.steps div{flex:1;min-width:150px;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--surface-2);color:var(--fg-2);font-weight:600;font-size:13px}
+.steps div .tl{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--line);flex:none}
+.steps small{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;opacity:.8}
+.steps .done{color:var(--ok)}.steps .done .tl{background:var(--ok);color:#fff}
+.steps .cur{background:var(--accent-soft);color:var(--accent)}.steps .cur .tl{background:var(--accent);color:var(--accent-fg)}
+.upl{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px dashed var(--line);color:var(--fg-2);cursor:pointer}
+.qcard{padding:18px;display:flex;flex-direction:column;gap:14px}
+.qcard .hd{display:flex;align-items:center;gap:12px}
+.qcard .hd .nm{flex:1;min-width:0}.qcard .hd b{display:block;font-size:16px}
+.qcard .hd small{color:var(--fg-2)}
+.qcard .acts{display:flex;gap:6px}
+.stat3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat3 div{padding:10px;border-radius:10px;background:var(--bg);text-align:center;display:flex;flex-direction:column;gap:2px;color:var(--fg-2);font-size:12px}
+.stat3 b{font-family:var(--mono);font-size:20px;color:var(--fg);font-weight:600}
+.eng{display:grid;grid-template-columns:1fr auto 1fr auto;gap:6px 12px;font-size:13px;color:var(--fg-2);align-items:baseline}
+.eng b{font-family:var(--mono);color:var(--fg);font-weight:600}
+.avs{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.tcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.tc{position:relative;padding:18px;border-radius:14px;border:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.tc .rib{position:absolute;top:0;right:0;background:var(--ok);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-bottom-left-radius:10px}
+.tc .pr{font-family:var(--mono);font-size:28px;font-weight:700;letter-spacing:-.02em}
+.tc .pr.free{color:var(--ok)}.tc .pr small{font-size:13px;color:var(--fg-2);font-weight:500}
+.tc .kv{display:flex;justify-content:space-between;color:var(--fg-2);font-size:13px}.tc .kv b{color:var(--fg)}
+.ri{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:var(--bg);flex-wrap:wrap}
+.ri .rt{flex:1;min-width:170px}.ri .rt b{display:flex;gap:8px;align-items:center}.ri small{color:var(--fg-2)}
+.ob{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:var(--bg);flex-wrap:wrap}
+.ob .rt{flex:1;min-width:140px}.ob small{display:block;color:var(--fg-2)}
+.sms{border:8px solid #1a2528;border-radius:28px;background:var(--bg);padding:14px;display:flex;flex-direction:column;gap:10px;min-height:290px}
+.bubble{padding:10px 12px;border-radius:16px 16px 16px 4px;background:var(--surface-2);font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere}
+.cnt3{display:flex;gap:24px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--line)}
+.cnt3 div{display:flex;flex-direction:column;color:var(--fg-2);font-size:12px}
+.cnt3 b{font-family:var(--mono);font-size:20px;color:var(--fg);font-weight:600}
+.rank{font-family:var(--mono);font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--surface-2);white-space:nowrap}
+.rank.r2{background:var(--accent-soft);color:var(--accent)}.rank.r3{background:var(--warn-soft);color:var(--warn)}.rank.r4,.rank.r5{background:var(--call);color:var(--call-fg)}
+.lock{display:inline-flex;gap:5px;align-items:center;color:var(--fg-2);font-size:12px}
+.uc{display:flex;align-items:center;gap:12px}.uc small{display:block;color:var(--fg-2)}
+.tt{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tt.ar{direction:rtl}
+.err{color:var(--bad);font-size:12px}
+
+/* Connexion */
+.login{display:grid;grid-template-columns:1.1fr 1fr;min-height:100dvh;margin:-24px -24px -64px}
+.lg-l{padding:44px;display:flex;flex-direction:column;gap:28px;justify-content:space-between;background:linear-gradient(150deg,var(--accent),color-mix(in srgb,var(--accent) 45%,var(--bg)));color:var(--accent-fg)}
+.lg-l h2{font-size:clamp(30px,4vw,48px);line-height:1.05;letter-spacing:-.02em;max-width:14ch;text-wrap:balance}
+.lg-l .st{display:flex;gap:28px;flex-wrap:wrap}.lg-l .st b{display:block;font-family:var(--mono);font-size:28px}
+.lg-r{padding:44px;display:flex;flex-direction:column;justify-content:center;gap:16px;max-width:520px;width:100%;margin-inline:auto}
+@container (max-width:800px){.login{grid-template-columns:1fr}.lg-l{min-height:300px}}
+body.bare .sidebar,body.bare .top{display:none}
+body.bare .app{grid-template-columns:1fr}
+body.bare .views{padding:0}
+
+@media (max-width:960px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;inset:0 auto 0 0;width:270px;max-height:none;height:100%;transform:translateX(-105%);transition:transform .25s;box-shadow:20px 0 40px -20px rgba(0,0,0,.5)}
+  .sidebar.open{transform:none}
+  .scrim.on{display:block;position:fixed;inset:0;background:rgba(5,12,14,.5);z-index:35}
+  .top .menu{display:grid}
+  .top{padding:10px 16px}.views{padding:16px 16px 56px}
+}
+@media (max-width:640px){
+  .kiosk{min-height:760px}
+  .eng{grid-template-columns:1fr auto}
+  .login{margin:-16px -16px -56px}.lg-l,.lg-r{padding:24px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ==========================================================================
+     SVG ICONS DICTIONARY
+     ========================================================================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+<symbol id="i-printer" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+<symbol id="i-swap" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4M21 13v1a4 4 0 0 1-4 4H3"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+<symbol id="i-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/></symbol>
+<symbol id="i-build" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/></symbol>
+<symbol id="i-qr" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h3M20 17v4"/></symbol>
+<symbol id="i-steth" viewBox="0 0 24 24"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6 6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3M8 15v1a6 6 0 0 0 6 6 6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></symbol>
+<symbol id="i-baby" viewBox="0 0 24 24"><path d="M9 12h.01M15 12h.01M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5"/><path d="M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5s-.9 2.5-2 2.5c-.8 0-1.5-.4-1.5-1"/></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><path d="M10 2v7.5L4.5 19a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9.5V2M8.5 2h7M7 16h10"/></symbol>
+<symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-mega" viewBox="0 0 24 24"><path d="m3 11 18-5v12L3 14zM11.6 16.8a3 3 0 1 1-5.8-1.6"/></symbol>
+<symbol id="i-phone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+<symbol id="i-desk" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+<symbol id="i-tablet" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 18h6"/></symbol>
+<symbol id="i-tv" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="m17 2-5 5-5-5"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="M12 2H2v10l9.29 9.29a1 1 0 0 0 1.42 0l6.58-6.58a1 1 0 0 0 0-1.42zM7 7h.01"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+<symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4zM22 2 11 13"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></symbol>
+<symbol id="i-login" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></symbol>
+<symbol id="i-trend" viewBox="0 0 24 24"><path d="m22 7-8.5 8.5-5-5L2 17M16 7h6v6"/></symbol>
+<symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="4" r="2"/><path d="M5 8h14M12 8v6M9 21l3-7 3 7"/></symbol>
+<symbol id="i-vol" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></symbol>
+<symbol id="i-pulse" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M3 21v-5h5"/></symbol>
+<symbol id="i-filter" viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54z"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+<symbol id="i-lang" viewBox="0 0 24 24"><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></symbol>
+<symbol id="i-stop" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/></symbol>
+</defs></svg>
+
+<!-- ==========================================================================
+     APPLICATION WRAPPER
+     ========================================================================== -->
+<div class="app" id="app">
+<aside class="sidebar" id="sidebar" aria-label="Navigation principale">
+  <div class="sb-brand"><span class="logo">D</span><div><b>DORI</b><span>SaaS Multi-tenant</span></div></div>
+  
+  <div class="nlbl">Espaces métiers</div>
+  <button class="nav" data-v="desk"><svg class="i"><use href="#i-desk"/></svg>Smart Desk Cockpit</button>
+  <button class="nav" data-v="kiosk"><svg class="i"><use href="#i-tablet"/></svg>Borne tactile</button>
+  <button class="nav" data-v="tv"><svg class="i"><use href="#i-tv"/></svg>Affichage de salle</button>
+  <button class="nav" data-v="mobile"><svg class="i"><use href="#i-phone"/></svg>Mobile patient</button>
+  
+  <div class="nlbl">Pilotage et administration</div>
+  <button class="nav" data-v="dash"><svg class="i"><use href="#i-grid"/></svg>Centre de commandement</button>
+  <button class="nav" data-v="sites"><svg class="i"><use href="#i-build"/></svg>Sites physiques</button>
+  <button class="nav" data-v="queues"><svg class="i"><use href="#i-list"/></svg>Files d'attente</button>
+  <button class="nav" data-v="tiers"><svg class="i"><use href="#i-tag"/></svg>Forfaits et tarifs</button>
+  <button class="nav" data-v="notif"><svg class="i"><use href="#i-mail"/></svg>Notifications SMS/Email</button>
+  <button class="nav" data-v="users"><svg class="i"><use href="#i-users"/></svg>Utilisateurs & RBAC</button>
+  <button class="nav" data-v="i18n"><svg class="i"><use href="#i-lang"/></svg>Traductions & Clés</button>
+  
+  <div class="nlbl">Système</div>
+  <button class="nav" data-v="login"><svg class="i"><use href="#i-login"/></svg>Page de connexion</button>
+  
+  <button class="usercard" id="user" aria-label="Changer de rôle pour la démonstration" title="Cliquer pour simuler un autre persona">
+    <span class="av" id="uav">OK</span>
+    <span class="grow"><b id="uname">Omar Khelifi</b><small id="urole">Admin · rang 4</small></span>
+    <svg class="i"><use href="#i-swap"/></svg>
+  </button>
+</aside>
+
+<div class="scrim" id="scrim"></div>
+
+<div class="main">
+<header class="top">
+  <button class="ibtn menu" id="menu" aria-label="Ouvrir le menu"><svg class="i"><use href="#i-menu"/></svg></button>
+  <button class="sel" id="siteSel" aria-haspopup="menu"><svg class="i"><use href="#i-build"/></svg><span id="siteLbl">Clinique Pasteur</span><em id="siteTz">Africa/Tunis · 11:28</em><svg class="i"><use href="#i-chev"/></svg></button>
+  <button class="sel" id="qSel" aria-haspopup="menu"><svg class="i"><use href="#i-list"/></svg><span id="qLbl">Pédiatrie</span><span class="pill acc num" id="qBadge">8</span><svg class="i"><use href="#i-chev"/></svg></button>
+  <span class="grow"></span>
+  <button class="sel" id="palOpen"><svg class="i"><use href="#i-search"/></svg>Commandes <kbd>Ctrl K</kbd></button>
+  <button class="ibtn" id="bell" aria-label="Notifications"><svg class="i"><use href="#i-bell"/></svg><span class="pin" id="bellPin"></span></button>
+  <button class="ibtn" id="theme" aria-label="Changer de thème" title="Thème : auto"><svg class="i"><use href="#i-sun"/></svg></button>
+  <span class="pill ok"><span class="dot"></span>Connecté</span>
+</header>
+
+<div class="views">
+
+<!-- ==========================================================================
+     VUE : SMART DESK COCKPIT (GUICHET & ACCUEIL)
+     ========================================================================== -->
+<section class="view" id="v-desk" hidden>
+  <div class="ph">
+    <span class="tile"><svg class="i"><use href="#i-desk"/></svg></span>
+    <div>
+      <h1>Smart Desk Cockpit <span class="pill" id="counterHeaderBadge"><span class="dot warn"></span>Accueil Flottant</span></h1>
+      <p class="sub">Console d'accueil et de secrétariat · <span class="mono">Espace</span> appelle, <span class="mono">N</span> crée un patient</p>
+    </div>
+    <div class="acts">
+      <button class="btn" id="btnDeskResetModal"><svg class="i"><use href="#i-alert"/></svg>Arrêt / RAZ</button>
+      <button class="btn" data-toast="Bordereau guichet imprimé"><svg class="i"><use href="#i-printer"/></svg>Imprimer</button>
+      <button class="btn pri" id="drawerOpen"><svg class="i"><use href="#i-plus"/></svg>Nouveau patient</button>
+    </div>
+  </div>
+
+  <!-- Barre d'état Accueil Flottant vs Guichet Occupé -->
+  <div class="desk-mode-bar floating" id="deskModeBar">
+    <svg class="i" style="font-size:20px;color:var(--warn)" id="deskModeIcon"><use href="#i-alert"/></svg>
+    <div class="grow" id="deskModeText">
+      <b>Mode Accueil Flottant : aucun guichet occupé</b>
+      <div style="font-size:12px;color:var(--fg-2)">Vous pouvez rechercher, inscrire des patients et donner des rendez-vous. Pour appeler des tickets et faire avancer la file, vous devez occuper un guichet physique.</div>
+    </div>
+    <div style="display:flex;gap:8px" id="deskModeActions">
+      <button class="btn ok" id="btnOccupyCounter"><svg class="i"><use href="#i-desk"/></svg>Occuper un guichet</button>
+    </div>
+  </div>
+
+  <div class="cols">
+    <!-- Colonne 1 : Commandes d'appel & Prochains -->
+    <div class="col">
+      <div class="hero-g floating" id="counterHero">
+        <div class="t"><span id="counterHeroTitle">Accueil Flottant</span><span class="pill" id="counterHeroStatus">Flottant</span></div>
+        <b id="counterHeroQueue">Pédiatrie</b>
+        <span style="opacity:.85" id="counterHeroTime">Prêt pour enregistrements</span>
+      </div>
+
+      <button class="callbtn" id="callNext" disabled title="Vous devez occuper un guichet pour appeler un ticket">
+        <span>Appeler suivant</span>
+        <kbd>Espace</kbd>
+      </button>
+
+      <div class="duo">
+        <button class="btn ok" id="served" disabled><span><svg class="i"><use href="#i-check"/></svg> Terminé</span><kbd>Entrée</kbd></button>
+        <button class="btn bad" id="noshow" disabled><span><svg class="i"><use href="#i-x"/></svg> Absent</span><kbd>Échap</kbd></button>
+      </div>
+
+      <div class="row" style="gap:8px">
+        <button class="btn grow" id="btnTransfer"><svg class="i"><use href="#i-swap"/></svg>Transférer vers une file</button>
+        <button class="btn" id="btnReChime" disabled title="Rappeler le ticket en cours"><svg class="i"><use href="#i-bell"/></svg></button>
+      </div>
+
+      <div class="card trio">
+        <div><svg class="i"><use href="#i-clock"/></svg><b>07m 45s</b>Temps moyen</div>
+        <div><svg class="i"><use href="#i-users"/></svg><b id="qTotal">8</b>File totale</div>
+        <div><svg class="i"><use href="#i-pulse"/></svg><b id="servedCount">28</b>Servis</div>
+      </div>
+
+      <div class="card box">
+        <h3>Prochains en attente <span class="pill acc" id="qCount">5</span></h3>
+        <ul class="nq" id="waitList"></ul>
+      </div>
+    </div>
+
+    <!-- Colonne 2 : Fiche active & Actions médicales -->
+    <div class="col" id="center">
+      <div class="note warn" id="earlyNote" hidden>
+        <svg class="i"><use href="#i-alert"/></svg>
+        <span>Rendez-vous de 10:15 appelé en avance : aucun patient à l'heure n'était en salle.</span>
+      </div>
+
+      <div class="card tcard">
+        <div class="hd">
+          <div>
+            <div class="label" style="margin-bottom:6px">Ticket appelé</div>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+              <span class="tk" id="cTicket">B014</span>
+              <span class="pill vip" id="cTier">VIP</span>
+            </div>
+          </div>
+          <div class="score">
+            <small>Score de priorité calculé</small>
+            <b id="cScore">84,50</b>
+            <small id="cFormula">60 (RDV) + 24,5 (escalade)</small>
+          </div>
+        </div>
+        <dl class="id">
+          <dt>Patient</dt><dd id="cName">M. Karim Ben Salem · 42 ans</dd>
+          <dt>Téléphone</dt><dd class="mono" id="cTel">+216 98 123 456</dd>
+          <dt>Langue</dt><dd>Français</dd>
+          <dt>Mode d'accès</dt><dd>Rendez-vous confirmé (10:15)</dd>
+        </dl>
+      </div>
+
+      <div class="card box">
+        <h3><svg class="i"><use href="#i-pulse"/></svg>Historique des passages</h3>
+        <ul class="list">
+          <li><time>14/09/2026</time><span class="grow">Consultation Pédiatrique</span><span style="color:var(--fg-2)">Dr Aziz</span></li>
+          <li><time>02/08/2026</time><span class="grow">Prélèvement laboratoire</span><span style="color:var(--fg-2)">Guichet 4</span></li>
+        </ul>
+      </div>
+
+      <div class="card box">
+        <h3><svg class="i"><use href="#i-lock"/></svg>Notes confidentielles internes</h3>
+        <ul class="notes" id="patientNotes">
+          <li><div>Patient à mobilité réduite — accompagnant présent<small>Sarah B. · 07/10 09:30</small></div><button class="ib" aria-label="Modifier"><svg class="i"><use href="#i-edit"/></svg></button></li>
+          <li><div>Attestation mutuelle à valider avant ordonnance<small>Sarah B. · 07/10 10:12</small></div><button class="ib" aria-label="Modifier"><svg class="i"><use href="#i-edit"/></svg></button></li>
+        </ul>
+        <button class="addnote" id="btnAddNoteModal"><svg class="i"><use href="#i-plus"/></svg>Ajouter une note interne</button>
+      </div>
+
+      <div class="pay">
+        <div>
+          <div class="label">Encaissement & Forfait</div>
+          <div style="margin:2px 0 8px">Forfait VIP · Pédiatrie</div>
+          <div class="seg" id="payMode">
+            <button aria-pressed="true">Espèces</button>
+            <button aria-pressed="false">Carte</button>
+            <button aria-pressed="false">Tiers-payant</button>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <b class="pr">35,000 TND</b>
+          <div><span class="pill warn" id="payStatus">En attente</span></div>
+        </div>
+        <button class="btn pri" id="cashBtn"><svg class="i"><use href="#i-card"/></svg>Encaisser</button>
+      </div>
+    </div>
+
+    <!-- Colonne 3 : Recherche, RDV du jour, Raccourcis -->
+    <div class="col">
+      <div class="card box">
+        <h3><svg class="i"><use href="#i-search"/></svg>Recherche rapide patient</h3>
+        <label class="search"><svg class="i"><use href="#i-search"/></svg><input id="quick" placeholder="Téléphone, nom ou n° de ticket" value="+216 98 123"></label>
+        <div class="hit">
+          <span class="av sm">KB</span>
+          <div class="grow">
+            <b>Karim Ben Salem</b>
+            <div class="mono" style="font-size:12px;color:var(--fg-2)">+216 98 123 456</div>
+          </div>
+          <span class="pill acc">Existant</span>
+        </div>
+      </div>
+
+      <div class="card box">
+        <h3><svg class="i"><use href="#i-cal"/></svg>Rendez-vous du jour <button class="btn sm" style="margin-left:auto" data-toast="Vue Agenda ouverte">Agenda</button></h3>
+        <div>
+          <div class="rdvrow"><time class="mono" style="color:var(--fg-2)">10:15</time><span class="grow">Ali K.</span><span class="pill ok">Arrivé</span></div>
+          <div class="rdvrow"><time class="mono" style="color:var(--fg-2)">10:30</time><span class="grow">Sonia M.</span><span class="pill ok">Arrivée</span></div>
+          <div class="rdvrow"><time class="mono" style="color:var(--fg-2)">11:00</time><span class="grow">Mourad B.</span><button class="btn sm pri" data-toast="Arrivée pointée pour Mourad B.">Pointer l'arrivée</button></div>
+          <div class="rdvrow"><time class="mono" style="color:var(--fg-2)">11:15</time><span class="grow">Fatima Z.</span><span class="pill">À venir</span></div>
+          <div class="rdvrow"><time class="mono" style="color:var(--fg-2)">11:30</time><span class="grow">Youssef A.</span><span class="pill">À venir</span></div>
+          <div class="rdvrow"><time class="mono" style="color:var(--fg-2)">14:00</time><span class="grow">Nadia C.</span><span class="pill">À venir</span></div>
+        </div>
+      </div>
+
+      <div class="card box">
+        <h3>Actions rapides</h3>
+        <button class="btn" id="drawerOpen2"><svg class="i"><use href="#i-plus"/></svg>Nouveau patient ou ticket</button>
+        <button class="btn" data-toast="Module de prise de RDV ouvert"><svg class="i"><use href="#i-cal"/></svg>Nouveau rendez-vous</button>
+        <button class="btn" data-toast="Dernier SMS renvoyé au patient"><svg class="i"><use href="#i-phone"/></svg>Renvoyer le SMS de suivi</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     VUE : BORNE TACTILE (KIOSK)
+     ========================================================================== -->
+<section class="view" id="v-kiosk" hidden>
+  <div class="ph">
+    <span class="tile"><svg class="i"><use href="#i-tablet"/></svg></span>
+    <div>
+      <h1>Borne tactile d'accueil <span class="route">/kiosk/:queueId</span></h1>
+      <p class="sub">Interface tactile haute accessibilité, cibles de 64 px, 3 langues dont Arabe en miroir (RTL). Mode malvoyant et synthèse vocale.</p>
+    </div>
+    <div class="acts">
+      <div class="seg" id="orient"><button aria-pressed="true" data-o="p">Portrait</button><button aria-pressed="false" data-o="l">Paysage</button></div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="kiosk" id="kiosk">
+      <div class="k-top">
+        <div class="bn"><span class="logo">D</span><div><b>DORI</b><small>Clinique Pasteur</small></div></div>
+        <button class="kb" id="kA11y" aria-pressed="false"><svg class="i"><use href="#i-person"/></svg><span class="tx">Accessibilité</span></button>
+        <button class="kb" id="kAudio" aria-pressed="false"><svg class="i"><use href="#i-vol"/></svg><span class="tx">Audio</span></button>
+        <div class="langs" role="group" aria-label="Langue">
+          <button class="kb" data-lang="fr" aria-pressed="true">FR</button>
+          <button class="kb ar" data-lang="ar" aria-pressed="false">عربي</button>
+          <button class="kb" data-lang="en" aria-pressed="false">EN</button>
+        </div>
+      </div>
+
+      <div class="k-body">
+        <!-- Étape 1 : Accueil -->
+        <div class="k-step on" data-s="home">
+          <h3 class="k-h" data-t="hello">Bienvenue. Comment souhaitez-vous être accueilli ?</h3>
+          <div class="giants">
+            <button class="giant acc" data-go="rdv">
+              <span class="gi"><svg class="i"><use href="#i-cal"/></svg></span>
+              <span data-t="rdv">J'ai un rendez-vous</span>
+              <small data-t="rdvs">Scan du QR code ou saisie du téléphone</small>
+            </button>
+            <button class="giant" data-go="service">
+              <span class="gi"><svg class="i"><use href="#i-person"/></svg></span>
+              <span data-t="walk">Sans rendez-vous</span>
+              <small data-t="walks">Choisissez votre service et obtenez un ticket</small>
+            </button>
+          </div>
+        </div>
+
+        <!-- Étape 2 : Identification RDV -->
+        <div class="k-step" data-s="rdv">
+          <h3 class="k-h">Identification de votre rendez-vous</h3>
+          <div class="k-g2">
+            <div>
+              <div class="qrbox"><svg class="i"><use href="#i-qr"/></svg></div>
+              <p class="k-sub" style="text-align:center;margin-top:8px"><b>Scannez votre QR code</b><br>Présentez la convocation devant le lecteur</p>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <b style="font-size:18px">Ou saisissez votre téléphone</b>
+              <div class="pbox"><span class="cty">TN +216</span><div class="phone-in" data-ph>98 123 456</div></div>
+              <div class="pad" data-pad></div>
+            </div>
+          </div>
+          <button class="cta" data-go="rdvok">Confirmer</button>
+          <button class="btn" data-go="home" style="min-height:48px"><svg class="i"><use href="#i-back"/></svg>Retour</button>
+        </div>
+
+        <!-- Étape 3 : Confirmation RDV -->
+        <div class="k-step" data-s="rdvok">
+          <h3 class="k-h">Rendez-vous retrouvé</h3>
+          <div class="card box" style="border:2px solid var(--ok);background:var(--ok-soft)">
+            <div class="label" style="color:var(--ok)">Bonjour</div>
+            <div style="font-size:28px;font-weight:700">Karim B.</div>
+            <div class="k-sub">Aujourd'hui 10:15 · Dr Aziz · Pédiatrie</div>
+          </div>
+          <div style="flex:1"></div>
+          <button class="cta" data-go="ticket">Je confirme ma présence<svg class="i"><use href="#i-arrow"/></svg></button>
+          <button class="btn" data-go="home" style="min-height:48px">Ce n'est pas moi</button>
+        </div>
+
+        <!-- Étape 4 : Choix du Service -->
+        <div class="k-step" data-s="service">
+          <button class="btn" data-go="home" style="align-self:flex-start"><svg class="i"><use href="#i-back"/></svg>Retour</button>
+          <h3 class="k-h" data-t="svc">Choisissez votre service</h3>
+          <p class="k-sub">Sélectionnez la file correspondant à votre besoin</p>
+          <div class="tiles" id="svcTiles"></div>
+        </div>
+
+        <!-- Étape 5 : Forfait & Tarif -->
+        <div class="k-step" data-s="tier">
+          <button class="btn" data-go="service" style="align-self:flex-start"><svg class="i"><use href="#i-back"/></svg>Retour</button>
+          <h3 class="k-h">Choisissez votre accès</h3>
+          <p class="k-sub" id="tierQ"></p>
+          <div id="tierList" style="display:flex;flex-direction:column;gap:12px"></div>
+          <div style="flex:1"></div>
+          <button class="cta" data-go="coords">Continuer<svg class="i"><use href="#i-arrow"/></svg></button>
+        </div>
+
+        <!-- Étape 6 : Coordonnées -->
+        <div class="k-step" data-s="coords">
+          <button class="btn" data-go="tier" style="align-self:flex-start"><svg class="i"><use href="#i-back"/></svg>Retour</button>
+          <h3 class="k-h" data-t="coords">Vos coordonnées</h3>
+          <p class="k-sub">Pour vous envoyer votre ticket et le lien de suivi SMS</p>
+          <input class="kin" placeholder="Nom de famille" aria-label="Nom de famille" id="kName">
+          <div class="pbox"><span class="cty">TN +216</span><div class="phone-in" data-ph>98 123 456</div></div>
+          <div class="pad" data-pad></div>
+          <button class="cta" data-go="ticket"><svg class="i"><use href="#i-check"/></svg>Valider et obtenir mon ticket</button>
+        </div>
+
+        <!-- Étape 7 : Ticket émis -->
+        <div class="k-step" data-s="ticket">
+          <div class="ticket">
+            <span class="pill ok"><svg class="i"><use href="#i-check"/></svg>Votre ticket a été émis</span>
+            <span class="label" style="margin-top:6px">Votre numéro</span>
+            <div class="big" id="tkBig">B042</div>
+            <b style="font-size:19px" id="tkQ">Pédiatrie · Standard</b>
+            <hr>
+            <div class="t3">
+              <div>Position<b id="tkPos">3e</b></div>
+              <div>Temps estimé<b id="tkEta">~10 min</b></div>
+              <div>Guichets<b id="tkG">2 ouverts</b></div>
+            </div>
+            <hr>
+            <div style="display:flex;gap:14px;align-items:center">
+              <div class="qr"><svg class="i"><use href="#i-qr"/></svg></div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <span class="pill ok"><svg class="i"><use href="#i-printer"/></svg>Impression papier...</span>
+                <span class="pill ok"><svg class="i"><use href="#i-phone"/></svg>SMS envoyé</span>
+              </div>
+            </div>
+            <span style="color:var(--fg-2);font-size:13px">Flashez le QR code ou cliquez sur le SMS pour suivre votre tour en direct</span>
+          </div>
+          <button class="btn pri" data-go="home" style="min-height:52px;margin-top:auto">Terminer</button>
+        </div>
+
+        <!-- Barre de timeout d'inactivité -->
+        <div class="idle"><svg class="i"><use href="#i-clock"/></svg><span>Inactivité</span><span class="bar"><i></i></span><span class="mono">28 s</span></div>
+        <div class="kfoot">DORI Kiosk v2.5 · Clinique Pasteur · Protection des données médicales</div>
+      </div>
+    </div>
+
+    <!-- Stepper de prévisualisation -->
+    <div class="rail" id="rail">
+      <p>Simulateur de parcours patient sur borne tactile :</p>
+      <button data-go="home" aria-current="true"><span>1</span>Accueil</button>
+      <button data-go="rdv"><span>2</span>Rendez-vous : identification</button>
+      <button data-go="rdvok"><span>3</span>Rendez-vous : confirmation</button>
+      <button data-go="service"><span>4</span>Sans rendez-vous : service</button>
+      <button data-go="tier"><span>5</span>Forfait et tarif</button>
+      <button data-go="coords"><span>6</span>Coordonnées</button>
+      <button data-go="ticket"><span>7</span>Ticket émis</button>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     VUE : AFFICHAGE DE SALLE (TV BROADCAST)
+     ========================================================================== -->
+<section class="view" id="v-tv" hidden>
+  <div class="ph">
+    <span class="tile"><svg class="i"><use href="#i-tv"/></svg></span>
+    <div>
+      <h1>Affichage de salle d'attente <span class="route">/display/:queueId</span></h1>
+      <p class="sub">Écran de diffusion 16:9 haute visibilité. Carillon Web Audio bi-ton (587 Hz et 880 Hz). Zéro donnée personnelle (PII).</p>
+    </div>
+    <div class="acts">
+      <button class="btn pri" id="tvCall"><svg class="i"><use href="#i-bell"/></svg>Simuler un appel (Carillon)</button>
+    </div>
+  </div>
+
+  <div class="tvwrap dk">
+    <div class="tv">
+      <div class="tv-h">
+        <span><svg class="i"><use href="#i-build"/></svg> CLINIQUE PASTEUR · Salle d'attente principale</span>
+        <span id="tvClock">Mercredi 07 octobre 2026 · 11:28</span>
+      </div>
+      <div class="tv-m">
+        <div class="hero pulse" id="hero">
+          <i class="ring"></i><i class="ring"></i><i class="ring"></i>
+          <span class="lbl">Numéro appelé</span>
+          <span class="tk" id="tvT">B014</span>
+          <span class="gx" id="tvG">Guichet 2</span>
+          <span class="who" id="tvS">Pédiatrie</span>
+        </div>
+        <div class="tside">
+          <div class="last">
+            <div class="lbl">Derniers appels</div>
+            <ol id="tvL"></ol>
+          </div>
+          <div>
+            <div class="lbl">État de la salle</div>
+            <div class="glob">
+              <div><b>7</b><span>en attente</span></div>
+              <div><b>14 min</b><span>attente moyenne</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tv-f">
+        <svg class="i"><use href="#i-mega"/></svg>
+        En cas d'urgence vitale, adressez-vous immédiatement à l'accueil central ou sonnez au boîtier rouge.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     VUE : MOBILE PATIENT TRACKER (PWA)
+     ========================================================================== -->
+<section class="view" id="v-mobile" hidden>
+  <div class="ph">
+    <span class="tile"><svg class="i"><use href="#i-phone"/></svg></span>
+    <div>
+      <h1>Suivi patient sur mobile <span class="route">/track?token=…</span></h1>
+      <p class="sub">Accessible instantanément via le lien SMS sans installation ni mot de passe. Jauge SVG en temps réel, vibration et alertes.</p>
+    </div>
+  </div>
+
+  <div class="phones">
+    <div class="phone">
+      <div class="m-bar">
+        <span>DORI Live</span>
+        <span class="pill ok"><span class="dot"></span>En direct</span>
+      </div>
+      <div class="m-body">
+        <div class="m-site">
+          <b>Clinique Pasteur</b>
+          <span>Consultation Pédiatrie</span>
+        </div>
+
+        <div class="m-tk" id="mTicketLabel">B014</div>
+
+        <div class="gauge">
+          <svg viewBox="0 0 100 100">
+            <circle class="bg" cx="50" cy="50" r="42" pathLength="100" stroke-dasharray="100"/>
+            <circle class="fg" id="gArc" cx="50" cy="50" r="42" pathLength="100" stroke-dasharray="100" stroke-dashoffset="40"/>
+          </svg>
+          <div>
+            <b id="gPos">3</b>
+            <span id="gLbl">E DANS LA FILE</span>
+          </div>
+        </div>
+
+        <div class="m-eta">
+          <span><svg class="i"><use href="#i-clock"/></svg> Temps estimé</span>
+          <b id="mEta">~ 15 min</b>
+        </div>
+        <div class="m-eta">
+          <span>Statut actuel</span>
+          <b id="mStatusText" style="color:var(--ok)">En attente</b>
+        </div>
+
+        <div class="m-tip">
+          <b>Conseil liberté</b>
+          Vous pouvez patienter dehors ou à la cafétéria. Votre téléphone vibrera et sonnera à l'approche de votre tour.
+        </div>
+
+        <button class="btn" id="btnMobileNotify"><svg class="i"><use href="#i-bell"/></svg>Recevoir une vibration</button>
+        <button class="btn bad" id="btnMobileCancel"><svg class="i"><use href="#i-x"/></svg>Annuler mon ticket</button>
+      </div>
+
+      <!-- Écran plein vert quand appelé -->
+      <div class="m-called" id="mCalled" hidden>
+        <i class="ring"></i>
+        <span class="label" style="color:#fff;opacity:.85">Ticket B014</span>
+        <h3>C'est votre tour !</h3>
+        <div>Présentez-vous immédiatement au</div>
+        <div class="g">Guichet 2</div>
+        <button class="btn" id="mBack">Je m'y rends</button>
+      </div>
+    </div>
+
+    <!-- Panneau de simulation -->
+    <div class="simctl">
+      <div class="card box">
+        <h3>Simulateur de file</h3>
+        <p>Avancez la file pour voir réagir la jauge et déclencher l'alerte d'appel.</p>
+        <button class="btn pri" id="mAdv"><svg class="i"><use href="#i-arrow"/></svg>Un patient est servi (-1)</button>
+        <button class="btn" id="mReset"><svg class="i"><use href="#i-refresh"/></svg>Réinitialiser à 3e</button>
+        <button class="btn call" id="mForceCall"><svg class="i"><use href="#i-bell"/></svg>Forcer l'appel du ticket</button>
+      </div>
+
+      <div class="card box">
+        <h3>Enquête de satisfaction (CSAT)</h3>
+        <p>S'affiche automatiquement dès que le patient a été servi au guichet.</p>
+        <div class="csat-box">
+          <b>Comment s'est passée votre prise en charge ?</b>
+          <div class="csat-stars" id="csatStars">
+            <span data-star="1">★</span><span data-star="2">★</span><span data-star="3">★</span><span data-star="4">★</span><span data-star="5">★</span>
+          </div>
+          <div style="font-size:12px;color:var(--fg-2)" id="csatFeedback">Cliquez sur une étoile</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     VUE : DASHBOARD & CENTRE DE COMMANDEMENT
+     ========================================================================== -->
+<section class="view" id="v-dash" hidden>
+  <div class="ph">
+    <span class="tile"><svg class="i"><use href="#i-grid"/></svg></span>
+    <div>
+      <h1>Centre de commandement opérationnel <span class="pill ok"><span class="dot"></span>Actualisation 5 s</span></h1>
+      <p class="sub">Supervision temps réel, alertes SLA, goulets d'étranglement et prévisions d'affluence · Clinique Pasteur</p>
+    </div>
+    <div class="acts">
+      <button class="btn" data-toast="Filtre appliqué : Tous les sites"><svg class="i"><use href="#i-build"/></svg>Tous les sites</button>
+      <button class="btn" data-toast="Export CSV généré avec succès"><svg class="i"><use href="#i-down"/></svg>Exporter</button>
+      <button class="btn pri" data-toast="Données métriques rafraîchies"><svg class="i"><use href="#i-refresh"/></svg>Actualiser</button>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="kt"><small>Inscrits du jour</small><span class="kic"><svg class="i"><use href="#i-users"/></svg></span></div><b>245</b><span class="dl good">↑ 12 % vs hier</span></div>
+    <div class="kpi"><div class="kt"><small>Servis</small><span class="kic ok"><svg class="i"><use href="#i-check"/></svg></span></div><b>184</b><span class="dl good">75 % des inscrits</span></div>
+    <div class="kpi"><div class="kt"><small>En attente</small><span class="kic warn"><svg class="i"><use href="#i-clock"/></svg></span></div><b>49</b><span class="dl good">↓ 8 vs hier</span></div>
+    <div class="kpi"><div class="kt"><small>Absences / No-shows</small><span class="kic bad"><svg class="i"><use href="#i-x"/></svg></span></div><b>12 <i>(4,9 %)</i></b><span class="dl good">↓ 1,2 pt</span></div>
+    <div class="kpi"><div class="kt"><small>Attente moyenne</small><span class="kic ok"><svg class="i"><use href="#i-pulse"/></svg></span></div><b>12m 40s</b><span class="dl good">2 min de mieux que l'objectif</span></div>
+  </div>
+
+  <div class="card box">
+    <h3><svg class="i"><use href="#i-pulse"/></svg>État de charge et SLA par file <span class="pill ok" style="margin-left:auto"><span class="dot"></span>Live</span></h3>
+    <div class="load" id="loads"></div>
+  </div>
+
+  <div class="autogrid">
+    <div class="card box">
+      <h3><svg class="i"><use href="#i-trend"/></svg>Arrivées par tranche horaire</h3>
+      <p class="hint">Aujourd'hui · 245 inscrits (pic observé à 11h)</p>
+      <div class="scroll"><svg class="chart" id="arr" viewBox="0 0 520 220" style="width:100%;min-width:420px;height:auto" role="img" aria-label="Arrivées par heure"></svg></div>
+    </div>
+    <div class="card box">
+      <h3><svg class="i"><use href="#i-users"/></svg>Guichets actifs et productivité des opérateurs</h3>
+      <p class="hint">4 guichets en service actif</p>
+      <div style="display:flex;flex-direction:column;gap:8px" id="oprs"></div>
+    </div>
+  </div>
+
+  <div class="card box">
+    <h3><svg class="i"><use href="#i-flame"/></svg>Matrice de chaleur & Prévision d'engorgement</h3>
+    <p class="hint">Moyenne des 7 derniers jours par créneau horaire</p>
+    <div class="scroll"><div class="heat" id="heat"></div></div>
+    <div class="legend">Faible <i></i> Forte · Cadre pointillé : pic prévu par l'algorithme</div>
+    <div class="note warn">
+      <svg class="i"><use href="#i-alert"/></svg>
+      <span class="grow"><b>Alerte prédictive :</b> Pic d'affluence prévu vendredi entre 10h et 11h (65 patients estimés). Ouverture d'un guichet supplémentaire recommandée sur Consultation Générale.</span>
+      <button class="btn sm" data-toast="Guichet 5 assigné et ouvert">Ouvrir un guichet</button>
+    </div>
+  </div>
+
+  <div class="card box">
+    <h3><svg class="i"><use href="#i-build"/></svg>Comparatif multi-sites (Régie SaaS)</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Site</th><th>Pays</th><th>Guichets</th><th>Inscrits / jour</th><th>Attente moy.</th><th>Absences</th><th>Taux Borne</th><th>Statut</th></tr></thead>
+        <tbody id="cmp"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     VUE : SITES PHYSIQUES & ASSISTANT D'ONBOARDING
+     ========================================================================== -->
+<section class="view" id="v-sites" hidden>
+  <div class="ph">
+    <span class="tile"><svg class="i"><use href="#i-build"/></svg></span>
+    <div>
+      <h1>Sites physiques & Multi-pays</h1>
+      <p class="sub">Administration multi-tenant des établissements, fuseaux horaires et devises ISO</p>
+    </div>
+    <div class="acts">
+      <button class="btn pri" id="wizNew"><svg class="i"><use href="#i-plus"/></svg>Nouvel établissement</button>
+    </div>
+  </div>
+
+  <div class="kpis" id="sitesKpi"></div>
+
+  <div class="card box" id="wizard">
+    <h3>Assistant d'onboarding · Nouveau site</h3>
+    <p class="hint">Quatre étapes guidées pour configurer un établissement complet</p>
+    <div class="steps" id="wizSteps"></div>
+    <div id="wizBody"></div>
+    <div class="row" style="justify-content:space-between">
+      <button class="btn" id="wizBack"><svg class="i"><use href="#i-back"/></svg>Retour</button>
+      <button class="btn pri" id="wizNext">Continuer<svg class="i"><use href="#i-arrow"/></svg></button>
+    </div>
+  </div>
+
+  <div class="card box">
+    <h3>Annuaire des sites configurés</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Site</th><th>Pays</th><th>Devise</th><th>Fuseau</th><th>Guichets</th><th>Statut</th><th>Actions</th></tr></thead>
+        <tbody id="siteRows"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     VUE : FILES D'ATTENTE & MOTEUR DE PRIORITÉ
+     ========================================================================== -->
+<section class="view" id="v-queues" hidden>
+  <div class="ph">
+    <span class="tile"><svg class="i"><use href="#i-list"/></svg></span>
+    <div>
+      <h1>Files d'attente & Algorithmes</h1>
+      <p class="sub">Paramétrage fin des coefficients de priorité, files virtuelles et guichets affectés</p>
+    </div>
+    <div class="acts">
+      <button class="btn pri" id="btnNewQueueModal"><svg class="i"><use href="#i-plus"/></svg>Créer une file</button>
+    </div>
+  </div>
+
+  <div class="kpis" id="qKpi"></div>
+  <div class="autogrid" id="qCards"></div>
+</section>
+
+<!-- ==========================================================================
+     VUE : FORFAITS ET TARIFS
+     ========================================================================== -->
+<section class="view" id="v-tiers" hidden>
+  <div class="ph">
+    <span class="tile"><svg class="i"><use href="#i-tag"/></svg></span>
+    <div>
+      <h1>Forfaits & Tarification par file</h1>
+      <p class="sub">Paliers de service (Standard, Prioritaire, VIP, Urgence) et déclinaison financière</p>
+    </div>
+    <div class="acts">
+      <button class="btn pri" id="btnNewTierModal"><svg class="i"><use href="#i-plus"/></svg>Créer un forfait</button>
+    </div>
+  </div>
+
+  <div class="kpis" id="tKpi"></div>
+  <div class="tcards" id="tCards"></div>
+
+  <div class="card box">
+    <h3>Matrice d'association des forfaits par file</h3>
+    <p class="hint">Surcharge des tarifs et devises par file d'attente. Devise par défaut : héritée du site physique.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>File d'attente</th><th>Standard</th><th>Prioritaire</th><th>VIP</th><th>Urgence</th></tr></thead>
+        <tbody id="tMatrix"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     VUE : NOTIFICATIONS & SMS STUDIO
+     ========================================================================== -->
+<section class="view" id="v-notif" hidden>
+  <div class="ph">
+    <span class="tile"><svg class="i"><use href="#i-mail"/></svg></span>
+    <div>
+      <h1>Notifications SMS & E-mail</h1>
+      <p class="sub">Règles de déclenchement d'approche, simulateur GSM 160 caractères et journal d'envoi</p>
+    </div>
+    <div class="acts">
+      <button class="btn pri" id="btnNewRuleModal"><svg class="i"><use href="#i-plus"/></svg>Nouvelle règle</button>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="kt"><small>Envoyées aujourd'hui</small><span class="kic"><svg class="i"><use href="#i-send"/></svg></span></div><b>522</b></div>
+    <div class="kpi"><div class="kt"><small>Délivrées</small><span class="kic ok"><svg class="i"><use href="#i-check"/></svg></span></div><b>498 <i>(95,4 %)</i></b></div>
+    <div class="kpi"><div class="kt"><small>En échec</small><span class="kic bad"><svg class="i"><use href="#i-alert"/></svg></span></div><b>12</b></div>
+    <div class="kpi"><div class="kt"><small>En attente</small><span class="kic warn"><svg class="i"><use href="#i-clock"/></svg></span></div><b>8</b></div>
+  </div>
+
+  <div class="autogrid">
+    <div class="card box">
+      <h3><svg class="i"><use href="#i-bell"/></svg>Règles de notification actives</h3>
+      <p class="hint">Déclenchement automatique par seuil de file</p>
+      <div style="display:flex;flex-direction:column;gap:10px" id="rules"></div>
+    </div>
+
+    <div class="card box">
+      <h3><svg class="i"><use href="#i-send"/></svg>Journal des envois récents <span class="pill ok" style="margin-left:auto"><span class="dot"></span>Live</span></h3>
+      <div style="display:flex;flex-direction:column;gap:8px" id="outbox"></div>
+    </div>
+  </div>
+
+  <div class="card box">
+    <h3><svg class="i"><use href="#i-phone"/></svg>Studio d'édition de templates & Simulateur GSM</h3>
+    <div class="autogrid">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="form2">
+          <div class="field"><label for="n1">Événement déclencheur</label><select class="in" id="n1"><option>Position dans la file (seuil d'approche)</option><option>Temps d'attente estimé</option><option>À l'émission du ticket (bienvenue)</option></select></div>
+          <div class="field"><label for="n2">Seuil (ex: 3 personnes devant)</label><input class="in mono" id="n2" value="3"></div>
+          <div class="field"><label for="n3">Canal de diffusion</label><select class="in" id="n3"><option>SMS</option><option>E-mail</option></select></div>
+          <div class="field" style="justify-content:flex-end"><label style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--fg);cursor:pointer"><input type="checkbox" id="n4" checked>Inclure le lien court de suivi</label></div>
+        </div>
+
+        <div class="field">
+          <label for="msg">Modèle du SMS (avec balises dynamiques)</label>
+          <textarea class="in mono" id="msg" rows="4">Bonjour, votre ticket {ticketNumber} pour {queueName} est en position {position}. Rendez-vous bientôt au guichet.</textarea>
+        </div>
+
+        <div class="chips" id="chips">
+          <button>{ticketNumber}</button><button>{queueName}</button><button>{siteName}</button><button>{threadNumber}</button><button>{position}</button>
+        </div>
+
+        <div id="vmsg" class="pill ok" style="align-self:flex-start"><svg class="i"><use href="#i-check"/></svg>Toutes les variables sont valides</div>
+      </div>
+
+      <div>
+        <div class="sms">
+          <div class="label" style="text-align:center">DORI SMS Preview</div>
+          <div class="bubble" id="bub"></div>
+        </div>
+        <div class="cnt3">
+          <div><b id="cnt">0</b>caractères</div>
+          <div><b id="seg">1</b>segment(s) GSM</div>
+          <div><b id="cost">0,040</b>TND estimés</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     VUE : UTILISATEURS & RBAC HIERARCHIQUE
+     ========================================================================== -->
+<section class="view" id="v-users" hidden>
+  <div class="ph">
+    <span class="tile"><svg class="i"><use href="#i-users"/></svg></span>
+    <div>
+      <h1>Comptes utilisateurs & Rôles RBAC</h1>
+      <p class="sub">Matrice de permissions hiérarchique avec anti-escalade de privilèges intégrée</p>
+    </div>
+  </div>
+
+  <div class="kpis" id="uKpi"></div>
+
+  <div class="note warn" id="uBan">
+    <svg class="i"><use href="#i-shield"/></svg>
+    <span></span>
+  </div>
+
+  <div class="card box">
+    <div class="row">
+      <label class="search grow" style="min-width:220px">
+        <svg class="i"><use href="#i-search"/></svg>
+        <input id="uq" placeholder="Rechercher par nom, identifiant ou e-mail" aria-label="Rechercher un utilisateur">
+      </label>
+      <span class="sel"><svg class="i"><use href="#i-filter"/></svg>Site</span>
+      <span class="sel"><svg class="i"><use href="#i-filter"/></svg>Rôle</span>
+      <span class="sel"><svg class="i"><use href="#i-filter"/></svg>Statut</span>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Utilisateur</th><th>Rôle</th><th>Rang</th><th>Type</th><th>Sites</th><th>Statut</th><th>Actions</th></tr></thead>
+        <tbody id="uRows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card box">
+    <h3><svg class="i"><use href="#i-plus"/></svg>Création sécurisée d'un utilisateur</h3>
+    <div class="form2">
+      <div class="field"><label for="u1">Nom d'utilisateur *</label><input class="in" id="u1" placeholder="identifiant unique"></div>
+      <div class="field"><label for="u2">E-mail</label><input class="in" id="u2" placeholder="prenom.nom@clinique.com"></div>
+      <div class="field">
+        <label for="u3">Mot de passe (10 à 20 caractères) *</label>
+        <input class="in" id="u3" type="password" value="MotDePasse123">
+        <span class="err" id="u3e" hidden>Le mot de passe doit comporter entre 10 et 20 caractères.</span>
+      </div>
+      <div class="field"><label for="u4" id="u4l">Rôle attribuable</label><select class="in" id="u4"></select></div>
+      <div class="field"><label for="u5">Langue préférée</label><select class="in" id="u5"><option>Français</option><option>Arabe</option><option>Anglais</option></select></div>
+      <div class="field"><label for="u6">Site affecté</label><select class="in" id="u6"><option>Clinique Pasteur</option><option>Clinique Pasteur Paris</option></select></div>
+    </div>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn">Annuler</button>
+      <button class="btn pri" id="uCreate"><svg class="i"><use href="#i-check"/></svg>Créer l'utilisateur</button>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     VUE : TRADUCTIONS ET CACHE I18N
+     ========================================================================== -->
+<section class="view" id="v-i18n" hidden>
+  <div class="ph">
+    <span class="tile"><svg class="i"><use href="#i-lang"/></svg></span>
+    <div>
+      <h1>Dictionnaire de traductions (i18n)</h1>
+      <p class="sub">Édition bilingue en temps réel avec publication versionnée et invalidation de cache sur les bornes</p>
+    </div>
+    <div class="acts">
+      <span class="sel"><svg class="i"><use href="#i-refresh"/></svg>Version en ligne <b id="ver">v2.4</b></span>
+      <button class="btn pri" id="pub1"><svg class="i"><use href="#i-send"/></svg>Publier v2.5</button>
+    </div>
+  </div>
+
+  <div class="kpis" id="iKpi"></div>
+
+  <div class="card box">
+    <div class="row">
+      <label class="search grow" style="min-width:220px">
+        <svg class="i"><use href="#i-search"/></svg>
+        <input id="iq" placeholder="Rechercher une clé de traduction" aria-label="Rechercher une clé">
+      </label>
+      <div class="seg" id="icat">
+        <button aria-pressed="true" data-c="">Toutes</button>
+        <button aria-pressed="false" data-c="ihm">IHM</button>
+        <button aria-pressed="false" data-c="sms">SMS</button>
+        <button aria-pressed="false" data-c="error">Erreurs</button>
+      </div>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Clé</th><th>Français</th><th>Arabe</th><th>Catégorie</th><th>Statut</th></tr></thead>
+        <tbody id="iRows"></tbody>
+      </table>
+    </div>
+
+    <div class="label">Variables autorisées pour insertion</div>
+    <div class="chips">
+      <button>{ticketNumber}</button><button>{queueName}</button><button>{siteName}</button><button>{threadNumber}</button><button>{position}</button>
+    </div>
+
+    <div class="note warn">
+      <svg class="i"><use href="#i-alert"/></svg>
+      <span><b>Validation préventive :</b> toute variable inconnue bloque l'enregistrement pour éliminer le risque d'erreur <span class="mono">TEMPLATE_PARAMETER_MISMATCH</span> côté serveur.</span>
+    </div>
+  </div>
+
+  <div class="card box" style="flex-direction:row;align-items:center;flex-wrap:wrap">
+    <span class="kic"><svg class="i"><use href="#i-send"/></svg></span>
+    <div class="grow">
+      <b>Publication globale et invalidation de cache</b>
+      <div style="color:var(--fg-2)">Incrémente le numéro de version de bundle et force le rechargement immédiat sur toutes les bornes tactiles connectées.</div>
+    </div>
+    <button class="btn pri" id="pub2">Publier <span id="nv">v2.5</span></button>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     VUE : CONNEXION (LOGIN SCREEN)
+     ========================================================================== -->
+<section class="view" id="v-login" hidden>
+  <div class="login">
+    <div class="lg-l">
+      <div style="display:flex;gap:12px;align-items:center">
+        <span class="logo" style="background:rgba(255,255,255,.2);color:inherit">D</span>
+        <div><b style="font-size:20px">DORI</b><div style="opacity:.85">Files d'attente et accueil patient</div></div>
+      </div>
+      <div>
+        <h2>L'accueil patient, sans file d'attente subie.</h2>
+        <p style="opacity:.9;max-width:44ch;margin-top:14px">Gestion multi-site des files, suivi mobile en temps réel et analyses prédictives pour cliniques, hôpitaux et laboratoires.</p>
+      </div>
+      <div>
+        <div class="st"><div><b>4</b>sites</div><div><b>5</b>files</div><div><b>3</b>langues</div></div>
+        <p style="opacity:.85;margin-top:18px"><svg class="i"><use href="#i-shield"/></svg> Données de démonstration sécurisées</p>
+      </div>
+    </div>
+
+    <div class="lg-r">
+      <button class="btn" id="loginBack" style="align-self:flex-end"><svg class="i"><use href="#i-back"/></svg>Retour à la maquette</button>
+      <h2 style="font-size:28px">Connexion</h2>
+      <p style="color:var(--fg-2)">Accédez à votre espace de travail DORI</p>
+
+      <div class="field">
+        <label for="l1">Nom d'utilisateur</label>
+        <input class="in" id="l1" value="sarah.b">
+      </div>
+      <div class="field">
+        <label for="l2">Mot de passe</label>
+        <input class="in" id="l2" type="password" value="MotDePasse123">
+        <span style="color:var(--fg-2);font-size:12px">10 à 20 caractères requis</span>
+      </div>
+
+      <label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" checked>Se souvenir de ce poste</label>
+
+      <button class="cta" id="loginGo">Se connecter<svg class="i"><use href="#i-arrow"/></svg></button>
+      <button class="btn" style="min-height:48px" data-toast="Redirection vers le fournisseur SSO OpenID Connect">Authentification SSO entreprise</button>
+
+      <p style="color:var(--fg-2);font-size:13px">Pas encore de compte ? Contactez votre administrateur de site.</p>
+    </div>
+  </div>
+</section>
+
+</div><!-- /views -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ==========================================================================
+     DRAWER : NOUVEAU PATIENT / TICKET
+     ========================================================================== -->
+<aside class="drawer" id="drawer" hidden aria-label="Nouveau patient">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <h3 style="font-size:18px">Nouveau patient ou ticket</h3>
+    <button class="ib" id="drawerClose" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button>
+  </div>
+
+  <div class="field">
+    <label for="dq">Rechercher avant de créer</label>
+    <label class="search"><svg class="i"><use href="#i-search"/></svg><input id="dq" value="+216 98 1"></label>
+  </div>
+  <div class="hit">
+    <span class="av sm">KB</span>
+    <div class="grow">
+      <b>Karim Ben Salem</b>
+      <div class="mono" style="color:var(--fg-2);font-size:12px">+216 98 123 456 · 3 passages</div>
+    </div>
+    <button class="btn sm pri" id="btnUseExistingPatient">Utiliser</button>
+  </div>
+
+  <div class="label">ou créer la fiche patient</div>
+  <div class="form2">
+    <div class="field"><label for="dn">Nom de famille *</label><input class="in" id="dn" placeholder="Nom"></div>
+    <div class="field"><label for="dp">Prénom</label><input class="in" id="dp" placeholder="Prénom"></div>
+    <div class="field full"><label for="dt">Numéro Mobile (format E.164) *</label><input class="in mono" id="dt" value="+216 98 123 456"></div>
+  </div>
+
+  <div class="label">Ticket de file d'attente</div>
+  <div class="form2">
+    <div class="field"><label for="dfile">File cible</label><select class="in" id="dfile"><option>Pédiatrie</option><option>Consultation Générale</option><option>Laboratoire / Prélèvement</option></select></div>
+    <div class="field"><label for="dtier">Forfait d'accès</label><select class="in" id="dtier"><option>Standard · Gratuit</option><option>VIP · 35,000 TND</option><option>Prioritaire · 20,000 TND</option><option>Urgence</option></select></div>
+  </div>
+
+  <div class="seg" id="mode">
+    <button aria-pressed="true">Sans rendez-vous</button>
+    <button aria-pressed="false">Rendez-vous futur</button>
+  </div>
+
+  <div class="grow"></div>
+
+  <div class="row">
+    <button class="btn pri grow" id="btnEmitTicketFromDrawer"><svg class="i"><use href="#i-check"/></svg>Émettre le ticket</button>
+    <button class="btn" title="Imprimer ticket papier" data-toast="Impression thermique envoyée"><svg class="i"><use href="#i-printer"/></svg></button>
+    <button class="btn" title="Envoyer SMS" data-toast="SMS de bienvenue envoyé"><svg class="i"><use href="#i-phone"/></svg></button>
+  </div>
+</aside>
+
+<!-- ==========================================================================
+     MODALS INTERACTIVES
+     ========================================================================== -->
+
+<!-- Modal 1 : Occuper un guichet (Session) -->
+<div class="modal-backdrop" id="modalOccupy" hidden>
+  <div class="modal-box">
+    <div class="modal-hd">
+      <h3 style="font-size:18px;display:flex;gap:8px;align-items:center"><svg class="i"><use href="#i-desk"/></svg>Occuper un guichet physique</h3>
+      <button class="ib" id="modalOccupyClose"><svg class="i"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-bd">
+      <p style="color:var(--fg-2)">Pour appeler des tickets et faire avancer la file d'attente, vous devez déclarer le guichet physique sur lequel vous vous installez.</p>
+      <div class="form2">
+        <div class="field">
+          <label for="selCounterNum">Numéro de guichet physique</label>
+          <select class="in" id="selCounterNum">
+            <option value="1">Guichet 1</option>
+            <option value="2" selected>Guichet 2 (recommandé)</option>
+            <option value="3">Guichet 3</option>
+            <option value="4">Guichet 4</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="selCounterMode">Mode initial</label>
+          <select class="in" id="selCounterMode">
+            <option value="active">Actif (prêt aux appels)</option>
+            <option value="paused">En pause</option>
+          </select>
+        </div>
+      </div>
+      <div class="note ok">
+        <svg class="i"><use href="#i-check"/></svg>
+        <span>L'occupation du guichet débloquera instantanément le bouton <b>Appeler suivant</b> et synchronisera l'écran TV de la salle d'attente.</span>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" id="modalOccupyCancel">Annuler</button>
+      <button class="btn pri" id="modalOccupyConfirm"><svg class="i"><use href="#i-check"/></svg>Confirmer l'installation</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 2 : Transférer un ticket -->
+<div class="modal-backdrop" id="modalTransfer" hidden>
+  <div class="modal-box">
+    <div class="modal-hd">
+      <h3 style="font-size:18px;display:flex;gap:8px;align-items:center"><svg class="i"><use href="#i-swap"/></svg>Transférer le ticket <span id="transferTicketNum">B014</span></h3>
+      <button class="ib" id="modalTransferClose"><svg class="i"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-bd">
+      <div class="field">
+        <label for="selTransferQueue">File d'attente de destination</label>
+        <select class="in" id="selTransferQueue">
+          <option value="A">Consultation Générale (File A)</option>
+          <option value="C">Laboratoire / Prélèvement (File C)</option>
+          <option value="D">Imagerie / Radiologie (File D)</option>
+          <option value="E">Facturation (File E)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="transferReason">Motif du transfert ou note de transmission</label>
+        <textarea class="in" id="transferReason" rows="3" placeholder="Ex: Consultation terminée, envoyé pour bilan sanguin"></textarea>
+      </div>
+      <div class="note">
+        <svg class="i"><use href="#i-swap"/></svg>
+        <span>Le patient conservera un rang prioritaire adapté dans la nouvelle file sans repasser par la borne.</span>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" id="modalTransferCancel">Annuler</button>
+      <button class="btn pri" id="modalTransferConfirm"><svg class="i"><use href="#i-check"/></svg>Transférer le patient</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 3 : Ajouter une note confidentielle -->
+<div class="modal-backdrop" id="modalNote" hidden>
+  <div class="modal-box">
+    <div class="modal-hd">
+      <h3 style="font-size:18px;display:flex;gap:8px;align-items:center"><svg class="i"><use href="#i-lock"/></svg>Ajouter une note confidentielle</h3>
+      <button class="ib" id="modalNoteClose"><svg class="i"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-bd">
+      <div class="field">
+        <label for="newNoteContent">Note médicale ou administrative</label>
+        <textarea class="in" id="newNoteContent" rows="4" placeholder="Ex: Patient souffrant d'allergie sévère à l'amoxicilline..."></textarea>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" id="modalNoteCancel">Annuler</button>
+      <button class="btn pri" id="modalNoteConfirm"><svg class="i"><use href="#i-plus"/></svg>Enregistrer la note</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 4 : Arrêt d'urgence / Réinitialisation nocturne -->
+<div class="modal-backdrop" id="modalReset" hidden>
+  <div class="modal-box">
+    <div class="modal-hd">
+      <h3 style="font-size:18px;color:var(--bad);display:flex;gap:8px;align-items:center"><svg class="i"><use href="#i-alert"/></svg>Procédure d'arrêt / RAZ</h3>
+      <button class="ib" id="modalResetClose"><svg class="i"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-bd">
+      <p>Cette opération permet d'exécuter une réinitialisation de la file d'attente ou un arrêt technique exceptionnel.</p>
+      <div class="note bad">
+        <svg class="i"><use href="#i-alert"/></svg>
+        <span><b>Attention :</b> Réinitialiser la file clôturera l'ensemble des tickets non encore servis pour la journée courante.</span>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" id="modalResetCancel">Annuler</button>
+      <button class="btn bad" id="modalResetConfirm"><svg class="i"><use href="#i-stop"/></svg>Confirmer l'opération</button>
+    </div>
+  </div>
+</div>
+
+<!-- Palette de commandes (Ctrl + K) -->
+<div class="pal" id="pal" hidden>
+  <div>
+    <label class="search" style="border:0;border-bottom:1px solid var(--line);border-radius:0;padding:14px">
+      <svg class="i"><use href="#i-search"/></svg>
+      <input id="palIn" placeholder="Tapez une commande ou un nom de patient..." aria-label="Palette de commandes">
+    </label>
+    <ul id="palList"></ul>
+  </div>
+</div>
+
+<!-- Toaster global -->
+<div class="toast" id="toast" role="status"><svg class="i"><use href="#i-check"/></svg><span id="toastMsg">Notification</span></div>
+
+<!-- ==========================================================================
+     LOGIQUE JAVASCRIPT APPLICATIVE
+     ========================================================================== -->
+<script>
+(function(){
+/* Helpers DOM */
+var $ = function(s, r){ return (r || document).querySelector(s); };
+var $$ = function(s, r){ return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+function ic(n){ return '<svg class="i"><use href="#i-'+n+'"/></svg>'; }
+
+/* Toast Management */
+var toastTimer;
+function toast(msg){
+  var t = $('#toast'), tm = $('#toastMsg');
+  if(tm) tm.textContent = msg;
+  else t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('on'); }, 2400);
+}
+window.__toast = toast;
+$$('[data-toast]').forEach(function(b){
+  b.addEventListener('click', function(){ toast(b.dataset.toast); });
+});
+
+/* Audio Synthesizer (Carillon bi-ton 587.33 Hz et 880 Hz) */
+var audioCtx = null;
+function playChime(){
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    [587.33, 880.00].forEach(function(freq, idx){
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      var startTime = audioCtx.currentTime + (idx * 0.18);
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.18, startTime + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 1.2);
+      osc.start(startTime);
+      osc.stop(startTime + 1.3);
+    });
+  } catch(e){}
+}
+
+/* ==========================================================================
+   DONNÉES DU SYSTÈME (REPOSITORIES)
+   ========================================================================== */
+var QUEUES = [
+  {l:'A', n:'Consultation Générale', w:22, g:4, t:22, hot:1, ic:'steth', h:215, ops:['SB','AD','MK','YM'], wk:10, ra:60, ew:0.5, er:1.0},
+  {l:'B', n:'Pédiatrie', w:8, g:2, t:10, ic:'baby', h:270, ops:['SB','AD','JD'], wk:10, ra:60, ew:0.5, er:1.0},
+  {l:'C', n:'Laboratoire / Prélèvement', w:12, g:3, t:15, ic:'flask', h:185, ops:['SB','YM'], wk:10, ra:50, ew:0.5, er:1.0},
+  {l:'D', n:'Imagerie / Radiologie', w:4, g:1, t:8, ic:'scan', h:325, ops:['AD'], wk:10, ra:60, ew:0.4, er:0.8},
+  {l:'E', n:'Facturation', w:3, g:1, t:5, ic:'card', h:45, ops:['MK'], wk:10, ra:40, ew:0.5, er:0.5}
+];
+
+var TIERS = [
+  {n:'Standard', d:'Accès régulier selon ordre d\'arrivée'},
+  {n:'Prioritaire', d:'Priorité intermédiaire (enfants, RDV)'},
+  {n:'VIP', d:'Salon dédié et priorité maximale'},
+  {n:'Urgence', d:'Cas médical urgent'}
+];
+
+var PRICES = {
+  A:[0,25,45,0],
+  B:[0,20,35,0],
+  C:[0,15,30,0],
+  D:[0,30,60,0],
+  E:[0,null,null,null]
+};
+
+function money(n){ return n === null ? '—' : n === 0 ? 'Gratuit' : n.toFixed(3).replace('.', ','); }
+
+var SITES = [
+  {n:'Clinique Pasteur', c:'Tunis', cc:'TN', pays:'Tunisie', tz:'Africa/Tunis', cur:'TND', g:11, ins:245, tma:12, ns:4.9},
+  {n:'Clinique Pasteur Paris', c:'Paris', cc:'FR', pays:'France', tz:'Europe/Paris', cur:'EUR', g:5, ins:186, tma:9, ns:3.1},
+  {n:'Centre Imagerie Casablanca', c:'Casablanca', cc:'MA', pays:'Maroc', tz:'Africa/Casablanca', cur:'MAD', g:6, ins:320, tma:18, ns:7.8},
+  {n:'Polyclinique Dubaï', c:'Dubaï', cc:'AE', pays:'Émirats arabes unis', tz:'Asia/Dubai', cur:'AED', g:3, ins:98, tma:7, ns:2.2}
+];
+
+var ROLES = [
+  {n:'Opératrice / Hôtesse', r:2, u:'Sarah Ben Salah', i:'SB'},
+  {n:'Manager de site', r:3, u:'Leila Trabelsi', i:'LT'},
+  {n:'Administrateur', r:4, u:'Omar Khelifi', i:'OK'},
+  {n:'Super-Admin SaaS', r:5, u:'Support DORI Root', i:'DR'}
+];
+
+var ri = 2, siteI = 0, qi = 1, curView = 'desk';
+function caller(){ return ROLES[ri].r; }
+var MIN_RANK = { desk:2, dash:3, sites:3, queues:3, tiers:3, notif:3, users:3, i18n:4 };
+function isAllowed(v){ return (MIN_RANK[v] || 0) <= caller(); }
+
+/* ==========================================================================
+   STATE MACHINE : MODE ACCUEIL FLOTTANT VS GUICHET OCCUPÉ
+   ========================================================================== */
+var counterState = {
+  occupied: false,
+  counterNum: 2,
+  status: 'floating', // 'floating' | 'active' | 'paused'
+  queueId: 1
+};
+
+function updateCounterUI(){
+  var bar = $('#deskModeBar');
+  var hero = $('#counterHero');
+  var badge = $('#counterHeaderBadge');
+  var callBtn = $('#callNext');
+  var servedBtn = $('#served');
+  var noShowBtn = $('#noshow');
+  var reChimeBtn = $('#btnReChime');
+
+  if(!counterState.occupied){
+    // Mode Accueil Flottant
+    bar.className = 'desk-mode-bar floating';
+    bar.querySelector('#deskModeIcon').innerHTML = '<use href="#i-alert"/>';
+    bar.querySelector('#deskModeIcon').style.color = 'var(--warn)';
+    $('#deskModeText b').textContent = 'Mode Accueil Flottant : aucun guichet physique occupé';
+    $('#deskModeText div').textContent = 'Vous pouvez inscrire des patients, donner des rendez-vous et ajouter des notes. Pour appeler des tickets, vous devez occuper un guichet.';
+    $('#deskModeActions').innerHTML = '<button class="btn ok" id="btnOccupyCounter"><svg class="i"><use href="#i-desk"/></svg>Occuper un guichet</button>';
+    $('#btnOccupyCounter').addEventListener('click', function(){ $('#modalOccupy').hidden = false; });
+
+    hero.className = 'hero-g floating';
+    $('#counterHeroTitle').textContent = 'Accueil Flottant';
+    $('#counterHeroStatus').textContent = 'Flottant';
+    $('#counterHeroTime').textContent = 'Prêt pour inscriptions';
+
+    badge.className = 'pill warn';
+    badge.innerHTML = '<span class="dot warn"></span>Accueil Flottant';
+
+    callBtn.disabled = true;
+    callBtn.title = 'Occupez d\'abord un guichet pour appeler des tickets';
+    servedBtn.disabled = true;
+    noShowBtn.disabled = true;
+    if(reChimeBtn) reChimeBtn.disabled = true;
+  } else {
+    // Guichet Occupé
+    bar.className = 'desk-mode-bar active';
+    bar.querySelector('#deskModeIcon').innerHTML = '<use href="#i-check"/>';
+    bar.querySelector('#deskModeIcon').style.color = 'var(--ok)';
+    $('#deskModeText b').textContent = 'Guichet N° ' + counterState.counterNum + ' · En service actif (' + QUEUES[qi].n + ')';
+    $('#deskModeText div').textContent = 'Vous êtes opérationnel pour appeler, servir ou clôturer les tickets de la file.';
+    $('#deskModeActions').innerHTML = '<button class="btn" id="btnPauseCounter"><svg class="i"><use href="#i-clock"/></svg>Pause</button><button class="btn bad" id="btnReleaseCounter"><svg class="i"><use href="#i-x"/></svg>Libérer le guichet</button>';
+    
+    $('#btnPauseCounter').addEventListener('click', function(){
+      toast('Guichet N° ' + counterState.counterNum + ' mis en pause temporaire');
+    });
+    $('#btnReleaseCounter').addEventListener('click', function(){
+      counterState.occupied = false;
+      counterState.status = 'floating';
+      updateCounterUI();
+      toast('Guichet N° ' + counterState.counterNum + ' libéré. Retour en Mode Accueil Flottant');
+    });
+
+    hero.className = 'hero-g';
+    $('#counterHeroTitle').textContent = 'Guichet ' + counterState.counterNum + ' · En service';
+    $('#counterHeroStatus').textContent = 'Actif';
+    $('#counterHeroTime').textContent = 'Connecté depuis 14 min';
+
+    badge.className = 'pill ok';
+    badge.innerHTML = '<span class="dot"></span>Guichet ' + counterState.counterNum + ' Actif';
+
+    callBtn.disabled = false;
+    callBtn.title = '';
+    servedBtn.disabled = false;
+    noShowBtn.disabled = false;
+    if(reChimeBtn) reChimeBtn.disabled = false;
+  }
+}
+
+/* Horloge temps réel selon fuseau */
+function tzf(tz, o){
+  try { return new Intl.DateTimeFormat('fr-FR', Object.assign({timeZone: tz}, o)).format(new Date()); }
+  catch(e){ return ''; }
+}
+
+function updateClock(){
+  var s = SITES[siteI];
+  $('#siteTz').textContent = s.tz + ' · ' + tzf(s.tz, {hour:'2-digit', minute:'2-digit'});
+  var tc = $('#tvClock');
+  if(tc) tc.textContent = tzf(s.tz, {weekday:'long', day:'2-digit', month:'long', year:'numeric'}) + ' · ' + tzf(s.tz, {hour:'2-digit', minute:'2-digit'});
+}
+setInterval(updateClock, 15000);
+
+/* ==========================================================================
+   NAVIGATION ENTRE ÉCRANS
+   ========================================================================== */
+var RENDER = {};
+
+function closeSide(){
+  $('#sidebar').classList.remove('open');
+  $('#scrim').classList.remove('on');
+}
+
+function showView(v){
+  if(!$('#v-'+v) || !isAllowed(v)) v = 'desk';
+  curView = v;
+  $$('.view').forEach(function(s){ s.hidden = (s.id !== 'v-'+v); });
+  $$('.nav').forEach(function(b){
+    if(b.dataset.v === v) b.setAttribute('aria-current', 'page');
+    else b.removeAttribute('aria-current');
+  });
+  document.body.classList.toggle('bare', v === 'login');
+  closeSide();
+  try { history.replaceState(null, '', '#' + v); } catch(e){}
+  window.scrollTo(0,0);
+  if(RENDER[v]) RENDER[v]();
+  updateClock();
+}
+
+$$('.nav').forEach(function(b){
+  b.addEventListener('click', function(){ showView(b.dataset.v); });
+});
+
+$('#menu').addEventListener('click', function(){
+  $('#sidebar').classList.add('open');
+  $('#scrim').classList.add('on');
+});
+$('#scrim').addEventListener('click', closeSide);
+
+function applyRole(){
+  var r = ROLES[ri];
+  $('#uname').textContent = r.u;
+  $('#uav').textContent = r.i;
+  $('#urole').textContent = r.n + ' · rang ' + r.r;
+  $$('.nav').forEach(function(b){ b.hidden = !isAllowed(b.dataset.v); });
+  if(!isAllowed(curView)) showView('desk');
+  else if(RENDER[curView]) RENDER[curView]();
+}
+
+$('#user').addEventListener('click', function(){
+  ri = (ri + 1) % ROLES.length;
+  applyRole();
+  toast('Persona simulé : ' + ROLES[ri].n + ' (rang ' + ROLES[ri].r + ')');
+});
+
+/* Thème (Auto / Clair / Sombre) */
+var currentTheme = 0;
+$('#theme').addEventListener('click', function(){
+  currentTheme = (currentTheme + 1) % 3;
+  var root = document.documentElement;
+  if(currentTheme === 0) root.removeAttribute('data-theme');
+  else root.setAttribute('data-theme', currentTheme === 1 ? 'light' : 'dark');
+  $('#theme').title = 'Thème : ' + ['auto','clair','sombre'][currentTheme];
+  toast('Thème basculé : ' + ['auto','clair','sombre'][currentTheme]);
+});
+
+$('#bell').addEventListener('click', function(){
+  $('#bellPin').style.display = 'none';
+  toast('2 alertes reçues : file Consultation Générale au-dessus du SLA, 1 échec SMS');
+});
+
+/* Menus déroulants Site & File */
+var currentPop = null;
+function closePop(){ if(currentPop){ currentPop.remove(); currentPop = null; } }
+
+function openPopMenu(btn, items, selIdx, onPick){
+  closePop();
+  currentPop = document.createElement('div');
+  currentPop.className = 'menu-pop';
+  currentPop.setAttribute('role', 'menu');
+  var rect = btn.getBoundingClientRect();
+  currentPop.style.top = (rect.bottom + 6) + 'px';
+  currentPop.style.left = Math.max(8, Math.min(rect.left, innerWidth - 290)) + 'px';
+  items.forEach(function(item, idx){
+    var b = document.createElement('button');
+    b.innerHTML = item;
+    b.setAttribute('aria-selected', idx === selIdx);
+    b.addEventListener('click', function(e){
+      e.stopPropagation();
+      onPick(idx);
+      closePop();
+    });
+    currentPop.appendChild(b);
+  });
+  document.body.appendChild(currentPop);
+}
+
+document.addEventListener('click', function(e){
+  if(currentPop && !currentPop.contains(e.target) && !e.target.closest('#siteSel,#qSel')) closePop();
+});
+
+$('#siteSel').addEventListener('click', function(){
+  openPopMenu(this, SITES.map(function(s){
+    return '<span class="cc">'+s.cc+'</span>'+s.n+'<small>'+s.cur+'</small>';
+  }), siteI, function(idx){
+    siteI = idx;
+    $('#siteLbl').textContent = SITES[idx].n;
+    updateClock();
+    toast('Établissement actif : ' + SITES[idx].n + ' (' + SITES[idx].tz + ')');
+  });
+});
+
+function renderQueueItem(q){
+  return '<span class="qb" style="--h:'+q.h+';width:26px;height:26px;font-size:12px">'+q.l+'</span>'+q.n+'<small>'+q.w+' en attente</small>';
+}
+
+$('#qSel').addEventListener('click', function(){
+  openPopMenu(this, QUEUES.map(renderQueueItem), qi, function(idx){
+    qi = idx;
+    $('#qLbl').textContent = QUEUES[idx].n;
+    $('#qBadge').textContent = QUEUES[idx].w;
+    $('#counterHeroQueue').textContent = QUEUES[idx].n;
+    toast('File active : ' + QUEUES[idx].n);
+  });
+});
+
+/* ==========================================================================
+   SMART DESK COCKPIT LOGIQUE
+   ========================================================================== */
+var queueData = [
+  {t:'B015', k:'rdv', w:12, tm:'10:15', n:'Sonia Mansour · 36 ans', tel:'+216 55 201 884', tier:'RDV', sc:'72,00', f:'60 (RDV) + 12,0 (escalade)'},
+  {t:'B016', k:'walk', w:18, tm:'', n:'Yassine Trabelsi · 29 ans', tel:'+216 22 774 190', tier:'Standard', sc:'19,00', f:'10 (sans RDV) + 9,0 (escalade)'},
+  {t:'B017', k:'walk', w:14, tm:'', n:'Amel Gharbi · 51 ans', tel:'+216 97 310 442', tier:'Standard', sc:'17,00', f:'10 (sans RDV) + 7,0 (escalade)'},
+  {t:'B018', k:'vip', w:6, tm:'', n:'Hédi Jlassi · 58 ans', tel:'+216 98 004 217', tier:'VIP', sc:'56,00', f:'50 (VIP) + 6,0 (escalade)'},
+  {t:'B019', k:'walk', w:2, tm:'', n:'Nour Ben Ammar · 7 ans', tel:'+216 20 665 903', tier:'Standard', sc:'11,00', f:'10 (sans RDV) + 1,0 (escalade)'}
+];
+
+var patientNamesPool = ['Rim Ouertani · 33 ans','Sami Bouzid · 45 ans','Ines Kallel · 8 ans','Walid Hamdi · 61 ans'];
+var nextTicketSeq = 20;
+var servedTotal = 28;
+
+function renderWaitingQueue(){
+  $('#waitList').innerHTML = queueData.map(function(q, i){
+    var tag = q.k === 'rdv' ? '<span class="tag rdvt">RDV</span>' : q.k === 'vip' ? '<span class="tag vipt">VIP</span>' : '<span class="tag">Sans RDV</span>';
+    return '<li><span class="ix">'+(i+1)+'</span><div class="grow"><span class="tk">'+q.t+'</span>'+tag+'<div class="m">'+(q.tm?'<span>'+ic('cal')+' '+q.tm+'</span>':'')+'<span>'+ic('clock')+' '+q.w+' min</span></div></div></li>';
+  }).join('');
+  $('#qCount').textContent = queueData.length;
+}
+
+function handleCallNextTicket(){
+  if(!counterState.occupied){
+    toast('Action impossible : vous devez d\'abord occuper un guichet !');
+    return;
+  }
+  var nextItem = queueData.shift();
+  if(!nextItem){
+    toast('Aucun ticket en attente dans cette file');
+    return;
+  }
+
+  $('#cTicket').textContent = nextItem.t;
+  $('#cName').textContent = nextItem.n;
+  $('#cTel').textContent = nextItem.tel;
+
+  var tierBadge = $('#cTier');
+  tierBadge.textContent = nextItem.tier;
+  tierBadge.className = 'pill ' + (nextItem.k === 'vip' ? 'vip' : nextItem.k === 'rdv' ? 'acc' : '');
+
+  $('#cScore').textContent = nextItem.sc;
+  $('#cFormula').textContent = nextItem.f;
+  $('#earlyNote').hidden = (nextItem.k !== 'rdv');
+
+  var currentTotal = Math.max(0, +$('#qTotal').textContent - 1);
+  $('#qTotal').textContent = currentTotal;
+
+  // Réapprovisionnement automatique pour démo continue
+  if(currentTotal >= 4){
+    nextTicketSeq++;
+    queueData.push({
+      t: 'B0' + nextTicketSeq,
+      k: 'walk',
+      w: 1,
+      tm: '',
+      n: patientNamesPool[nextTicketSeq % patientNamesPool.length],
+      tel: '+216 2' + (nextTicketSeq % 10) + ' 400 11' + (nextTicketSeq % 10),
+      tier: 'Standard',
+      sc: '10,50',
+      f: '10 (sans RDV) + 0,5 (escalade)'
+    });
+  }
+
+  renderWaitingQueue();
+  playChime();
+  toast('Ticket ' + nextItem.t + ' appelé au guichet ' + counterState.counterNum);
+}
+
+renderWaitingQueue();
+updateCounterUI();
+
+$('#callNext').addEventListener('click', handleCallNextTicket);
+
+$('#served').addEventListener('click', function(){
+  if(!counterState.occupied) return;
+  servedTotal++;
+  $('#servedCount').textContent = servedTotal;
+  toast('Ticket clôturé avec succès — Guichet disponible pour le suivant');
+});
+
+$('#noshow').addEventListener('click', function(){
+  if(!counterState.occupied) return;
+  toast('Ticket marqué absent (No-show enregistré)');
+});
+
+if($('#btnReChime')){
+  $('#btnReChime').addEventListener('click', function(){
+    if(!counterState.occupied) return;
+    playChime();
+    toast('Rappel sonore émis pour le ticket en cours');
+  });
+}
+
+/* Modals Desk */
+$('#modalOccupyClose').addEventListener('click', function(){ $('#modalOccupy').hidden = true; });
+$('#modalOccupyCancel').addEventListener('click', function(){ $('#modalOccupy').hidden = true; });
+$('#modalOccupyConfirm').addEventListener('click', function(){
+  counterState.occupied = true;
+  counterState.counterNum = +$('#selCounterNum').value;
+  counterState.status = $('#selCounterMode').value;
+  $('#modalOccupy').hidden = true;
+  updateCounterUI();
+  toast('Installation validée sur le Guichet N° ' + counterState.counterNum);
+});
+
+$('#btnTransfer').addEventListener('click', function(){
+  $('#transferTicketNum').textContent = $('#cTicket').textContent;
+  $('#modalTransfer').hidden = false;
+});
+$('#modalTransferClose').addEventListener('click', function(){ $('#modalTransfer').hidden = true; });
+$('#modalTransferCancel').addEventListener('click', function(){ $('#modalTransfer').hidden = true; });
+$('#modalTransferConfirm').addEventListener('click', function(){
+  var targetQueue = $('#selTransferQueue').selectedOptions[0].text;
+  $('#modalTransfer').hidden = true;
+  toast('Ticket ' + $('#cTicket').textContent + ' transféré avec succès vers ' + targetQueue);
+  handleCallNextTicket();
+});
+
+$('#btnAddNoteModal').addEventListener('click', function(){ $('#modalNote').hidden = false; });
+$('#modalNoteClose').addEventListener('click', function(){ $('#modalNote').hidden = true; });
+$('#modalNoteCancel').addEventListener('click', function(){ $('#modalNote').hidden = true; });
+$('#modalNoteConfirm').addEventListener('click', function(){
+  var txt = $('#newNoteContent').value.trim();
+  if(!txt){ toast('Veuillez saisir un texte pour la note'); return; }
+  var li = document.createElement('li');
+  li.innerHTML = '<div>' + txt + '<small>' + ROLES[ri].u + ' · À l\'instant</small></div><button class="ib" aria-label="Modifier">' + ic('edit') + '</button>';
+  $('#patientNotes').prepend(li);
+  $('#newNoteContent').value = '';
+  $('#modalNote').hidden = true;
+  toast('Note confidentielle enregistrée');
+});
+
+$('#btnDeskResetModal').addEventListener('click', function(){ $('#modalReset').hidden = false; });
+$('#modalResetClose').addEventListener('click', function(){ $('#modalReset').hidden = true; });
+$('#modalResetCancel').addEventListener('click', function(){ $('#modalReset').hidden = true; });
+$('#modalResetConfirm').addEventListener('click', function(){
+  $('#modalReset').hidden = true;
+  toast('Procédure de réinitialisation nocturne exécutée pour le site');
+});
+
+/* Drawer Patient */
+var drawerEl = $('#drawer');
+function openPatientDrawer(){ drawerEl.hidden = false; }
+$('#drawerOpen').addEventListener('click', openPatientDrawer);
+$('#drawerOpen2').addEventListener('click', openPatientDrawer);
+$('#drawerClose').addEventListener('click', function(){ drawerEl.hidden = true; });
+
+$('#btnUseExistingPatient').addEventListener('click', function(){
+  $('#dn').value = 'Ben Salem';
+  $('#dp').value = 'Karim';
+  $('#dt').value = '+216 98 123 456';
+  toast('Fiche de Karim Ben Salem chargée');
+});
+
+$('#btnEmitTicketFromDrawer').addEventListener('click', function(){
+  drawerEl.hidden = true;
+  nextTicketSeq++;
+  var newTk = 'B0' + nextTicketSeq;
+  queueData.push({
+    t: newTk,
+    k: 'walk',
+    w: 1,
+    tm: '',
+    n: ($('#dp').value || 'Patient') + ' ' + ($('#dn').value || 'Nouveau'),
+    tel: $('#dt').value || '+216 98 000 000',
+    tier: $('#dtier').value.indexOf('VIP') >= 0 ? 'VIP' : 'Standard',
+    sc: '10,00',
+    f: '10 (sans RDV)'
+  });
+  renderWaitingQueue();
+  toast('Nouveau ticket ' + newTk + ' créé et inséré dans la file !');
+});
+
+function setupSegmentedGroup(sel){
+  $$(sel + ' button').forEach(function(b){
+    b.addEventListener('click', function(){
+      $$(sel + ' button').forEach(function(x){ x.setAttribute('aria-pressed', x === b); });
+    });
+  });
+}
+setupSegmentedGroup('#mode');
+setupSegmentedGroup('#payMode');
+
+$('#cashBtn').addEventListener('click', function(){
+  $('#payStatus').className = 'pill ok';
+  $('#payStatus').textContent = 'Encaissé';
+  toast('Encaissement de 35,000 TND enregistré (Reçu émis)');
+});
+
+/* ==========================================================================
+   PALETTE DE COMMANDES (CTRL+K)
+   ========================================================================== */
+var paletteEl = $('#pal');
+var COMMANDS = [
+  {h: ic('arrow') + 'Appeler le ticket suivant', k:'Espace', f: function(){ showView('desk'); handleCallNextTicket(); }},
+  {h: ic('desk') + 'Occuper un guichet physique', k:'', f: function(){ showView('desk'); $('#modalOccupy').hidden = false; }},
+  {h: ic('search') + 'Rechercher le patient « Karim »', k:'', f: function(){ showView('desk'); $('#quick').focus(); }},
+  {h: ic('swap') + 'Basculer vers la file Consultation Générale', k:'', f: function(){ qi = 0; $('#qLbl').textContent = QUEUES[0].n; $('#qBadge').textContent = QUEUES[0].w; toast('File active : Consultation Générale'); }},
+  {h: ic('plus') + 'Nouveau patient ou ticket', k:'N', f: function(){ showView('desk'); openPatientDrawer(); }},
+  {h: ic('grid') + 'Aller au Centre de commandement', k:'', f: function(){ showView('dash'); }},
+  {h: ic('tv') + 'Ouvrir l\'affichage de salle', k:'', f: function(){ showView('tv'); }},
+  {h: ic('phone') + 'Simulateur mobile patient', k:'', f: function(){ showView('mobile'); }}
+];
+
+function renderPalette(){
+  var filterTxt = $('#palIn').value.toLowerCase();
+  var list = $('#palList');
+  list.innerHTML = '';
+  COMMANDS.forEach(function(cmd){
+    if(filterTxt && cmd.h.toLowerCase().indexOf(filterTxt) < 0) return;
+    var li = document.createElement('li');
+    li.innerHTML = cmd.h + (cmd.k ? '<kbd>' + cmd.k + '</kbd>' : '');
+    li.addEventListener('click', function(){
+      togglePalette(false);
+      cmd.f();
+    });
+    list.appendChild(li);
+  });
+  if(list.firstChild) list.firstChild.classList.add('on');
+}
+
+function togglePalette(isOpen){
+  paletteEl.hidden = !isOpen;
+  if(isOpen){
+    $('#palIn').value = '';
+    renderPalette();
+    setTimeout(function(){ $('#palIn').focus(); }, 10);
+  }
+}
+
+$('#palOpen').addEventListener('click', function(){ togglePalette(true); });
+paletteEl.addEventListener('click', function(e){ if(e.target === paletteEl) togglePalette(false); });
+$('#palIn').addEventListener('input', renderPalette);
+$('#palIn').addEventListener('keydown', function(e){
+  if(e.key === 'Enter'){
+    var activeLi = $('#palList li.on') || $('#palList li');
+    if(activeLi) activeLi.click();
+  }
+});
+
+document.addEventListener('keydown', function(e){
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && curView !== 'login'){
+    e.preventDefault();
+    togglePalette(paletteEl.hidden);
+  }
+  if(e.key === 'Escape'){
+    togglePalette(false);
+    drawerEl.hidden = true;
+    $$('.modal-backdrop').forEach(function(m){ m.hidden = true; });
+  }
+  var tag = e.target && e.target.tagName;
+  if(curView === 'desk' && paletteEl.hidden && drawerEl.hidden && !/INPUT|TEXTAREA|SELECT|BUTTON/.test(tag)){
+    if(e.key === ' '){
+      e.preventDefault();
+      handleCallNextTicket();
+    } else if(e.key === 'n' || e.key === 'N'){
+      openPatientDrawer();
+    } else if(e.key === 'Enter'){
+      $('#served').click();
+    }
+  }
+});
+
+/* ==========================================================================
+   BORNE TACTILE (KIOSK) LOGIQUE
+   ========================================================================== */
+var KIOSK_TEXTS = {
+  fr: {
+    hello: 'Bienvenue. Comment souhaitez-vous être accueilli ?',
+    rdv: 'J\'ai un rendez-vous',
+    rdvs: 'Scan du QR code ou saisie du téléphone',
+    walk: 'Sans rendez-vous',
+    walks: 'Choisissez votre service et obtenez un ticket',
+    svc: 'Choisissez votre service',
+    coords: 'Vos coordonnées'
+  },
+  ar: {
+    hello: 'مرحباً بكم. كيف تودون أن نستقبلكم؟',
+    rdv: 'لدي موعد',
+    rdvs: 'امسحوا رمز QR أو أدخلوا رقم هاتفكم',
+    walk: 'بدون موعد',
+    walks: 'اختاروا الخدمة واستلموا تذكرتكم',
+    svc: 'اختاروا الخدمة',
+    coords: 'بياناتكم'
+  },
+  en: {
+    hello: 'Welcome. How would you like to be received?',
+    rdv: 'I have an appointment',
+    rdvs: 'Scan your QR code or enter your phone number',
+    walk: 'No appointment',
+    walks: 'Choose a service and get your ticket',
+    svc: 'Choose your service',
+    coords: 'Your details'
+  }
+};
+
+var kioskEl = $('#kiosk'), kioskQueue = QUEUES[1], kioskTierIdx = 0, isKioskRdv = false, phoneDigits = '';
+
+$$('.langs button').forEach(function(b){
+  b.addEventListener('click', function(){
+    $$('.langs button').forEach(function(x){ x.setAttribute('aria-pressed', x === b); });
+    var lang = b.dataset.lang;
+    kioskEl.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+    kioskEl.classList.toggle('ar', lang === 'ar');
+    $$('[data-t]', kioskEl).forEach(function(el){
+      el.textContent = KIOSK_TEXTS[lang][el.dataset.t];
+    });
+  });
+});
+
+$$('#orient button').forEach(function(b){
+  b.addEventListener('click', function(){
+    $$('#orient button').forEach(function(x){ x.setAttribute('aria-pressed', x === b); });
+    kioskEl.classList.toggle('land', b.dataset.o === 'l');
+  });
+});
+
+$('#kA11y').addEventListener('click', function(){
+  var isPressed = this.getAttribute('aria-pressed') !== 'true';
+  this.setAttribute('aria-pressed', isPressed);
+  kioskEl.classList.toggle('a11y', isPressed);
+  toast(isPressed ? 'Mode accessibilité activé : contraste et police augmentés' : 'Mode standard rétabli');
+});
+
+$('#kAudio').addEventListener('click', function(){
+  var isPressed = this.getAttribute('aria-pressed') !== 'true';
+  this.setAttribute('aria-pressed', isPressed);
+  if(isPressed) playChime();
+  toast(isPressed ? 'Guidage vocal audio activé' : 'Audio coupé');
+});
+
+function formatOrdinal(n){ return n === 1 ? '1er' : n + 'e'; }
+
+function populateKioskTiers(){
+  var pricesArr = PRICES[kioskQueue.l], html = '';
+  $('#tierQ').textContent = kioskQueue.n;
+  for(var i = 0; i < 3; i++){
+    if(pricesArr[i] === null) continue;
+    html += '<button class="tier" data-ti="'+i+'" aria-pressed="'+(i === kioskTierIdx)+'"><span><b>'+TIERS[i].n+'</b><small>'+TIERS[i].d+'</small></span><span class="pr">'+(pricesArr[i] === 0 ? 'Gratuit' : money(pricesArr[i]) + ' TND')+'</span></button>';
+  }
+  $('#tierList').innerHTML = html;
+}
+
+$('#tierList').addEventListener('click', function(e){
+  var btn = e.target.closest('.tier');
+  if(!btn) return;
+  kioskTierIdx = +btn.dataset.ti;
+  $$('.tier').forEach(function(x){ x.setAttribute('aria-pressed', x === btn); });
+});
+
+function populateKioskTicket(){
+  var q = isKioskRdv ? QUEUES[1] : kioskQueue;
+  var pos = isKioskRdv ? 3 : q.w + 1;
+  var eta = isKioskRdv ? 10 : q.t;
+  var tierName = isKioskRdv ? 'Rendez-vous 10:15' : TIERS[kioskTierIdx].n;
+  $('#tkBig').textContent = q.l + '042';
+  $('#tkQ').textContent = q.n + ' · ' + tierName;
+  $('#tkPos').textContent = formatOrdinal(pos);
+  $('#tkEta').textContent = '~' + eta + ' min';
+  $('#tkG').textContent = q.g + ' ouverts';
+}
+
+function navigateKioskStep(stepId){
+  $$('.k-step', kioskEl).forEach(function(x){
+    x.classList.toggle('on', x.dataset.s === stepId);
+  });
+  $$('#rail button').forEach(function(b){
+    b.setAttribute('aria-current', b.dataset.go === stepId);
+  });
+  if(stepId === 'tier') populateKioskTiers();
+  if(stepId === 'ticket'){
+    populateKioskTicket();
+    playChime();
+  }
+  if(stepId === 'home'){
+    phoneDigits = '';
+    formatPhoneDisplay();
+  }
+}
+
+$$('#v-kiosk [data-go]').forEach(function(b){
+  b.addEventListener('click', function(){
+    var target = b.dataset.go;
+    if(target === 'rdv') isKioskRdv = true;
+    if(target === 'service') isKioskRdv = false;
+    navigateKioskStep(target);
+  });
+});
+
+$('#svcTiles').innerHTML = QUEUES.map(function(q, i){
+  return '<button class="tile" data-qi="'+i+'"><span class="ic">'+ic(q.ic)+'</span><b>'+q.n+'</b><small><span>'+ic('clock')+' ~'+q.t+' min</span><span>'+ic('users')+' '+q.w+'</span></small></button>';
+}).join('');
+
+$('#svcTiles').addEventListener('click', function(e){
+  var btn = e.target.closest('.tile');
+  if(!btn) return;
+  kioskQueue = QUEUES[+btn.dataset.qi];
+  kioskTierIdx = 0;
+  isKioskRdv = false;
+  navigateKioskStep('tier');
+});
+
+function formatPhoneDisplay(){
+  var digits = phoneDigits;
+  var out = digits.slice(0, 2);
+  if(digits.length > 2) out += ' ' + digits.slice(2, 5);
+  if(digits.length > 5) out += ' ' + digits.slice(5, 8);
+  $$('[data-ph]').forEach(function(el){
+    el.textContent = digits ? out : '98 123 456';
+    el.style.opacity = digits ? 1 : 0.45;
+  });
+}
+
+$$('[data-pad]').forEach(function(pad){
+  pad.innerHTML = ['1','2','3','4','5','6','7','8','9','⌫','0','OK'].map(function(key){
+    return '<button data-k="'+key+'" aria-label="'+key+'">'+key+'</button>';
+  }).join('');
+  pad.addEventListener('click', function(e){
+    var btn = e.target.closest('button');
+    if(!btn) return;
+    var key = btn.dataset.k;
+    if(key === '⌫') phoneDigits = phoneDigits.slice(0, -1);
+    else if(key === 'OK'){
+      var currentStep = pad.closest('.k-step').dataset.s;
+      navigateKioskStep(currentStep === 'rdv' ? 'rdvok' : 'ticket');
+    } else if(phoneDigits.length < 8) phoneDigits += key;
+    formatPhoneDisplay();
+  });
+});
+formatPhoneDisplay();
+
+/* ==========================================================================
+   AFFICHAGE DE SALLE (TV BROADCAST)
+   ========================================================================== */
+var callHistory = [
+  ['A012', 'Guichet 1', 'Consultation'],
+  ['E004', 'Guichet 3', 'Facturation'],
+  ['B013', 'Guichet 2', 'Pédiatrie'],
+  ['C001', 'Guichet 4', 'Laboratoire']
+];
+var tvNextQueue = [
+  ['B015', 'Guichet 2', 'Pédiatrie'],
+  ['E005', 'Guichet 3', 'Facturation'],
+  ['A013', 'Guichet 1', 'Consultation'],
+  ['C002', 'Guichet 4', 'Laboratoire']
+];
+var tvCurrentCall = ['B014', 'Guichet 2', 'Pédiatrie'];
+var tvNextIdx = 0;
+
+function renderTVHistory(){
+  $('#tvL').innerHTML = callHistory.map(function(c){
+    return '<li><span class="t">'+c[0]+'</span><span class="g">'+c[1]+'</span><small>'+c[2]+'</small></li>';
+  }).join('');
+}
+renderTVHistory();
+
+$('#tvCall').addEventListener('click', function(){
+  callHistory.unshift(tvCurrentCall);
+  callHistory = callHistory.slice(0, 4);
+  tvCurrentCall = tvNextQueue[tvNextIdx % tvNextQueue.length];
+  tvNextIdx++;
+
+  $('#tvT').textContent = tvCurrentCall[0];
+  $('#tvG').textContent = tvCurrentCall[1];
+  $('#tvS').textContent = tvCurrentCall[2];
+  renderTVHistory();
+
+  var heroBox = $('#hero');
+  heroBox.classList.remove('pulse');
+  void heroBox.offsetWidth;
+  heroBox.classList.add('pulse');
+  playChime();
+  toast('Appel diffusé sur l\'écran TV avec carillon bi-ton');
+});
+
+/* ==========================================================================
+   MOBILE PATIENT TRACKER
+   ========================================================================== */
+var mobilePosition = 3;
+
+function renderMobileTracker(){
+  if(mobilePosition <= 0){
+    $('#mCalled').hidden = false;
+    $('#mStatusText').textContent = 'Appelé au guichet !';
+    $('#mStatusText').style.color = 'var(--call)';
+    playChime();
+    try { if(navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 500]); } catch(e){}
+    return;
+  }
+  $('#mCalled').hidden = true;
+  $('#mStatusText').textContent = 'En attente';
+  $('#mStatusText').style.color = 'var(--ok)';
+  $('#gPos').textContent = mobilePosition;
+  $('#gLbl').textContent = mobilePosition === 1 ? 'ER, PROCHAIN !' : 'E DANS LA FILE';
+  $('#gArc').setAttribute('stroke-dashoffset', String(100 - (4 - mobilePosition) / 4 * 99));
+  $('#mEta').textContent = '~ ' + (mobilePosition * 5) + ' min';
+}
+
+$('#mAdv').addEventListener('click', function(){
+  if(mobilePosition > 0){
+    mobilePosition--;
+    renderMobileTracker();
+  }
+});
+
+$('#mReset').addEventListener('click', function(){
+  mobilePosition = 3;
+  $('#mCalled').hidden = true;
+  renderMobileTracker();
+  toast('Position mobile réinitialisée à 3e');
+});
+
+$('#mForceCall').addEventListener('click', function(){
+  mobilePosition = 0;
+  renderMobileTracker();
+});
+
+$('#mBack').addEventListener('click', function(){
+  $('#mCalled').hidden = true;
+  toast('Bonne consultation !');
+});
+
+$('#btnMobileNotify').addEventListener('click', function(){
+  try { if(navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch(e){}
+  toast('Alerte vibration testée avec succès sur votre mobile');
+});
+
+$('#btnMobileCancel').addEventListener('click', function(){
+  if(confirm('Souhaitez-vous vraiment annuler votre ticket de file B014 ?')){
+    $('#mStatusText').textContent = 'Ticket annulé';
+    $('#mStatusText').style.color = 'var(--bad)';
+    toast('Votre ticket a été annulé avec succès');
+  }
+});
+
+$$('#csatStars span').forEach(function(star){
+  star.addEventListener('click', function(){
+    var score = +star.dataset.star;
+    $$('#csatStars span').forEach(function(s, idx){
+      s.classList.toggle('active', idx < score);
+    });
+    $('#csatFeedback').textContent = 'Merci ! Note de ' + score + ' / 5 enregistrée.';
+    toast('Enquête de satisfaction transmise');
+  });
+});
+
+renderMobileTracker();
+
+/* ==========================================================================
+   DASHBOARD / ANALYTICS
+   ========================================================================== */
+var dashInitialized = false;
+
+RENDER.dash = function(){
+  if(dashInitialized) return;
+  dashInitialized = true;
+
+  $('#loads').innerHTML = QUEUES.map(function(q){
+    return '<span class="nm"><span class="qb" style="--h:'+q.h+'">'+q.l+'</span>'+q.n+'</span><span class="track"><i class="'+(q.hot?'hot':'')+'" style="width:'+(q.w/24*100)+'%"></i></span><span class="meta"><b class="num" style="color:var(--fg)">'+q.w+'</b> en attente · '+q.g+' guichet'+(q.g>1?'s':'')+' · ~'+q.t+' min <span class="pill '+(q.hot?'bad':'ok')+'">'+(q.hot?'Charge forte':'Normale')+'</span></span>';
+  }).join('');
+
+  var arrData = [6, 17, 32, 43, 29, 18, 24, 36, 25, 15];
+  var hours = ['08h','09h','10h','11h','12h','13h','14h','15h','16h','17h'];
+  var W = 520, H = 220, l = 34, b = 28, t = 14, r = 8, maxVal = 50;
+  var pw = W - l - r, ph = H - b - t, svgStr = '';
+
+  [0, 25, 50].forEach(function(gridVal){
+    var y = t + ph - (gridVal / maxVal * ph);
+    svgStr += '<line class="gl" x1="'+l+'" x2="'+(W-r)+'" y1="'+y+'" y2="'+y+'"/><text x="'+(l-6)+'" y="'+(y+4)+'" text-anchor="end">'+gridVal+'</text>';
+  });
+
+  var barWidth = pw / arrData.length;
+  arrData.forEach(function(val, idx){
+    var barH = val / maxVal * ph;
+    var posX = l + idx * barWidth + barWidth * 0.18;
+    svgStr += '<rect x="'+posX+'" y="'+(t+ph-barH)+'" width="'+(barWidth*0.64)+'" height="'+barH+'" rx="3" fill="'+(val===43?'var(--call)':'var(--accent)')+'"/><text x="'+(posX+barWidth*0.32)+'" y="'+(H-10)+'" text-anchor="middle">'+hours[idx]+'</text>';
+  });
+  svgStr += '<text x="'+(l+3*barWidth+barWidth*0.5)+'" y="'+(t+ph-43/maxVal*ph-5)+'" text-anchor="middle" style="fill:var(--fg);font-weight:700">43</text>';
+  $('#arr').innerHTML = svgStr;
+
+  var operatorsList = [
+    ['SB', 'Sarah B.', 'Guichet 1 · Pédiatrie', '28 servis', 'ok'],
+    ['AG', 'Dr Aziz', 'Guichet 2 · Pédiatrie', '34 servis', 'ok'],
+    ['MK', 'Mohamed K.', 'Guichet 1 · Générale', 'Inactif 8 min', 'warn'],
+    ['YM', 'Yassine M.', 'Guichet 2 · Générale', '22 servis', 'ok']
+  ];
+  $('#oprs').innerHTML = operatorsList.map(function(op){
+    return '<div class="opr"><span class="av">'+op[0]+'</span><div class="who"><b>'+op[1]+' '+(op[4]==='ok'?'<span style="color:var(--call)">'+ic('star')+'</span>':'<span style="color:var(--warn)">'+ic('alert')+'</span>')+'</b><small>'+op[2]+'</small></div><div class="sv"><b style="color:'+(op[4]==='ok'?'var(--ok)':'var(--warn)')+'">'+op[3]+'</b></div>'+(op[4]==='warn'?'<button class="btn bad sm" data-toast="Session de Mohamed K. fermée à distance">'+ic('ban')+'Déconnecter</button>':'')+'</div>';
+  }).join('');
+  $$('#oprs [data-toast]').forEach(function(b){ b.addEventListener('click', function(){ toast(b.dataset.toast); }); });
+
+  var days = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+  var pr = [.25,.45,.7,.9,1,.85,.6,.55,.4,.3,.2,.1];
+  var df = [.95,.9,1,.92,1,.7,.25];
+  var heatHtml = '<span></span>';
+  for(var c = 0; c < 12; c++) heatHtml += '<span class="hl">'+(8+c)+'h</span>';
+  days.forEach(function(d, dIdx){
+    heatHtml += '<span>'+d+'</span>';
+    for(var c = 0; c < 12; c++){
+      var val = Math.min(1, pr[c] * df[dIdx] + ((dIdx * 7 + c * 3) % 5) / 60);
+      var isPred = (dIdx === 4 && (c === 2 || c === 3));
+      heatHtml += '<i class="'+(isPred?'pred':'')+'" title="'+d+' '+(8+c)+'h · environ '+Math.round(val*65)+' patients" style="background:color-mix(in srgb,var(--accent) '+Math.max(6,Math.round(val*100))+'%,var(--surface-2))"></i>';
+    }
+  });
+  $('#heat').innerHTML = heatHtml;
+
+  $('#cmp').innerHTML = SITES.map(function(s){
+    var tc = s.tma > 15 ? 'var(--bad)' : s.tma <= 10 ? 'var(--ok)' : 'var(--warn)';
+    var nc = s.ns > 6 ? 'var(--bad)' : s.ns < 4 ? 'var(--ok)' : 'var(--warn)';
+    return '<tr><td><b>'+s.n+'</b><div style="color:var(--fg-2);font-size:12px">'+s.c+'</div></td><td><span class="cc">'+s.cc+'</span></td><td class="num">'+s.g+'</td><td class="num">'+s.ins+'</td><td class="num" style="color:'+tc+';font-weight:600">'+s.tma+' min</td><td class="num" style="color:'+nc+';font-weight:600">'+String(s.ns).replace('.',',')+' %</td><td class="num">'+Math.round(40+s.ins%37)+' %</td><td><span class="pill ok"><span class="dot"></span>Actif</span></td></tr>';
+  }).join('');
+};
+
+/* ==========================================================================
+   SITES PHYSIQUES & WIZARD ONBOARDING
+   ========================================================================== */
+var COUNTRY_MAP = {
+  'France': ['EUR', 'Europe/Paris'],
+  'Tunisie': ['TND', 'Africa/Tunis'],
+  'Maroc': ['MAD', 'Africa/Casablanca'],
+  'Émirats arabes unis': ['AED', 'Asia/Dubai']
+};
+var WIZARD_STEPS = [
+  {ic:'build', t:'Identité & Marque'},
+  {ic:'globe', t:'Pays & Devises'},
+  {ic:'clock', t:'Horaires & SLA'},
+  {ic:'check', t:'Récapitulatif'}
+];
+var wizardIndex = 0;
+var wizardData = {
+  name: 'Clinique Pasteur Paris',
+  type: 'Privé',
+  addr: '12 avenue Pasteur, 75015 Paris',
+  pays: 'France',
+  cur: 'EUR',
+  tz: 'Europe/Paris',
+  lang: 'Français'
+};
+
+function renderOptions(arr, selectedVal){
+  return arr.map(function(x){
+    return '<option' + (x === selectedVal ? ' selected' : '') + '>' + x + '</option>';
+  }).join('');
+}
+
+function renderWizard(){
+  $('#wizSteps').innerHTML = WIZARD_STEPS.map(function(s, idx){
+    return '<div class="'+(idx < wizardIndex ? 'done' : idx === wizardIndex ? 'cur' : '')+'"><span class="tl">'+ic(idx < wizardIndex ? 'check' : s.ic)+'</span><span><small>Étape '+(idx+1)+'</small>'+s.t+'</span></div>';
+  }).join('');
+
+  var bodyHtml = '';
+  if(wizardIndex === 0){
+    bodyHtml = '<div class="form2"><div class="field"><label for="w-name">Nom de l\'établissement *</label><input class="in" id="w-name" value="'+wizardData.name+'"></div><div class="field"><label>Secteur d\'activité</label><div class="seg" id="w-type"><button aria-pressed="'+(wizardData.type==='Privé')+'">Privé</button><button aria-pressed="'+(wizardData.type==='Public')+'">Public</button></div></div><div class="field"><label for="w-addr">Adresse physique complète</label><input class="in" id="w-addr" value="'+wizardData.addr+'"></div><div class="field"><label>Logo de marque</label><div class="upl">'+ic('upload')+'Téléverser un logo HD (PNG / SVG)</div></div></div>';
+  } else if(wizardIndex === 1){
+    bodyHtml = '<div class="form2"><div class="field"><label for="w-pays">Pays</label><select class="in" id="w-pays">'+renderOptions(Object.keys(COUNTRY_MAP), wizardData.pays)+'</select></div><div class="field"><label for="w-cur">Devise monétaire (ISO 4217)</label><select class="in" id="w-cur">'+renderOptions(['EUR','TND','MAD','AED','USD'], wizardData.cur)+'</select></div><div class="field"><label for="w-tz">Fuseau horaire officiel</label><select class="in" id="w-tz">'+renderOptions(['Europe/Paris','Africa/Tunis','Africa/Casablanca','Asia/Dubai'], wizardData.tz)+'</select></div><div class="field"><label for="w-lang">Langue par défaut</label><select class="in" id="w-lang">'+renderOptions(['Français','Arabe','Anglais'], wizardData.lang)+'</select></div><div class="full note">'+ic('clock')+'<span>Heure locale calculée : <b class="mono">'+tzf(wizardData.tz, {hour:'2-digit', minute:'2-digit'})+'</b>. Tous les calculs d\'horaires et de bornes se basent sur ce fuseau.</span></div></div>';
+  } else if(wizardIndex === 2){
+    bodyHtml = '<div class="form2"><div class="field"><label>Heure d\'ouverture</label><input class="in mono" value="08:00"></div><div class="field"><label>Heure de fermeture</label><input class="in mono" value="18:00"></div><div class="field"><label>Début de pause déjeuner</label><input class="in mono" value="12:30"></div><div class="field"><label>Fin de pause</label><input class="in mono" value="13:30"></div><div class="field"><label>Durée créneau RDV (min)</label><input class="in mono" value="15"></div><div class="field"><label>Capacité par créneau</label><input class="in mono" value="4"></div><div class="field"><label>Tolérance retard RDV (min)</label><input class="in mono" value="60"></div><div class="field"><label>Réinitialisation nocturne (RAZ)</label><input class="in mono" value="03:00"></div></div>';
+  } else if(wizardIndex === 3){
+    bodyHtml = '<dl class="id"><dt>Établissement</dt><dd>'+wizardData.name+' ('+wizardData.type+')</dd><dt>Adresse</dt><dd>'+wizardData.addr+'</dd><dt>Pays et devise</dt><dd>'+wizardData.pays+' · '+wizardData.cur+'</dd><dt>Fuseau</dt><dd class="mono">'+wizardData.tz+'</dd><dt>Horaires</dt><dd>08:00 à 18:00 (pause 12:30-13:30), créneaux de 15 min</dd></dl><div class="note ok">'+ic('check')+'<span>La transaction est atomique : création du site, initialisation des files par défaut et affectation des rôles en une seule étape.</span></div>';
+  }
+
+  $('#wizBody').innerHTML = bodyHtml;
+  $('#wizBack').disabled = (wizardIndex === 0);
+  $('#wizNext').innerHTML = (wizardIndex === 3 ? ic('check') + 'Créer l\'établissement' : 'Continuer' + ic('arrow'));
+}
+
+$('#wizBody').addEventListener('input', function(e){
+  var mapKey = {'w-name':'name', 'w-addr':'addr'}[e.target.id];
+  if(mapKey) wizardData[mapKey] = e.target.value;
+});
+
+$('#wizBody').addEventListener('change', function(e){
+  var id = e.target.id, val = e.target.value;
+  if(id === 'w-pays'){
+    wizardData.pays = val;
+    wizardData.cur = COUNTRY_MAP[val][0];
+    wizardData.tz = COUNTRY_MAP[val][1];
+    renderWizard();
+  } else if(id === 'w-cur'){
+    wizardData.cur = val;
+  } else if(id === 'w-tz'){
+    wizardData.tz = val;
+    renderWizard();
+  } else if(id === 'w-lang'){
+    wizardData.lang = val;
+  }
+});
+
+$('#wizBody').addEventListener('click', function(e){
+  var btn = e.target.closest('#w-type button');
+  if(!btn) return;
+  wizardData.type = btn.textContent;
+  renderWizard();
+});
+
+$('#wizBack').addEventListener('click', function(){
+  if(wizardIndex > 0){ wizardIndex--; renderWizard(); }
+});
+
+$('#wizNext').addEventListener('click', function(){
+  if(wizardIndex < 3){
+    wizardIndex++;
+    renderWizard();
+  } else {
+    toast('Établissement « ' + wizardData.name + ' » déployé avec succès !');
+    wizardIndex = 0;
+    renderWizard();
+  }
+});
+
+$('#wizNew').addEventListener('click', function(){
+  wizardIndex = 0;
+  renderWizard();
+  $('#wizard').scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+RENDER.sites = function(){
+  var totalCounters = SITES.reduce(function(acc, s){ return acc + s.g; }, 0);
+  $('#sitesKpi').innerHTML = [
+    ['Sites actifs', SITES.length, 'build'],
+    ['Pays couverts', 4, 'globe'],
+    ['Guichets déployés', totalCounters, 'users'],
+    ['Devises supportées', 4, 'card']
+  ].map(function(k){
+    return '<div class="kpi"><div class="kt"><small>'+k[0]+'</small><span class="kic">'+ic(k[2])+'</span></div><b>'+k[1]+'</b></div>';
+  }).join('');
+
+  $('#siteRows').innerHTML = SITES.map(function(s){
+    return '<tr><td><div class="uc"><span class="kic">'+ic('build')+'</span><div><b>'+s.n+'</b><small>'+s.c+'</small></div></div></td><td><span class="cc">'+s.cc+'</span> '+s.pays+'</td><td><span class="pill ok">'+s.cur+'</span></td><td class="mono">'+s.tz+'</td><td class="num">'+s.g+'</td><td><span class="pill ok"><span class="dot"></span>Actif</span></td><td><button class="ib" aria-label="Modifier" data-toast="Édition de '+s.n+'">'+ic('edit')+'</button></td></tr>';
+  }).join('');
+  $$('#siteRows [data-toast]').forEach(function(b){ b.addEventListener('click', function(){ toast(b.dataset.toast); }); });
+  renderWizard();
+};
+
+/* ==========================================================================
+   FILES D'ATTENTE & FORFAITS
+   ========================================================================== */
+RENDER.queues = function(){
+  var totalWaiting = QUEUES.reduce(function(a,q){ return a + q.w; }, 0);
+  var totalCounters = QUEUES.reduce(function(a,q){ return a + q.g; }, 0);
+
+  $('#qKpi').innerHTML = [
+    ['Files actives', QUEUES.length, 'list', ''],
+    ['Guichets configurés', totalCounters, 'users', 'ok'],
+    ['Total en attente', totalWaiting, 'clock', 'warn'],
+    ['Attente moyenne', '13 min', 'trend', '']
+  ].map(function(k){
+    return '<div class="kpi"><div class="kt"><small>'+k[0]+'</small><span class="kic '+k[3]+'">'+ic(k[2])+'</span></div><b>'+k[1]+'</b></div>';
+  }).join('');
+
+  $('#qCards').innerHTML = QUEUES.map(function(q){
+    return '<div class="card qcard"><div class="hd"><span class="qb" style="--h:'+q.h+'">'+q.l+'</span><div class="nm"><b>'+q.n+'</b><small><span class="dot"></span> Actif · '+q.g+' guichet'+(q.g>1?'s':'')+' max</small></div><div class="acts"><button class="ib" aria-label="Modifier" data-toast="Paramètres de file modifiés">'+ic('edit')+'</button><button class="ib" aria-label="Dupliquer" data-toast="File dupliquée">'+ic('copy')+'</button><button class="ib bad" aria-label="Supprimer" data-toast="File archivée">'+ic('trash')+'</button></div></div>'+
+      '<div class="stat3"><div><b>'+q.w+'</b>En attente</div><div><b>~'+q.t+'m</b>Attente moy.</div><div><span class="pill '+(q.hot?'bad':'ok')+'" style="align-self:center;margin-top:6px">'+(q.hot?'Forte':'Normale')+'</span>Statut</div></div>'+
+      '<div><div class="label" style="margin-bottom:8px">'+ic('lock')+' Moteur d\'ordonnancement (Scores)</div><div class="eng"><span>Poids sans RDV</span><b>'+q.wk.toFixed(1)+'</b><span>Poids RDV</span><b>'+q.ra.toFixed(1)+'</b><span>Escalade sans RDV</span><b>'+q.ew.toFixed(1)+'/min</b><span>Escalade RDV</span><b>'+q.er.toFixed(1)+'/min</b></div></div>'+
+      '<div><div class="label" style="margin-bottom:8px">'+ic('users')+' Opérateurs assignés</div><div class="avs">'+q.ops.map(function(o){ return '<span class="av sm">'+o+'</span>'; }).join('')+'<button class="ib" aria-label="Ajouter" style="width:26px;height:26px" data-toast="Assigner un opérateur">'+ic('plus')+'</button></div></div></div>';
+  }).join('');
+  $$('#qCards [data-toast]').forEach(function(b){ b.addEventListener('click', function(){ toast(b.dataset.toast); }); });
+};
+
+$('#btnNewQueueModal').addEventListener('click', function(){
+  toast('Création de file d\'attente ouverte');
+});
+
+RENDER.tiers = function(){
+  $('#tKpi').innerHTML = [
+    ['Forfaits actifs', 4, 'tag', ''],
+    ['Forfaits payants', 2, 'card', 'warn'],
+    ['Recette moyenne', '32,500 TND', 'trend', 'ok'],
+    ['Forfait par défaut', 'Standard', 'star', '']
+  ].map(function(k){
+    return '<div class="kpi"><div class="kt"><small>'+k[0]+'</small><span class="kic '+k[3]+'">'+ic(k[2])+'</span></div><b'+(k[1].length>6?' style="font-size:24px"':'')+'>'+k[1]+'</b></div>';
+  }).join('');
+
+  var pr = [0, 25, 45, 0];
+  $('#tCards').innerHTML = TIERS.map(function(t, i){
+    return '<div class="tc">'+(i===0?'<span class="rib">Par défaut</span>':'')+'<span class="kic'+(i===2?' warn':i===3?' bad':'')+'">'+ic(i===2?'star':'tag')+'</span><div><b style="font-size:18px">'+t.n+'</b><div style="color:var(--fg-2)">'+t.d+'</div></div><div class="pr'+(pr[i]===0?' free':'')+'">'+(pr[i]===0?'Gratuit':money(pr[i])+' <small>TND</small>')+'</div><div class="kv"><span>Devise</span><b>TND (héritée)</b></div><div class="kv"><span>Files associées</span><b>5 files</b></div><div class="row"><button class="btn sm grow" data-toast="Édition du forfait '+t.n+'">'+ic('edit')+'Éditer</button><button class="ib" aria-label="Dupliquer" data-toast="Forfait dupliqué">'+ic('copy')+'</button><button class="ib bad" aria-label="Supprimer" data-toast="Forfait désactivé">'+ic('trash')+'</button></div></div>';
+  }).join('');
+  $$('#tCards [data-toast]').forEach(function(b){ b.addEventListener('click', function(){ toast(b.dataset.toast); }); });
+
+  $('#tMatrix').innerHTML = QUEUES.map(function(q){
+    return '<tr><td><div class="uc"><span class="qb" style="--h:'+q.h+';width:28px;height:28px">'+q.l+'</span><b>'+q.n+'</b></div></td>' +
+      PRICES[q.l].map(function(p){
+        return '<td class="mono"'+(p===null?' style="color:var(--fg-2)"':p>0?' style="color:var(--warn);font-weight:600"':'')+'>'+(p===null?'Non proposé':p===0?'0 TND':money(p)+' TND')+'</td>';
+      }).join('') + '</tr>';
+  }).join('');
+};
+
+$('#btnNewTierModal').addEventListener('click', function(){
+  toast('Création de nouveau forfait tarifaire');
+});
+
+/* ==========================================================================
+   NOTIFICATIONS SMS & SIMULATEUR GSM
+   ========================================================================== */
+var RULES = [
+  {n:'Bienvenue', ch:'SMS', tg:'À l\'émission', sent:242, on:true},
+  {n:'Seuil d\'approche', ch:'SMS', tg:'Position ≤ 3', sent:186, on:true, link:1},
+  {n:'Seuil d\'approche', ch:'E-mail', tg:'Temps ≤ 10 min', sent:94, on:true, link:1},
+  {n:'Bienvenue', ch:'E-mail', tg:'À l\'émission', sent:0, on:false}
+];
+var OUTBOX = [
+  ['+216 98 ••• 456', 'Twilio', '11:22', 'ok'],
+  ['+216 22 ••• 789', 'Twilio', '11:18', 'ok'],
+  ['f••••@mail.com', 'SendGrid', '11:15', 'run'],
+  ['+216 50 ••• 222', 'Twilio', '11:10', 'fail'],
+  ['+216 98 ••• 444', 'Twilio', '11:25', 'pend']
+];
+
+function renderRules(){
+  $('#rules').innerHTML = RULES.map(function(r, i){
+    return '<div class="ri"><span class="kic">'+ic(r.ch==='SMS'?'phone':'mail')+'</span><div class="rt"><b>'+r.n+' <span class="pill acc">'+r.ch+'</span></b><small>'+r.tg+(r.link?' · lien de suivi inclus':'')+'</small></div><small class="num">'+r.sent+' envoyés</small><button class="toggle" role="switch" aria-checked="'+r.on+'" data-r="'+i+'" aria-label="Activer la règle"></button></div>';
+  }).join('');
+}
+
+$('#rules').addEventListener('click', function(e){
+  var btn = e.target.closest('.toggle');
+  if(!btn) return;
+  var r = RULES[+btn.dataset.r];
+  r.on = !r.on;
+  btn.setAttribute('aria-checked', r.on);
+  toast(r.n + ' · ' + r.ch + (r.on ? ' activée' : ' désactivée'));
+});
+
+function renderOutbox(){
+  var STATUS_MAP = {
+    ok:['ok', 'Livré'],
+    run:['acc', 'En cours'],
+    fail:['bad', 'Échec'],
+    pend:['warn', 'En attente']
+  };
+  $('#outbox').innerHTML = OUTBOX.map(function(o, i){
+    return '<div class="ob"><span class="kic">'+ic(o[0].indexOf('@')>0?'mail':'phone')+'</span><div class="rt"><b class="mono">'+o[0]+'</b><small>'+o[1]+' · '+o[2]+'</small></div><span class="pill '+STATUS_MAP[o[3]][0]+'">'+STATUS_MAP[o[3]][1]+'</span>'+(o[3]==='fail'?'<button class="btn sm" data-rs="'+i+'">'+ic('swap')+'Renvoyer</button>':'')+'</div>';
+  }).join('');
+}
+
+$('#outbox').addEventListener('click', function(e){
+  var btn = e.target.closest('[data-rs]');
+  if(!btn) return;
+  OUTBOX[+btn.dataset.rs][3] = 'pend';
+  renderOutbox();
+  toast('Notification remise dans la file d\'envoi');
+});
+
+var TEMPLATE_VARS = {
+  ticketNumber: 'B014',
+  queueName: 'Pédiatrie',
+  siteName: 'Clinique Pasteur',
+  threadNumber: '2',
+  position: '3'
+};
+var msgInput = $('#msg');
+
+function renderMsgPreview(){
+  var invalidVars = [];
+  var out = msgInput.value.replace(/\{(\w+)\}/g, function(fullMatch, varKey){
+    if(!(varKey in TEMPLATE_VARS)){
+      invalidVars.push(varKey);
+      return fullMatch;
+    }
+    return TEMPLATE_VARS[varKey];
+  }) + ($('#n4').checked ? '\nSuivi : dori.app/t/9f8b2d' : '');
+
+  $('#bub').textContent = out;
+  var charCount = out.length;
+  var segments = Math.max(1, Math.ceil(charCount / 160));
+  $('#cnt').textContent = charCount + ' / 160';
+  $('#seg').textContent = segments;
+  $('#cost').textContent = (segments * 0.04).toFixed(3).replace('.', ',');
+
+  var valBadge = $('#vmsg');
+  valBadge.className = 'pill ' + (invalidVars.length ? 'bad' : 'ok');
+  valBadge.innerHTML = invalidVars.length ? ic('alert') + 'Variable inconnue : {' + invalidVars[0] + '}' : ic('check') + 'Variables valides';
+}
+
+msgInput.addEventListener('input', renderMsgPreview);
+$('#n4').addEventListener('change', renderMsgPreview);
+$('#chips').addEventListener('click', function(e){
+  if(e.target.tagName === 'BUTTON'){
+    msgInput.value += e.target.textContent;
+    renderMsgPreview();
+    msgInput.focus();
+  }
+});
+
+$('#btnNewRuleModal').addEventListener('click', function(){
+  toast('Création d\'une règle de notification');
+});
+
+RENDER.notif = function(){
+  renderRules();
+  renderOutbox();
+  renderMsgPreview();
+};
+
+/* ==========================================================================
+   UTILISATEURS & RBAC HIERARCHIQUE
+   ========================================================================== */
+var USERS_DATA = [
+  {n:'Sarah Ben Salah', u:'sarah.b', e:'sarah.b@pasteur.fr', role:'Opératrice', r:2, ty:'h', s:'1', st:'ok', i:'SB'},
+  {n:'Dr. Aziz Gharbi', u:'dr.aziz', e:'aziz.g@pasteur.fr', role:'Praticien', r:2, ty:'h', s:'1', st:'ok', i:'AG'},
+  {n:'Leila Trabelsi', u:'manager1', e:'leila.t@pasteur.fr', role:'Manager', r:3, ty:'h', s:'2', st:'ok', i:'LT'},
+  {n:'Omar Khelifi', u:'admin1', e:'omar.k@dori.com', role:'Admin', r:4, ty:'h', s:'4', st:'ok', i:'OK'},
+  {n:'Borne tactile · Pasteur', u:'kiosk-pasteur', e:'compte technique', role:'Kiosk', r:1, ty:'k', s:'1', st:'ok', i:'BK'},
+  {n:'Hédi Jlassi', u:'h.jlassi', e:'h.jlassi@pasteur.fr', role:'Praticien', r:2, ty:'h', s:'1', st:'lock', i:'HJ'},
+  {n:'Support DORI Master', u:'root', e:'support@dori.com', role:'Root', r:5, ty:'h', s:'Tous', st:'ok', i:'DR'}
+];
+
+var ROLE_HIERARCHY = [['Kiosk',1], ['Opératrice',2], ['Praticien',2], ['Manager',3], ['Admin',4]];
+
+RENDER.users = function(){
+  var currentRank = caller();
+  var query = ($('#uq').value || '').toLowerCase();
+  var humans = USERS_DATA.filter(function(x){ return x.ty === 'h'; }).length;
+  var kiosks = USERS_DATA.filter(function(x){ return x.ty === 'k'; }).length;
+  var locked = USERS_DATA.filter(function(x){ return x.st === 'lock'; }).length;
+
+  $('#uKpi').innerHTML = [
+    ['Total comptes', USERS_DATA.length, 'users', ''],
+    ['Comptes humains', humans, 'person', ''],
+    ['Comptes bornes', kiosks, 'tablet', 'warn'],
+    ['Comptes verrouillés', locked, 'lock', 'bad']
+  ].map(function(k){
+    return '<div class="kpi"><div class="kt"><small>'+k[0]+'</small><span class="kic '+k[3]+'">'+ic(k[2])+'</span></div><b>'+k[1]+'</b></div>';
+  }).join('');
+
+  $('#uBan span').innerHTML = '<b>Anti-escalade RBAC active :</b> Vous ne pouvez pas modifier ou révoquer un compte de rang supérieur ou égal au vôtre (votre rang : R' + currentRank + '). Changez de rôle dans le menu pour observer l\'adaptation de l\'interface.';
+
+  $('#uRows').innerHTML = USERS_DATA.filter(function(x){
+    return !query || (x.n + x.u + x.e).toLowerCase().indexOf(query) >= 0;
+  }).map(function(x){
+    var canManage = currentRank > x.r;
+    return '<tr><td><div class="uc"><span class="av">'+x.i+'</span><div><b>'+x.n+'</b><small>@'+x.u+' · '+x.e+'</small></div></div></td><td>'+x.role+'</td><td><span class="rank r'+x.r+'">R'+x.r+'</span></td><td>'+(x.ty==='k'?'<span class="pill">'+ic('tablet')+'Borne</span>':'<span class="pill">'+ic('person')+'Humain</span>')+'</td><td class="num">'+x.s+'</td><td><span class="pill '+(x.st==='ok'?'ok':'bad')+'"><span class="dot" style="background:currentColor"></span>'+(x.st==='ok'?'Actif':'Verrouillé')+'</span></td><td>'+(canManage?'<div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm" data-toast="Édition de '+x.n+'">Éditer</button><button class="ib" aria-label="Désactiver" data-toast="Statut inversé pour '+x.n+'">'+ic('ban')+'</button></div>':'<span class="lock">'+ic('lock')+'Lecture seule</span>')+'</td></tr>';
+  }).join('');
+  $$('#uRows [data-toast]').forEach(function(b){ b.addEventListener('click', function(){ toast(b.dataset.toast); }); });
+
+  var availableRoles = ROLE_HIERARCHY.filter(function(o){ return o[1] < currentRank; });
+  $('#u4').innerHTML = availableRoles.map(function(o){
+    return '<option>' + o[0] + ' (R' + o[1] + ')</option>';
+  }).join('');
+  $('#u4l').textContent = 'Rôle attribuable (plafond : R' + (currentRank - 1) + ')';
+};
+
+$('#uq').addEventListener('input', RENDER.users);
+
+$('#uCreate').addEventListener('click', function(){
+  var passLen = $('#u3').value.length;
+  var isInvalidPass = (passLen < 10 || passLen > 20);
+  var isMissingUser = !$('#u1').value.trim();
+  $('#u3e').hidden = !isInvalidPass;
+
+  if(isInvalidPass){
+    toast('Erreur de validation : Le mot de passe doit comporter entre 10 et 20 caractères');
+  } else if(isMissingUser){
+    toast('Erreur : Nom d\'utilisateur obligatoire');
+  } else {
+    toast('Utilisateur créé avec succès et rattaché au site !');
+  }
+});
+
+/* ==========================================================================
+   TRADUCTIONS & CACHE (I18N)
+   ========================================================================== */
+var TRANSLATIONS = [
+  ['kiosk.welcome', 'Bienvenue', 'مرحباً', 'ihm', 'pub'],
+  ['kiosk.have_appointment', 'J\'ai un rendez-vous', 'لدي موعد', 'ihm', 'pub'],
+  ['kiosk.no_appointment', 'Sans rendez-vous', 'بدون موعد', 'ihm', 'pub'],
+  ['sms.welcome', 'Votre ticket {ticketNumber} pour {queueName} à {siteName}.', 'تذكرتك {ticketNumber} لـ {queueName} في {siteName}.', 'sms', 'pub'],
+  ['sms.threshold', 'C\'est presque votre tour ! Position : {position}.', 'اقترب دورك! المركز: {position}.', 'sms', 'draft'],
+  ['error.queue_full', 'Cette file d\'attente est actuellement complète.', 'هذا الصف ممتلئ حالياً.', 'error', 'pub']
+];
+var i18nVersion = 5;
+var currentCat = '';
+
+RENDER.i18n = function(){
+  var query = ($('#iq').value || '').toLowerCase();
+  var rows = TRANSLATIONS.filter(function(r){
+    return (!currentCat || r[3] === currentCat) && (!query || (r[0] + r[1]).toLowerCase().indexOf(query) >= 0);
+  });
+  var pubCount = TRANSLATIONS.filter(function(r){ return r[4] === 'pub'; }).length;
+
+  $('#iKpi').innerHTML = [
+    ['Clés affichées', rows.length + ' <i>/ 248</i>', 'lang', ''],
+    ['Catégories', 3, 'filter', ''],
+    ['Publiées', pubCount, 'check', 'ok'],
+    ['Brouillons', TRANSLATIONS.length - pubCount, 'alert', 'warn']
+  ].map(function(k){
+    return '<div class="kpi"><div class="kt"><small>'+k[0]+'</small><span class="kic '+k[3]+'">'+ic(k[2])+'</span></div><b>'+k[1]+'</b></div>';
+  }).join('');
+
+  $('#iRows').innerHTML = rows.map(function(r){
+    var varMatches = (r[1].match(/\{\w+\}/g) || []).length;
+    return '<tr><td><span class="pill acc mono">'+r[0]+'</span></td><td>'+r[1]+(varMatches?'<div style="color:var(--ok);font-size:12px">'+ic('check')+' Variables valides</div>':'')+'</td><td class="ar" dir="rtl">'+r[2]+'</td><td><span class="pill">'+r[3].toUpperCase()+'</span></td><td><span class="pill '+(r[4]==='pub'?'ok':'warn')+'">'+(r[4]==='pub'?'Publié':'Brouillon')+'</span></td></tr>';
+  }).join('');
+
+  $('#ver').textContent = 'v2.' + (i18nVersion - 1);
+  $('#nv').textContent = 'v2.' + i18nVersion;
+};
+
+$('#iq').addEventListener('input', RENDER.i18n);
+
+$$('#icat button').forEach(function(b){
+  b.addEventListener('click', function(){
+    $$('#icat button').forEach(function(x){ x.setAttribute('aria-pressed', x === b); });
+    currentCat = b.dataset.c;
+    RENDER.i18n();
+  });
+});
+
+function publishTranslations(){
+  TRANSLATIONS.forEach(function(r){ r[4] = 'pub'; });
+  toast('Version v2.' + i18nVersion + ' publiée avec succès sur les 12 bornes connectées !');
+  i18nVersion++;
+  RENDER.i18n();
+}
+$('#pub1').addEventListener('click', publishTranslations);
+$('#pub2').addEventListener('click', publishTranslations);
+
+/* ==========================================================================
+   INITIALISATION DE L'APPLICATION
+   ========================================================================== */
+$('#loginGo').addEventListener('click', function(){
+  ri = 0; // Opératrice Sarah
+  applyRole();
+  showView('desk');
+  toast('Bienvenue Sarah Ben Salah (Console Smart Desk prête)');
+});
+
+$('#loginBack').addEventListener('click', function(){
+  showView('desk');
+});
+
+applyRole();
+var initialHash = (location.hash || '').slice(1);
+showView(initialHash && $('#v-' + initialHash) ? initialHash : 'desk');
+
+})();
+</script>
+</body>
+</html>
