@@ -30,3 +30,7 @@ Thumbs.db
 # TypeScript cache
 *.tsbuildinfo
 .quality-dist/
+.tmp-browser-profile-2/
+.tmp-browser-profile-final/
+.tmp-cdp-9333/
+.tmp-edge-profile/

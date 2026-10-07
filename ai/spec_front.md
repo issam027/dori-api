@@ -748,3 +748,91 @@ Le front ne code pas ses menus sur le nom du rôle. Il part des permissions et s
 <!-- CHECKPOINT id="ckpt_muxynk78_zvkn8q" time="2026-10-07T10:24:30.212Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 <!-- CHECKPOINT id="ckpt_muxz0f5y_qr2gza" time="2026-10-07T10:34:30.214Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muxzda4x_2p6ze2" time="2026-10-07T10:44:30.225Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muxzq53y_doljcb" time="2026-10-07T10:54:30.238Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy0302m_ignup4" time="2026-10-07T11:04:30.238Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy0fv1s_8482j9" time="2026-10-07T11:14:30.256Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy0sq0n_tv64p4" time="2026-10-07T11:24:30.263Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy15kz7_v58sdn" time="2026-10-07T11:34:30.259Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy1ify8_3v24ip" time="2026-10-07T11:44:30.272Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy1vax7_y0n40q" time="2026-10-07T11:54:30.283Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy285w6_15tgpt" time="2026-10-07T12:04:30.294Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy2ow1r_rj4wxr" time="2026-10-07T12:17:30.687Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy3xw3b_5x0r6t" time="2026-10-07T12:52:30.263Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy4ar28_7aoyw1" time="2026-10-07T13:02:30.272Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy5farg_qo65xw" time="2026-10-07T13:34:02.044Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy5s6p9_6q05q0" time="2026-10-07T13:44:03.309Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy6b8zj_yeivn1" time="2026-10-07T13:58:52.735Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy6o3yn_5z3qqz" time="2026-10-07T14:08:52.751Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy70yxd_zapmb1" time="2026-10-07T14:18:52.753Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy7dtw6_uu9wg4" time="2026-10-07T14:28:52.758Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy7qov6_lnr2ou" time="2026-10-07T14:38:52.770Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy83jtn_2wvdkv" time="2026-10-07T14:48:52.763Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy8gesm_410ihr" time="2026-10-07T14:58:52.774Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy8t9ro_idhl8s" time="2026-10-07T15:08:52.788Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy964s0_k1rb6e" time="2026-10-07T15:18:52.848Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy9izt2_cpif8d" time="2026-10-07T15:28:52.934Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muy9vutd_aw2kiz" time="2026-10-07T15:38:52.993Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muya8ptk_jcq6vr" time="2026-10-07T15:48:53.048Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyalktp_sx2bdh" time="2026-10-07T15:58:53.101Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyc3t0q_ocrxzg" time="2026-10-07T16:41:03.146Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyd6xqw_ffy4aa" time="2026-10-07T17:11:28.856Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muydpj2d_ftachf" time="2026-10-07T17:25:56.293Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muye2dz3_aphrew" time="2026-10-07T17:35:56.223Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyef8yb_zmew7b" time="2026-10-07T17:45:56.243Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyes3x6_3w9ypl" time="2026-10-07T17:55:56.250Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyf4yw3_5rqvaf" time="2026-10-07T18:05:56.259Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyfhtv5_vm40as" time="2026-10-07T18:15:56.273Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyfuotz_x507ff" time="2026-10-07T18:25:56.279Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyg7jsk_l9twcn" time="2026-10-07T18:35:56.276Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muygkerq_wr67yy" time="2026-10-07T18:45:56.294Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muygx9qn_g25ctm" time="2026-10-07T18:55:56.303Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyha4pi_5iuqyw" time="2026-10-07T19:05:56.310Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyhsqz3_8epaxm" time="2026-10-07T19:20:24.976Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyi5ly3_jy0mns" time="2026-10-07T19:30:24.987Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyiigwx_4324bf" time="2026-10-07T19:40:24.993Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyivbvo_h08moa" time="2026-10-07T19:50:24.996Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
