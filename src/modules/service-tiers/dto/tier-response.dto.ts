@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
-export class ServiceTierDetailDto {
+export class ServiceTierResponseDto {
   @ApiProperty({ example: 1, description: 'ID du forfait' })
   tierId: number;
 
@@ -23,9 +24,12 @@ export class ServiceTierDetailDto {
   isActive: boolean;
 }
 
-export class PaginatedServiceTierResponseDto {
-  @ApiProperty({ type: [ServiceTierDetailDto], description: 'Liste des forfaits' })
-  items: ServiceTierDetailDto[];
+export class PaginatedServiceTierResponseDto extends PaginatedResponseDto {
+  @ApiProperty({
+    type: [ServiceTierResponseDto],
+    description: 'Liste des forfaits',
+  })
+  items: ServiceTierResponseDto[];
 
   @ApiProperty({ example: 1, description: 'Numéro de page actuelle' })
   page: number;
@@ -40,7 +44,7 @@ export class PaginatedServiceTierResponseDto {
   totalPages: number;
 }
 
-export class QueueTierDetailDto {
+export class QueueTierResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la file' })
   queueId: number;
 
@@ -53,25 +57,49 @@ export class QueueTierDetailDto {
   })
   price: number;
 
+  @ApiProperty({ example: 'TND', minLength: 3, maxLength: 3 })
+  currency: string;
+
+  @ApiPropertyOptional({
+    example: null,
+    nullable: true,
+    minLength: 3,
+    maxLength: 3,
+    description: 'Surcharge persistée sur cette association',
+  })
+  currencyOverride?: string | null;
+
+  @ApiProperty({
+    enum: ['association', 'queue', 'site'],
+    description: 'Niveau ayant fourni la devise effective',
+  })
+  currencyOrigin: 'association' | 'queue' | 'site';
+
   @ApiProperty({
     example: true,
     description: 'Indique si ce forfait est proposé par la file',
   })
-  isEnabled: boolean;
+  isActive: boolean;
 
   @ApiProperty({ example: true, description: 'Forfait sélectionné par défaut' })
   isDefault: boolean;
 
+  @ApiProperty({ example: 0 })
+  displayOrder: number;
+
   @ApiPropertyOptional({
-    type: ServiceTierDetailDto,
+    type: ServiceTierResponseDto,
     description: 'Détails du forfait global',
   })
-  tier?: ServiceTierDetailDto;
+  tier?: ServiceTierResponseDto;
 }
 
-export class PaginatedQueueTierResponseDto {
-  @ApiProperty({ type: [QueueTierDetailDto], description: 'Liste des forfaits de la file' })
-  items: QueueTierDetailDto[];
+export class PaginatedQueueTierResponseDto extends PaginatedResponseDto {
+  @ApiProperty({
+    type: [QueueTierResponseDto],
+    description: 'Liste des forfaits de la file',
+  })
+  items: QueueTierResponseDto[];
 
   @ApiProperty({ example: 1, description: 'Numéro de page actuelle' })
   page: number;
@@ -86,7 +114,7 @@ export class PaginatedQueueTierResponseDto {
   totalPages: number;
 }
 
-export class NotificationRuleDetailDto {
+export class NotificationRuleResponseDto {
   @ApiProperty({ example: 10, description: 'ID de la règle de notification' })
   ruleId: number;
 
@@ -98,23 +126,16 @@ export class NotificationRuleDetailDto {
 
   @ApiProperty({
     example: 'threshold',
-    enum: ['welcome', 'threshold', 'near_turn'],
+    enum: ['welcome', 'threshold'],
     description: 'Événement déclencheur',
   })
-  triggerEvent: string;
+  notificationType: 'welcome' | 'threshold';
 
-  @ApiProperty({
-    example: 'position',
-    enum: ['position', 'estimated_time'],
-    description: 'Type de seuil',
-  })
-  thresholdType: string;
+  @ApiPropertyOptional({ enum: ['position', 'estimatedTime'], nullable: true })
+  thresholdType?: 'position' | 'estimatedTime' | null;
 
-  @ApiProperty({
-    example: 3,
-    description: 'Valeur du seuil (ex: 3 personnes avant)',
-  })
-  thresholdValue: number;
+  @ApiPropertyOptional({ example: 3, minimum: 1, nullable: true })
+  thresholdValue?: number | null;
 
   @ApiProperty({
     example: 'sms',
@@ -123,20 +144,49 @@ export class NotificationRuleDetailDto {
   })
   channel: string;
 
-  @ApiPropertyOptional({
-    example: 'sms.threshold_reached',
-    description: 'Clé du gabarit de traduction',
+  @ApiProperty({
+    example: true,
+    description: 'Inclure ou non le lien public de suivi',
   })
-  templateKey?: string;
+  includeTrackingLink: boolean;
 
   @ApiProperty({ example: true, description: 'Règle active' })
   isActive: boolean;
 }
 
-export class TierDeleteResponseDto {
+export class PaginatedNotificationRuleResponseDto extends PaginatedResponseDto {
+  @ApiProperty({
+    type: [NotificationRuleResponseDto],
+    description: 'Liste des règles de notification',
+  })
+  items: NotificationRuleResponseDto[];
+
+  @ApiProperty({ example: 1, description: 'Numéro de page actuelle' })
+  page: number;
+
+  @ApiProperty({ example: 25, description: "Nombre d'éléments par page" })
+  pageSize: number;
+
+  @ApiProperty({ example: 10, description: "Total d'éléments" })
+  total: number;
+
+  @ApiProperty({ example: 1, description: 'Total de pages' })
+  totalPages: number;
+}
+
+export class DeleteTierResponseDto {
   @ApiProperty({ example: 1, description: "ID de l'élément supprimé" })
-  id: number;
+  tierId?: number;
+
+  @ApiPropertyOptional({ example: 1 })
+  queueId?: number;
+
+  @ApiPropertyOptional({ example: 1 })
+  ruleId?: number;
 
   @ApiProperty({ example: true, description: 'Confirmation de suppression' })
   deleted: boolean;
+
+  @ApiPropertyOptional({ example: true })
+  removed?: boolean;
 }

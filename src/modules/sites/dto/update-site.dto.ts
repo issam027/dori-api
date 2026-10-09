@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/swagger';
 import { CreateSiteDto } from './create-site.dto';
-import { IsBoolean, IsInt, IsOptional } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateSiteDto extends PartialType(CreateSiteDto) {
@@ -16,5 +16,6 @@ export class AssignManagerDto {
     example: 2,
   })
   @IsInt()
+  @IsNotEmpty()
   userId: number;
 }

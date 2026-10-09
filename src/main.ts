@@ -1,25 +1,59 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
+import type { IncomingMessage, ServerResponse } from 'http';
 import helmet from 'helmet';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+import cookieParser = require('cookie-parser');
 import { AppModule } from './app.module';
+import { ConfiguredIoAdapter } from './core/realtime/configured-io.adapter';
+import {
+  createOpenApiConfig,
+  normalizeOpenApiDocument,
+} from './core/swagger/openapi.config';
+import { PositiveIdParamPipe } from './core/validation/positive-id-param.pipe';
 
-async function bootstrap() {
-  const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule);
+async function createApp(): Promise<NestExpressApplication> {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
+  });
 
   const configService = app.get(ConfigService);
+  const isVercel = configService.get<boolean>('platform.isVercel') ?? false;
+  app.use(cookieParser());
 
-  // Security Headers (§7.3, §8.3)
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+          'script-src': [
+            "'self'",
+            "'unsafe-inline'",
+            'https://cdnjs.cloudflare.com',
+          ],
+          'style-src': [
+            "'self'",
+            "'unsafe-inline'",
+            'https://cdnjs.cloudflare.com',
+          ],
+          'img-src': ["'self'", 'data:', 'https://cdnjs.cloudflare.com'],
+        },
+      },
+    }),
+  );
 
-  // CORS (§7.3, §8.3)
-  const allowedOrigins = configService.get<string[]>('cors.allowedOrigins') || [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:5173',
-  ];
+  const allowedOrigins = configService.getOrThrow<string[]>(
+    'cors.allowedOrigins',
+  );
+
+  // WebSockets can't run on serverless functions
+  if (!isVercel) {
+    app.useWebSocketAdapter(new ConfiguredIoAdapter(app, allowedOrigins));
+  }
+
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,
@@ -34,8 +68,8 @@ async function bootstrap() {
     exposedHeaders: ['X-Correlation-Id', 'ETag'],
   });
 
-  // Global Validation Pipe with strict whitelisting (§7.3)
   app.useGlobalPipes(
+    new PositiveIdParamPipe(),
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
@@ -44,47 +78,64 @@ async function bootstrap() {
     }),
   );
 
-  // OpenAPI 3 Specification / Swagger UI (§7.1)
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Dori API')
-    .setDescription(
-      'Spécification de référence de la plateforme de gestion de files d’attente et de rendez-vous Dori',
-    )
-    .setVersion('1.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        description: 'Entrez votre token JWT d’accès',
-      },
-      'bearer',
-    )
-    .addApiKey(
-      {
-        type: 'apiKey',
-        name: 'X-Registration-Token',
-        in: 'header',
-        description: 'Jeton public de suivi de position',
-      },
-      'registration-token',
-    )
-    .build();
-
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  const document = normalizeOpenApiDocument(
+    SwaggerModule.createDocument(app, createOpenApiConfig()),
+  );
   SwaggerModule.setup('api/docs', app, document, {
+    customCssUrl:
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui.min.css',
+    customJs: [
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui-bundle.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui-standalone-preset.min.js',
+    ],
     swaggerOptions: {
       persistAuthorization: true,
       urls: [{ url: '/api/docs-json', name: 'OpenAPI JSON' }],
     },
   });
 
-  const port = configService.get<number>('port') || 3000;
-  await app.listen(port);
-  logger.log(`Dori API server successfully started on port ${port}`);
-  logger.log(
-    `OpenAPI documentation available at http://localhost:${port}/api/docs`,
-  );
+  // Redirige la racine vers la documentation Swagger
+  app
+    .getHttpAdapter()
+    .get('/', (_req: unknown, res: { redirect: (url: string) => void }) => {
+      res.redirect('/api/docs');
+    });
+
+  await app.init(); // init(), not listen(): Vercel owns the HTTP server
+  return app;
 }
 
-bootstrap();
+// Cached so the app is built once per warm instance
+let appPromise: Promise<NestExpressApplication> | null = null;
+
+function getApp(): Promise<NestExpressApplication> {
+  appPromise ??= createApp().catch((err) => {
+    appPromise = null; // allow a retry on the next request
+    throw err;
+  });
+  return appPromise;
+}
+
+// Vercel entry point
+export default async function handler(
+  req: IncomingMessage,
+  res: ServerResponse,
+) {
+  const app = await getApp();
+  const instance = app.getHttpAdapter().getInstance();
+  return instance(req, res);
+}
+
+// Local / traditional hosting: keep the normal listen behaviour
+void getApp().then(async (app) => {
+  const configService = app.get(ConfigService);
+  const isVercel = configService.get<boolean>('platform.isVercel') ?? false;
+  if (!isVercel) {
+    const logger = new Logger('DoriApi');
+    const port = configService.get<number>('port') || 3000;
+    await app.listen(port);
+    logger.log(
+      `OpenAPI documentation available at http://localhost:${port}/api/docs`,
+    );
+  }
+});

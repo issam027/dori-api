@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class DailyQueueVolumeDto {
+export class DailyQueueVolumeItemDto {
   @ApiProperty({
     example: 85,
     description: "Total d'inscriptions enregistrées dans la journée",
@@ -34,11 +34,15 @@ export class DailyQueueVolumeDto {
   @ApiProperty({ example: 7, description: "Total d'annulations" })
   totalCancelled: number;
 
-  @ApiProperty({ example: 2, description: "Total non clôturées : en attente, en cours au guichet ou reportées." })
+  @ApiProperty({
+    example: 2,
+    description:
+      'Total non clôturées : en attente, en cours au guichet ou reportées.',
+  })
   totalOpen: number;
 }
 
-export class DailyQueueKpisDto {
+export class DailyQueueKpisItemDto {
   @ApiProperty({
     example: 0.067,
     description: 'Taux de no-show (no_show / (served + no_show))',
@@ -81,16 +85,16 @@ export class DailyQueueReportResponseDto {
   businessDate: string;
 
   @ApiProperty({
-    type: DailyQueueVolumeDto,
+    type: DailyQueueVolumeItemDto,
     description: 'Volumes journaliers',
   })
-  volume: DailyQueueVolumeDto;
+  volume: DailyQueueVolumeItemDto;
 
   @ApiProperty({
-    type: DailyQueueKpisDto,
+    type: DailyQueueKpisItemDto,
     description: 'Indicateurs clés de performance',
   })
-  kpis: DailyQueueKpisDto;
+  kpis: DailyQueueKpisItemDto;
 }
 
 export class DashboardSummaryResponseDto {

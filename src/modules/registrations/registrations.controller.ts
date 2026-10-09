@@ -17,27 +17,31 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
-  ApiHeader,
+  ApiSecurity,
 } from '@nestjs/swagger';
 import {
   ApiDoriOkResponse,
   ApiDoriCreatedResponse,
+  ApiDoriErrorResponses,
+  ApiDoriPublicErrorResponses,
 } from '../../core/swagger/api-dori-response.decorator';
 import { RegistrationsService } from './registrations.service';
 import {
   CreateRegistrationDto,
   UpdateRegistrationDto,
-  RescheduleDto,
+  RescheduleRegistrationDto,
   LookupRegistrationDto,
   RegistrationFilterDto,
-  AvailabilityQueryDto,
+  RegistrationAvailabilityQueryDto,
 } from './dto/registration.dto';
 import {
-  RegistrationDetailResponseDto,
+  RegistrationResponseDto,
+  CreateRegistrationResponseDto,
+  RescheduleRegistrationResponseDto,
   PaginatedRegistrationResponseDto,
-  AvailabilityResponseDto,
-  PublicPositionResponseDto,
-  RegistrationDeleteResponseDto,
+  RegistrationAvailabilityResponseDto,
+  RegistrationPositionResponseDto,
+  DeleteRegistrationResponseDto,
 } from './dto/registration-response.dto';
 import { Public } from '../../core/auth/decorators/public.decorator';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
@@ -45,36 +49,44 @@ import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interf
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
 
 @ApiTags('Registrations')
-@ApiBearerAuth('bearer')
+@ApiDoriErrorResponses()
 @Controller('api/v1')
 export class RegistrationsController {
   constructor(private readonly registrationsService: RegistrationsService) {}
 
+  @ApiBearerAuth('bearer')
   @Get('queues/:queueId/availability')
-  @RequirePermission('customer_register')
+  @RequirePermission('registration_register')
   @ApiOperation({
     summary: 'Disponibilité des créneaux de RDV',
     description:
       "Retourne la liste des créneaux horaires d'une date donnée avec leur capacité restante.",
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse(AvailabilityResponseDto, 'Disponibilités des créneaux')
+  @ApiDoriOkResponse(
+    RegistrationAvailabilityResponseDto,
+    'Disponibilités des créneaux',
+  )
   async getAvailability(
     @Param('queueId', ParseIntPipe) queueId: number,
-    @Query() query: AvailabilityQueryDto,
+    @Query() query: RegistrationAvailabilityQueryDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.registrationsService.getAvailability(queueId, query, user);
   }
 
+  @ApiBearerAuth('bearer')
   @Get('registrations')
-  @RequirePermission('customer_view')
+  @RequirePermission('registration_view')
   @ApiOperation({
     summary: 'Lister les inscriptions',
     description:
       'Recherche et filtre paginé des inscriptions selon la file, la date ou le statut.',
   })
-  @ApiDoriOkResponse(PaginatedRegistrationResponseDto, 'Liste paginée des inscriptions')
+  @ApiDoriOkResponse(
+    PaginatedRegistrationResponseDto,
+    'Liste paginée des inscriptions',
+  )
   async findRegistrations(
     @Query() filter: RegistrationFilterDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -82,8 +94,9 @@ export class RegistrationsController {
     return this.registrationsService.findRegistrations(filter, user);
   }
 
+  @ApiBearerAuth('bearer')
   @Post('registrations')
-  @RequirePermission('customer_register')
+  @RequirePermission('registration_register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Inscrire un client (Walk-in ou RDV)',
@@ -91,7 +104,7 @@ export class RegistrationsController {
       'Génère un nouveau ticket pour un client présent sur place ou réserve un créneau de rendez-vous.',
   })
   @ApiDoriCreatedResponse(
-    RegistrationDetailResponseDto,
+    CreateRegistrationResponseDto,
     'Inscription effectuée avec ticket généré',
   )
   async register(
@@ -101,6 +114,7 @@ export class RegistrationsController {
     return this.registrationsService.createRegistration(dto, user);
   }
 
+  @ApiBearerAuth('bearer')
   @Get('registrations/lookup')
   @RequirePermission('appointment_lookup')
   @ApiOperation({
@@ -108,7 +122,7 @@ export class RegistrationsController {
     description:
       "Retrouve un rendez-vous par son numéro de ticket ou par le nom et l'heure exacte.",
   })
-  @ApiDoriOkResponse(RegistrationDetailResponseDto, 'Rendez-vous trouvé')
+  @ApiDoriOkResponse(RegistrationResponseDto, 'Rendez-vous trouvé')
   async lookup(
     @Query() dto: LookupRegistrationDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -116,8 +130,9 @@ export class RegistrationsController {
     return this.registrationsService.lookupAppointment(dto, user);
   }
 
+  @ApiBearerAuth('bearer')
   @Get('registrations/:registrationId')
-  @RequirePermission('customer_view')
+  @RequirePermission('registration_view')
   @ApiOperation({
     summary: "Détails d'une inscription",
     description:
@@ -128,7 +143,7 @@ export class RegistrationsController {
     type: Number,
     description: "ID de l'inscription",
   })
-  @ApiDoriOkResponse(RegistrationDetailResponseDto, "Détails de l'inscription")
+  @ApiDoriOkResponse(RegistrationResponseDto, "Détails de l'inscription")
   async findOne(
     @Param('registrationId', ParseIntPipe) registrationId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -136,8 +151,9 @@ export class RegistrationsController {
     return this.registrationsService.findRegistrationById(registrationId, user);
   }
 
+  @ApiBearerAuth('bearer')
   @Patch('registrations/:registrationId')
-  @RequirePermission('customer_edit')
+  @RequirePermission('registration_edit')
   @ApiOperation({
     summary: 'Modifier une inscription',
     description:
@@ -148,7 +164,7 @@ export class RegistrationsController {
     type: Number,
     description: "ID de l'inscription",
   })
-  @ApiDoriOkResponse(RegistrationDetailResponseDto, 'Inscription mise à jour')
+  @ApiDoriOkResponse(RegistrationResponseDto, 'Inscription mise à jour')
   async update(
     @Param('registrationId', ParseIntPipe) registrationId: number,
     @Body() dto: UpdateRegistrationDto,
@@ -161,6 +177,7 @@ export class RegistrationsController {
     );
   }
 
+  @ApiBearerAuth('bearer')
   @Post('registrations/:registrationId/reschedule')
   @RequirePermission('appointment_manage')
   @HttpCode(HttpStatus.OK)
@@ -174,15 +191,19 @@ export class RegistrationsController {
     type: Number,
     description: "ID de l'inscription",
   })
-  @ApiDoriOkResponse(RegistrationDetailResponseDto, 'Rendez-vous reprogrammé')
+  @ApiDoriOkResponse(
+    RescheduleRegistrationResponseDto,
+    'Rendez-vous reprogrammé',
+  )
   async reschedule(
     @Param('registrationId', ParseIntPipe) registrationId: number,
-    @Body() dto: RescheduleDto,
+    @Body() dto: RescheduleRegistrationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.registrationsService.reschedule(registrationId, dto, user);
   }
 
+  @ApiBearerAuth('bearer')
   @Post('registrations/:registrationId/check-in')
   @RequirePermission('appointment_checkin')
   @HttpCode(HttpStatus.OK)
@@ -196,7 +217,7 @@ export class RegistrationsController {
     type: Number,
     description: "ID de l'inscription",
   })
-  @ApiDoriOkResponse(RegistrationDetailResponseDto, 'Arrivée validée')
+  @ApiDoriOkResponse(RegistrationResponseDto, 'Arrivée validée')
   async checkIn(
     @Param('registrationId', ParseIntPipe) registrationId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -204,8 +225,9 @@ export class RegistrationsController {
     return this.registrationsService.checkIn(registrationId, user);
   }
 
+  @ApiBearerAuth('bearer')
   @Delete('registrations/:registrationId')
-  @RequirePermission('customer_delete')
+  @RequirePermission('registration_delete')
   @ApiOperation({
     summary: 'Annuler une inscription',
     description: "Annule l'inscription ou le rendez-vous.",
@@ -215,7 +237,10 @@ export class RegistrationsController {
     type: Number,
     description: "ID de l'inscription",
   })
-  @ApiDoriOkResponse(RegistrationDeleteResponseDto, 'Inscription annulée avec succès')
+  @ApiDoriOkResponse(
+    DeleteRegistrationResponseDto,
+    'Inscription annulée avec succès',
+  )
   async remove(
     @Param('registrationId', ParseIntPipe) registrationId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -224,18 +249,23 @@ export class RegistrationsController {
   }
 
   @Public()
+  @ApiSecurity('registration-token')
   @Get('public/registrations/position')
+  @ApiDoriPublicErrorResponses({
+    include401: true,
+    omit404: true,
+    omit409: true,
+    omit422: true,
+  })
   @ApiOperation({
     summary: "Suivi public de la position d'un ticket",
     description:
-      'Permet à un client muni de son jeton de suivi (transmis par SMS ou QR code) de connaître son rang et son temps estimé.',
+      "Permet à un client muni de son jeton de suivi (transmis par SMS ou via la propriété `registrationTrackingToken` retournée par `POST /registrations`) de connaître son rang et son temps d'attente estimé sans JWT utilisateur.",
   })
-  @ApiHeader({
-    name: 'X-Registration-Token',
-    description: "Jeton de suivi public de l'inscription",
-    required: true,
-  })
-  @ApiDoriOkResponse(PublicPositionResponseDto, 'Position actuelle dans la file')
+  @ApiDoriOkResponse(
+    RegistrationPositionResponseDto,
+    'Position actuelle dans la file',
+  )
   async getPublicPosition(@Headers('X-Registration-Token') token: string) {
     return this.registrationsService.getPublicPosition(token);
   }

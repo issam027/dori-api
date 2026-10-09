@@ -18,7 +18,7 @@ export class DoriTierNotificationRule {
   tier_id: number;
 
   @Column({ type: 'varchar', length: 20 })
-  notification_type: 'welcome' | 'threshold' | 'trakingLink';
+  notification_type: 'welcome' | 'threshold';
 
   @Column({ type: 'varchar', length: 20 })
   channel: 'sms' | 'email';

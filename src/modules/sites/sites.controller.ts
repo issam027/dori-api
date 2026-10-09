@@ -20,18 +20,19 @@ import {
 import {
   ApiDoriOkResponse,
   ApiDoriCreatedResponse,
+  ApiDoriErrorResponses,
 } from '../../core/swagger/api-dori-response.decorator';
 import { SitesService } from './sites.service';
 import { CreateSiteDto } from './dto/create-site.dto';
 import { UpdateSiteDto, AssignManagerDto } from './dto/update-site.dto';
 import {
-  SiteDetailResponseDto,
+  SiteResponseDto,
   PaginatedSiteResponseDto,
-  SiteDeleteResponseDto,
-  SiteManagerResponseDto,
+  DeleteSiteResponseDto,
+  PaginatedSiteManagerResponseDto,
   AssignManagerResponseDto,
+  RemoveManagerResponseDto,
 } from './dto/site-response.dto';
-import { PaginatedQueueResponseDto } from '../queues/dto/queue-response.dto';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
@@ -39,6 +40,7 @@ import { RequirePermission } from '../../core/rbac/decorators/require-permission
 
 @ApiTags('Sites')
 @ApiBearerAuth('bearer')
+@ApiDoriErrorResponses()
 @Controller('api/v1/sites')
 export class SitesController {
   constructor(private readonly sitesService: SitesService) {}
@@ -66,7 +68,7 @@ export class SitesController {
     description:
       'Crée un nouveau site avec ses paramètres horaires, de fuseau horaire et de tolérance.',
   })
-  @ApiDoriCreatedResponse(SiteDetailResponseDto, 'Site créé avec succès')
+  @ApiDoriCreatedResponse(SiteResponseDto, 'Site créé avec succès')
   async createSite(
     @Body() createSiteDto: CreateSiteDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -81,7 +83,7 @@ export class SitesController {
     description: "Retourne la configuration complète d'un site spécifique.",
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
-  @ApiDoriOkResponse(SiteDetailResponseDto, 'Détails du site')
+  @ApiDoriOkResponse(SiteResponseDto, 'Détails du site')
   async findSite(
     @Param('siteId', ParseIntPipe) siteId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -97,7 +99,7 @@ export class SitesController {
       'Met à jour la configuration générale, les horaires ou les poids de priorité du site.',
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
-  @ApiDoriOkResponse(SiteDetailResponseDto, 'Site mis à jour avec succès')
+  @ApiDoriOkResponse(SiteResponseDto, 'Site mis à jour avec succès')
   async updateSite(
     @Param('siteId', ParseIntPipe) siteId: number,
     @Body() updateSiteDto: UpdateSiteDto,
@@ -113,7 +115,7 @@ export class SitesController {
     description: 'Désactive logiquement le site et ses files associées.',
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
-  @ApiDoriOkResponse(SiteDeleteResponseDto, 'Site désactivé avec succès')
+  @ApiDoriOkResponse(DeleteSiteResponseDto, 'Site désactivé avec succès')
   async deleteSite(
     @Param('siteId', ParseIntPipe) siteId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -121,36 +123,24 @@ export class SitesController {
     return this.sitesService.deleteSite(siteId, user);
   }
 
-  @Get(':siteId/queues')
-  @RequirePermission('site_view')
-  @ApiOperation({
-    summary: "Lister les files d'attente d'un site",
-    description:
-      "Retourne toutes les files d'attente actives rattachées au site.",
-  })
-  @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
-  @ApiDoriOkResponse(PaginatedQueueResponseDto, "Liste paginée des files d'attente du site")
-  async getQueues(
-    @Param('siteId', ParseIntPipe) siteId: number,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return this.sitesService.findSiteQueues(siteId, user);
-  }
-
   @Get(':siteId/managers')
   @RequirePermission('site_view')
   @ApiOperation({
     summary: "Lister les managers d'un site",
     description:
-      'Retourne la liste des utilisateurs affectés comme managers à ce site.',
+      'Retourne la liste paginée des utilisateurs affectés comme managers à ce site.',
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
-  @ApiDoriOkResponse([SiteManagerResponseDto], 'Liste des managers du site')
+  @ApiDoriOkResponse(
+    PaginatedSiteManagerResponseDto,
+    'Liste paginée des managers du site',
+  )
   async getManagers(
     @Param('siteId', ParseIntPipe) siteId: number,
+    @Query() pagination: PaginationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.sitesService.getSiteManagers(siteId, user);
+    return this.sitesService.findSiteManagers(siteId, pagination, user);
   }
 
   @Post(':siteId/managers')
@@ -161,7 +151,10 @@ export class SitesController {
     description: 'Associe un utilisateur au périmètre de gestion de ce site.',
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
-  @ApiDoriCreatedResponse(AssignManagerResponseDto, 'Manager affecté avec succès')
+  @ApiDoriCreatedResponse(
+    AssignManagerResponseDto,
+    'Manager affecté avec succès',
+  )
   async assignManager(
     @Param('siteId', ParseIntPipe) siteId: number,
     @Body() body: AssignManagerDto,
@@ -182,7 +175,7 @@ export class SitesController {
     type: Number,
     description: "ID de l'utilisateur à retirer",
   })
-  @ApiDoriOkResponse(AssignManagerResponseDto, 'Manager retiré avec succès')
+  @ApiDoriOkResponse(RemoveManagerResponseDto, 'Manager retiré avec succès')
   async removeManager(
     @Param('siteId', ParseIntPipe) siteId: number,
     @Param('userId', ParseIntPipe) userId: number,

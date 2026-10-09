@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { Request, Response } from 'express';
 
 /**
@@ -21,7 +21,7 @@ export class CorrelationIdInterceptor implements NestInterceptor {
     const res = ctx.getResponse<Response>();
 
     const correlationId =
-      (req.headers['x-correlation-id'] as string) ?? uuidv4();
+      (req.headers['x-correlation-id'] as string) ?? randomUUID();
 
     req.headers['x-correlation-id'] = correlationId;
     res.setHeader('x-correlation-id', correlationId);

@@ -8,7 +8,7 @@ export interface JwtPayload {
   exp?: number;
   jti?: string;
   /** UUID de la session (`dori_user_session.session_id`) liée à ce JWT — SEC-02 */
-  sid?: string;
+  sid: string;
 }
 
 export interface AuthenticatedUser {

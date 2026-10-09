@@ -1,7 +1,9 @@
 import { IsBoolean, IsIn, IsInt, IsOptional, Min } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ValidSessionMode } from '../../../core/validation/domain-validation.decorators';
 
-export class OpenSessionDto {
+@ValidSessionMode()
+export class OpenQueueSessionDto {
   @ApiPropertyOptional({
     example: 1,
     description: 'Numéro du guichet (thread) à ouvrir (requis si mode=active)',

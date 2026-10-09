@@ -21,11 +21,11 @@ INSERT INTO dori_permission (permission_name, description) VALUES
 ('tier_catalog_manage',    'Gérer le catalogue global de forfaits'),
 ('tier_view',              'Voir les forfaits proposés par une queue'),
 ('session_operate',        'Ouvrir, reprendre ou fermer un guichet ; consulter guichets et sessions'),
-('customer_register',      'Inscrire un client (walk-in ou RDV)'),
-('customer_view',          'Consulter la liste des inscriptions d''une queue'),
-('customer_edit',          'Modifier une inscription'),
-('customer_delete',        'Annuler (soft delete) une inscription'),
-('customer_call',          'Appeler le suivant, marquer servi/absent'),
+('registration_register',      'Inscrire un client (walk-in ou RDV)'),
+('registration_view',          'Consulter la liste des inscriptions d''une queue'),
+('registration_edit',          'Modifier une inscription'),
+('registration_delete',        'Annuler (soft delete) une inscription'),
+('registration_call',          'Appeler le suivant, marquer servi/absent'),
 ('appointment_manage',     'Réserver, reprogrammer, annuler un RDV'),
 ('appointment_lookup',     'Rechercher un RDV par ticket, ou par nom + heure exacte du créneau'),
 ('appointment_checkin',    'Pointer l''arrivée d''un rendez-vous déjà réservé, trouvé par recherche'),
@@ -58,7 +58,7 @@ ON CONFLICT (role_name) DO NOTHING;
 INSERT INTO dori_role_permission (role_id, permission_id)
 SELECT (SELECT role_id FROM dori_role WHERE role_name='kiosk'), permission_id
 FROM dori_permission WHERE permission_name IN (
-  'queue_view','tier_view','customer_register',
+  'queue_view','tier_view','registration_register',
   'appointment_lookup','appointment_checkin'
 )
 ON CONFLICT (role_id, permission_id) DO NOTHING;
@@ -67,8 +67,8 @@ ON CONFLICT (role_id, permission_id) DO NOTHING;
 INSERT INTO dori_role_permission (role_id, permission_id)
 SELECT (SELECT role_id FROM dori_role WHERE role_name='hotesse'), permission_id
 FROM dori_permission WHERE permission_name IN (
-  'queue_view','tier_view','customer_register',
-  'customer_view','customer_edit','customer_delete','customer_call',
+  'queue_view','tier_view','registration_register',
+  'registration_view','registration_edit','registration_delete','registration_call',
   'session_operate','appointment_manage',
   'appointment_lookup','appointment_checkin',
   'person_note_view','person_note_manage','notification_view'
@@ -79,8 +79,8 @@ ON CONFLICT (role_id, permission_id) DO NOTHING;
 INSERT INTO dori_role_permission (role_id, permission_id)
 SELECT (SELECT role_id FROM dori_role WHERE role_name='manager'), permission_id
 FROM dori_permission WHERE permission_name IN (
-  'queue_view','tier_view','customer_register',
-  'customer_view','customer_edit','customer_delete','customer_call',
+  'queue_view','tier_view','registration_register',
+  'registration_view','registration_edit','registration_delete','registration_call',
   'session_operate','appointment_manage',
   'appointment_lookup','appointment_checkin',
   'person_note_view','person_note_manage','notification_view',
@@ -95,8 +95,8 @@ ON CONFLICT (role_id, permission_id) DO NOTHING;
 INSERT INTO dori_role_permission (role_id, permission_id)
 SELECT (SELECT role_id FROM dori_role WHERE role_name='admin'), permission_id
 FROM dori_permission WHERE permission_name IN (
-  'queue_view','tier_view','customer_register',
-  'customer_view','customer_edit','customer_delete','customer_call',
+  'queue_view','tier_view','registration_register',
+  'registration_view','registration_edit','registration_delete','registration_call',
   'session_operate','appointment_manage',
   'appointment_lookup','appointment_checkin',
   'person_note_view','person_note_manage','notification_view',

@@ -1,0 +1,98 @@
+asyncapi: 2.6.0
+info:
+  title: Dori Realtime API
+  version: 1.0.0
+  description: Contrat Socket.IO pour les mises à jour temps réel de Dori.
+servers:
+  production:
+    url: api.dori.example.com
+    protocol: wss
+    security:
+      - bearerAuth: []
+      - registrationToken: []
+channels:
+  subscribe:
+    publish:
+      operationId: subscribeToRoom
+      message:
+        payload:
+          type: object
+          required: [room]
+          properties:
+            room:
+              type: string
+              pattern: '^(system:translations|registration:[^:]+|queue:[1-9][0-9]*:(ops|display))$'
+  ping_session:
+    publish:
+      operationId: pingQueueSession
+      security: [{ bearerAuth: [] }]
+      message:
+        payload:
+          type: object
+          required: [queueId, sessionId]
+          properties:
+            queueId: { type: integer, minimum: 1 }
+            sessionId: { type: integer, minimum: 1 }
+  'queue:{queueId}:ops':
+    parameters:
+      queueId: { schema: { type: integer, minimum: 1 } }
+    subscribe:
+      operationId: receiveQueueOperations
+      security: [{ bearerAuth: [] }]
+      message:
+        payload: { type: object, additionalProperties: true }
+  'queue:{queueId}:display':
+    parameters:
+      queueId: { schema: { type: integer, minimum: 1 } }
+    subscribe:
+      operationId: receiveQueueDisplay
+      security: [{ bearerAuth: [] }]
+      message:
+        payload:
+          type: object
+          properties:
+            event: { type: string }
+            ticketNumber: { type: string }
+            threadNumber: { type: integer, minimum: 1 }
+            calledTickets: { type: array, items: { type: string } }
+            waitingCount: { type: integer, minimum: 0 }
+            timestamp: { type: string, format: date-time }
+  'registration:{registrationToken}':
+    parameters:
+      registrationToken: { schema: { type: string, format: uuid } }
+    subscribe:
+      operationId: receiveRegistrationPosition
+      security: [{ registrationToken: [] }]
+      message:
+        name: position_update
+        payload:
+          type: object
+          required: [ticketNumber, status]
+          properties:
+            ticketNumber: { type: string }
+            status: { type: string }
+            position: { type: integer, minimum: 0 }
+            estimatedWaitMinutes: { type: integer, minimum: 0 }
+  system:translations:
+    subscribe:
+      operationId: receiveTranslationInvalidation
+      security: [{ bearerAuth: [] }]
+      message:
+        name: translation_cache_invalidated
+        payload:
+          type: object
+          required: [category, version, timestamp]
+          properties:
+            category: { type: string }
+            version: { type: integer, minimum: 1 }
+            timestamp: { type: string, format: date-time }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: httpApiKey
+      in: header
+      name: Authorization
+    registrationToken:
+      type: apiKey
+      in: user
+      description: Socket.IO handshake auth.registrationToken ou X-Registration-Token.

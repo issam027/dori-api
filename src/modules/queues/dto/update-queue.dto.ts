@@ -1,8 +1,13 @@
-import { PartialType } from '@nestjs/swagger';
+import { PartialType, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CreateQueueDto } from './create-queue.dto';
-import { IsBoolean, IsInt, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../../core/pagination/pagination.dto';
 
 export class UpdateQueueDto extends PartialType(CreateQueueDto) {
@@ -32,10 +37,11 @@ export class QueueFilterDto extends PaginationDto {
 }
 
 export class AssignOperatorDto {
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: "ID de l'opérateur à affecter",
     example: 3,
   })
   @IsInt()
+  @IsNotEmpty()
   userId: number;
 }

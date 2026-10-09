@@ -1,6 +1,7 @@
 # Build output
 /dist
 /build
+/.quality-dist
 
 # Node modules
 node_modules/
@@ -28,3 +29,10 @@ Thumbs.db
 
 # TypeScript cache
 *.tsbuildinfo
+.quality-dist/
+.tmp-browser-profile-2/
+.tmp-browser-profile-final/
+.tmp-cdp-9333/
+.tmp-edge-profile/
+.tmp-browser-profile-validation/
+.tmp-browser-profile-validation-2/

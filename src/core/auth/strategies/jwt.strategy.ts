@@ -2,57 +2,41 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { DataSource } from 'typeorm';
 import {
   JwtPayload,
   AuthenticatedUser,
 } from '../interfaces/jwt-payload.interface';
 import { DoriException } from '../../errors/dori.exception';
+import { JwtSessionRepository } from '../repositories/jwt-session.repository';
+import { ClockService } from '../../clock/clock.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     configService: ConfigService,
-    private readonly dataSource: DataSource,
+    private readonly jwtSessionRepository: JwtSessionRepository,
+    private readonly clockService: ClockService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey:
-        configService.get<string>('jwt.secret') || 'change-me-in-production',
+      secretOrKey: configService.getOrThrow<string>('jwt.secret'),
     });
   }
 
   async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
-    let sessionId: string | undefined;
+    if (!payload.sid) {
+      throw new DoriException('UNAUTHENTICATED');
+    }
 
-    if (payload.sid) {
-      // SEC-02 : vérifier la session SPECIFIQUE liée à ce JWT
-      const sessions = await this.dataSource.query(
-        `SELECT session_id FROM dori_user_session
-         WHERE session_id = $1 AND revoked_reason IS NULL AND revoked_at IS NULL
-           AND expires_at > NOW()`,
-        [payload.sid],
-      );
+    const sessionId = await this.jwtSessionRepository.findValidSessionId(
+      payload.sid,
+      payload.sub,
+      this.clockService.now(),
+    );
 
-      if (!sessions || sessions.length === 0) {
-        throw new DoriException('UNAUTHENTICATED');
-      }
-      sessionId = sessions[0].session_id;
-    } else {
-      // Fallback pour les tokens émis avant le correctif SEC-02 (sans sid)
-      const sessions = await this.dataSource.query(
-        `SELECT session_id FROM dori_user_session
-         WHERE user_id = $1 AND revoked_reason IS NULL AND revoked_at IS NULL
-           AND expires_at > NOW()
-         LIMIT 1`,
-        [payload.sub],
-      );
-
-      if (!sessions || sessions.length === 0) {
-        throw new DoriException('UNAUTHENTICATED');
-      }
-      sessionId = sessions[0].session_id;
+    if (!sessionId) {
+      throw new DoriException('UNAUTHENTICATED');
     }
 
     return {

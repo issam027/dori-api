@@ -33,6 +33,9 @@ export class DoriQueue {
   thread_count: number;
 
   // Overrides (null = inherit from site)
+  @Column({ type: 'char', length: 3, nullable: true })
+  currency: string | null;
+
   @Column({ type: 'boolean', nullable: true })
   appointments_enabled: boolean | null;
 
@@ -77,6 +80,9 @@ export class DoriQueue {
 
   @Column({ type: 'time', nullable: true })
   daily_reset_time: string | null;
+
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  locale: string | null;
 
   @Column({ type: 'int', nullable: true })
   created_by_user_id: number | null;

@@ -20,6 +20,7 @@ import {
 import {
   ApiDoriOkResponse,
   ApiDoriCreatedResponse,
+  ApiDoriErrorResponses,
 } from '../../core/swagger/api-dori-response.decorator';
 import { ServiceTiersService } from './service-tiers.service';
 import {
@@ -31,12 +32,13 @@ import {
   UpdateNotificationRuleDto,
 } from './dto/service-tier.dto';
 import {
-  ServiceTierDetailDto,
+  ServiceTierResponseDto,
   PaginatedServiceTierResponseDto,
-  QueueTierDetailDto,
+  QueueTierResponseDto,
   PaginatedQueueTierResponseDto,
-  NotificationRuleDetailDto,
-  TierDeleteResponseDto,
+  NotificationRuleResponseDto,
+  PaginatedNotificationRuleResponseDto,
+  DeleteTierResponseDto,
 } from './dto/tier-response.dto';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
@@ -45,6 +47,7 @@ import { RequirePermission } from '../../core/rbac/decorators/require-permission
 
 @ApiTags('Tiers')
 @ApiBearerAuth('bearer')
+@ApiDoriErrorResponses()
 @Controller('api/v1')
 export class ServiceTiersController {
   constructor(private readonly tiersService: ServiceTiersService) {}
@@ -57,7 +60,10 @@ export class ServiceTiersController {
     description:
       'Retourne tous les forfaits disponibles au catalogue (Gratuit, Standard, Premium...).',
   })
-  @ApiDoriOkResponse(PaginatedServiceTierResponseDto, 'Liste paginée des forfaits du catalogue')
+  @ApiDoriOkResponse(
+    PaginatedServiceTierResponseDto,
+    'Liste paginée des forfaits du catalogue',
+  )
   async findTiers(
     @Query() pagination: PaginationDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -72,7 +78,7 @@ export class ServiceTiersController {
     summary: 'Créer un forfait au catalogue',
     description: 'Ajoute un nouveau type de forfait dans le catalogue système.',
   })
-  @ApiDoriCreatedResponse(ServiceTierDetailDto, 'Forfait créé au catalogue')
+  @ApiDoriCreatedResponse(ServiceTierResponseDto, 'Forfait créé au catalogue')
   async createTier(
     @Body() dto: CreateTierDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -87,7 +93,7 @@ export class ServiceTiersController {
     description: "Retourne les informations d'un forfait du catalogue.",
   })
   @ApiParam({ name: 'tierId', type: Number, description: 'ID du forfait' })
-  @ApiDoriOkResponse(ServiceTierDetailDto, 'Détails du forfait')
+  @ApiDoriOkResponse(ServiceTierResponseDto, 'Détails du forfait')
   async findTier(
     @Param('tierId', ParseIntPipe) tierId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -103,7 +109,7 @@ export class ServiceTiersController {
       "Met à jour le libellé ou la description d'un forfait non système.",
   })
   @ApiParam({ name: 'tierId', type: Number, description: 'ID du forfait' })
-  @ApiDoriOkResponse(ServiceTierDetailDto, 'Forfait mis à jour')
+  @ApiDoriOkResponse(ServiceTierResponseDto, 'Forfait mis à jour')
   async updateTier(
     @Param('tierId', ParseIntPipe) tierId: number,
     @Body() dto: UpdateTierDto,
@@ -120,7 +126,7 @@ export class ServiceTiersController {
       'Désactive le forfait du catalogue (interdit sur les forfaits système).',
   })
   @ApiParam({ name: 'tierId', type: Number, description: 'ID du forfait' })
-  @ApiDoriOkResponse(TierDeleteResponseDto, 'Forfait désactivé')
+  @ApiDoriOkResponse(DeleteTierResponseDto, 'Forfait désactivé')
   async deleteTier(
     @Param('tierId', ParseIntPipe) tierId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -134,15 +140,19 @@ export class ServiceTiersController {
   @ApiOperation({
     summary: 'Forfaits associés à une file',
     description:
-      'Retourne la liste des forfaits configurés pour cette file avec leurs tarifs locaux.',
+      'Retourne la liste paginée des forfaits configurés pour cette file avec leurs tarifs locaux.',
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse(PaginatedQueueTierResponseDto, 'Liste paginée des forfaits de la file')
+  @ApiDoriOkResponse(
+    PaginatedQueueTierResponseDto,
+    'Liste paginée des forfaits de la file',
+  )
   async getQueueTiers(
     @Param('queueId', ParseIntPipe) queueId: number,
+    @Query() pagination: PaginationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.tiersService.getQueueTiers(queueId, user);
+    return this.tiersService.findQueueTiers(queueId, pagination, user);
   }
 
   @Post('queues/:queueId/tiers')
@@ -154,7 +164,7 @@ export class ServiceTiersController {
       "Définit le prix local et l'activation du forfait pour la file d'attente.",
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriCreatedResponse(QueueTierDetailDto, 'Forfait associé avec succès')
+  @ApiDoriCreatedResponse(QueueTierResponseDto, 'Forfait associé avec succès')
   async associateTier(
     @Param('queueId', ParseIntPipe) queueId: number,
     @Body() dto: AssociateQueueTierDto,
@@ -172,7 +182,10 @@ export class ServiceTiersController {
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
   @ApiParam({ name: 'tierId', type: Number, description: 'ID du forfait' })
-  @ApiDoriOkResponse(QueueTierDetailDto, 'Configuration du forfait mise à jour')
+  @ApiDoriOkResponse(
+    QueueTierResponseDto,
+    'Configuration du forfait mise à jour',
+  )
   async updateQueueTier(
     @Param('queueId', ParseIntPipe) queueId: number,
     @Param('tierId', ParseIntPipe) tierId: number,
@@ -190,7 +203,7 @@ export class ServiceTiersController {
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
   @ApiParam({ name: 'tierId', type: Number, description: 'ID du forfait' })
-  @ApiDoriOkResponse(TierDeleteResponseDto, 'Forfait dissocié')
+  @ApiDoriOkResponse(DeleteTierResponseDto, 'Forfait dissocié')
   async removeQueueTier(
     @Param('queueId', ParseIntPipe) queueId: number,
     @Param('tierId', ParseIntPipe) tierId: number,
@@ -209,13 +222,22 @@ export class ServiceTiersController {
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
   @ApiParam({ name: 'tierId', type: Number, description: 'ID du forfait' })
-  @ApiDoriOkResponse([NotificationRuleDetailDto], 'Liste des règles de notification')
+  @ApiDoriOkResponse(
+    PaginatedNotificationRuleResponseDto,
+    'Liste paginée des règles de notification',
+  )
   async getRules(
     @Param('queueId', ParseIntPipe) queueId: number,
     @Param('tierId', ParseIntPipe) tierId: number,
+    @Query() pagination: PaginationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.tiersService.getNotificationRules(queueId, tierId, user);
+    return this.tiersService.findNotificationRules(
+      queueId,
+      tierId,
+      pagination,
+      user,
+    );
   }
 
   @Post('queues/:queueId/tiers/:tierId/notification-rules')
@@ -228,7 +250,10 @@ export class ServiceTiersController {
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
   @ApiParam({ name: 'tierId', type: Number, description: 'ID du forfait' })
-  @ApiDoriCreatedResponse(NotificationRuleDetailDto, 'Règle créée avec succès')
+  @ApiDoriCreatedResponse(
+    NotificationRuleResponseDto,
+    'Règle créée avec succès',
+  )
   async createRule(
     @Param('queueId', ParseIntPipe) queueId: number,
     @Param('tierId', ParseIntPipe) tierId: number,
@@ -247,7 +272,7 @@ export class ServiceTiersController {
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
   @ApiParam({ name: 'tierId', type: Number, description: 'ID du forfait' })
   @ApiParam({ name: 'ruleId', type: Number, description: 'ID de la règle' })
-  @ApiDoriOkResponse(NotificationRuleDetailDto, 'Règle modifiée avec succès')
+  @ApiDoriOkResponse(NotificationRuleResponseDto, 'Règle modifiée avec succès')
   async updateRule(
     @Param('queueId', ParseIntPipe) queueId: number,
     @Param('tierId', ParseIntPipe) tierId: number,
@@ -273,7 +298,7 @@ export class ServiceTiersController {
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
   @ApiParam({ name: 'tierId', type: Number, description: 'ID du forfait' })
   @ApiParam({ name: 'ruleId', type: Number, description: 'ID de la règle' })
-  @ApiDoriOkResponse(TierDeleteResponseDto, 'Règle supprimée')
+  @ApiDoriOkResponse(DeleteTierResponseDto, 'Règle supprimée')
   async deleteRule(
     @Param('queueId', ParseIntPipe) queueId: number,
     @Param('tierId', ParseIntPipe) tierId: number,

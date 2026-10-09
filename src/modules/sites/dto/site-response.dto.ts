@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
-export class SiteDetailResponseDto {
+export class SiteResponseDto {
   @ApiProperty({ example: 1, description: 'ID unique du site' })
   siteId: number;
 
@@ -124,12 +125,12 @@ export class SiteDetailResponseDto {
   updatedAt: string;
 }
 
-export class PaginatedSiteResponseDto {
+export class PaginatedSiteResponseDto extends PaginatedResponseDto {
   @ApiProperty({
-    type: [SiteDetailResponseDto],
+    type: [SiteResponseDto],
     description: 'Liste des sites',
   })
-  items: SiteDetailResponseDto[];
+  items: SiteResponseDto[];
 
   @ApiProperty({ example: 1, description: 'Page actuelle' })
   page: number;
@@ -144,7 +145,7 @@ export class PaginatedSiteResponseDto {
   totalPages: number;
 }
 
-export class SiteDeleteResponseDto {
+export class DeleteSiteResponseDto {
   @ApiProperty({ example: 1, description: 'ID du site supprimé' })
   siteId: number;
 
@@ -167,15 +168,54 @@ export class SiteManagerResponseDto {
 
   @ApiProperty({ example: true, description: 'Compte actif' })
   isActive: boolean;
+
+  @ApiPropertyOptional({
+    example: 'human',
+    enum: ['human', 'kiosk'],
+    description: 'Type de compte utilisateur',
+  })
+  userType?: string;
+
+  @ApiPropertyOptional({
+    example: '2026-09-28T10:00:00.000Z',
+    description: "Date d'affectation au site",
+  })
+  assignedAt?: string;
+}
+
+export class PaginatedSiteManagerResponseDto extends PaginatedResponseDto {
+  @ApiProperty({
+    type: [SiteManagerResponseDto],
+    description: 'Liste des managers du site',
+  })
+  items: SiteManagerResponseDto[];
+
+  @ApiProperty({ example: 1, description: 'Page actuelle' })
+  page: number;
+
+  @ApiProperty({ example: 25, description: 'Taille de page' })
+  pageSize: number;
+
+  @ApiProperty({ example: 2, description: "Total d'éléments" })
+  total: number;
+
+  @ApiProperty({ example: 1, description: 'Total de pages' })
+  totalPages: number;
 }
 
 export class AssignManagerResponseDto {
   @ApiProperty({ example: true, description: 'Opération réussie' })
-  success: boolean;
+  assigned: boolean;
 
   @ApiProperty({ example: 1, description: 'ID du site' })
   siteId: number;
 
   @ApiProperty({ example: 2, description: "ID de l'utilisateur" })
   userId: number;
+}
+
+export class RemoveManagerResponseDto {
+  @ApiProperty({ minimum: 1 }) siteId: number;
+  @ApiProperty({ minimum: 1 }) userId: number;
+  @ApiProperty({ example: true }) removed: boolean;
 }

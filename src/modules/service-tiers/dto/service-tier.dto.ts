@@ -6,7 +6,9 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsISO4217CurrencyCode,
   Min,
+  MaxLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -14,17 +16,20 @@ export class CreateTierDto {
   @ApiProperty({ example: 'gold', description: 'Code unique du forfait' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(20)
   tierCode: string;
 
   @ApiProperty({ example: 'Or', description: 'Nom affiché du forfait' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(50)
   tierName: string;
 
   @ApiPropertyOptional({
     example: 'Notification de bienvenue + seuil + lien de suivi',
   })
   @IsString()
+  @MaxLength(500)
   @IsOptional()
   description?: string;
 }
@@ -56,15 +61,29 @@ export class AssociateQueueTierDto {
   @Min(0)
   price: number;
 
-  @ApiPropertyOptional({ example: 'TND', description: 'Code devise ISO 4217' })
-  @IsString()
+  @ApiPropertyOptional({
+    example: 'EUR',
+    nullable: true,
+    description:
+      'Surcharge ISO 4217 de cette association ; null ou absence = devise effective de la file',
+  })
+  @IsISO4217CurrencyCode()
   @IsOptional()
-  currency?: string;
+  currency?: string | null;
 
   @ApiPropertyOptional({ example: 1, description: "Ordre d'affichage" })
   @IsInt()
+  @Min(0)
   @IsOptional()
   displayOrder?: number;
+
+  @ApiPropertyOptional({
+    example: false,
+    description: 'Définir ce forfait comme choix par défaut de la file',
+  })
+  @IsBoolean()
+  @IsOptional()
+  isDefault?: boolean;
 }
 
 export class UpdateQueueTierDto {
@@ -74,10 +93,15 @@ export class UpdateQueueTierDto {
   @IsOptional()
   price?: number;
 
-  @ApiPropertyOptional({ example: 'EUR' })
-  @IsString()
+  @ApiPropertyOptional({
+    example: 'EUR',
+    nullable: true,
+    description:
+      'Surcharge ISO 4217 ; null rétablit l’héritage depuis la file puis le site',
+  })
+  @IsISO4217CurrencyCode()
   @IsOptional()
-  currency?: string;
+  currency?: string | null;
 
   @ApiPropertyOptional({ example: 2 })
   @IsInt()
@@ -88,35 +112,44 @@ export class UpdateQueueTierDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Définir ou retirer ce forfait comme choix par défaut',
+  })
+  @IsBoolean()
+  @IsOptional()
+  isDefault?: boolean;
 }
 
 export class CreateNotificationRuleDto {
   @ApiProperty({
-    enum: ['welcome', 'threshold', 'trakingLink'],
+    enum: ['welcome', 'threshold'],
     description: 'Type de notification',
   })
-  @IsIn(['welcome', 'threshold', 'trakingLink'])
-  notificationType: 'welcome' | 'threshold' | 'trakingLink';
+  @IsIn(['welcome', 'threshold'])
+  notificationType: 'welcome' | 'threshold';
 
   @ApiProperty({ enum: ['sms', 'email'], description: "Canal d'envoi" })
   @IsIn(['sms', 'email'])
   channel: 'sms' | 'email';
 
   @ApiPropertyOptional({
-    example: 3,
-    description: 'Déclencher quand la position du client atteint ce seuil',
+    enum: ['position', 'estimatedTime'],
+    description: 'Nature du seuil ; requis uniquement pour le type threshold',
   })
-  @IsInt()
+  @IsIn(['position', 'estimatedTime'])
   @IsOptional()
-  thresholdPosition?: number;
+  thresholdType?: 'position' | 'estimatedTime';
 
   @ApiPropertyOptional({
-    example: 10,
-    description: "Déclencher X minutes avant l'appel estimé",
+    example: 3,
+    minimum: 1,
+    description: 'Position ou nombre de minutes selon thresholdType',
   })
   @IsInt()
+  @Min(1)
   @IsOptional()
-  thresholdMinutes?: number;
+  thresholdValue?: number;
 
   @ApiPropertyOptional({
     default: false,
@@ -128,25 +161,26 @@ export class CreateNotificationRuleDto {
 }
 
 export class UpdateNotificationRuleDto {
-  @ApiPropertyOptional({ enum: ['welcome', 'threshold', 'trakingLink'] })
-  @IsIn(['welcome', 'threshold', 'trakingLink'])
+  @ApiPropertyOptional({ enum: ['welcome', 'threshold'] })
+  @IsIn(['welcome', 'threshold'])
   @IsOptional()
-  notificationType?: 'welcome' | 'threshold' | 'trakingLink';
+  notificationType?: 'welcome' | 'threshold';
 
   @ApiPropertyOptional({ enum: ['sms', 'email'] })
   @IsIn(['sms', 'email'])
   @IsOptional()
   channel?: 'sms' | 'email';
 
-  @ApiPropertyOptional({ example: 5 })
-  @IsInt()
+  @ApiPropertyOptional({ enum: ['position', 'estimatedTime'], nullable: true })
+  @IsIn(['position', 'estimatedTime'])
   @IsOptional()
-  thresholdPosition?: number;
+  thresholdType?: 'position' | 'estimatedTime' | null;
 
-  @ApiPropertyOptional({ example: 15 })
+  @ApiPropertyOptional({ example: 5, minimum: 1, nullable: true })
   @IsInt()
+  @Min(1)
   @IsOptional()
-  thresholdMinutes?: number;
+  thresholdValue?: number | null;
 
   @ApiPropertyOptional()
   @IsBoolean()

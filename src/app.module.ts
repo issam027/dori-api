@@ -4,7 +4,9 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
-import configuration from './core/config/configuration';
+import configuration, {
+  validateEnvironment,
+} from './core/config/configuration';
 import { DatabaseModule } from './core/database/database.module';
 import { ClockModule } from './core/clock/clock.module';
 import { RbacModule } from './core/rbac/rbac.module';
@@ -34,8 +36,8 @@ import { GlobalExceptionFilter } from './core/errors/global-exception.filter';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true,
       load: [configuration],
+      validate: validateEnvironment,
     }),
     ScheduleModule.forRoot(),
     ThrottlerModule.forRootAsync({

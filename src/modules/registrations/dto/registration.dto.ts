@@ -5,33 +5,43 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CreatePersonDto } from '../../persons/dto/person.dto';
+import { PersonIdentityDto } from '../../persons/dto/person.dto';
 import { PaginationDto } from '../../../core/pagination/pagination.dto';
+import {
+  ExactlyOneOf,
+  ValidRegistrationLookup,
+  ValidRegistrationSchedule,
+} from '../../../core/validation/domain-validation.decorators';
 
+@ExactlyOneOf(['personId', 'person'])
+@ValidRegistrationSchedule()
 export class CreateRegistrationDto {
   @ApiPropertyOptional({
     example: 5,
     description: "ID d'une personne existante (si connue)",
   })
   @IsInt()
+  @Min(1)
   @IsOptional()
   personId?: number;
 
   @ApiPropertyOptional({
-    type: () => CreatePersonDto,
+    type: () => PersonIdentityDto,
     description: 'Créer une nouvelle personne à la volée',
   })
   @ValidateNested()
-  @Type(() => CreatePersonDto)
+  @Type(() => PersonIdentityDto)
   @IsOptional()
-  person?: CreatePersonDto;
+  person?: PersonIdentityDto;
 
   @ApiProperty({ example: 1, description: 'ID de la queue cible' })
   @IsInt()
+  @Min(1)
   @IsNotEmpty()
   queueId: number;
 
@@ -54,6 +64,7 @@ export class CreateRegistrationDto {
 
   @ApiProperty({ example: 1, description: 'ID du forfait (tier) choisi' })
   @IsInt()
+  @Min(1)
   @IsNotEmpty()
   tierId: number;
 
@@ -78,7 +89,7 @@ export class UpdateRegistrationDto {
   languagePreference?: string;
 }
 
-export class RescheduleDto {
+export class RescheduleRegistrationDto {
   @ApiProperty({
     example: '2026-10-02T10:30:00Z',
     description: 'Nouveau créneau RDV (ISO 8601)',
@@ -88,9 +99,10 @@ export class RescheduleDto {
   scheduledTime: string;
 }
 
+@ValidRegistrationLookup()
 export class LookupRegistrationDto {
   @ApiPropertyOptional({
-    example: 'MED-0042',
+    example: 'A-012',
     description: 'Numéro de ticket à rechercher',
   })
   @IsString()
@@ -114,12 +126,14 @@ export class LookupRegistrationDto {
 export class RegistrationFilterDto extends PaginationDto {
   @ApiPropertyOptional({ example: 1 })
   @IsInt()
+  @Min(1)
   @IsOptional()
   @Type(() => Number)
   queueId?: number;
 
   @ApiPropertyOptional({ example: 1 })
   @IsInt()
+  @Min(1)
   @IsOptional()
   @Type(() => Number)
   siteId?: number;
@@ -128,7 +142,7 @@ export class RegistrationFilterDto extends PaginationDto {
     example: '2026-10-01',
     description: 'Date métier (YYYY-MM-DD)',
   })
-  @IsString()
+  @IsDateString()
   @IsOptional()
   businessDate?: string;
 
@@ -136,28 +150,38 @@ export class RegistrationFilterDto extends PaginationDto {
     example: 'waiting',
     description: 'Filtrer par statut',
   })
-  @IsString()
+  @IsIn([
+    'booked',
+    'waiting',
+    'in_progress',
+    'served',
+    'no_show',
+    'cancelled',
+    'expired',
+  ])
   @IsOptional()
   status?: string;
 
   @ApiPropertyOptional({ enum: ['walkin', 'appointment'] })
-  @IsString()
+  @IsIn(['walkin', 'appointment'])
   @IsOptional()
   entryType?: string;
 
   @ApiPropertyOptional({ example: 'booked' })
-  @IsString()
+  @IsIn(['booked', 'confirmed', 'checked_in', 'cancelled'])
   @IsOptional()
   appointmentStatus?: string;
 
   @ApiPropertyOptional({ example: 5 })
   @IsInt()
+  @Min(1)
   @IsOptional()
   @Type(() => Number)
   personId?: number;
 
   @ApiPropertyOptional({ example: 1 })
   @IsInt()
+  @Min(1)
   @IsOptional()
   @Type(() => Number)
   tierId?: number;
@@ -168,7 +192,7 @@ export class RegistrationFilterDto extends PaginationDto {
   search?: string;
 }
 
-export class AvailabilityQueryDto extends PaginationDto {
+export class RegistrationAvailabilityQueryDto {
   @ApiProperty({
     example: '2026-10-01',
     description: 'Date à consulter (YYYY-MM-DD)',

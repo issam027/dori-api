@@ -1,10 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Server } from 'socket.io';
+import { ClockService } from '../clock/clock.service';
 
 @Injectable()
 export class RealtimeService {
-  private readonly logger = new Logger(RealtimeService.name);
   private server: Server | null = null;
+
+  constructor(private readonly clockService: ClockService) {}
 
   setServer(server: Server) {
     this.server = server;
@@ -36,7 +38,7 @@ export class RealtimeService {
       threadNumber: payload.threadNumber,
       calledTickets: payload.calledTickets,
       waitingCount: payload.waitingCount,
-      timestamp: new Date().toISOString(),
+      timestamp: this.clockService.now().toISOString(),
     };
     this.server.to(`queue:${queueId}:display`).emit(event, safePayload);
   }
@@ -65,7 +67,7 @@ export class RealtimeService {
       .emit('translation_cache_invalidated', {
         category,
         version,
-        timestamp: new Date().toISOString(),
+        timestamp: this.clockService.now().toISOString(),
       });
   }
 }

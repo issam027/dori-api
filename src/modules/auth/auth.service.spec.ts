@@ -3,12 +3,11 @@ import { DataSource } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
-jest.mock('uuid', () => ({ v4: () => 'mocked-uuid' }));
-
 import { AuthService } from './auth.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
+import { AuthRepository } from './auth.repository';
 
 describe('AuthService — SEC-03 Logout Specific Session', () => {
   let service: AuthService;
@@ -22,6 +21,12 @@ describe('AuthService — SEC-03 Logout Specific Session', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
+        {
+          provide: AuthRepository,
+          useFactory: (dataSource: DataSource) =>
+            new AuthRepository(dataSource),
+          inject: [DataSource],
+        },
         {
           provide: DataSource,
           useValue: dataSourceMock,
@@ -76,17 +81,17 @@ describe('AuthService — SEC-03 Logout Specific Session', () => {
     expect(result).toEqual({ success: true });
 
     expect(dataSourceMock.query).toHaveBeenCalledWith(
-      expect.stringContaining('WHERE session_id = $2 AND revoked_at IS NULL'),
-      [expect.any(Date), 'session-uuid-device-1'],
+      expect.stringContaining('WHERE session_id = $3 AND revoked_at IS NULL'),
+      [expect.any(Date), 'logout', 'session-uuid-device-1'],
     );
     // Must NOT revoke all sessions
     expect(dataSourceMock.query).not.toHaveBeenCalledWith(
-      expect.stringContaining('WHERE user_id = $2 AND revoked_at IS NULL'),
+      expect.stringContaining('WHERE user_id = $3 AND revoked_at IS NULL'),
       expect.anything(),
     );
   });
 
-  it('CAS 2 — should revoke all caller sessions (global logout) when userId == caller.userId', async () => {
+  it('CAS 2 — should revoke all caller sessions (global_logout) when userId == caller.userId', async () => {
     const caller: AuthenticatedUser = {
       userId: 5,
       username: 'agent1',
@@ -100,8 +105,8 @@ describe('AuthService — SEC-03 Logout Specific Session', () => {
     expect(result).toEqual({ success: true });
 
     expect(dataSourceMock.query).toHaveBeenCalledWith(
-      expect.stringContaining("revoked_reason = 'global logout'"),
-      [expect.any(Date), 5],
+      expect.stringContaining('revoked_reason = $2'),
+      [expect.any(Date), 'global_logout', 5],
     );
   });
 
@@ -132,16 +137,16 @@ describe('AuthService — SEC-03 Logout Specific Session', () => {
 
     // caller rank = 3, target rank = 2 (hotesse)
     dataSourceMock.query
-      .mockResolvedValueOnce([{ max_rank: 3 }])  // callerRankRes
-      .mockResolvedValueOnce([{ max_rank: 2 }])  // targetRankRes
+      .mockResolvedValueOnce([{ max_rank: 3 }]) // callerRankRes
+      .mockResolvedValueOnce([{ max_rank: 2 }]) // targetRankRes
       .mockResolvedValueOnce([{ user_id: 20 }]); // targetUsers exists
 
     const result = await service.logout(caller, { userId: 20 });
     expect(result).toEqual({ success: true });
 
     expect(dataSourceMock.query).toHaveBeenCalledWith(
-      expect.stringContaining("revoked_reason = 'force_logout'"),
-      [expect.any(Date), 20],
+      expect.stringContaining('revoked_reason = $2'),
+      [expect.any(Date), 'force_logout', 20],
     );
   });
 });

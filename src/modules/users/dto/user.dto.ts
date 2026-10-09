@@ -8,6 +8,9 @@ import {
   IsOptional,
   IsString,
   MinLength,
+  MaxLength,
+  Min,
+  IsLocale,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../../core/pagination/pagination.dto';
@@ -19,6 +22,7 @@ export class CreateUserDto {
   })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(50)
   username: string;
 
   @ApiPropertyOptional({
@@ -26,16 +30,19 @@ export class CreateUserDto {
     description: 'Adresse e-mail',
   })
   @IsEmail()
+  @MaxLength(255)
   @IsOptional()
   email?: string;
 
   @ApiProperty({
-    example: 'Secure@Pass2026',
-    description: 'Mot de passe (minimum 10 caractères)',
+    example: '••••••••••••',
+    description: 'Mot de passe (entre 10 et 20 caractères)',
     minLength: 10,
+    maxLength: 20,
   })
   @IsString()
   @MinLength(10)
+  @MaxLength(20)
   password: string;
 
   @ApiPropertyOptional({
@@ -60,6 +67,7 @@ export class CreateUserDto {
     description: 'Rôle initial à assigner (ID)',
   })
   @IsInt()
+  @Min(1)
   @IsOptional()
   roleId?: number;
 }
@@ -67,11 +75,13 @@ export class CreateUserDto {
 export class UpdateUserDto {
   @ApiPropertyOptional({ example: 'nouvel.email@hopital.tn' })
   @IsEmail()
+  @MaxLength(255)
   @IsOptional()
   email?: string;
 
   @ApiPropertyOptional({ example: 'ar' })
-  @IsString()
+  @IsLocale()
+  @MaxLength(10)
   @IsOptional()
   languagePreference?: string;
 }
@@ -87,25 +97,28 @@ export class UpdateUserStatusDto {
 
 export class SetUserPasswordDto {
   @ApiProperty({
-    example: 'NewSecure@2026',
-    description: 'Nouveau mot de passe (minimum 10 caractères)',
+    example: '••••••••••••',
+    description: 'Nouveau mot de passe (entre 10 et 20 caractères)',
     minLength: 10,
+    maxLength: 20,
   })
   @IsString()
   @MinLength(10)
+  @MaxLength(20)
   newPassword: string;
 }
 
 export class AssignUserRoleDto {
   @ApiProperty({ example: 2, description: 'ID du rôle à assigner' })
   @IsInt()
+  @Min(1)
   roleId: number;
 }
 
 export class UpdateRolePermissionsDto {
   @ApiProperty({
     type: [String],
-    example: ['site_view', 'queue_view', 'customer_register'],
+    example: ['site_view', 'queue_view', 'registration_register'],
     description: 'Liste complète des noms de permissions à attribuer au rôle',
   })
   @IsArray()
@@ -127,12 +140,3 @@ export class UserFilterDto extends PaginationDto {
   @IsOptional()
   search?: string;
 }
-
-export class UserDeleteResponseDto {
-  @ApiProperty({ example: 5, description: "ID de l'utilisateur supprimé" })
-  userId: number;
-
-  @ApiProperty({ example: true, description: 'Confirmation de la suppression' })
-  deleted: boolean;
-}
-

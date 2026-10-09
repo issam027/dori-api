@@ -12,7 +12,7 @@ export class DoriNotification {
   notification_id: number;
 
   @Column({ type: 'int' })
-  customer_id: number;
+  registration_id: number;
 
   @Column({ type: 'int', nullable: true })
   rule_id: number | null;
@@ -21,7 +21,7 @@ export class DoriNotification {
   channel: 'sms' | 'email';
 
   @Column({ type: 'varchar', length: 20 })
-  notification_type: 'welcome' | 'threshold' | 'trakingLink';
+  notification_type: 'welcome' | 'threshold';
 
   @Column({ type: 'varchar', length: 10 })
   locale: string;
@@ -33,10 +33,17 @@ export class DoriNotification {
   notification_content: string | null;
 
   @Column({ type: 'varchar', length: 20, default: 'pending' })
-  notification_status: 'pending' | 'sent' | 'delivered' | 'failed';
+  notification_status:
+    'pending' | 'processing' | 'sent' | 'delivered' | 'failed';
+
+  @Column({ type: 'timestamptz', nullable: true })
+  processing_started_at: Date | null;
 
   @Column({ type: 'varchar', length: 128, nullable: true })
   provider_message_id: string | null;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  provider: string | null;
 
   @Column({ type: 'text', nullable: true })
   failure_reason: string | null;

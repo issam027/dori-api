@@ -12,13 +12,15 @@ import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { DataSource } from 'typeorm';
 import { ScopeService } from '../rbac/services/scope.service';
 import { RealtimeService } from './realtime.service';
+import { ClockService } from '../clock/clock.service';
 import {
   JwtPayload,
   AuthenticatedUser,
 } from '../auth/interfaces/jwt-payload.interface';
+import { JwtStrategy } from '../auth/strategies/jwt.strategy';
+import { RealtimeRepository } from './realtime.repository';
 
 interface AuthenticatedSocket extends Socket {
   user?: AuthenticatedUser;
@@ -26,13 +28,10 @@ interface AuthenticatedSocket extends Socket {
   registrationId?: number;
 }
 
-@WebSocketGateway({
-  cors: {
-    origin: '*',
-  },
-})
+@WebSocketGateway()
 export class RealtimeGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server!: Server;
 
@@ -41,10 +40,12 @@ export class RealtimeGateway
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly dataSource: DataSource,
+    private readonly realtimeRepository: RealtimeRepository,
     private readonly scopeService: ScopeService,
     private readonly realtimeService: RealtimeService,
-  ) { }
+    private readonly clockService: ClockService,
+    private readonly jwtStrategy: JwtStrategy,
+  ) {}
 
   afterInit(server: Server) {
     this.realtimeService.setServer(server);
@@ -64,18 +65,9 @@ export class RealtimeGateway
         auth.registrationToken || headers['x-registration-token'];
 
       if (token) {
-        const secret =
-          this.configService.get<string>('jwt.secret') ||
-          'change-me-in-production';
+        const secret = this.configService.getOrThrow<string>('jwt.secret');
         const payload: JwtPayload = this.jwtService.verify(token, { secret });
-
-        client.user = {
-          userId: Number(payload.sub),
-          username: payload.username,
-          userType: payload.userType,
-          roles: payload.roles,
-          permissions: payload.permissions,
-        };
+        client.user = await this.jwtStrategy.validate(payload);
         this.logger.debug(
           `User ${client.user.username} (id: ${client.user.userId}) connected via WS`,
         );
@@ -84,25 +76,22 @@ export class RealtimeGateway
 
       if (trackingToken) {
         // Resolve registration by token (§7.9, §4.14)
-        const rows = await this.dataSource.query(
-          `SELECT customer_id, registration_tracking_token_valid_until, is_active
-           FROM dori_customer
-           WHERE registration_tracking_token = $1`,
-          [trackingToken],
-        );
+        const reg =
+          await this.realtimeRepository.findRegistrationByTrackingToken(
+            String(trackingToken),
+          );
 
-        if (rows && rows.length > 0) {
-          const reg = rows[0];
-          const validUntil = new Date(
+        if (reg) {
+          const validUntil = this.clockService.parse(
             reg.registration_tracking_token_valid_until,
           );
-          if (validUntil > new Date() && reg.is_active) {
+          if (validUntil > this.clockService.now() && reg.is_active) {
             client.trackingToken = String(trackingToken);
-            client.registrationId = Number(reg.customer_id);
+            client.registrationId = Number(reg.registration_id);
             // Automatically join own registration room
             client.join(`registration:${trackingToken}`);
             this.logger.debug(
-              `Tracking token connected for customer ${client.registrationId}`,
+              `Tracking token connected for registration ${client.registrationId}`,
             );
             return;
           }
@@ -199,13 +188,16 @@ export class RealtimeGateway
     }
 
     try {
-      await this.dataSource.query(
-        `UPDATE dori_queue_session
-         SET last_seen_at = CURRENT_TIMESTAMP
-         WHERE session_id = $1 AND queue_id = $2 AND user_id = $3 AND disconnected_at IS NULL`,
-        [data.sessionId, data.queueId, client.user.userId],
+      await this.realtimeRepository.touchQueueSession(
+        data.sessionId,
+        data.queueId,
+        client.user.userId,
+        this.clockService.now(),
       );
-      return { acknowledged: true, timestamp: new Date().toISOString() };
+      return {
+        acknowledged: true,
+        timestamp: this.clockService.now().toISOString(),
+      };
     } catch (err: any) {
       this.logger.error(`Error updating session last_seen_at: ${err.message}`);
       return { acknowledged: false };

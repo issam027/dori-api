@@ -1,10 +1,12 @@
-import { Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { PermissionsGuard } from './guards/permissions.guard';
 import { ScopeService } from './services/scope.service';
+import { DatabaseModule } from '../database/database.module';
+import { ScopeRepository } from './repositories/scope.repository';
 
-@Global()
 @Module({
-  providers: [PermissionsGuard, ScopeService],
+  imports: [DatabaseModule],
+  providers: [PermissionsGuard, ScopeService, ScopeRepository],
   exports: [PermissionsGuard, ScopeService],
 })
 export class RbacModule {}

@@ -20,6 +20,7 @@ import {
 import {
   ApiDoriOkResponse,
   ApiDoriCreatedResponse,
+  ApiDoriErrorResponses,
 } from '../../core/swagger/api-dori-response.decorator';
 import { UsersService } from './users.service';
 import {
@@ -30,11 +31,10 @@ import {
   AssignUserRoleDto,
   UpdateRolePermissionsDto,
   UserFilterDto,
-  UserDeleteResponseDto,
 } from './dto/user.dto';
 import {
   PaginatedUserResponseDto,
-  UserDetailResponseDto,
+  UserResponseDto,
   CreateUserResponseDto,
   UpdateUserResponseDto,
   UpdateUserStatusResponseDto,
@@ -43,6 +43,7 @@ import {
   RemoveUserRoleResponseDto,
   PaginatedRoleResponseDto,
   UpdateRolePermissionsResponseDto,
+  DeleteUserResponseDto,
 } from './dto/user-response.dto';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
@@ -54,6 +55,7 @@ import {
 
 @ApiTags('Users')
 @ApiBearerAuth('bearer')
+@ApiDoriErrorResponses()
 @Controller('api/v1')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -122,7 +124,7 @@ export class UsersController {
     type: Number,
     description: "ID de l'utilisateur",
   })
-  @ApiDoriOkResponse(UserDetailResponseDto, "Détails de l'utilisateur")
+  @ApiDoriOkResponse(UserResponseDto, "Détails de l'utilisateur")
   async findUserById(
     @Param('userId', ParseIntPipe) userId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -147,7 +149,10 @@ export class UsersController {
     type: Number,
     description: "ID de l'utilisateur",
   })
-  @ApiDoriOkResponse(UpdateUserResponseDto, 'Utilisateur mis à jour avec succès')
+  @ApiDoriOkResponse(
+    UpdateUserResponseDto,
+    'Utilisateur mis à jour avec succès',
+  )
   async updateUser(
     @Param('userId', ParseIntPipe) userId: number,
     @Body() dto: UpdateUserDto,
@@ -202,7 +207,7 @@ export class UsersController {
     type: Number,
     description: "ID de l'utilisateur",
   })
-  @ApiDoriOkResponse(UserDeleteResponseDto, 'Utilisateur supprimé avec succès')
+  @ApiDoriOkResponse(DeleteUserResponseDto, 'Utilisateur supprimé avec succès')
   async deleteUser(
     @Param('userId', ParseIntPipe) userId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -257,10 +262,7 @@ export class UsersController {
     type: Number,
     description: "ID de l'utilisateur",
   })
-  @ApiDoriCreatedResponse(
-    AssignUserRoleResponseDto,
-    'Rôle assigné avec succès',
-  )
+  @ApiDoriCreatedResponse(AssignUserRoleResponseDto, 'Rôle assigné avec succès')
   async assignUserRole(
     @Param('userId', ParseIntPipe) userId: number,
     @Body() body: AssignUserRoleDto,
@@ -278,8 +280,7 @@ export class UsersController {
   )
   @ApiOperation({
     summary: 'Retirer un rôle à un utilisateur',
-    description:
-      'Retire un rôle précédemment assigné à un compte utilisateur.',
+    description: 'Retire un rôle précédemment assigné à un compte utilisateur.',
   })
   @ApiParam({
     name: 'userId',

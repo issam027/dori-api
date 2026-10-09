@@ -18,10 +18,14 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
+  ApiHeader,
 } from '@nestjs/swagger';
 import {
   ApiDoriOkResponse,
   ApiDoriCreatedResponse,
+  ApiDoriErrorResponses,
+  ApiDoriPublicErrorResponses,
+  ApiDoriNotModifiedResponse,
 } from '../../core/swagger/api-dori-response.decorator';
 import { Response } from 'express';
 import { TranslationsService } from './translations.service';
@@ -29,33 +33,51 @@ import {
   CreateTranslationDto,
   UpdateTranslationDto,
   TranslationFilterDto,
-  BundleQueryDto,
+  TranslationBundleQueryDto,
 } from './dto/translation.dto';
 import {
   TranslationBundleResponseDto,
   PaginatedTranslationResponseDto,
-  TranslationDetailDto,
+  TranslationResponseDto,
   DeleteTranslationResponseDto,
 } from './dto/translation-response.dto';
+import { Public } from '../../core/auth/decorators/public.decorator';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
 
 @ApiTags('Translations')
-@ApiBearerAuth('bearer')
+@ApiDoriErrorResponses()
 @Controller('api/v1/translations')
 export class TranslationsController {
   constructor(private readonly translationsService: TranslationsService) {}
 
+  @Public()
   @Get('bundle')
+  @ApiDoriPublicErrorResponses({
+    omit404: true,
+    omit409: true,
+    omit422: true,
+  })
   @ApiOperation({
     summary: 'Obtenir le bundle de traductions',
     description:
       'Retourne le dictionnaire de traductions pour une locale et une catégorie données avec support du cache HTTP via ETag.',
   })
-  @ApiDoriOkResponse(TranslationBundleResponseDto, 'Bundle de traductions')
+  @ApiHeader({
+    name: 'If-None-Match',
+    required: false,
+    description: 'ETag reçu lors du dernier téléchargement du bundle',
+  })
+  @ApiDoriNotModifiedResponse("Le bundle n'a pas changé; réponse sans corps.")
+  @ApiDoriOkResponse(TranslationBundleResponseDto, 'Bundle de traductions', {
+    ETag: {
+      description: 'Version faible du bundle retourné',
+      schema: { type: 'string' },
+    },
+  })
   async getBundle(
-    @Query() query: BundleQueryDto,
+    @Query() query: TranslationBundleQueryDto,
     @Headers('if-none-match') ifNoneMatch: string,
     @Res({ passthrough: true }) res: Response,
   ) {
@@ -71,6 +93,7 @@ export class TranslationsController {
     return bundle;
   }
 
+  @ApiBearerAuth('bearer')
   @Get()
   @RequirePermission('translation_manage')
   @ApiOperation({
@@ -86,6 +109,7 @@ export class TranslationsController {
     return this.translationsService.findTranslations(filter);
   }
 
+  @ApiBearerAuth('bearer')
   @Post()
   @RequirePermission('translation_manage')
   @HttpCode(HttpStatus.CREATED)
@@ -95,7 +119,7 @@ export class TranslationsController {
       'Enregistre une nouvelle traduction pour une clé et une locale données, avec validation des placeholders de gabarit.',
   })
   @ApiDoriCreatedResponse(
-    TranslationDetailDto,
+    TranslationResponseDto,
     'Traduction enregistrée avec succès',
   )
   async createTranslation(
@@ -105,6 +129,7 @@ export class TranslationsController {
     return this.translationsService.createTranslation(dto, user);
   }
 
+  @ApiBearerAuth('bearer')
   @Patch(':translationId')
   @RequirePermission('translation_manage')
   @ApiOperation({
@@ -117,7 +142,10 @@ export class TranslationsController {
     type: Number,
     description: 'ID de la traduction',
   })
-  @ApiDoriOkResponse(TranslationDetailDto, 'Traduction mise à jour avec succès')
+  @ApiDoriOkResponse(
+    TranslationResponseDto,
+    'Traduction mise à jour avec succès',
+  )
   async updateTranslation(
     @Param('translationId', ParseIntPipe) translationId: number,
     @Body() dto: UpdateTranslationDto,
@@ -126,6 +154,7 @@ export class TranslationsController {
     return this.translationsService.updateTranslation(translationId, dto, user);
   }
 
+  @ApiBearerAuth('bearer')
   @Delete(':translationId')
   @RequirePermission('translation_manage')
   @ApiOperation({

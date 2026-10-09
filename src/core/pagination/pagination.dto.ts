@@ -1,6 +1,6 @@
 import { IsInt, IsOptional, IsString, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
  * Convertit un nom de champ camelCase en snake_case.
@@ -8,6 +8,21 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
  */
 function toSnakeCase(field: string): string {
   return field.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+}
+
+export class LimitQueryDto {
+  @ApiPropertyOptional({
+    type: Number,
+    minimum: 1,
+    maximum: 100,
+    description: 'Nombre maximum de résultats à retourner',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
 }
 
 export class PaginationDto {
@@ -28,7 +43,8 @@ export class PaginationDto {
 
   @ApiPropertyOptional({
     example: 'createdAt:desc',
-    description: 'field:asc|desc — le champ peut être en camelCase ou snake_case',
+    description:
+      'field:asc|desc — le champ peut être en camelCase ou snake_case',
   })
   @IsOptional()
   @IsString()
@@ -96,16 +112,16 @@ export interface PaginatedResult<T> {
   totalPages: number;
 }
 
-export function buildPaginatedResult<T>(
-  items: T[],
-  total: number,
-  dto: PaginationDto,
-): PaginatedResult<T> {
-  return {
-    items,
-    page: dto.page,
-    pageSize: dto.pageSize,
-    total,
-    totalPages: Math.ceil(total / dto.pageSize),
-  };
+export abstract class PaginatedResponseDto {
+  @ApiProperty({ example: 1, description: 'Page actuelle' })
+  page: number;
+
+  @ApiProperty({ example: 25, description: 'Taille de page' })
+  pageSize: number;
+
+  @ApiProperty({ example: 100, description: "Nombre total d'éléments" })
+  total: number;
+
+  @ApiProperty({ example: 4, description: 'Nombre total de pages' })
+  totalPages: number;
 }

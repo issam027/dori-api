@@ -15,31 +15,37 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
-  ApiQuery,
 } from '@nestjs/swagger';
 import {
   ApiDoriOkResponse,
   ApiDoriCreatedResponse,
+  ApiDoriErrorResponses,
 } from '../../core/swagger/api-dori-response.decorator';
 import { QueueEngineService } from './queue-engine.service';
-import { OpenSessionDto } from './dto/session.dto';
+import { OpenQueueSessionDto } from './dto/session.dto';
 import {
-  QueuePreviewResponseDto,
-  QueueThreadDto,
-  QueueSessionDetailDto,
-  CalledNextCustomerResponseDto,
+  QueuePreviewItemDto,
+  PaginatedQueueThreadResponseDto,
+  QueueSessionResponseDto,
+  PaginatedQueueSessionResponseDto,
+  CallNextRegistrationResponseDto,
   CloseSessionResponseDto,
-  CustomerActionResponseDto,
+  UpdateRegistrationStatusResponseDto,
 } from './dto/engine-response.dto';
+import {
+  LimitQueryDto,
+  PaginationDto,
+} from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
 
 @ApiTags('QueueEngine')
 @ApiBearerAuth('bearer')
+@ApiDoriErrorResponses()
 @Controller('api/v1')
 export class QueueEngineController {
-  constructor(private readonly engineService: QueueEngineService) { }
+  constructor(private readonly engineService: QueueEngineService) {}
 
   @Get('sites/:siteId/next-preview')
   @RequirePermission('queue_view')
@@ -54,20 +60,16 @@ export class QueueEngineController {
     type: Number,
     description: 'ID du site',
   })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Nombre max de résultats',
-  })
-  @ApiDoriOkResponse([QueuePreviewResponseDto], 'Prévisualisation des prochains appels')
+  @ApiDoriOkResponse(
+    [QueuePreviewItemDto],
+    'Prévisualisation des prochains appels',
+  )
   async nextPreview(
     @CurrentUser() user: AuthenticatedUser,
     @Param('siteId', ParseIntPipe) siteId: number,
-    @Query('limit') limit?: string,
+    @Query() query: LimitQueryDto,
   ) {
-    const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.engineService.previewNext(user, siteId, limitNum);
+    return this.engineService.previewNext(user, siteId, query.limit ?? 10);
   }
 
   @Get('queues/:queueId/threads')
@@ -78,12 +80,13 @@ export class QueueEngineController {
       'Liste les guichets (threads) ouverts et fermés avec leur opérateur respectif.',
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse([QueueThreadDto], 'Liste des guichets')
+  @ApiDoriOkResponse(PaginatedQueueThreadResponseDto, 'Liste des guichets')
   async getThreads(
     @Param('queueId', ParseIntPipe) queueId: number,
+    @Query() pagination: PaginationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.engineService.getThreadsStatus(queueId, user);
+    return this.engineService.getThreadsStatus(queueId, user, pagination);
   }
 
   @Get('queues/:queueId/sessions')
@@ -91,15 +94,19 @@ export class QueueEngineController {
   @ApiOperation({
     summary: "Sessions actives d'une file",
     description:
-      'Retourne la liste des sessions de guichets actuellement en cours.',
+      'Retourne la liste paginée des sessions de guichets actuellement en cours.',
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse([QueueSessionDetailDto], 'Sessions actives')
+  @ApiDoriOkResponse(
+    PaginatedQueueSessionResponseDto,
+    'Liste paginée des sessions actives',
+  )
   async getActiveSessions(
     @Param('queueId', ParseIntPipe) queueId: number,
+    @Query() pagination: PaginationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.engineService.getActiveSessions(queueId, user);
+    return this.engineService.getActiveSessions(queueId, pagination, user);
   }
 
   @Post('queues/:queueId/sessions')
@@ -111,10 +118,10 @@ export class QueueEngineController {
       "Ouvre un guichet pour l'opérateur connecté et l'active pour recevoir les appels de clients.",
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriCreatedResponse(QueueSessionDetailDto, 'Session de guichet ouverte')
+  @ApiDoriCreatedResponse(QueueSessionResponseDto, 'Session de guichet ouverte')
   async openSession(
     @Param('queueId', ParseIntPipe) queueId: number,
-    @Body() dto: OpenSessionDto,
+    @Body() dto: OpenQueueSessionDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.engineService.openSession(queueId, dto, user);
@@ -143,7 +150,7 @@ export class QueueEngineController {
   }
 
   @Post('queues/:queueId/next')
-  @RequirePermission('customer_call')
+  @RequirePermission('registration_call')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Appeler le prochain ticket',
@@ -151,7 +158,10 @@ export class QueueEngineController {
       "Sélectionne le prochain client selon l'algorithme d'escalade et lui assigne le guichet de l'opérateur.",
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
-  @ApiDoriOkResponse(CalledNextCustomerResponseDto, 'Prochain ticket appelé au guichet')
+  @ApiDoriOkResponse(
+    CallNextRegistrationResponseDto,
+    'Prochain ticket appelé au guichet',
+  )
   async callNext(
     @Param('queueId', ParseIntPipe) queueId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -160,7 +170,7 @@ export class QueueEngineController {
   }
 
   @Post('registrations/:registrationId/served')
-  @RequirePermission('customer_call')
+  @RequirePermission('registration_call')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Marquer un client comme servi',
@@ -172,7 +182,7 @@ export class QueueEngineController {
     type: Number,
     description: "ID de l'inscription cliente",
   })
-  @ApiDoriOkResponse(CustomerActionResponseDto, 'Client marqué servi')
+  @ApiDoriOkResponse(UpdateRegistrationStatusResponseDto, 'Client marqué servi')
   async markServed(
     @Param('registrationId', ParseIntPipe) registrationId: number,
     @CurrentUser() user: AuthenticatedUser,
@@ -181,7 +191,7 @@ export class QueueEngineController {
   }
 
   @Post('registrations/:registrationId/no-show')
-  @RequirePermission('customer_call')
+  @RequirePermission('registration_call')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Déclarer un client absent (No-show)',
@@ -193,7 +203,10 @@ export class QueueEngineController {
     type: Number,
     description: "ID de l'inscription cliente",
   })
-  @ApiDoriOkResponse(CustomerActionResponseDto, 'Client marqué absent')
+  @ApiDoriOkResponse(
+    UpdateRegistrationStatusResponseDto,
+    'Client marqué absent',
+  )
   async markNoShow(
     @Param('registrationId', ParseIntPipe) registrationId: number,
     @CurrentUser() user: AuthenticatedUser,

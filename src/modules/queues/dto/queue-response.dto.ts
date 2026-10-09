@@ -1,6 +1,45 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
-export class QueueDetailResponseDto {
+export type QueueConfigOrigin = 'inherited' | 'overridden';
+
+export class QueueConfigOriginsResponseDto {
+  @ApiProperty({ enum: ['inherited', 'overridden'] })
+  currency: QueueConfigOrigin;
+  @ApiProperty({ enum: ['inherited', 'overridden'] }) locale: QueueConfigOrigin;
+  @ApiProperty({ enum: ['inherited', 'overridden'] })
+  appointmentsEnabled: QueueConfigOrigin;
+  @ApiProperty({ enum: ['inherited', 'overridden'] })
+  appointmentSlotDuration: QueueConfigOrigin;
+  @ApiProperty({ enum: ['inherited', 'overridden'] })
+  slotCapacity: QueueConfigOrigin;
+  @ApiProperty({ enum: ['inherited', 'overridden'] })
+  workingHoursStart: QueueConfigOrigin;
+  @ApiProperty({ enum: ['inherited', 'overridden'] })
+  workingHoursEnd: QueueConfigOrigin;
+  @ApiProperty({ enum: ['inherited', 'overridden'] })
+  breakStart: QueueConfigOrigin;
+  @ApiProperty({ enum: ['inherited', 'overridden'] })
+  breakEnd: QueueConfigOrigin;
+  @ApiProperty({ enum: ['inherited', 'overridden'] })
+  lateToleranceMinutes: QueueConfigOrigin;
+  @ApiProperty({ enum: ['inherited', 'overridden'] })
+  baseWeightWalkin: QueueConfigOrigin;
+  @ApiProperty({ enum: ['inherited', 'overridden'] })
+  baseWeightAppointment: QueueConfigOrigin;
+  @ApiProperty({ enum: ['inherited', 'overridden'] })
+  escalationRateWalkin: QueueConfigOrigin;
+  @ApiProperty({ enum: ['inherited', 'overridden'] })
+  escalationRateAppointment: QueueConfigOrigin;
+  @ApiProperty({ enum: ['inherited', 'overridden'] })
+  carryOverWaiting: QueueConfigOrigin;
+  @ApiProperty({ enum: ['inherited', 'overridden'] })
+  dailyResetMode: QueueConfigOrigin;
+  @ApiProperty({ enum: ['inherited', 'overridden'] })
+  dailyResetTime: QueueConfigOrigin;
+}
+
+export class QueueResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la file' })
   queueId: number;
 
@@ -24,6 +63,12 @@ export class QueueDetailResponseDto {
 
   @ApiProperty({ example: 3, description: 'Nombre de guichets (threads)' })
   threadCount: number;
+
+  @ApiProperty({ example: 'TND', description: 'Devise effective de la file' })
+  currency: string;
+
+  @ApiProperty({ example: 'fr', description: 'Locale effective de la file' })
+  locale: string;
 
   @ApiProperty({
     example: true,
@@ -67,6 +112,33 @@ export class QueueDetailResponseDto {
   @ApiProperty({ example: 60, description: 'Poids de base rendez-vous' })
   baseWeightAppointment: number;
 
+  @ApiProperty({ example: 1, description: "Taux d'escalade walk-in effectif" })
+  escalationRateWalkin: number;
+
+  @ApiProperty({
+    example: 1,
+    description: "Taux d'escalade rendez-vous effectif",
+  })
+  escalationRateAppointment: number;
+
+  @ApiProperty({
+    example: false,
+    description: "Report de l'attente au lendemain",
+  })
+  carryOverWaiting: boolean;
+
+  @ApiProperty({ enum: ['close_all', 'close_served_only'] })
+  dailyResetMode: 'close_all' | 'close_served_only';
+
+  @ApiProperty({ example: '03:00:00' })
+  dailyResetTime: string;
+
+  @ApiProperty({
+    type: QueueConfigOriginsResponseDto,
+    description: 'Origine de chaque valeur configurable',
+  })
+  configOrigins: QueueConfigOriginsResponseDto;
+
   @ApiProperty({ example: true, description: 'File active ou inactive' })
   isActive: boolean;
 
@@ -83,12 +155,12 @@ export class QueueDetailResponseDto {
   updatedAt: string;
 }
 
-export class PaginatedQueueResponseDto {
+export class PaginatedQueueResponseDto extends PaginatedResponseDto {
   @ApiProperty({
-    type: [QueueDetailResponseDto],
+    type: [QueueResponseDto],
     description: 'Liste des files',
   })
-  items: QueueDetailResponseDto[];
+  items: QueueResponseDto[];
 
   @ApiProperty({ example: 1, description: 'Numéro de page actuelle' })
   page: number;
@@ -105,7 +177,7 @@ export class PaginatedQueueResponseDto {
 
 export class NextAppointmentItemDto {
   @ApiProperty({ example: 42, description: "ID de l'inscription client" })
-  customerId: number;
+  registrationId: number;
 
   @ApiProperty({ example: 'A-012', description: 'Numéro de ticket' })
   ticketNumber: string;
@@ -149,47 +221,45 @@ export class QueueStatusResponseDto {
   nextAppointments: NextAppointmentItemDto[];
 }
 
-export class CallingTicketDto {
+export class CallingTicketResponseDto {
   @ApiProperty({ example: 1, description: 'Numéro du guichet' })
   threadNumber: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'A-007',
+    nullable: true,
     description: 'Numéro de ticket en cours de traitement',
   })
-  ticketNumber: string;
+  currentTicket: string | null;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: '2026-09-27T10:15:00.000Z',
     description: "Heure de l'appel",
   })
-  calledAt: string;
+  calledAt?: string;
 }
 
 export class QueueDisplayResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la file' })
   queueId: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'Consultation Cardiologie',
     description: 'Nom de la file',
   })
-  queueName: string;
+  queueName?: string;
 
   @ApiProperty({
-    type: [CallingTicketDto],
+    type: [CallingTicketResponseDto],
     description: 'Tickets actuellement appelés aux guichets',
   })
-  currentCalling: CallingTicketDto[];
+  activeThreads: CallingTicketResponseDto[];
 
-  @ApiProperty({
-    type: [CallingTicketDto],
-    description: 'Derniers tickets appelés (historique récent pour affichage)',
-  })
-  recentCalled: CallingTicketDto[];
+  @ApiProperty({ type: [String], description: 'Prochains numéros de ticket' })
+  nextTickets: string[];
 }
 
-export class QueueDeleteResponseDto {
+export class DeleteQueueResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la file supprimée' })
   queueId: number;
 
@@ -197,7 +267,7 @@ export class QueueDeleteResponseDto {
   deleted: boolean;
 }
 
-export class QueueResetResponseDto {
+export class ResetQueueResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la file réinitialisée' })
   queueId: number;
 
@@ -205,10 +275,10 @@ export class QueueResetResponseDto {
     example: '2026-09-27T12:00:00.000Z',
     description: 'Horodatage de la réinitialisation',
   })
-  resetAt: string;
+  timestamp: string;
 
-  @ApiProperty({ example: 0, description: 'Nombre de clients clôturés' })
-  closedWaitingCount: number;
+  @ApiProperty({ example: true, description: 'Réinitialisation confirmée' })
+  reset: boolean;
 }
 
 export class QueueOperatorResponseDto {
@@ -231,8 +301,11 @@ export class QueueOperatorResponseDto {
   isActive: boolean;
 }
 
-export class PaginatedQueueOperatorResponseDto {
-  @ApiProperty({ type: [QueueOperatorResponseDto], description: 'Liste des opérateurs' })
+export class PaginatedQueueOperatorResponseDto extends PaginatedResponseDto {
+  @ApiProperty({
+    type: [QueueOperatorResponseDto],
+    description: 'Liste des opérateurs',
+  })
   items: QueueOperatorResponseDto[];
 
   @ApiProperty({ example: 1, description: 'Numéro de page actuelle' })
@@ -250,11 +323,17 @@ export class PaginatedQueueOperatorResponseDto {
 
 export class AssignOperatorResponseDto {
   @ApiProperty({ example: true, description: 'Opération réussie' })
-  success: boolean;
+  assigned: boolean;
 
   @ApiProperty({ example: 1, description: 'ID de la file' })
   queueId: number;
 
   @ApiProperty({ example: 3, description: "ID de l'utilisateur" })
   userId: number;
+}
+
+export class RemoveOperatorResponseDto {
+  @ApiProperty({ minimum: 1 }) queueId: number;
+  @ApiProperty({ minimum: 1 }) userId: number;
+  @ApiProperty({ example: true }) removed: boolean;
 }

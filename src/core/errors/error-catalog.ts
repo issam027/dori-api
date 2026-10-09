@@ -42,6 +42,14 @@ export const ERROR_CATALOG: Record<
     status: 404,
     translationKey: 'errors.user_not_found',
   },
+  ROLE_NOT_FOUND: {
+    status: 404,
+    translationKey: 'errors.role_not_found',
+  },
+  PERMISSION_NOT_FOUND: {
+    status: 404,
+    translationKey: 'errors.permission_not_found',
+  },
   TIER_NOT_FOUND: {
     status: 404,
     translationKey: 'errors.tier_not_found',
@@ -125,5 +133,17 @@ export const ERROR_CATALOG: Record<
   RATE_LIMITED: {
     status: 429,
     translationKey: 'errors.rate_limited',
+  },
+  RESOURCE_NOT_FOUND: {
+    status: 404,
+    translationKey: 'errors.resource_not_found',
+  },
+  CONFLICT: {
+    status: 409,
+    translationKey: 'errors.conflict',
+  },
+  INTERNAL_ERROR: {
+    status: 500,
+    translationKey: 'errors.internal_error',
   },
 };

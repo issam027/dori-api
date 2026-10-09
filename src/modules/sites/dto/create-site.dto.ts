@@ -8,6 +8,11 @@ import {
   IsString,
   Matches,
   Min,
+  IsISO4217CurrencyCode,
+  IsLocale,
+  IsTimeZone,
+  IsUrl,
+  MaxLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -15,6 +20,7 @@ export class CreateSiteDto {
   @ApiProperty({ example: 'Hôpital Aziza Othmana', description: 'Nom du site' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   siteName: string;
 
   @ApiPropertyOptional({
@@ -22,6 +28,7 @@ export class CreateSiteDto {
     description: 'Adresse ou localisation',
   })
   @IsString()
+  @MaxLength(255)
   @IsOptional()
   siteLocation?: string;
 
@@ -29,11 +36,12 @@ export class CreateSiteDto {
     example: 'https://cdn.dori.tn/logos/hao.png',
     description: 'URL du logo',
   })
-  @IsString()
+  @IsUrl({ require_protocol: true })
+  @MaxLength(500)
   @IsOptional()
   siteLogoUrl?: string;
 
-  @ApiPropertyOptional({ enum: ['public', 'private'], default: 'public' })
+  @ApiPropertyOptional({ enum: ['public', 'private'], example: 'public' })
   @IsIn(['public', 'private'])
   @IsOptional()
   siteType?: 'public' | 'private';
@@ -42,7 +50,8 @@ export class CreateSiteDto {
     example: 'Africa/Tunis',
     description: 'Fuseau horaire IANA',
   })
-  @IsString()
+  @IsTimeZone()
+  @MaxLength(64)
   @IsOptional()
   timezone?: string;
 
@@ -50,12 +59,12 @@ export class CreateSiteDto {
     example: 'TND',
     description: 'Code devise ISO 4217 (3 lettres)',
   })
-  @IsString()
+  @IsISO4217CurrencyCode()
   @IsOptional()
   defaultCurrency?: string;
 
   @ApiPropertyOptional({
-    default: false,
+    example: false,
     description: 'Activer les rendez-vous par défaut',
   })
   @IsBoolean()
@@ -63,7 +72,7 @@ export class CreateSiteDto {
   defaultAppointmentsEnabled?: boolean;
 
   @ApiPropertyOptional({
-    default: 15,
+    example: 15,
     description: "Durée d'un créneau (minutes)",
   })
   @IsInt()
@@ -71,7 +80,7 @@ export class CreateSiteDto {
   @IsOptional()
   defaultAppointmentSlotDuration?: number;
 
-  @ApiPropertyOptional({ default: 1, description: 'Capacité par créneau' })
+  @ApiPropertyOptional({ example: 1, description: 'Capacité par créneau' })
   @IsInt()
   @Min(1)
   @IsOptional()
@@ -110,7 +119,7 @@ export class CreateSiteDto {
   defaultBreakEnd?: string;
 
   @ApiPropertyOptional({
-    default: 60,
+    example: 60,
     description: 'Tolérance retard RDV (minutes)',
   })
   @IsInt()
@@ -119,7 +128,7 @@ export class CreateSiteDto {
   defaultLateToleranceMinutes?: number;
 
   @ApiPropertyOptional({
-    default: 0,
+    example: 0,
     description: 'Poids de base walk-in (priorité)',
   })
   @IsNumber()
@@ -127,20 +136,20 @@ export class CreateSiteDto {
   defaultBaseWeightWalkin?: number;
 
   @ApiPropertyOptional({
-    default: 60,
+    example: 60,
     description: 'Poids de base rendez-vous (priorité)',
   })
   @IsNumber()
   @IsOptional()
   defaultBaseWeightAppointment?: number;
 
-  @ApiPropertyOptional({ default: 1, description: "Taux d'escalade walk-in" })
+  @ApiPropertyOptional({ example: 1, description: "Taux d'escalade walk-in" })
   @IsNumber()
   @IsOptional()
   defaultEscalationRateWalkin?: number;
 
   @ApiPropertyOptional({
-    default: 1,
+    example: 1,
     description: "Taux d'escalade rendez-vous",
   })
   @IsNumber()
@@ -148,7 +157,7 @@ export class CreateSiteDto {
   defaultEscalationRateAppointment?: number;
 
   @ApiPropertyOptional({
-    default: false,
+    example: false,
     description: 'Reporter les clients en attente au lendemain',
   })
   @IsBoolean()
@@ -157,7 +166,7 @@ export class CreateSiteDto {
 
   @ApiPropertyOptional({
     enum: ['close_all', 'close_served_only'],
-    default: 'close_all',
+    example: 'close_all',
   })
   @IsIn(['close_all', 'close_served_only'])
   @IsOptional()
@@ -175,7 +184,8 @@ export class CreateSiteDto {
     example: 'fr',
     description: 'Locale par défaut (ISO 639-1)',
   })
-  @IsString()
+  @IsLocale()
+  @MaxLength(10)
   @IsOptional()
   defaultLocale?: string;
 }

@@ -11,17 +11,20 @@ export class DoriPerson {
   @PrimaryGeneratedColumn()
   person_id: number;
 
+  @Column({ type: 'int' })
+  site_id: number;
+
   @Column({ type: 'varchar', length: 50, nullable: true })
   first_name: string | null;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
-  last_name: string | null;
+  @Column({ type: 'varchar', length: 50 })
+  last_name: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   email: string | null;
 
-  @Column({ type: 'varchar', length: 20, nullable: true })
-  phone_number: string | null;
+  @Column({ type: 'varchar', length: 20 })
+  phone_number: string;
 
   @Column({ type: 'date', nullable: true })
   birth_date: string | null;

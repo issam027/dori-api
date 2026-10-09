@@ -1,138 +1,100 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
-export class QueueNextCandidateDto {
-  @ApiProperty({ example: 102, description: "ID de l'inscription cliente" })
-  customerId: number;
-
-  @ApiProperty({ example: 'A-015', description: 'Numéro de ticket' })
-  ticketNumber: string;
-
-  @ApiProperty({
-    example: 'walkin',
-    enum: ['walkin', 'appointment'],
-    description: "Type d'entrée",
-  })
-  entryType: string;
-
-  @ApiProperty({
-    example: 45.5,
-    description: 'Score de priorité calculé par le moteur',
-  })
-  calculatedScore: number;
-
-  @ApiProperty({ example: 25, description: 'Minutes passées en attente' })
-  waitingMinutes: number;
+export class QueueCandidatePersonItemDto {
+  @ApiProperty({ minimum: 1 }) personId: number;
+  @ApiPropertyOptional() firstName?: string;
+  @ApiPropertyOptional() lastName?: string;
 }
 
-export class QueuePreviewResponseDto {
-  @ApiProperty({ example: 1, description: "ID de la file d'attente" })
-  queueId: number;
-
-  @ApiProperty({
-    type: [QueueNextCandidateDto],
-    description: 'Candidats éligibles ordonnés par priorité',
-  })
-  candidates: QueueNextCandidateDto[];
+export class QueuePreviewItemDto {
+  @ApiProperty({ minimum: 1 }) registrationId: number;
+  @ApiProperty() ticketNumber: string;
+  @ApiProperty({ minimum: 1 }) queueId: number;
+  @ApiProperty() queueCode: string;
+  @ApiProperty() queueName: string;
+  @ApiProperty() siteName: string;
+  @ApiProperty({ enum: ['walkin', 'appointment'] }) entryType: string;
+  @ApiPropertyOptional({ format: 'date-time', nullable: true }) scheduledTime?:
+    string | null;
+  @ApiProperty() priorityScore: number;
+  @ApiProperty() calledEarly: boolean;
+  @ApiProperty({ type: QueueCandidatePersonItemDto })
+  person: QueueCandidatePersonItemDto;
 }
 
-export class QueueThreadDto {
-  @ApiProperty({ example: 1, description: 'Numéro du guichet' })
-  threadNumber: number;
-
-  @ApiProperty({
-    example: true,
-    description: 'Indique si le guichet est actuellement ouvert',
-  })
-  isOpen: boolean;
-
-  @ApiPropertyOptional({
-    example: 2,
-    description: "ID de l'opérateur connecté au guichet",
-  })
-  operatorUserId?: number;
-
-  @ApiPropertyOptional({
-    example: 'A-010',
-    description: 'Ticket actuellement en cours de traitement',
-  })
-  currentTicketNumber?: string;
+export class ThreadSessionItemDto {
+  @ApiProperty({ minimum: 1 }) sessionId: number;
+  @ApiProperty({ minimum: 1 }) userId: number;
+  @ApiProperty() username: string;
+  @ApiProperty({ format: 'date-time' }) connectedAt: string;
+  @ApiProperty({ format: 'date-time' }) lastSeenAt: string;
+  @ApiProperty({ minimum: 0 }) inactiveMinutes: number;
+  @ApiPropertyOptional({ minimum: 1, nullable: true }) currentRegistrationId?:
+    number | null;
 }
 
-export class QueueSessionDetailDto {
-  @ApiProperty({ example: 12, description: 'ID de la session de guichet' })
-  sessionId: number;
-
-  @ApiProperty({ example: 1, description: 'ID de la file' })
-  queueId: number;
-
-  @ApiProperty({ example: 1, description: 'Numéro du guichet' })
-  threadNumber: number;
-
-  @ApiProperty({ example: 2, description: "ID de l'utilisateur opérateur" })
-  userId: number;
-
-  @ApiProperty({
-    example: 'active',
-    enum: ['active', 'paused', 'closed'],
-    description: 'Mode de la session',
-  })
-  mode: string;
-
-  @ApiProperty({
-    example: '2026-09-27T08:00:00.000Z',
-    description: 'Heure de connexion',
-  })
-  connectedAt: string;
-
-  @ApiPropertyOptional({ example: null, description: 'Heure de déconnexion' })
-  disconnectedAt?: string;
+export class QueueThreadResponseDto {
+  @ApiProperty({ minimum: 1 }) threadNumber: number;
+  @ApiProperty({ enum: ['occupied', 'free'] }) status: string;
+  @ApiPropertyOptional({ type: ThreadSessionItemDto, nullable: true })
+  session: ThreadSessionItemDto | null;
 }
 
-export class CalledNextCustomerResponseDto {
-  @ApiProperty({ example: 102, description: "ID de l'inscription appelée" })
-  customerId: number;
+export class PaginatedQueueThreadResponseDto extends PaginatedResponseDto {
+  @ApiProperty({ type: [QueueThreadResponseDto] })
+  items: QueueThreadResponseDto[];
+}
 
-  @ApiProperty({ example: 'A-015', description: 'Numéro de ticket appelé' })
-  ticketNumber: string;
+export class QueueSessionResponseDto {
+  @ApiProperty({ minimum: 1 }) sessionId: number;
+  @ApiProperty({ minimum: 1 }) queueId: number;
+  @ApiPropertyOptional({ minimum: 1, nullable: true }) threadNumber?:
+    number | null;
+  @ApiProperty({ minimum: 1 }) userId: number;
+  @ApiProperty({ enum: ['active', 'consultation_only'] }) mode: string;
+  @ApiProperty({ format: 'date-time' }) connectedAt: string;
+  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  disconnectedAt?: string | null;
+  @ApiPropertyOptional() username?: string;
+  @ApiPropertyOptional({ minimum: 1, nullable: true }) takenOverFromSessionId?:
+    number | null;
+  @ApiPropertyOptional({ minimum: 1, nullable: true })
+  reassignedRegistrationId?: number | null;
+}
 
-  @ApiProperty({ example: 1, description: 'Numéro du guichet assigné' })
-  threadNumber: number;
+export class PaginatedQueueSessionResponseDto extends PaginatedResponseDto {
+  @ApiProperty({ type: [QueueSessionResponseDto] })
+  items: QueueSessionResponseDto[];
+}
 
-  @ApiProperty({
-    example: 'in_progress',
-    description: "Nouveau statut de l'inscription",
-  })
-  status: string;
-
-  @ApiProperty({
-    example: '2026-09-27T10:15:00.000Z',
-    description: "Horodatage de l'appel",
-  })
-  calledAt: string;
+export class CallNextRegistrationResponseDto {
+  @ApiProperty({ minimum: 1 }) registrationId: number;
+  @ApiProperty() ticketNumber: string;
+  @ApiProperty({ enum: ['walkin', 'appointment'] }) entryType: string;
+  @ApiPropertyOptional({ format: 'date-time', nullable: true }) scheduledTime?:
+    string | null;
+  @ApiProperty() calledEarly: boolean;
+  @ApiProperty({ type: 'object' }) tier: Record<string, unknown>;
+  @ApiProperty({ example: 'in_progress' }) status: string;
+  @ApiProperty({ minimum: 1 }) sessionId: number;
+  @ApiProperty({ minimum: 1 }) threadNumber: number;
+  @ApiProperty() priorityScore: number;
+  @ApiProperty({ format: 'date-time' }) calledAt: string;
+  @ApiProperty({ type: 'object' }) person: Record<string, unknown>;
 }
 
 export class CloseSessionResponseDto {
-  @ApiProperty({ example: 12, description: 'ID de la session fermée' })
-  sessionId: number;
-
-  @ApiProperty({ example: true, description: 'Session clôturée avec succès' })
-  closed: boolean;
+  @ApiProperty({ minimum: 1 }) sessionId: number;
+  @ApiProperty() closed: boolean;
 }
 
-export class CustomerActionResponseDto {
-  @ApiProperty({ example: 102, description: "ID de l'inscription" })
-  customerId: number;
-
-  @ApiProperty({
-    example: 'served',
-    enum: ['served', 'no_show'],
-    description: 'Statut final appliqué',
-  })
-  status: string;
-
-  @ApiProperty({
-    example: '2026-09-27T10:35:00.000Z',
-    description: "Horodatage de l'action",
-  })
-  completedAt: string;
+export class UpdateRegistrationStatusResponseDto {
+  @ApiProperty({ minimum: 1 }) registrationId: number;
+  @ApiProperty({ enum: ['served', 'no_show'] }) status: string;
+  @ApiPropertyOptional({ format: 'date-time', nullable: true }) servedAt?:
+    string | null;
+  @ApiProperty({ format: 'date-time' }) closedAt: string;
+  @ApiProperty({ minimum: 1 }) handledBySessionId: number;
+  @ApiProperty({ minimum: 1 }) handledByUserId: number;
 }
