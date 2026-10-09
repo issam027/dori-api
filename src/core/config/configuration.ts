@@ -128,15 +128,15 @@ export default () => {
     throttle: {
       default: {
         ttl: 60_000,
-        limit: 200,
+        limit: 2000,
       },
       strict: {
         ttl: 60_000,
-        limit: 20,
+        limit: 2000,
       },
       auth: {
         ttl: 60_000,
-        limit: 10,
+        limit: 100,
       },
     },
 

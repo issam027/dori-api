@@ -26,27 +26,19 @@
       --shadow: 0 12px 34px rgba(16, 42, 67, .08);
       --radius: 16px;
     }
-    body.mid { --navy:#173852; --navy-2:#245875; --ink:#29465c; --muted:#617d91; --line:#bdcdd8; --bg:#e8eef2; --surface:#f8fbfc; --teal:#0d8587; --teal-dark:#086d70; --teal-soft:#d9f0ee; --blue-soft:#dfeafa; --amber-soft:#f7ead2; --red-soft:#f7e4e1; --shadow:0 12px 32px rgba(20,53,75,.12); }
-    body.mid-dark { --navy:#d4e6ef; --navy-2:#315f79; --ink:#d2e0e8; --muted:#94aebe; --line:#496174; --bg:#1b2935; --surface:#253746; --teal:#35b5b0; --teal-dark:#8be3db; --teal-soft:#204b4d; --blue-soft:#2b425d; --amber-soft:#594728; --red-soft:#5a3531; --green:#7bd5a6; --shadow:0 12px 34px rgba(4,15,24,.22); }
-    body.dark { --navy:#d9edf5; --navy-2:#1d526d; --ink:#dbe7ef; --muted:#a9bfd0; --line:#3d5b70; --bg:#0b1724; --surface:#132638; --teal:#24aaa8; --teal-dark:#82e8df; --teal-soft:#123e42; --blue-soft:#1d3958; --amber-soft:#513b1f; --red-soft:#512b26; --green:#76dda6; --shadow:0 12px 34px rgba(0,0,0,.28); }
+    body.dark { --navy:#d9edf5; --navy-2:#1d526d; --ink:#dbe7ef; --muted:#9fb3c8; --line:#334e68; --bg:#0b1724; --surface:#132638; --teal:#24aaa8; --teal-dark:#72ddd3; --teal-soft:#123e42; --blue-soft:#172f4b; --amber-soft:#49351c; --red-soft:#482621; --green:#69d19a; --shadow:0 12px 34px rgba(0,0,0,.28); }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
     body { margin: 0; color: var(--ink); background: var(--bg); font: 14px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     button, input, select { font: inherit; }
     button { cursor: pointer; }
     .app { min-height: 100vh; display: grid; grid-template-columns: 252px 1fr; }
-    .sidebar { position: sticky; top: 0; height: 100vh; padding: 24px 18px; color: #dbeafe; background: linear-gradient(165deg, #0b2034 0%, #123752 58%, #0c5b63 130%); overflow: auto; }
+    .sidebar { position:sticky; top:0; display:flex; flex-direction:column; height:100vh; padding:24px 18px; color:#dbeafe; background:linear-gradient(165deg,#0b2034 0%,#123752 58%,#0c5b63 130%); overflow:auto; }
     .brand { display: flex; align-items: center; gap: 12px; padding: 0 8px 25px; color: white; }
     .brand-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; color: #0d5960; background: #c5f4ef; font-weight: 900; font-size: 19px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.6); }
     .brand strong { display: block; font-size: 20px; letter-spacing: .12em; }
     .brand small { color: #9fb3c8; }
-    .nav-label { margin:17px 10px 8px; color:#7fa5bb; font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
-    #mainNav .nav-section-toggle { display:flex; align-items:center; justify-content:space-between; width:100%; margin-top:9px; padding:9px 10px; border:0; border-radius:9px; color:#8fb1c4; background:transparent; font-size:10px; font-weight:850; letter-spacing:.13em; text-transform:uppercase; }
-    #mainNav .nav-section-toggle:hover { color:white; background:rgba(255,255,255,.06); }
-    #mainNav .nav-section-toggle::after { content:'›'; font-size:18px; line-height:1; transition:transform .18s ease; }
-    .nav-section.open .nav-section-toggle::after { transform:rotate(90deg); }
-    .nav-section-items { display:none; gap:4px; }
-    .nav-section.open .nav-section-items { display:grid; animation:reveal .18s ease; }
+    .nav-label { margin: 17px 10px 8px; color: #7fa5bb; font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
     .nav { display: grid; gap: 4px; }
     .nav button { display: flex; align-items: center; gap: 11px; width: 100%; padding: 11px 12px; border: 0; border-radius: 10px; color: #cbdbe8; background: transparent; text-align: left; transition: .18s ease; }
     .nav button:hover { color: white; background: rgba(255,255,255,.08); }
@@ -55,6 +47,20 @@
     .side-card { margin-top: 24px; padding: 14px; border: 1px solid rgba(255,255,255,.12); border-radius: 13px; background: rgba(255,255,255,.06); }
     .side-card .online { color: #8df0be; font-weight: 700; }
     .side-card small { color: #9fb3c8; }
+    .legal-link { border:0; color:var(--muted); background:transparent; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+    .sidebar .legal-link { display:block; flex:0 0 auto; width:100%; margin-top:auto; padding-top:20px; color:#9fb3c8; font-size:11px; text-align:center; }
+    #mainNav { flex:1 0 auto; }
+    #mainNav .nav-section-toggle { display:flex; align-items:center; justify-content:space-between; width:100%; margin-top:9px; padding:9px 10px; border:0; border-radius:9px; color:#8fb1c4; background:transparent; font-size:10px; font-weight:850; letter-spacing:.13em; text-transform:uppercase; }
+    #mainNav .nav-section-toggle:hover { color:white; background:rgba(255,255,255,.06); }
+    #mainNav .nav-section-toggle::after { content:'›'; font-size:18px; line-height:1; transition:transform .18s ease; }
+    #mainNav .nav-section.open .nav-section-toggle::after { transform:rotate(90deg); }
+    #mainNav .nav-section-items { display:none; gap:4px; }
+    #mainNav .nav-section.open .nav-section-items { display:grid; animation:reveal .18s ease; }
+    .legal-page { max-width:980px; margin:auto; }
+    .legal-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:18px; }
+    .legal-section { scroll-margin-top:95px; }
+    body.legal-public .app { grid-template-columns:1fr; }
+    body.legal-public .sidebar, body.legal-public .topbar, body.legal-public .mobile-nav { display:none !important; }
     main { min-width: 0; }
     .topbar { position: sticky; z-index: 10; top: 0; display: flex; align-items: center; gap: 16px; min-height: 74px; padding: 12px 28px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(14px); }
     .topbar h1 { margin: 0; font-size: 18px; }
@@ -117,8 +123,6 @@
     .empty-ticket { display: grid; min-height: 194px; place-items: center; border: 1px dashed var(--line); border-radius: 14px; color: var(--muted); text-align: center; }
     .list { display: grid; gap: 9px; }
     .list-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 11px; padding: 12px; border: 1px solid #e7edf2; border-radius: 11px; background: white; }
-    button.list-row.selected, .selectable.selected, tr.selected { border-color:var(--teal); background:var(--teal-soft); box-shadow:0 0 0 3px color-mix(in srgb,var(--teal) 12%,transparent); }
-    tr.selected td { background:var(--teal-soft); }
     .ticket-chip { display: grid; place-items: center; min-width: 45px; height: 34px; border-radius: 9px; color: var(--navy); background: var(--blue-soft); font-weight: 900; }
     .metric { padding: 17px; border: 1px solid #e3eaf0; border-radius: 14px; background: white; }
     .metric strong { display: block; margin-top: 4px; color: var(--navy); font-size: 25px; }
@@ -158,31 +162,12 @@
     .qr-demo { display: grid; grid-template-columns: repeat(5, 9px); gap: 3px; width: max-content; margin: 15px auto; padding: 8px; background: white; }
     .qr-demo i { width: 9px; height: 9px; background: #142f43; }
     .qr-demo i:nth-child(3n) { opacity: .08; }
-    .display-shell { padding:18px 22px; border-radius:20px; color:white; background:radial-gradient(circle at 80% 0%,#17656b,#102a43 58%); box-shadow:0 22px 45px rgba(16,42,67,.22); overflow:hidden; }
-    .display-device { width:min(1180px,100%); aspect-ratio:16/9; margin:auto; padding:10px; border-radius:25px; background:#0a1823; box-shadow:0 24px 55px rgba(16,42,67,.25); }
-    .display-screen { display:grid; grid-template-rows:45% 55%; height:100%; overflow:hidden; border-radius:15px; background:var(--surface); }
-    .display-screen .display-shell { display:flex; flex-direction:column; min-height:0; border-radius:0; box-shadow:none; }
-    .display-screen .display-shell > div:first-child { margin-bottom:12px !important; }
-    .display-light-panel { display:grid; grid-template-rows:auto auto auto minmax(72px,1fr); min-height:0; padding:10px 14px 12px; color:var(--ink); background:var(--surface); overflow:hidden; }
-    .display-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
-    .display-summary .metric { padding:7px 11px; background:color-mix(in srgb,var(--surface) 90%,var(--teal-soft)); }
-    .display-summary .metric strong { margin-top:0; font-size:18px; }
-    .display-light-panel > .card { padding:7px 11px; margin-top:6px !important; }
-    .display-light-panel > .card .card-head { margin-bottom:0; }
-    .display-light-panel > .card p { margin:1px 0; }
-    .display-light-panel > .card-head { margin:5px 0 4px !important; }
-    .display-light-panel > .card-head p { margin:0; font-size:11px; }
-    #displayHistory { grid-template-columns:repeat(4,minmax(0,1fr)); align-items:stretch; min-height:72px; gap:8px; }
-    #displayHistory .station { height:100%; min-height:0; padding:7px 9px; overflow:hidden; }
-    #displayHistory .station h3 { margin-top:3px; font-size:15px; }
-    #displayHistory .station p, #displayHistory .station b { margin:1px 0; font-size:11px; }
-    .display-identity { margin-top:8px; color:#b9fff4; font-size:17px; font-weight:800; }
-    .display-next-person { color:var(--navy); font-size:13px; font-weight:800; }
-    .display-call { display:grid; grid-template-columns:1fr auto; align-items:center; flex:1; min-height:0; padding:16px 22px; border:1px solid rgba(255,255,255,.18); border-radius:17px; background:rgba(255,255,255,.08); }
+    .display-shell { padding: 30px; border-radius: 20px; color: white; background: radial-gradient(circle at 80% 0%, #17656b, #102a43 58%); box-shadow: 0 22px 45px rgba(16,42,67,.22); }
+    .display-call { display: grid; grid-template-columns: 1fr auto; align-items: center; min-height: 235px; padding: 30px; border: 1px solid rgba(255,255,255,.18); border-radius: 17px; background: rgba(255,255,255,.08); }
     .display-call.flash { animation: callFlash .85s ease 2; }
     @keyframes callFlash { 50% { transform: scale(1.015); background: rgba(128,241,225,.22); box-shadow: 0 0 35px rgba(128,241,225,.25); } }
-    .display-call strong { display:block; font-size:clamp(45px,7vw,78px); line-height:1; }
-    .counter { padding:16px 25px; border-radius:17px; color:#103b45; background:#9cf2e7; font-size:clamp(24px,4vw,45px); font-weight:900; text-align:center; }
+    .display-call strong { display: block; font-size: clamp(54px, 9vw, 105px); line-height: 1; }
+    .counter { padding: 26px 35px; border-radius: 17px; color: #103b45; background: #9cf2e7; font-size: clamp(28px, 5vw, 58px); font-weight: 900; text-align: center; }
     .phone { max-width: 355px; margin: auto; padding: 11px; border-radius: 38px; background: #0f2536; box-shadow: 0 25px 48px rgba(16,42,67,.25); }
     .phone-screen { min-height: 625px; padding: 24px 19px; border-radius: 29px; background: linear-gradient(#f8fffe, #edf7f6); }
     .phone-notch { width: 95px; height: 20px; margin: -17px auto 23px; border-radius: 0 0 13px 13px; background: #0f2536; }
@@ -204,12 +189,6 @@
     .month-day.muted-day { opacity:.45 }
     .month-day strong { display:block;margin-bottom:7px }
     .month-event { display:block;margin-top:5px;padding:5px 7px;border-radius:7px;background:var(--teal-soft);color:var(--teal-dark);font-size:11px;font-weight:700 }
-    .month-day:not(.muted-day), .cal-cell[data-slot-date] { cursor:pointer; transition:.15s ease; }
-    .month-day:not(.muted-day):hover, .cal-cell[data-slot-date]:hover { background:color-mix(in srgb,var(--teal-soft) 62%,var(--surface)); }
-    .appointment, .month-event { cursor:pointer; }
-    .modal-step-nav { display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px }
-    .choice-card { border:2px solid var(--line);background:var(--surface);transition:.15s ease }
-    .choice-card.selected { border-color:var(--teal);background:var(--teal-soft);box-shadow:0 0 0 3px color-mix(in srgb,var(--teal) 12%,transparent) }
     .sla-alert { border-left:4px solid #d64545;background:rgba(214,69,69,.07) }
     .person-note { max-width:220px }
     .note-preview { display:block;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:help }
@@ -238,11 +217,7 @@
     .toast.show { opacity: 1; transform: translateY(0); }
     .modal-backdrop { position: fixed; z-index: 90; inset: 0; display: none; place-items: center; padding: 20px; background: rgba(10, 29, 44, .55); }
     .modal-backdrop.open { display: grid; }
-    .modal { width:min(820px,calc(100vw - 40px)) !important; max-height:calc(100vh - 40px); padding:24px; border-radius:17px; background:white; box-shadow:0 25px 70px rgba(0,0,0,.24); overflow-y:auto; overscroll-behavior:contain; }
-    .modal .card-head > .btn { flex:0 0 auto; }
-    .modal .actions { flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px; scrollbar-width:thin; }
-    .modal .actions .btn, .modal-step-nav .btn { flex:0 0 auto; white-space:nowrap; }
-    .modal-step-nav { flex-wrap:nowrap; }
+    .modal { width: min(480px, 100%); padding: 24px; border-radius: 17px; background: white; box-shadow: 0 25px 70px rgba(0,0,0,.24); }
     .mobile-nav { display: none; }
     .login-page { position:fixed; z-index:200; inset:0; display:grid; place-items:center; padding:25px; background:radial-gradient(circle at 15% 15%, #1a6670, #102a43 50%, #091d2f); overflow:auto; }
     .login-page.hidden { display:none; }
@@ -255,8 +230,6 @@
     .required { margin-left:2px; color:var(--red); font-size:16px; font-weight:900; line-height:1; }
     .optional { color:var(--muted); font-size:10px; font-weight:700; text-transform:uppercase; }
     .inherit { color:var(--teal-dark); font-size:10px; font-weight:800; text-transform:uppercase; }
-    body.mid input, body.mid select, body.mid textarea, body.mid .btn.outline, body.mid .list-row, body.mid .metric, body.mid .tabs, body.mid .tab.active, body.mid th { color:var(--ink); border-color:var(--line); background:var(--surface); }
-    body.mid-dark input, body.mid-dark select, body.mid-dark textarea, body.mid-dark .btn.outline, body.mid-dark .list-row, body.mid-dark .metric, body.mid-dark .tabs, body.mid-dark .tab.active, body.mid-dark th { color:var(--ink); border-color:var(--line); background:var(--surface); }
     body.dark input, body.dark select, body.dark textarea, body.dark .btn.outline, body.dark .list-row, body.dark .metric, body.dark .tabs, body.dark .tab.active, body.dark th { color:var(--ink); border-color:var(--line); background:var(--surface); }
     body.dark .modal, body.dark .login-card, body.dark .role-card, body.dark .kiosk-choice, body.dark .mobile-phone { color:var(--ink); border-color:var(--line); background:var(--surface); }
     body.dark .station, body.dark .card[style*="#f8fafc"] { background:#102333 !important; }
@@ -278,24 +251,6 @@
     body.dark .position-ring { background:conic-gradient(#49cfc5 0 74%,#314b5e 74%); }
     body.dark .position-ring > div { color:var(--ink); background:#172d3e; }
     body.dark .mobile-nav { border-color:var(--line); background:var(--surface); }
-    body.mid .modal, body.mid .login-card, body.mid .role-card, body.mid .kiosk-choice, body.mid .mobile-phone, body.mid .cal-cell, body.mid .month-day { color:var(--ink);border-color:var(--line);background:var(--surface); }
-    body.mid .card[style*="#f8fafc"], body.mid .station { background:#eef3f6 !important; }
-    body.mid-dark .modal, body.mid-dark .login-card, body.mid-dark .role-card, body.mid-dark .kiosk-choice, body.mid-dark .mobile-phone, body.mid-dark .cal-cell, body.mid-dark .month-day, body.mid-dark .choice-card { color:var(--ink);border-color:var(--line);background:var(--surface); }
-    body.mid-dark .card[style*="#f8fafc"], body.mid-dark .station { background:#2b3d4c !important; }
-    body.mid-dark .badge { color:#d6e4eb;background:#3b5161; }
-    body.mid-dark .badge.green { color:#9ae6bb;background:#28513e; }
-    body.mid-dark .badge.amber { color:#ffdaa0;background:#5a4528; }
-    body.mid-dark .badge.teal { color:#9aeee7;background:#245659; }
-    body.mid-dark .badge.red { color:#ffb5ad;background:#603832; }
-    body.mid-dark .cal-head { color:#e0edf3;background:#304756; }
-    body.mid-dark .appointment { color:#e8fbf9;border-color:#61d3ca;background:#285759; }
-    body.mid-dark .appointment.booked { color:#edf2ff;border-color:#91aeff;background:#344b6a; }
-    body.mid-dark .kiosk-shell { color:var(--ink);border-color:#152532;background:linear-gradient(155deg,#2c4452,#233743); }
-    body.mid-dark .kiosk-option, body.mid-dark .kiosk-ticket { color:var(--ink);border-color:var(--line);background:#2b4050; }
-    body.mid-dark .kiosk-choice.selected, body.mid-dark .kiosk-option:hover { border-color:#62d6ce;background:#285759; }
-    body.mid-dark .phone-screen { color:var(--ink);background:linear-gradient(#2c4553,#233844); }
-    body.mid-dark .position-ring > div, body.mid-dark .mobile-nav { color:var(--ink);border-color:var(--line);background:var(--surface); }
-    body.dark .month-day, body.dark .choice-card { color:var(--ink);border-color:var(--line);background:var(--surface); }
     @media (max-width: 1050px) { .grid-3 { grid-template-columns: 1fr 1fr; } .grid-3 > :last-child { grid-column: 1 / -1; } .grid-4 { grid-template-columns: repeat(2, 1fr); } .login-card > .grid-2 { grid-template-columns:1fr; } }
     @media (max-width: 760px) {
       .app { display: block; padding-bottom: 68px; }
@@ -310,19 +265,12 @@
       .kiosk-shell { padding: 20px; border-width: 7px; }
       .kiosk-options, .kiosk-grid, .kiosk-form { grid-template-columns: 1fr; }
       .display-call { grid-template-columns: 1fr; gap: 20px; }
-      .display-summary { grid-template-columns:1fr; }
-      .display-device { aspect-ratio:auto; }
-      .display-screen { display:block; }
-      .display-light-panel { display:block; overflow:visible; }
-      #displayHistory { grid-template-columns:1fr; }
       .bar-row { grid-template-columns: 100px 1fr; } .bar-row > :last-child { display: none; }
       .mobile-nav { position: fixed; z-index: 30; bottom: 0; display: grid; grid-template-columns: repeat(5, 1fr); width: 100%; padding: 7px; border-top: 1px solid var(--line); background: white; }
       .mobile-nav button { padding: 8px 2px; border: 0; color: var(--muted); background: transparent; font-size: 10px; }
       .mobile-nav button.active { color: var(--teal-dark); font-weight: 800; }
       .role-grid { grid-template-columns:1fr 1fr; }
-      .modal-backdrop { padding:12px; }
-      .modal { width:calc(100vw - 24px) !important; max-height:calc(100vh - 24px); padding:18px; }
-      .modal-step-nav { align-items:flex-end; }
+      .legal-summary { grid-template-columns:1fr; }
     }
   </style>
 </head>
@@ -338,6 +286,7 @@
         <section class="nav-section" data-nav-section="experiences"><button class="nav-section-toggle" type="button">Expériences</button><div class="nav-section-items"><button data-view="kiosk">▤ Borne kiosque</button><button data-view="display">▰ Écran salle</button><button data-view="mobile">◫ Tracking mobile</button></div></section>
         <section class="nav-section" data-nav-section="administration"><button class="nav-section-toggle" type="button">Administration</button><div class="nav-section-items"><button data-view="onboarding">◇ Nouveau site</button><button data-view="settings">⚙ Configuration</button><button data-view="health">♡ Santé plateforme</button></div></section>
       </nav>
+      <button class="legal-link" type="button" data-legal-source="app">Mentions légales · Confidentialité</button>
     </aside>
 
     <main>
@@ -520,8 +469,9 @@
         </section>
 
         <section class="view" id="display">
-          <div class="hero"><div><div class="eyebrow">Salle d'attente</div><h2>Affichage écran</h2><p class="muted" id="displayPrivacyDescription">Vue publique sans donnée personnelle, synchronisée en temps réel.</p></div><div class="actions"><button class="btn primary" id="advanceDisplay">▶ Simuler l'appel suivant</button><button class="btn outline" id="resetDisplay">Réinitialiser</button><span class="badge green"><span class="dot"></span> Écran connecté</span></div></div>
-          <div class="display-device"><div class="display-screen"><div class="display-shell"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px"><div><b style="font-size:22px">Clinique El Manar</b><div style="opacity:.75">Accueil général · affichage en direct</div></div><div style="text-align:right"><b id="displayClock">10:42</b><div style="opacity:.7">Français / العربية</div></div></div><div class="display-call" id="displayCall"><div><small style="letter-spacing:.12em">TICKET APPELÉ</small><strong id="displayTicket">A-042</strong><div class="display-identity" data-display-identity id="displayCalledPerson">Amira Ben Salah</div><p style="font-size:18px;opacity:.82">Merci de vous présenter au poste indiqué</p></div><div class="counter">GUICHET<br><span id="displayCounter">03</span></div></div></div><div class="display-light-panel"><div class="display-summary"><div class="metric"><small>Dernier appel</small><strong id="displayPrevious">A-041 · 02</strong></div><div class="metric"><small>En attente</small><strong id="displayWaiting">18 personnes</strong></div><div class="metric"><small>Attente estimée</small><strong id="displayEstimate">~ 12 min</strong></div></div><div class="card" data-display-identity style="box-shadow:none;background:var(--teal-soft);margin-top:14px"><div class="card-head"><div><small class="muted">PROCHAINE PERSONNE À APPELER</small><h3 id="displayNextTicket">A-043 · Mohamed Gharbi</h3></div><span class="badge teal">Aperçu interne</span></div><p class="display-next-person" id="displayNextContext">Accueil général · ordre calculé par le moteur de file</p></div><div class="card-head" style="margin-top:18px"><div><h3>Historique des quatre derniers appels</h3><p class="muted" id="displayHistoryPrivacy">Tickets uniquement sur l'affichage public.</p></div><span class="badge teal">Mis à jour en direct</span></div><div class="grid grid-4" id="displayHistory"></div></div></div></div>
+          <div class="hero"><div><div class="eyebrow">Salle d'attente</div><h2>Affichage TV</h2><p class="muted">Vue sans donnée personnelle, synchronisée en temps réel.</p></div><div class="actions"><button class="btn primary" id="advanceDisplay">▶ Simuler l'appel suivant</button><button class="btn outline" id="resetDisplay">Réinitialiser</button><span class="badge green"><span class="dot"></span> Écran connecté</span></div></div>
+          <div class="display-shell"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:25px"><div><b style="font-size:22px">Clinique El Manar</b><div style="opacity:.7">Accueil général</div></div><div>10:42 · Français / العربية</div></div><div class="display-call" id="displayCall"><div><small style="letter-spacing:.12em">TICKET APPELÉ</small><strong id="displayTicket">A-042</strong><p style="font-size:20px;opacity:.8">Merci de vous présenter au poste indiqué</p></div><div class="counter">GUICHET<br><span id="displayCounter">03</span></div></div><div class="grid grid-3" style="margin-top:18px"><div class="card" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);color:white;box-shadow:none"><small>Dernier appel</small><h3 id="displayPrevious" style="color:white;font-size:28px">A-041 · 02</h3></div><div class="card" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);color:white;box-shadow:none"><small>En attente</small><h3 id="displayWaiting" style="color:white;font-size:28px">18 personnes</h3></div><div class="card" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);color:white;box-shadow:none"><small>Attente estimée</small><h3 id="displayEstimate" style="color:white;font-size:28px">~ 12 min</h3></div></div></div>
+          <div class="card" style="margin-top:18px"><div class="card-head"><div><h3>Historique des quatre derniers appels</h3><p class="muted">Numéros uniquement, sans aucune donnée personnelle.</p></div><span class="badge teal">Mis à jour en direct</span></div><div class="grid grid-4" id="displayHistory"><div class="station"><span class="badge green">À l'instant</span><h3>A-042</h3><p class="muted">Guichet 03 · Accueil</p></div><div class="station"><span class="badge">Il y a 2 min</span><h3>A-041</h3><p class="muted">Guichet 02 · Accueil</p></div><div class="station"><span class="badge">Il y a 4 min</span><h3>C-017</h3><p class="muted">Guichet 04 · Consultations</p></div><div class="station"><span class="badge">Il y a 7 min</span><h3>L-009</h3><p class="muted">Guichet 01 · Laboratoire</p></div></div></div>
         </section>
 
         <section class="view" id="mobile">
@@ -574,6 +524,19 @@
             <div class="config-panel" data-config-panel="translations"><div class="card-head"><div><h3>Traductions dynamiques</h3><p class="muted">Libellés IHM, messages et erreurs par locale.</p></div><button class="btn primary" data-toast="Nouvelle clé de traduction ajoutée.">+ Nouvelle clé</button></div><div class="actions" style="margin-bottom:14px"><button class="btn primary">Français</button><button class="btn outline">العربية</button><button class="btn outline">English</button></div><div class="table-wrap"><table><thead><tr><th>Clé</th><th>Catégorie</th><th>Valeur française</th><th>Variables</th></tr></thead><tbody><tr><td><code>ihm.queue.position</code></td><td>IHM</td><td>Vous êtes en position {position}</td><td><span class="badge">position</span></td></tr><tr><td><code>sms.welcome</code></td><td>SMS</td><td>Bienvenue, votre ticket est {ticket}</td><td><span class="badge">ticket</span></td></tr><tr><td><code>error.thread_occupied</code></td><td>Erreur</td><td>Ce guichet est déjà occupé</td><td>—</td></tr></tbody></table></div></div>
           </div>
         </section>
+
+        <section class="view" id="legal">
+          <div class="legal-page"><div class="hero"><div><div class="eyebrow">Informations publiques</div><h2>Mentions légales et confidentialité</h2><p class="muted">Informations applicables à la plateforme SaaS DORI et à ses interfaces publiques.</p></div><button class="btn outline" id="legalBack">← Retour</button></div>
+          <div class="legal-summary"><div class="metric"><small>Éditeur</small><strong style="font-size:18px">DORI SaaS</strong><span class="muted">Solution de gestion des flux</span></div><div class="metric"><small>Version du document</small><strong style="font-size:18px">1.0</strong><span class="muted">Mise à jour : 8 octobre 2026</span></div><div class="metric"><small>Contact</small><strong style="font-size:18px">legal@dori.example</strong><span class="muted">Adresse de démonstration à remplacer</span></div></div>
+          <div class="card legal-section" id="legalPublisher"><h3>1. Éditeur, publication et hébergement</h3><p>DORI est une plateforme SaaS de gestion des files d’attente. Les coordonnées légales définitives de la société éditrice, du directeur de publication et de l’hébergeur doivent être renseignées avant la mise en production pour chaque territoire concerné.</p><div class="card" style="box-shadow:none;background:var(--amber-soft);margin-top:12px"><b>Contenu de démonstration</b><p class="muted">Les noms, adresses et contacts affichés dans cette maquette sont fictifs. Ils ne constituent pas les mentions légales définitives de l’exploitant.</p></div></div>
+          <div class="card legal-section" style="margin-top:14px"><h3>2. Objet et conditions d’utilisation</h3><p>Le service permet aux établissements autorisés d’organiser leurs files, rendez-vous, guichets, notifications et parcours d’accueil. L’utilisateur s’engage à utiliser uniquement les fonctions correspondant à son rôle et à son périmètre. Toute tentative d’accès non autorisé, de contournement des permissions ou d’altération du service est interdite.</p></div>
+          <div class="card legal-section" style="margin-top:14px"><h3>3. Données personnelles</h3><p>Selon le déploiement, l’établissement exploitant agit comme responsable de traitement et l’éditeur DORI comme sous-traitant. Les données peuvent comprendre l’identité, les coordonnées, les rendez-vous, passages, notes d’accueil et journaux techniques strictement nécessaires au service.</p><div class="grid grid-2" style="margin-top:12px"><div class="station"><b>Finalités</b><p class="muted">Accueil, ordonnancement, notification, suivi du ticket, sécurité, audit et statistiques opérationnelles.</p></div><div class="station"><b>Droits</b><p class="muted">Accès, rectification, effacement, limitation, opposition et portabilité selon la réglementation applicable.</p></div></div></div>
+          <div class="card legal-section" style="margin-top:14px"><h3>4. Confidentialité des interfaces</h3><p>L’écran public de salle et le tracking public n’affichent aucune identité personnelle. Les noms et notes ne sont visibles que par les utilisateurs authentifiés et habilités. Le token de tracking est personnel, temporaire et ne doit pas être partagé publiquement.</p></div>
+          <div class="card legal-section" style="margin-top:14px"><h3>5. Cookies et stockage local</h3><p>Le stockage local est limité aux préférences non sensibles telles que le thème ou la langue. Les jetons d’authentification sensibles ne doivent pas être conservés dans un stockage accessible au JavaScript. Les cookies techniques indispensables sont distingués de toute mesure d’audience éventuelle.</p></div>
+          <div class="card legal-section" style="margin-top:14px"><h3>6. Conservation et sécurité</h3><p>Les durées de conservation sont définies par l’établissement et la politique contractuelle DORI. Les accès sont journalisés, limités par rôle et périmètre, et protégés par des mesures adaptées. Aucun système ne pouvant garantir une sécurité absolue, tout incident doit suivre la procédure de notification applicable.</p></div>
+          <div class="card legal-section" style="margin-top:14px"><h3>7. Propriété intellectuelle et responsabilité</h3><p>La marque, l’interface, les composants, contenus et logiciels DORI sont protégés. Leur reproduction non autorisée est interdite. L’éditeur met en œuvre les moyens raisonnables pour assurer la disponibilité du service, sous réserve des maintenances, dépendances techniques et cas de force majeure.</p></div>
+          <div class="card legal-section" style="margin-top:14px"><h3>8. Contact et version</h3><p>Les demandes juridiques ou relatives aux données doivent être adressées au contact officiel configuré par l’exploitant. Toute modification substantielle entraîne une nouvelle version et une date de mise à jour visible.</p><div class="actions" style="margin-top:14px"><button class="btn primary" id="legalBackBottom">Retour à DORI</button></div></div></div>
+        </section>
       </div>
     </main>
   </div>
@@ -588,12 +551,12 @@
   <div class="modal-backdrop" id="userModal"><div class="modal"><div class="card-head"><div><h3>Nouvel utilisateur</h3><p class="muted">Création du compte, puis affectations séparées</p></div><button class="btn outline" data-close>×</button></div><div class="form-grid"><label>Nom d'utilisateur <span class="required" title="Champ requis">*</span><input id="newUserName" maxlength="50" value="nour.bensalem" /></label><label>Mot de passe <span class="required" title="Champ requis">*</span><input id="newUserPassword" type="password" minlength="10" maxlength="20" value="DemoSecure12" /></label><label>Email <span class="optional">Optionnel · 255 car. max</span><input id="newUserEmail" type="email" maxlength="255" value="nour@jasmins.tn" /></label><label>Type de compte <span class="optional">Optionnel · défaut human</span><select id="newUserType"><option value="human">Human</option><option value="kiosk">Kiosk — borne ou écran</option></select></label><label>Rôle initial <span class="optional">roleId optionnel</span><select id="newUserRole"><option value="2">Hôtesse · ID 2</option><option value="3">Manager · ID 3</option><option value="1">Kiosk · ID 1</option></select></label><label>Langue <span class="optional">Optionnel</span><select id="newUserLanguage"><option value="fr">fr</option><option value="ar">ar</option><option value="en">en</option></select></label></div><div class="card" style="box-shadow:none;background:#f8fafc;margin-top:14px"><b>Affectations après création</b><p class="muted">Les sites et les files ne font pas partie de `CreateUserDto`. Ils sont associés ensuite. Un même opérateur peut être affecté à Accueil général et Consultations.</p><div class="actions" style="margin-top:9px"><span class="badge teal">Clinique Les Jasmins</span><span class="badge teal">Accueil général</span><span class="badge teal">Consultations</span></div></div><button class="btn primary block" id="createUserButton" style="margin-top:18px">Créer puis affecter</button></div></div>
   <div class="modal-backdrop" id="noteModal"><div class="modal"><p class="muted">Chargement des notes…</p></div></div>
   <div class="modal-backdrop" id="notificationDetailModal"><div class="modal" style="width:min(680px,100%)"><div class="card-head"><div><h3 id="notificationDetailTitle">Notification</h3><p class="muted" id="notificationDetailRegistration"></p></div><button class="btn outline" data-close>×</button></div><div class="grid grid-2"><div class="card" style="box-shadow:none"><div class="check-row"><span>Type</span><b id="detailNotificationType"></b></div><div class="check-row"><span>Canal</span><b id="detailNotificationChannel"></b></div><div class="check-row"><span>Locale</span><b id="detailNotificationLocale"></b></div><div class="check-row"><span>Destinataire</span><b id="detailNotificationRecipient"></b></div><div class="check-row"><span>Statut</span><span id="detailNotificationStatus"></span></div><div class="check-row"><span>Tentatives</span><b id="detailNotificationAttempts"></b></div></div><div class="card" style="box-shadow:none"><div class="check-row"><span>Date métier</span><b id="detailNotificationBusinessDate"></b></div><div class="check-row"><span>Créée</span><b id="detailNotificationCreated"></b></div><div class="check-row"><span>Mise à jour</span><b id="detailNotificationUpdated"></b></div><div class="check-row"><span>Remise</span><b id="detailNotificationDelivered"></b></div><div><b>Motif d’échec</b><p class="muted" id="detailNotificationFailure">—</p></div></div></div><div class="card" style="box-shadow:none;background:#f8fafc;margin-top:14px"><b>Contenu envoyé</b><p id="detailNotificationContent" style="white-space:pre-wrap"></p></div><div class="actions" style="justify-content:flex-end;margin-top:18px"><button class="btn danger notification-resend notification-send-action" id="detailNotificationResend" hidden>Réémettre la notification</button><button class="btn outline" data-close>Fermer</button></div></div></div>
-  <div class="modal-backdrop" id="manualNotificationModal"><div class="modal"><div class="card-head"><div><h3>Notification manuelle</h3><p class="muted">Corps conforme à SendManualNotificationDto</p></div><button class="btn outline" data-close>×</button></div><div class="form-grid"><label>ID d’inscription <span class="required" title="Champ requis">*</span><input id="manualNotificationRegistration" type="number" min="1" value="1042" /></label><label>Canal <span class="required" title="Champ requis">*</span><select id="manualNotificationChannel"><option value="sms">SMS</option><option value="email">Email</option></select></label><label>Destinataire de substitution <span class="optional">Optionnel</span><input id="manualNotificationRecipient" placeholder="+216… ou adresse email" /></label></div><label style="margin-top:13px">Contenu <span class="required" title="Champ requis">*</span><textarea id="manualNotificationContent" rows="5" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:9px" placeholder="Message à envoyer…"></textarea></label><div class="actions" style="justify-content:flex-end;margin-top:18px"><button class="btn outline" data-close>Annuler</button><button class="btn primary" id="sendManualNotification">Enregistrer et mettre en file</button></div></div></div>
+  <div class="modal-backdrop" id="manualNotificationModal"><div class="modal" style="width:min(760px,100%)"><div class="card-head"><div><h3>Notification manuelle</h3><p class="muted" id="manualNotificationStepLabel">Étape 1 sur 2 · Choisir la personne</p></div><button class="btn outline" data-close>×</button></div><div class="steps"><span class="step done" id="manualNotificationProgressOne"></span><span class="step" id="manualNotificationProgressTwo"></span></div><div id="manualNotificationPersonStep"><label>Rechercher une personne du site<input id="manualNotificationPersonSearch" placeholder="Nom, téléphone ou numéro de ticket…" /></label><div class="list" id="manualNotificationPeople" style="margin-top:12px"><button class="list-row manual-notification-person selected" data-person-name="Amira Ben Salah" data-registration-id="1042" data-recipient="+21698456789"><span class="ticket-chip">AB</span><div style="text-align:left"><b>Amira Ben Salah</b><div class="muted">A-042 · inscription #1042 · +216 •• ••• 789</div></div><span class="badge green manual-notification-choice">Sélectionnée</span></button><button class="list-row manual-notification-person" data-person-name="Mohamed Gharbi" data-registration-id="1048" data-recipient="mohamed@example.tn"><span class="ticket-chip">MG</span><div style="text-align:left"><b>Mohamed Gharbi</b><div class="muted">A-043 · inscription #1048 · m•••@example.tn</div></div><span class="badge manual-notification-choice">Choisir</span></button><button class="list-row manual-notification-person" data-person-name="Leïla Kallel" data-registration-id="1051" data-recipient="+21622111904"><span class="ticket-chip">LK</span><div style="text-align:left"><b>Leïla Kallel</b><div class="muted">C-018 · inscription #1051 · +216 •• ••• 904</div></div><span class="badge manual-notification-choice">Choisir</span></button></div><button class="btn primary block" id="manualNotificationNext" style="margin-top:16px">Continuer vers le message →</button></div><div id="manualNotificationMessageStep" hidden><div class="card" style="box-shadow:none;background:var(--teal-soft);margin-bottom:14px"><b id="manualNotificationPersonSummary">Amira Ben Salah</b><p class="muted" id="manualNotificationRegistrationSummary">Ticket A-042 · inscription #1042</p></div><input id="manualNotificationRegistration" type="hidden" value="1042" /><div class="form-grid"><label>Canal <span class="required" title="Champ requis">*</span><select id="manualNotificationChannel"><option value="sms">SMS</option><option value="email">Email</option></select></label><label>Destinataire de substitution<input id="manualNotificationRecipient" placeholder="Utiliser le destinataire de la personne" /></label></div><label style="margin-top:13px">Contenu <span class="required" title="Champ requis">*</span><textarea id="manualNotificationContent" rows="5" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:9px" placeholder="Message à envoyer…"></textarea></label><div class="actions" style="justify-content:space-between;margin-top:18px"><button class="btn outline" id="manualNotificationBack">← Modifier la personne</button><div class="actions"><button class="btn outline" data-close>Annuler</button><button class="btn primary" id="sendManualNotification">Enregistrer et mettre en file</button></div></div></div></div></div>
   <div class="modal-backdrop" id="assignmentModal"><div class="modal" style="width:min(760px,100%)"><div class="card-head"><div><h3>Affectations de l’utilisateur</h3><p class="muted">Relations enregistrées séparément après la création du compte</p></div><button class="btn outline" data-close>×</button></div><label>Utilisateur <span class="required" title="Champ requis" aria-label="Champ requis">*</span><select id="assignmentUser"><option value="12">Sarah Ben Ali · ID 12</option><option value="8">Mehdi Gharbi · ID 8</option><option value="31">Kiosque Hall A · ID 31</option><option value="32">TV Accueil · ID 32</option></select></label><div class="card" style="box-shadow:none;background:var(--teal-soft);margin-top:14px"><div class="card-head"><div><b id="assignmentSiteName">Clinique El Manar</b><p class="muted">Site actif · ID 1</p></div><span class="badge teal">Contexte courant</span></div><p class="muted">Le compte est créé avant ces associations. Chacune des cases ci-dessous simule une requête dédiée de l’API.</p></div><div class="grid grid-2" style="margin-top:14px"><div class="card" style="box-shadow:none"><h3>Responsabilité du site</h3><p class="muted">Affectation via <code>/sites/:siteId/managers</code>.</p><label class="check-row"><span><b>Manager du site</b><small class="muted" style="display:block">Administration de Clinique El Manar</small></span><input type="checkbox" id="assignmentManager" /></label></div><div class="card" style="box-shadow:none"><h3>Files opérées</h3><p class="muted">Une association indépendante via <code>/queues/:queueId/operators</code>.</p><label class="check-row"><span><b>Accueil général</b><small class="muted" style="display:block">File ID 1</small></span><input class="assignment-queue" type="checkbox" value="1" data-name="Accueil général" /></label><label class="check-row"><span><b>Consultations</b><small class="muted" style="display:block">File ID 2</small></span><input class="assignment-queue" type="checkbox" value="2" data-name="Consultations" /></label><label class="check-row"><span><b>Laboratoire</b><small class="muted" style="display:block">File ID 3</small></span><input class="assignment-queue" type="checkbox" value="3" data-name="Laboratoire" /></label></div></div><div class="card" style="box-shadow:none;background:#f8fafc;margin-top:14px"><b>Résumé des changements</b><p class="muted" id="assignmentSummary">Sélectionnez les responsabilités de cet utilisateur.</p></div><div class="actions" style="justify-content:flex-end;margin-top:18px"><button class="btn outline" data-close>Annuler</button><button class="btn primary" id="saveAssignments">Enregistrer les affectations</button></div></div></div>
   <div class="modal-backdrop" id="resourceModal"><div class="modal" style="width:min(780px,100%)"><div class="card-head"><div><h3 id="resourceModalTitle">Modifier</h3><p class="muted" id="resourceModalHint">Données de démonstration</p></div><button class="btn outline" data-close>×</button></div><div id="resourceFields"></div><div class="actions" style="justify-content:flex-end;margin-top:18px"><button class="btn outline" data-close>Annuler</button><button class="btn primary" id="saveResource">Enregistrer</button></div></div></div>
 
   <script>
-    const titles = { desk:'Cockpit guichet', queue:'Mes files', profile:'Mon profil', calendar:'Rendez-vous', control:'Supervision', portfolio:'Portefeuille de sites', reports:'Rapports', notifications:'Notifications', kiosk:'Borne kiosque', display:'Écran salle', mobile:'Tracking mobile', onboarding:'Nouveau site', settings:'Configuration', health:'Santé de la plateforme' };
+    const titles = { desk:'Cockpit guichet', queue:'Mes files', profile:'Mon profil', calendar:'Rendez-vous', control:'Supervision', portfolio:'Portefeuille de sites', reports:'Rapports', notifications:'Notifications', kiosk:'Borne kiosque', display:'Écran salle', mobile:'Tracking mobile', onboarding:'Nouveau site', settings:'Configuration', health:'Santé de la plateforme', legal:'Mentions légales' };
     const toast = document.getElementById('toast');
     let toastTimer;
     function showToast(message) { toast.textContent = message; toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 2800); }
@@ -611,10 +574,15 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
-    document.querySelectorAll('#mainNav .nav-section-toggle').forEach(toggle => toggle.addEventListener('click', () => {
-      const selectedSection = toggle.closest('.nav-section');
-      document.querySelectorAll('#mainNav .nav-section').forEach(section => section.classList.toggle('open', section === selectedSection));
-    }));
+    document.querySelectorAll('#mainNav .nav-section-toggle').forEach(toggle => toggle.addEventListener('click', () => { const selectedSection = toggle.closest('.nav-section'); document.querySelectorAll('#mainNav .nav-section').forEach(section => section.classList.toggle('open', section === selectedSection)); }));
+    document.querySelector('#loginPage .login-card').insertAdjacentHTML('beforeend', '<div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--line);text-align:center"><button class="legal-link" type="button" data-legal-source="login">Mentions légales</button><span class="muted"> · </span><button class="legal-link" type="button" data-legal-source="login">Politique de confidentialité</button><span class="muted"> · Version 1.0</span></div>');
+    document.querySelector('.kiosk-shell').insertAdjacentHTML('beforeend', '<div style="text-align:center;margin-top:16px"><button class="legal-link" type="button" data-legal-source="kiosk">Informations légales et confidentialité</button></div>');
+    document.getElementById('mobileScreen').insertAdjacentHTML('beforeend', '<div style="text-align:center;margin-top:14px"><button class="legal-link" type="button" data-legal-source="mobile">Informations légales</button></div>');
+    let legalReturnView = 'desk'; let legalOpenedFromLogin = false;
+    function openLegalPage(source) { legalOpenedFromLogin = source === 'login'; legalReturnView = document.querySelector('.view.active')?.id || 'desk'; document.getElementById('loginPage').classList.add('hidden'); document.body.classList.toggle('legal-public', legalOpenedFromLogin); showView('legal'); }
+    function closeLegalPage() { document.body.classList.remove('legal-public'); if (legalOpenedFromLogin) { document.getElementById('loginPage').classList.remove('hidden'); showView('desk'); } else showView(legalReturnView === 'legal' ? 'desk' : legalReturnView); }
+    document.querySelectorAll('[data-legal-source]').forEach(button => button.addEventListener('click', () => openLegalPage(button.dataset.legalSource)));
+    document.getElementById('legalBack').addEventListener('click', closeLegalPage); document.getElementById('legalBackBottom').addEventListener('click', closeLegalPage);
     document.querySelectorAll('[data-toast]').forEach(b => b.addEventListener('click', () => showToast(b.dataset.toast)));
     document.querySelectorAll('[data-modal]').forEach(b => b.addEventListener('click', () => document.getElementById(b.dataset.modal).classList.add('open')));
     document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('.modal-backdrop').classList.remove('open')));
@@ -623,15 +591,13 @@
 
     const themeToggle = document.getElementById('themeToggle');
     function applyTheme(theme) {
-      const acceptedTheme = ['light', 'mid', 'mid-dark', 'dark'].includes(theme) ? theme : 'light';
-      document.body.classList.toggle('mid', acceptedTheme === 'mid'); document.body.classList.toggle('mid-dark', acceptedTheme === 'mid-dark'); document.body.classList.toggle('dark', acceptedTheme === 'dark');
-      const themeUi = { light:['◐','Mode intermédiaire clair'], mid:['◑','Mode intermédiaire sombre'], 'mid-dark':['☾','Mode sombre'], dark:['☀','Mode clair'] }[acceptedTheme];
-      themeToggle.textContent = themeUi[0]; themeToggle.title = `Activer le ${themeUi[1].toLowerCase()}`; themeToggle.setAttribute('aria-label', themeToggle.title); themeToggle.dataset.theme = acceptedTheme;
-      try { localStorage.setItem('dori-demo-theme', acceptedTheme); } catch (_) { /* La maquette reste fonctionnelle sans stockage local. */ }
+      const dark = theme === 'dark'; document.body.classList.toggle('dark', dark);
+      themeToggle.textContent = dark ? '☀' : '☾'; themeToggle.title = dark ? 'Activer le mode clair' : 'Activer le mode sombre'; themeToggle.setAttribute('aria-label', themeToggle.title);
+      try { localStorage.setItem('dori-demo-theme', theme); } catch (_) { /* La maquette reste fonctionnelle sans stockage local. */ }
     }
     let savedTheme = 'light'; try { savedTheme = localStorage.getItem('dori-demo-theme') || 'light'; } catch (_) { /* Contexte file:// restreint. */ }
     applyTheme(savedTheme);
-    themeToggle.addEventListener('click', () => applyTheme({ light:'mid', mid:'mid-dark', 'mid-dark':'dark', dark:'light' }[themeToggle.dataset.theme || 'light']));
+    themeToggle.addEventListener('click', () => applyTheme(document.body.classList.contains('dark') ? 'light' : 'dark'));
 
     const siteContextButton = document.getElementById('siteContextButton');
     const siteContextMenu = document.getElementById('siteContextMenu');
@@ -798,9 +764,9 @@
     for (let hour = 8; hour <= 17; hour++) {
       const timeCell = document.createElement('div'); timeCell.className = 'cal-cell'; timeCell.innerHTML = `<b>${String(hour).padStart(2, '0')}:00</b>${hour === 17 ? '<div class="muted">Fermeture</div>' : ''}`; weekGrid.appendChild(timeCell);
       for (let day = 0; day < 5; day++) {
-        const cell = document.createElement('div'); cell.className = 'cal-cell'; cell.dataset.slotDate = `2026-10-${String(7 + day).padStart(2, '0')}`; cell.dataset.slotTime = `${String(hour).padStart(2, '0')}:00`;
+        const cell = document.createElement('div'); cell.className = 'cal-cell';
         if (hour === 12 || hour === 13) { cell.classList.add('calendar-break'); cell.innerHTML = day === 0 && hour === 12 ? '<span class="muted">Pause du site · 12:00–14:00</span>' : '';
-        } else if (weeklyAppointments[`${hour}-${day}`]) { const appointment = document.createElement('div'); appointment.className = `appointment ${/Réservé/.test(weeklyAppointments[`${hour}-${day}`]) ? 'booked' : ''}`; appointment.dataset.appointmentDate = cell.dataset.slotDate; appointment.innerHTML = weeklyAppointments[`${hour}-${day}`]; cell.appendChild(appointment); }
+        } else if (weeklyAppointments[`${hour}-${day}`]) { const appointment = document.createElement('div'); appointment.className = `appointment ${/Réservé/.test(weeklyAppointments[`${hour}-${day}`]) ? 'booked' : ''}`; appointment.innerHTML = weeklyAppointments[`${hour}-${day}`]; cell.appendChild(appointment); }
         weekGrid.appendChild(cell);
       }
     }
@@ -893,8 +859,7 @@
 
     document.body.insertAdjacentHTML('beforeend', '<div class="modal-backdrop" id="appointmentActionModal"><div class="modal"><div class="card-head"><div><h3 id="appointmentActionTitle">Rendez-vous</h3><p class="muted" id="appointmentActionMeta">Consultations · Clinique El Manar</p></div><button class="btn outline" id="closeAppointmentAction">×</button></div><div class="card" style="box-shadow:none;background:var(--teal-soft)"><div class="check-row"><span>Statut</span><span class="badge" id="appointmentActionStatus">Réservé</span></div><div class="check-row"><span>Personne</span><b id="appointmentActionPerson">Sonia Mansour</b></div><div class="check-row"><span>Créneau</span><b id="appointmentActionSlot">09:30</b></div></div><div class="form-grid" id="appointmentRescheduleFields" hidden style="margin-top:14px"><label>Nouvelle date<input type="date" id="appointmentRescheduleDate" value="2026-10-08" /></label><label>Nouveau créneau<select id="appointmentRescheduleTime"><option>10:30</option><option>11:15</option></select></label></div><div class="actions" style="justify-content:flex-end;margin-top:18px"><button class="btn danger" id="cancelAppointmentAction">Annuler le rendez-vous</button><button class="btn outline" id="rescheduleAppointmentAction">Reprogrammer</button><button class="btn primary" id="checkinAppointmentAction">Faire le check-in</button></div></div></div>');
     let selectedCalendarAppointment = null;
-    function openAppointmentActions(card, date) { selectedCalendarAppointment = card; const text = card.innerText.split('\n')[0]; document.getElementById('appointmentActionTitle').textContent = `Rendez-vous · ${text}`; document.getElementById('appointmentActionPerson').textContent = text.split('·')[1]?.trim() || 'Personne planifiée'; document.getElementById('appointmentActionSlot').textContent = `${date} · ${text.split('·')[0]?.trim() || '—'}`; document.getElementById('appointmentActionStatus').textContent = card.classList.contains('booked') ? 'Réservé' : 'Présent'; document.getElementById('checkinAppointmentAction').hidden = date !== '2026-10-07'; document.getElementById('appointmentRescheduleFields').hidden = true; document.getElementById('rescheduleAppointmentAction').textContent = 'Reprogrammer'; document.getElementById('appointmentActionModal').classList.add('open'); }
-    document.querySelectorAll('#calendar .appointment').forEach(card => { card.title = 'Ouvrir les actions du rendez-vous'; card.addEventListener('click', event => { event.stopPropagation(); openAppointmentActions(card, card.dataset.appointmentDate); }); });
+    document.querySelectorAll('#calendar .appointment').forEach(card => { card.style.cursor = 'pointer'; card.title = 'Ouvrir les actions du rendez-vous'; card.addEventListener('click', () => { selectedCalendarAppointment = card; const text = card.innerText.split('\n')[0]; document.getElementById('appointmentActionTitle').textContent = `Rendez-vous · ${text}`; document.getElementById('appointmentActionPerson').textContent = text.split('·')[1]?.trim() || 'Personne planifiée'; document.getElementById('appointmentActionSlot').textContent = text.split('·')[0]?.trim() || '—'; document.getElementById('appointmentActionStatus').textContent = card.classList.contains('booked') ? 'Réservé' : 'Présent'; document.getElementById('appointmentActionModal').classList.add('open'); }); });
     document.getElementById('closeAppointmentAction').addEventListener('click', () => document.getElementById('appointmentActionModal').classList.remove('open'));
     document.getElementById('appointmentActionModal').addEventListener('click', event => { if (event.target.id === 'appointmentActionModal') event.currentTarget.classList.remove('open'); });
     document.getElementById('rescheduleAppointmentAction').addEventListener('click', event => { const fields = document.getElementById('appointmentRescheduleFields'); if (fields.hidden) { fields.hidden = false; event.currentTarget.textContent = 'Confirmer la reprogrammation'; return; } const time = document.getElementById('appointmentRescheduleTime').value; if (selectedCalendarAppointment) selectedCalendarAppointment.innerHTML = `${time} · ${document.getElementById('appointmentActionPerson').textContent}<br>Reprogrammé`; document.getElementById('appointmentActionModal').classList.remove('open'); fields.hidden = true; event.currentTarget.textContent = 'Reprogrammer'; showToast('Rendez-vous reprogrammé sur un créneau disponible.'); });
@@ -921,10 +886,10 @@
     notificationFilterToggle.addEventListener('click', () => { const opening = notificationFiltersForm.hidden; notificationFiltersForm.hidden = !opening; resetNotificationFilters.hidden = !opening; notificationFilterToggle.textContent = opening ? 'Masquer les filtres' : 'Afficher les filtres'; });
 
     const displayCalls = [
-      { ticket:'A-042', person:'Amira Ben Salah', counter:'03', previous:'A-041 · 02', waiting:18, estimate:12 },
-      { ticket:'A-043', person:'Mohamed Gharbi', counter:'01', previous:'A-042 · 03', waiting:17, estimate:11 },
-      { ticket:'A-044', person:'Leïla Kallel', counter:'04', previous:'A-043 · 01', waiting:16, estimate:10 },
-      { ticket:'A-045', person:'Rim Trabelsi', counter:'02', previous:'A-044 · 04', waiting:15, estimate:9 }
+      { ticket: 'A-042', counter: '03', previous: 'A-041 · 02', waiting: 18, estimate: 12 },
+      { ticket: 'A-043', counter: '01', previous: 'A-042 · 03', waiting: 17, estimate: 11 },
+      { ticket: 'A-044', counter: '04', previous: 'A-043 · 01', waiting: 16, estimate: 10 },
+      { ticket: 'A-045', counter: '02', previous: 'A-044 · 04', waiting: 15, estimate: 9 }
     ];
     let displayIndex = 0;
     function renderDisplayCall() {
@@ -934,17 +899,10 @@
       document.getElementById('displayPrevious').textContent = call.previous;
       document.getElementById('displayWaiting').textContent = `${call.waiting} personnes`;
       document.getElementById('displayEstimate').textContent = `~ ${call.estimate} min`;
-      const internalDisplay = selectedRole !== 'kiosk';
-      document.querySelectorAll('[data-display-identity]').forEach(element => element.hidden = !internalDisplay);
-      document.getElementById('displayCalledPerson').textContent = call.person;
-      const nextCall = displayCalls[(displayIndex + 1) % displayCalls.length];
-      document.getElementById('displayNextTicket').textContent = `${nextCall.ticket} · ${nextCall.person}`;
-      document.getElementById('displayPrivacyDescription').textContent = internalDisplay ? 'Aperçu interne sur le poste d’un membre du site, avec identités autorisées.' : 'Vue publique de salle sans donnée personnelle, synchronisée en temps réel.';
-      document.getElementById('displayHistoryPrivacy').textContent = internalDisplay ? 'Identités visibles uniquement dans cet aperçu interne.' : 'Tickets uniquement, sans donnée personnelle.';
       const history = document.getElementById('displayHistory');
       if (history) {
         const recent = [0, 1, 2, 3].map(offset => displayCalls[(displayIndex - offset + displayCalls.length) % displayCalls.length]);
-        history.innerHTML = recent.map((item, index) => `<div class="station"><span class="badge ${index === 0 ? 'green' : ''}">${index === 0 ? 'À l’instant' : `Il y a ${index * 2} min`}</span><h3>${item.ticket}</h3>${internalDisplay ? `<b style="display:block;margin-top:5px">${item.person}</b>` : ''}<p class="muted">Guichet ${item.counter} · Accueil</p></div>`).join('');
+        history.innerHTML = recent.map((item, index) => `<div class="station"><span class="badge ${index === 0 ? 'green' : ''}">${index === 0 ? 'À l’instant' : `Il y a ${index * 2} min`}</span><h3>${item.ticket}</h3><p class="muted">Guichet ${item.counter} · Accueil</p></div>`).join('');
       }
       const panel = document.getElementById('displayCall'); panel.classList.remove('flash'); void panel.offsetWidth; panel.classList.add('flash');
     }
@@ -1287,6 +1245,13 @@
     }
     document.querySelectorAll('#notificationTable .notification-resend').forEach(button => button.addEventListener('click', () => resendNotification(button.closest('tr'))));
     document.getElementById('detailNotificationResend').addEventListener('click', () => resendNotification(selectedNotificationRow));
+    let manualNotificationSelection = { personName:'Amira Ben Salah', registrationId:'1042', recipient:'+21698456789', context:'A-042 · inscription #1042' };
+    function showManualNotificationStep(step) { const messageStep = step === 2; document.getElementById('manualNotificationPersonStep').hidden = messageStep; document.getElementById('manualNotificationMessageStep').hidden = !messageStep; document.getElementById('manualNotificationProgressTwo').classList.toggle('done', messageStep); document.getElementById('manualNotificationStepLabel').textContent = messageStep ? 'Étape 2 sur 2 · Message et envoi' : 'Étape 1 sur 2 · Choisir la personne'; }
+    document.querySelectorAll('.manual-notification-person').forEach(button => button.addEventListener('click', () => { document.querySelectorAll('.manual-notification-person').forEach(item => { const selected = item === button; item.classList.toggle('selected', selected); const badge = item.querySelector('.manual-notification-choice'); badge.className = `badge manual-notification-choice ${selected ? 'green' : ''}`; badge.textContent = selected ? 'Sélectionnée' : 'Choisir'; }); manualNotificationSelection = { personName:button.dataset.personName, registrationId:button.dataset.registrationId, recipient:button.dataset.recipient, context:button.querySelector('.muted').textContent.split(' · ').slice(0,2).join(' · ') }; }));
+    document.getElementById('manualNotificationPersonSearch').addEventListener('input', event => { const query = event.target.value.toLowerCase().trim(); document.querySelectorAll('.manual-notification-person').forEach(person => person.hidden = !person.innerText.toLowerCase().includes(query)); });
+    document.getElementById('manualNotificationNext').addEventListener('click', () => { if (!manualNotificationSelection) { showToast('Sélectionnez une personne et son inscription.'); return; } document.getElementById('manualNotificationRegistration').value = manualNotificationSelection.registrationId; document.getElementById('manualNotificationPersonSummary').textContent = manualNotificationSelection.personName; document.getElementById('manualNotificationRegistrationSummary').textContent = manualNotificationSelection.context; document.getElementById('manualNotificationRecipient').value = ''; document.getElementById('manualNotificationRecipient').placeholder = `Destinataire connu : ${manualNotificationSelection.recipient}`; showManualNotificationStep(2); });
+    document.getElementById('manualNotificationBack').addEventListener('click', () => showManualNotificationStep(1));
+    document.querySelector('[data-modal="manualNotificationModal"]').addEventListener('click', () => { document.getElementById('manualNotificationPersonSearch').value = ''; document.querySelectorAll('.manual-notification-person').forEach(person => person.hidden = false); showManualNotificationStep(1); });
     document.getElementById('sendManualNotification').addEventListener('click', () => {
       const registrationId = Number(document.getElementById('manualNotificationRegistration').value); const content = document.getElementById('manualNotificationContent').value.trim();
       if (!Number.isInteger(registrationId) || registrationId < 1 || !content) { showToast('L’ID d’inscription et le contenu sont requis.'); return; }
@@ -1382,7 +1347,6 @@
       const allowed = roleAccess[role];
       document.querySelectorAll('#mainNav [data-view]').forEach(button => button.hidden = !allowed.includes(button.dataset.view));
       document.querySelectorAll('.mobile-nav [data-view]').forEach(button => button.hidden = !allowed.includes(button.dataset.view));
-      document.querySelectorAll('[data-view="onboarding"]').forEach(button => button.hidden = !['root','admin'].includes(role));
       const firstView = allowed[0]; showView(firstView);
       const identity = roleIdentities[role];
       document.getElementById('profileFirstName').value = identity.first; document.getElementById('profileLastName').value = identity.last; document.getElementById('profileEmail').value = identity.email;
@@ -1392,10 +1356,7 @@
       document.getElementById('profileScopeBadge').textContent = role === 'root' ? 'Global' : role === 'admin' ? 'Multi-sites' : role === 'manager' ? 'Site complet' : role === 'kiosk' ? 'Appareil' : '2 files';
       document.getElementById('profileButton').title = `Profil · ${roleNames[role]}`;
       document.querySelectorAll('.notification-send-action').forEach(action => action.hidden = !['root','admin','manager'].includes(role));
-      const translationTab = document.querySelector('[data-config-tab="translations"]'); if (translationTab) translationTab.hidden = !['root','admin'].includes(role);
-      const translationPanel = document.querySelector('[data-config-panel="translations"]'); if (translationPanel?.classList.contains('active') && !['root','admin'].includes(role)) document.querySelector('[data-config-tab="sites"]')?.click();
       document.getElementById('kioskStaffContext').hidden = role === 'kiosk';
-      renderDisplayCall();
       updateRoleGuard(role);
       configureSiteContext(role);
       showToast(`Session ouverte avec le profil ${roleNames[role]}.`);
@@ -1412,69 +1373,7 @@
     document.getElementById('setupNext').addEventListener('click', event => {
       if (setupStep === 1 && !document.getElementById('setupSiteName').value.trim()) { event.stopImmediatePropagation(); showToast('Le nom du site est le seul champ requis à cette étape.'); }
     }, true);
-
-    // Finalisation IHM : les champs non marqués sont optionnels. On conserve uniquement les contraintes utiles.
-    document.querySelectorAll('.optional').forEach(hint => { hint.textContent = hint.textContent.replace(/\bOptionnel\b\s*[·:]?\s*/gi, '').replace(/\boptionnel\b\s*[·:]?\s*/gi, '').trim(); if (!hint.textContent) hint.remove(); });
-
-    // Toute sélection interactive possède un état visuel explicite.
-    document.addEventListener('click', event => {
-      const selectable = event.target.closest('[data-select-group]');
-      if (!selectable) return;
-      document.querySelectorAll(`[data-select-group="${selectable.dataset.selectGroup}"]`).forEach(item => item.classList.toggle('selected', item === selectable));
-    });
-
-    // Calendrier : un espace libre préconfigure le formulaire ; les événements du mois ouvrent les mêmes actions.
-    function openAppointmentCreation(date, time = '10:30') {
-      document.getElementById('appointmentDate').value = date;
-      const timeSelect = document.getElementById('appointmentTime');
-      if (![...timeSelect.options].some(option => option.value === time)) timeSelect.add(new Option(`${time} — disponibilité simulée`, time));
-      timeSelect.value = time; showAppointmentStep(1); document.getElementById('appointmentModal').classList.add('open');
-      showToast(`Créneau du ${date} à ${time} préselectionné.`);
-    }
-    document.querySelectorAll('#calendar .cal-cell[data-slot-date]').forEach(cell => cell.addEventListener('click', event => { if (!event.target.closest('.appointment') && !cell.classList.contains('calendar-break')) openAppointmentCreation(cell.dataset.slotDate, cell.dataset.slotTime); }));
-    document.querySelectorAll('#calendarMonth .month-day:not(.muted-day)').forEach(day => {
-      const dayNumber = Number(day.querySelector('strong')?.textContent); const date = `2026-10-${String(dayNumber).padStart(2, '0')}`; day.dataset.slotDate = date;
-      day.querySelectorAll('.month-event').forEach(eventCard => { eventCard.classList.add('booked'); eventCard.addEventListener('click', event => { event.stopPropagation(); openAppointmentActions(eventCard, date); }); });
-      day.addEventListener('click', event => { if (!event.target.closest('.month-event')) openAppointmentCreation(date); });
-    });
-
-    // Les trois offres sont un catalogue global fixe ; l'administration d'un site ne fait que les associer aux files.
-    const tierMarkup = `<div class="card" style="box-shadow:none;background:var(--teal-soft);margin-bottom:16px"><b>Catalogue DORI fixe</b><p class="muted">Gratuit, Standard et Premium sont proposés par la plateforme. Sélectionnez une file puis associez une ou plusieurs offres et configurez chaque association.</p></div><label>File configurée<select class="tier-queue"><option>Accueil général</option><option>Consultations</option><option>Laboratoire</option></select></label><div class="grid grid-3" style="margin-top:16px"><button class="card choice-card selected" data-select-group="tier-offer" data-tier-code="free"><span class="badge green">Gratuit</span><h3 style="margin-top:10px">0 TND</h3><p class="muted">Sans notification automatique</p></button><button class="card choice-card" data-select-group="tier-offer" data-tier-code="standard"><span class="badge teal">Standard</span><h3 style="margin-top:10px">Tarif configurable</h3><p class="muted">Notification de seuil</p></button><button class="card choice-card" data-select-group="tier-offer" data-tier-code="premium"><span class="badge amber">Premium</span><h3 style="margin-top:10px">Tarif configurable</h3><p class="muted">Bienvenue, seuil et tracking</p></button></div><div class="card" style="box-shadow:none;margin-top:16px"><h3>Règles de l'association</h3><div class="form-grid" style="margin-top:12px"><label>Prix <span class="required" title="Champ requis">*</span><input class="tier-price" type="number" min="0" step="0.001" value="0" /></label><label>Devise<select class="tier-currency"><option value="">Hériter de la file puis du site</option><option>TND</option><option>EUR</option><option>USD</option></select></label><label>Ordre d'affichage<input class="tier-order" type="number" min="0" value="1" /></label><label>Choix par défaut<select class="tier-default"><option value="false">Non</option><option value="true">Oui</option></select></label></div><button class="btn primary save-fixed-tier" style="margin-top:14px">Associer l'offre à la file</button></div>`;
-    [document.querySelector('[data-setup-panel="4"]'), document.querySelector('[data-config-panel="tiers"]')].forEach(panel => { if (!panel) return; panel.innerHTML = `<div class="card-head"><div><h3>Forfaits par file</h3><p class="muted">Association et tarification des offres du catalogue DORI.</p></div></div>${tierMarkup}`; panel.querySelector('.save-fixed-tier').addEventListener('click', () => { const selected = panel.querySelector('[data-tier-code].selected'); const price = Number(panel.querySelector('.tier-price').value); if (!selected || !Number.isFinite(price) || price < 0) { showToast('Sélectionnez une offre et renseignez un prix valide.'); return; } showToast(`${selected.textContent.trim().split(/\s+/)[0]} associé à ${panel.querySelector('.tier-queue').value}.`); }); });
-    document.querySelectorAll('option, .badge, h3, p, td, b').forEach(node => { if (node.childElementCount === 0 && node.textContent.includes('Confort')) node.textContent = node.textContent.replaceAll('Confort', 'Premium'); });
-
-    // Éditeur de file unique pour l'onboarding et la configuration, en deux vues compactes.
-    document.body.insertAdjacentHTML('beforeend', `<div class="modal-backdrop" id="queueEditorModal"><div class="modal" style="width:min(720px,100%)"><div class="card-head"><div><h3 id="queueEditorTitle">Nouvelle file</h3><p class="muted" id="queueEditorStepLabel">Étape 1 sur 2 · Informations propres à la file</p></div><button class="btn outline" data-queue-close>×</button></div><div class="steps"><span class="step done" id="queueStepOne"></span><span class="step" id="queueStepTwo"></span></div><div id="queueSpecificStep"><div class="form-grid"><label>Code <span class="required" title="Champ requis">*</span><input id="queueEditorCode" maxlength="10" placeholder="ACC" /></label><label>Nom<input id="queueEditorName" maxlength="50" placeholder="Accueil général" /></label><label>Attente moyenne<input id="queueEditorWait" type="number" min="1" value="10" /></label><label>Nombre de guichets<input id="queueEditorThreads" type="number" min="1" value="1" /></label></div></div><div id="queueInheritanceStep" hidden><div class="card" style="box-shadow:none;background:var(--teal-soft);margin-bottom:14px"><b>Héritage site → file</b><p class="muted">Laissez « Hériter » pour reprendre le réglage du site. Une valeur choisie surcharge uniquement cette file.</p></div><div class="form-grid"><label>Devise<select id="queueEditorCurrency"><option value="">Hériter</option><option>TND</option><option>EUR</option></select></label><label>Locale<select id="queueEditorLocale"><option value="">Hériter</option><option>fr</option><option>ar</option><option>en</option></select></label><label>Rendez-vous<select id="queueEditorAppointments"><option value="">Hériter</option><option value="true">Activés</option><option value="false">Désactivés</option></select></label><label>Durée du créneau<input id="queueEditorDuration" type="number" min="1" placeholder="Hériter" /></label><label>Capacité du créneau<input id="queueEditorCapacity" type="number" min="1" placeholder="Hériter" /></label><label>Tolérance retard<input id="queueEditorTolerance" type="number" min="0" placeholder="Hériter" /></label><label>Ouverture<input id="queueEditorStart" type="time" /></label><label>Fermeture<input id="queueEditorEnd" type="time" /></label><label>Début interruption<input id="queueEditorBreakStart" type="time" /></label><label>Fin interruption<input id="queueEditorBreakEnd" type="time" /></label><label>Reset quotidien<select id="queueEditorReset"><option value="">Hériter</option><option value="close_all">Clôturer tous</option><option value="close_served_only">Clôturer les servis</option></select></label><label>Heure du reset<input id="queueEditorResetTime" type="time" /></label></div></div><div class="modal-step-nav"><button class="btn outline" id="queueEditorPrevious" disabled>← Retour</button><div class="actions"><button class="btn outline" data-queue-close>Annuler</button><button class="btn primary" id="queueEditorNext">Continuer →</button></div></div></div></div>`);
-    document.querySelector('#queueInheritanceStep .form-grid').insertAdjacentHTML('beforeend', '<label>Poids walk-in<input id="queueEditorWeightWalkin" type="number" step="any" placeholder="Hériter" /></label><label>Poids rendez-vous<input id="queueEditorWeightAppointment" type="number" step="any" placeholder="Hériter" /></label><label>Escalade walk-in<input id="queueEditorEscalationWalkin" type="number" step="any" placeholder="Hériter" /></label><label>Escalade rendez-vous<input id="queueEditorEscalationAppointment" type="number" step="any" placeholder="Hériter" /></label><label>Report des attentes<select id="queueEditorCarryOver"><option value="">Hériter</option><option value="true">Oui</option><option value="false">Non</option></select></label>');
-    let queueEditorStep = 1; let editedQueueRow = null;
-    function showQueueEditorStep(step) { queueEditorStep = step; document.getElementById('queueSpecificStep').hidden = step !== 1; document.getElementById('queueInheritanceStep').hidden = step !== 2; document.getElementById('queueStepTwo').classList.toggle('done', step === 2); document.getElementById('queueEditorPrevious').disabled = step === 1; document.getElementById('queueEditorNext').textContent = step === 1 ? 'Continuer vers héritage →' : 'Enregistrer la file'; document.getElementById('queueEditorStepLabel').textContent = step === 1 ? 'Étape 1 sur 2 · Informations propres à la file' : 'Étape 2 sur 2 · Héritage et surcharges'; }
-    function openQueueEditor(row = null) { editedQueueRow = row; const setupRow = row?.closest('[data-setup-panel="3"]'); const displayedName = row ? (setupRow ? row.cells[1].textContent.trim() : row.cells[0].textContent.trim().split('\n')[0]) : ''; const knownCodes = { 'Accueil général':'ACC', 'Consultations':'CONS', 'Laboratoire':'LAB' }; document.getElementById('queueEditorTitle').textContent = row ? 'Modifier la file' : 'Nouvelle file'; document.getElementById('queueEditorCode').value = row ? (setupRow ? row.cells[0].textContent.trim() : knownCodes[displayedName] || row.cells[1].textContent.trim()) : ''; document.getElementById('queueEditorName').value = displayedName; showQueueEditorStep(1); document.getElementById('queueEditorModal').classList.add('open'); }
-    document.querySelectorAll('[data-queue-close]').forEach(button => button.addEventListener('click', () => document.getElementById('queueEditorModal').classList.remove('open')));
-    document.getElementById('queueEditorPrevious').addEventListener('click', () => showQueueEditorStep(1));
-    document.getElementById('queueEditorNext').addEventListener('click', () => { if (queueEditorStep === 1) { if (!document.getElementById('queueEditorCode').value.trim()) { showToast('Le code de la file est requis.'); return; } showQueueEditorStep(2); return; } document.getElementById('queueEditorModal').classList.remove('open'); showToast(`File ${document.getElementById('queueEditorCode').value.trim().toUpperCase()} enregistrée avec ses règles d'héritage.`); });
-    document.addEventListener('click', event => { const create = event.target.closest('[data-setup-panel="3"] .card-head > .btn.primary, [data-config-panel="queues"] .demo-create'); const edit = event.target.closest('[data-config-panel="queues"] .admin-edit, [data-setup-panel="3"] .admin-edit'); if (!create && !edit) return; event.preventDefault(); event.stopImmediatePropagation(); openQueueEditor(edit?.closest('tr') || null); }, true);
-
-    // Éditeur de compte unique : création du compte, puis rôle et files du site.
-    const userModalElement = document.getElementById('userModal');
-    userModalElement.querySelector('.modal').innerHTML = `<div class="card-head"><div><h3 id="userEditorTitle">Nouveau compte</h3><p class="muted" id="userEditorStepLabel">Étape 1 sur 2 · Informations du compte</p></div><button class="btn outline" data-user-close>×</button></div><div class="steps"><span class="step done"></span><span class="step" id="userEditorProgressTwo"></span></div><div id="userAccountStep"><div class="form-grid"><label>Nom d'utilisateur <span class="required" title="Champ requis">*</span><input id="accountUsername" maxlength="50" /></label><label>Mot de passe <span class="required" title="Champ requis">*</span><input id="accountPassword" type="password" minlength="10" maxlength="20" /></label><label>Email<input id="accountEmail" type="email" maxlength="255" /></label><label>Type de compte<select id="accountType"><option value="human">Humain</option><option value="kiosk">Service · kiosque ou écran</option></select></label><label>Langue<select id="accountLanguage"><option>fr</option><option>ar</option><option>en</option></select></label></div></div><div id="userAssignmentStep" hidden><div class="card" style="box-shadow:none;background:var(--teal-soft);margin-bottom:14px"><b>Affectation sur le site en cours</b><p class="muted">Ces relations sont enregistrées après la création du compte.</p></div><label>Rôle sur le site <span class="required" title="Champ requis">*</span><select id="accountRole"><option value="manager">Manager du site</option><option value="operator">Opérateur</option><option value="kiosk">Compte kiosque</option></select></label><div id="accountQueueAssignments" class="card" style="box-shadow:none;margin-top:14px"><b>Files autorisées</b><label class="check-row"><span>Accueil général</span><input type="checkbox" checked /></label><label class="check-row"><span>Consultations</span><input type="checkbox" /></label><label class="check-row"><span>Laboratoire</span><input type="checkbox" /></label></div></div><div class="modal-step-nav"><button class="btn outline" id="userEditorPrevious" disabled>← Retour</button><div class="actions"><button class="btn outline" data-user-close>Annuler</button><button class="btn primary" id="userEditorNext">Continuer →</button></div></div>`;
-    let userEditorStep = 1; let editingUserAccount = false;
-    function showUserEditorStep(step) { userEditorStep = step; document.getElementById('userAccountStep').hidden = step !== 1; document.getElementById('userAssignmentStep').hidden = step !== 2; document.getElementById('userEditorProgressTwo').classList.toggle('done', step === 2); document.getElementById('userEditorPrevious').disabled = step === 1; document.getElementById('userEditorNext').textContent = step === 1 ? 'Continuer vers les affectations →' : 'Créer et affecter le compte'; document.getElementById('userEditorStepLabel').textContent = step === 1 ? 'Étape 1 sur 2 · Informations du compte' : 'Étape 2 sur 2 · Rôle et files du site'; }
-    function openUserEditor(row = null) { editingUserAccount = Boolean(row); document.getElementById('userEditorTitle').textContent = row ? 'Modifier le compte' : 'Nouveau compte'; document.getElementById('accountUsername').value = row?.querySelector('td b')?.textContent.trim().toLowerCase().replaceAll(' ', '.') || ''; document.getElementById('accountUsername').disabled = editingUserAccount; document.getElementById('accountPassword').closest('label').hidden = editingUserAccount; document.getElementById('accountPassword').value = ''; document.getElementById('accountEmail').value = row?.querySelector('td .muted')?.textContent.trim() || ''; showUserEditorStep(1); userModalElement.classList.add('open'); }
-    document.querySelectorAll('[data-user-close]').forEach(button => button.addEventListener('click', () => userModalElement.classList.remove('open')));
-    document.getElementById('userEditorPrevious').addEventListener('click', () => showUserEditorStep(1));
-    document.getElementById('accountRole').addEventListener('change', event => document.getElementById('accountQueueAssignments').hidden = event.target.value !== 'operator');
-    document.querySelector('[data-config-panel="users"] [data-modal="userModal"]')?.addEventListener('click', () => openUserEditor());
-    document.getElementById('userEditorNext').addEventListener('click', () => { if (userEditorStep === 1) { const username = document.getElementById('accountUsername').value.trim(); const password = document.getElementById('accountPassword').value; if (!username || (!editingUserAccount && (password.length < 10 || password.length > 20))) { showToast('Le nom utilisateur et un mot de passe de 10 à 20 caractères sont requis à la création.'); return; } showUserEditorStep(2); return; } userModalElement.classList.remove('open'); showToast(editingUserAccount ? 'Compte et affectations mis à jour.' : 'Compte créé puis affecté au site selon le rôle sélectionné.'); });
-    document.addEventListener('click', event => { const trigger = event.target.closest('[data-setup-panel="5"] .card-head > .btn.primary'); const edit = event.target.closest('[data-config-panel="users"] .admin-edit, [data-setup-panel="5"] .admin-edit'); if (!trigger && !edit) return; event.preventDefault(); event.stopImmediatePropagation(); openUserEditor(edit?.closest('tr') || null); }, true);
-
-    notificationPanel.insertAdjacentHTML('afterbegin', '<div class="card" style="box-shadow:none;background:var(--teal-soft);margin-bottom:16px"><b>Règles par offre associée à la file</b><p class="muted">Gratuit ne déclenche aucune notification. Standard configure une règle Threshold. Premium peut configurer Welcome et Threshold ; chaque règle choisit SMS ou email et peut inclure le lien de tracking.</p></div>');
-
-    // La recette technique était fictive : l'activation reste l'action utile et devient réversible.
-    const testCallRow = [...document.querySelectorAll('[data-setup-panel="6"] .check-row')].find(row => row.textContent.includes("Test d'appel complet")); testCallRow?.remove();
-    const activationButton = [...document.querySelectorAll('[data-setup-panel="6"] button')].find(button => ['Activer','Désactiver'].includes(button.textContent.trim()));
-    if (activationButton) { const cleanButton = activationButton.cloneNode(true); activationButton.replaceWith(cleanButton); let active = false; cleanButton.addEventListener('click', () => { active = !active; cleanButton.textContent = active ? 'Désactiver' : 'Activer'; cleanButton.classList.toggle('danger', active); cleanButton.classList.toggle('primary', !active); showToast(active ? 'Site activé dans la démonstration.' : 'Site désactivé dans la démonstration.'); }); }
     showSetupStep(1);
-    applyRole(selectedRole);
   </script>
 </body>
 </html>
