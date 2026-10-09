@@ -35,6 +35,7 @@ Une fonctionnalité absente du Swagger ne doit pas être simulée comme persista
 - Tout élément sélectionné possède un état visuel évident.
 - Les champs obligatoires portent `*`. Les champs non marqués sont optionnels ; le mot « Optionnel » n’est pas affiché.
 - Les libellés, messages, validations, statuts et textes d’aide sont traduisibles.
+- Les mentions légales et la politique de confidentialité sont accessibles avant et après authentification, ainsi que depuis les interfaces publiques.
 
 ## 3. Profils et navigation
 
@@ -65,6 +66,7 @@ Règles :
 - une seule catégorie peut être dépliée ;
 - ouvrir une catégorie replie la précédente ;
 - naviguer vers une page déplie automatiquement sa catégorie.
+- le lien `Mentions légales · Confidentialité` reste hors des catégories et est ancré en bas du bandeau latéral, quelle que soit la catégorie ouverte ou la hauteur de son contenu.
 
 ### 3.3 Bandeau supérieur
 
@@ -215,6 +217,7 @@ Chaque appel réseau possède : chargement, succès, vide, erreur récupérable,
 | `/onboarding` | Nouveau site | sites, queues, tiers, rules, users, rôles, affectations |
 | `/settings/*` | Configuration | sites, queues, users, tiers, rules, translations |
 | `/health` | Santé | health |
+| `/legal` | Mentions légales et confidentialité | Aucun endpoint : contenu frontend versionné |
 
 ## 7. Écrans et parcours détaillés
 
@@ -373,6 +376,13 @@ Page dédiée. Les filtres sont repliés par défaut et résumés dans une pasti
 - manuelle : `POST /api/v1/notifications`, `SendManualNotificationDto` ;
 - réémission d’un échec : `POST /api/v1/notifications/{notificationId}/resend`.
 
+L’envoi manuel est un assistant en deux étapes afin d’éviter la saisie technique d’un identifiant :
+
+1. rechercher une personne dans le site courant avec `GET /api/v1/persons`, la sélectionner, puis sélectionner l’une de ses inscriptions actives ou récentes obtenue avec `GET /api/v1/registrations` ;
+2. afficher un récapitulatif immuable de la personne et de l’inscription, choisir le canal `sms` ou `email`, saisir le contenu requis et, si nécessaire, un destinataire de substitution, puis envoyer avec `POST /api/v1/notifications`.
+
+La commande est toujours construite avec le `registrationId` exigé par `SendManualNotificationDto` : le frontend ne transmet jamais directement un `personId` à l’opération d’envoi. Le retour à l’étape précédente conserve le brouillon. Après validation, l’interface ferme l’assistant, confirme la mise en file et actualise le journal afin d’afficher le statut initial `pending`.
+
 Colonnes : ID/registration, ticket/personne, type, canal, destinataire masqué, statut, tentatives, dates, action. Statuts : `pending`, `processing`, `sent`, `delivered`, `failed`. La réémission est réservée aux permissions adaptées et à un statut compatible.
 
 ### 7.10 Borne kiosque
@@ -514,6 +524,31 @@ Visible uniquement pour Root et Admin.
 - ne pas inventer d’état détaillé pour Redis, fournisseurs SMS ou WebSocket sans données API ;
 - rafraîchissement manuel et périodique raisonnable.
 
+### 7.16 Mentions légales et confidentialité
+
+Page publique dédiée, jamais une modale. Elle est accessible :
+
+- depuis le pied de la page de connexion ;
+- depuis le bas du menu authentifié ;
+- depuis la borne kiosque ;
+- depuis le tracking mobile.
+
+Elle n’appartient à aucune catégorie métier du menu. Lorsqu’elle est ouverte avant authentification, le shell privé, le menu, le profil et le contexte de site sont masqués. Le retour restitue exactement le contexte d’origine.
+
+Contenu minimal :
+
+- éditeur, directeur de publication, hébergeur et contact ;
+- objet et conditions d’utilisation ;
+- rôles responsable de traitement/sous-traitant selon le déploiement ;
+- catégories de données, finalités, droits et contact ;
+- confidentialité des écrans publics et du token de tracking ;
+- cookies techniques et stockage local ;
+- conservation, sécurité et gestion des incidents ;
+- propriété intellectuelle, disponibilité et responsabilité ;
+- version et date de mise à jour.
+
+Aucun endpoint légal n’existe dans `docs-json.json`. Le contenu est donc versionné dans le frontend et configurable par environnement/build pour les coordonnées de l’éditeur et de l’hébergeur. Les valeurs fictives de la maquette doivent être bloquantes en recette de production. Tous les textes légaux sont traduisibles, mais une traduction ne doit être publiée qu’après validation juridique.
+
 ## 8. Contrats de formulaires essentiels
 
 ### 8.1 Personne
@@ -618,6 +653,7 @@ Les traductions globales ne sont administrables que par Root/Admin, mais leur bu
 - calendrier semaine/mois et préremplissage ;
 - check-in conditionnel ;
 - écran public sans PII et écran interne avec noms ;
+- page légale accessible avant/après authentification, depuis kiosque et mobile ;
 - modales larges et actions sur une ligne.
 
 ### 12.3 Tests contractuels
@@ -806,3 +842,25 @@ Ne pas présenter comme disponible sans évolution API :
 ---
 
 Cette spécification constitue la référence finale de construction de l’IHM DORI. Toute évolution visuelle ou métier ultérieure doit mettre à jour simultanément le Swagger, ce document, les tests de contrat et les captures de référence.
+
+<!-- CHECKPOINT id="ckpt_muyniih0_kv0uxr" time="2026-10-07T22:00:25.092Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muynvdfj_k79fs4" time="2026-10-07T22:10:25.087Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyo88ea_46yk4b" time="2026-10-07T22:20:25.090Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyol3d9_y5mh90" time="2026-10-07T22:30:25.101Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyoxycf_9gjxm2" time="2026-10-07T22:40:25.119Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyrgpqj_ijswep" time="2026-10-07T23:50:59.659Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyrtkoz_ivpb2v" time="2026-10-08T00:00:59.651Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muys6fnp_891kpe" time="2026-10-08T00:10:59.653Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muysjanf_jucdhb" time="2026-10-08T00:20:59.691Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyul5xt_qhcnsx" time="2026-10-08T01:18:26.129Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_muyyzype_svh6go" time="2026-10-08T03:21:55.058Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

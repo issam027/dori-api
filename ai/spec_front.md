@@ -207,6 +207,7 @@ Pour satisfaire aux attentes des opérateurs intensifs et offrir un produit comm
 - **Raccourcis Clavier Guichet Haute Efficacité** :  
   `Espace` (Appeler suivant), `Entrée` (Valider terminé), `Échap` (Marquer absent) et `N` (Nouveau ticket rapide).
 - **Thème Sombre & Thème Clair (Dark/Light Mode)** : Adaptabilité visuelle automatique selon l'environnement de la clinique ou le choix de l'opérateur.
+- **Navigation latérale en accordéon** : Les catégories Opérations, Expériences et Administration n’apparaissent que si elles contiennent au moins un écran autorisé. Une seule catégorie est ouverte à la fois et celle de la route active s’ouvre automatiquement. Le lien `Mentions légales · Confidentialité`, indépendant des catégories, reste toujours ancré tout en bas du bandeau latéral.
 
 ---
 
@@ -552,6 +553,11 @@ Outil interactif d'aide à la décision :
 - **Éditeur de Règles** : Configuration des alertes `'welcome'` et `'threshold'` (par position ou par temps restant).
 - **Simulateur de Rendu SMS** : Mockup de smartphone affichant le texte avec compteur de caractères et découpage en segments GSM (160 car.).
 - **Journal Outbox Temps Réel** : Suivi des statuts de remise (`pending`, `delivered`, `failed`) avec bouton de renvoi en 1-clic (`POST /notifications/:id/resend`).
+- **Envoi manuel guidé en deux étapes** :
+  1. rechercher et sélectionner une personne du site courant (`GET /api/v1/persons`), puis choisir son inscription active ou récente (`GET /api/v1/registrations`) ;
+  2. récapituler la personne et l’inscription, choisir `sms` ou `email`, saisir le message et l’éventuel destinataire de substitution, puis appeler `POST /api/v1/notifications`.
+
+  Le payload respecte strictement `SendManualNotificationDto` et contient le `registrationId` sélectionné, jamais un `personId` utilisé comme substitut. Le retour entre les deux étapes conserve le brouillon et l’envoi réussi actualise le journal avec le statut initial `pending`.
 
 ### 9.6 Annuaire Utilisateurs & Attribution des Rôles Anti-Escalade
 
@@ -587,6 +593,7 @@ Ce module est réservé au rôle Root et exploite uniquement son scope global.
 | Route Front-End | Espace / Écran Correspondant | Persona Cible | Endpoints DORI-API Consommés |
 | :--- | :--- | :--- | :--- |
 | `/login` | Page de Connexion Unifiée | Tous | `POST /api/v1/auth/login` |
+| `/legal` | Mentions légales et confidentialité | Public, tous profils, kiosque et tracking | Aucun endpoint actuel : contenu frontend statique, versionné et traduisible |
 | `/desk` | Smart Desk Cockpit Augmenté | Secrétaire, Guichetier, Médecin | `GET /queues/:id/status`, `POST /queues/:id/next`, `POST /registrations/:id/served`, `POST /registrations/:id/no-show`, `GET/POST /persons`, `GET/POST /persons/:id/notes`, `GET /availability`, `POST /registrations/:id/check-in` |
 | `/kiosk/:queueId?` | Borne Tactile Libre-Service | Usager sur appareil authentifié | `GET /translations/bundle`; compte technique requis pour tiers, création, lookup et check-in |
 | `/display/:queueId`| Display Broadcast TV | Écran à compte technique | `GET /queues/:id/display`, WebSocket `queue:{id}:display`, permission `queue_view` |
@@ -696,6 +703,16 @@ Le front ne code pas ses menus sur le nom du rôle. Il part des permissions et s
 ---
 
 ## 14. Critères d'Acceptation Transverses
+
+### Page publique légale
+
+- Une page dédiée `/legal`, et non une modale, regroupe mentions légales et politique de confidentialité.
+- Elle est accessible depuis la connexion, le bas du menu authentifié, la borne kiosque et le tracking mobile.
+- Avant authentification, elle masque entièrement le shell privé et restitue la page de connexion au retour.
+- Elle contient éditeur, publication, hébergement, conditions d’utilisation, données personnelles, droits, cookies/stockage local, conservation, sécurité, propriété intellectuelle, responsabilité, contact, version et date.
+- Aucun endpoint correspondant n’existe actuellement : le contenu et les coordonnées sont versionnés dans le frontend et paramétrables par environnement.
+- Les valeurs fictives de la maquette doivent être remplacées et validées juridiquement avant la production.
+- Tous les contenus sont traduisibles, avec validation juridique distincte par locale.
 
 ### 14.1 Sécurité et confidentialité
 
