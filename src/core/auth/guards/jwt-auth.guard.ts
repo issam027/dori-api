@@ -18,11 +18,29 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     if (isPublic) {
       return true;
     }
+
+    const req = context.switchToHttp().getRequest();
+    console.log(
+      'REQ',
+      req.method,
+      req.url,
+      'hasAuth:',
+      !!req.headers['authorization'],
+    );
+
     return super.canActivate(context);
   }
 
-  handleRequest(err: any, user: any, _info: any) {
+  handleRequest(err: any, user: any, info: any) {
     if (err || !user) {
+      console.error(
+        'AUTH FAIL',
+        JSON.stringify({
+          err: err?.message ?? null,
+          info: info?.message ?? null,
+          infoName: info?.name ?? null,
+        }),
+      );
       throw new DoriException('UNAUTHENTICATED');
     }
     return user;
