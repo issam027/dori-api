@@ -18,31 +18,29 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     if (isPublic) {
       return true;
     }
-
-    const req = context.switchToHttp().getRequest();
-    console.log(
-      'REQ',
-      req.method,
-      req.url,
-      'hasAuth:',
-      !!req.headers['authorization'],
-    );
-
     return super.canActivate(context);
   }
 
   handleRequest(err: any, user: any, info: any) {
-    if (err || !user) {
+    // Erreur technique (DB saturée, timeout...) : 500, pas 401.
+    // Le message réel reste dans les logs Vercel, pas dans la réponse.
+    if (err) {
+      console.error('AUTH ERROR', err?.message);
+      throw new DoriException('INTERNAL_ERROR');
+    }
+
+    // Pas d'utilisateur : token absent, expiré ou invalide
+    if (!user) {
       console.error(
         'AUTH FAIL',
         JSON.stringify({
-          err: err?.message ?? null,
           info: info?.message ?? null,
           infoName: info?.name ?? null,
         }),
       );
       throw new DoriException('UNAUTHENTICATED');
     }
+
     return user;
   }
 }
