@@ -28,6 +28,12 @@ import { DatabaseSeedService } from './database-seed.service';
           configService.get<string>('nodeEnv') === 'development'
             ? ['error', 'warn']
             : false,
+        // Pool adapté au serverless : 1 connexion par instance Vercel
+        extra: {
+          max: 1,
+          idleTimeoutMillis: 10000,
+          connectionTimeoutMillis: 5000,
+        },
       }),
     }),
   ],
