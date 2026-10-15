@@ -114,7 +114,7 @@ export class QueuesService {
   ): Promise<PaginatedResult<QueueResponseDto>> {
     const scope = await this.scopeService.getUserScope(user);
     const { pageSize, offset, sortOrder } = filter.getParams();
-    // VAL-01 : allowlist des colonnes autorisées pour dori_site_queue_thread (alias q)
+    // VAL-01 : allowlist des colonnes autorisées pour dori_queue (alias q)
     const sortField = filter.getSafeSortField(
       [
         'q.queue_id',
@@ -161,7 +161,7 @@ export class QueuesService {
   async findQueueById(queueId: number, user: AuthenticatedUser) {
     await this.scopeService.checkQueueAccess(user, queueId);
 
-    const row = await this.queuesRepository.findActiveById(queueId);
+    const row = await this.queuesRepository.findById(queueId);
     if (!row) {
       throw new DoriException('QUEUE_NOT_FOUND', { queueId });
     }
@@ -319,7 +319,7 @@ export class QueuesService {
   ) {
     await this.scopeService.checkQueueAccess(user, queueId);
     const { pageSize, offset, sortOrder } = pagination.getParams();
-    // VAL-01 : allowlist pour le JOIN dori_user_queue / dori_user
+    // VAL-01 : allowlist pour le JOIN dori_user_queue_assignment / dori_user
     const sortField = pagination.getSafeSortField(
       ['u.user_id', 'u.username', 'u.email', 'uq.assigned_at'],
       'uq.assigned_at',
@@ -358,7 +358,7 @@ export class QueuesService {
       throw new DoriException('ACCOUNT_LOCKED', { userId: targetUserId });
     }
 
-    // SEC-04 : 2. Vérifier que le targetUser possède bien le rôle 'hotesse' (ou 'operator') actif
+    // SEC-04 : 2. Vérifier que le targetUser possède bien le rôle 'operator' actif
     if (!(await this.queuesRepository.hasOperatorRole(targetUserId))) {
       throw new DoriException('FORBIDDEN_ROLE_ESCALATION');
     }

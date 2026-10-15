@@ -5,8 +5,8 @@ import { CreateUserDto, SetUserPasswordDto } from './user.dto';
 describe('User DTOs Password Validation', () => {
   it('accepts a valid password between 10 and 20 characters', async () => {
     const dto = plainToInstance(CreateUserDto, {
-      username: 'hostesse',
-      email: 'hostesse@hopital.tn',
+      username: 'operator',
+      email: 'operator@hopital.tn',
       password: 'Root@123456',
       userType: 'human',
       languagePreference: 'fr',
@@ -19,8 +19,8 @@ describe('User DTOs Password Validation', () => {
 
   it('rejects passwords shorter than 10 characters', async () => {
     const dto = plainToInstance(CreateUserDto, {
-      username: 'hostesse',
-      email: 'hostesse@hopital.tn',
+      username: 'operator',
+      email: 'operator@hopital.tn',
       password: 'Short123', // 8 characters
       userType: 'human',
       languagePreference: 'fr',
@@ -35,8 +35,8 @@ describe('User DTOs Password Validation', () => {
 
   it('rejects passwords longer than 20 characters', async () => {
     const dto = plainToInstance(CreateUserDto, {
-      username: 'hostesse',
-      email: 'hostesse@hopital.tn',
+      username: 'operator',
+      email: 'operator@hopital.tn',
       password: 'ThisPasswordIsWayTooLongAndExceedsTwentyChars!', // > 20 characters
       userType: 'human',
       languagePreference: 'fr',

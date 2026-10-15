@@ -95,6 +95,12 @@ export class PersonNoteResponseDto {
     description: 'Date de dernière modification',
   })
   updatedAt?: string;
+
+  @ApiProperty({ example: true, description: 'Note active' })
+  isActive: boolean;
+
+  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  deletedAt?: string | null;
 }
 
 export class PaginatedPersonNoteResponseDto extends PaginatedResponseDto {

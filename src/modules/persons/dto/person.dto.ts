@@ -9,9 +9,10 @@ import {
   Matches,
   Min,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { PaginationDto } from '../../../core/pagination/pagination.dto';
+import { strictBoolean } from '../../../core/validation/strict-boolean.transformer';
 
 export class PersonIdentityDto {
   @ApiPropertyOptional({ example: 'Mohamed', description: 'Prénom' })
@@ -80,6 +81,11 @@ export class UpdatePersonDto extends PartialType(PersonIdentityDto) {
 }
 
 export class PersonFilterDto extends PaginationDto {
+  @ApiPropertyOptional({ type: Boolean, default: true })
+  @Transform(({ obj, key }) => strictBoolean(obj[key]))
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
   @ApiProperty({ minimum: 1, example: 1, description: 'Site de recherche' })
   @Type(() => Number)
   @IsInt()
@@ -105,11 +111,24 @@ export class CreatePersonNoteDto {
 }
 
 export class UpdatePersonNoteDto {
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'Note mise à jour',
     description: 'Nouveau contenu de la note',
   })
   @IsString()
-  @IsNotEmpty()
-  content: string;
+  @IsOptional()
+  content?: string;
+
+  @ApiPropertyOptional({ description: 'Activer ou désactiver la note' })
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+}
+
+export class PersonNoteFilterDto extends PaginationDto {
+  @ApiPropertyOptional({ type: Boolean, default: true })
+  @Transform(({ obj, key }) => strictBoolean(obj[key]))
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }

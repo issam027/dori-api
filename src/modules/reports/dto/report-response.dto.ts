@@ -1,5 +1,63 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+export class ReportVolumeDto {
+  @ApiProperty() registered: number;
+  @ApiProperty() walkin: number;
+  @ApiProperty() appointments: number;
+  @ApiProperty() served: number;
+  @ApiProperty() noShow: number;
+  @ApiProperty() expired: number;
+  @ApiProperty() cancelled: number;
+}
+
+export class ReportTimingDto {
+  @ApiProperty({ nullable: true }) averageWaitMinutes: number | null;
+  @ApiProperty({ nullable: true }) medianWaitMinutes: number | null;
+  @ApiProperty({ nullable: true }) p90WaitMinutes: number | null;
+  @ApiProperty({ nullable: true }) averageServiceMinutes: number | null;
+  @ApiProperty({ nullable: true }) medianServiceMinutes: number | null;
+  @ApiProperty({ nullable: true }) p90ServiceMinutes: number | null;
+}
+
+export class ReportRatesDto {
+  @ApiProperty({ nullable: true }) noShowRate: number | null;
+  @ApiProperty({ nullable: true }) cancellationRate: number | null;
+  @ApiProperty({ nullable: true }) expirationRate: number | null;
+}
+
+export class ReportMetricsDto {
+  @ApiProperty({ type: ReportVolumeDto }) volume: ReportVolumeDto;
+  @ApiProperty({ type: ReportTimingDto }) timing: ReportTimingDto;
+  @ApiProperty({ type: ReportRatesDto }) rates: ReportRatesDto;
+}
+
+export class ReportBucketDto extends ReportMetricsDto {
+  @ApiProperty({ format: 'date' }) periodStart: string;
+  @ApiProperty({ format: 'date' }) periodEnd: string;
+}
+
+export class ReportPeriodDto {
+  @ApiProperty({ format: 'date' }) dateFrom: string;
+  @ApiProperty({ format: 'date' }) dateTo: string;
+  @ApiProperty({ enum: ['day', 'week', 'month'] }) granularity: string;
+}
+
+export class ReportGroupDto extends ReportMetricsDto {
+  @ApiProperty({ type: 'object' }) dimension: Record<string, unknown>;
+  @ApiProperty({ type: [ReportBucketDto] }) buckets: ReportBucketDto[];
+  @ApiProperty({ nullable: true }) timezone: string | null;
+}
+
+export class ReportSeriesResponseDto {
+  @ApiProperty({ type: 'object' }) scope: Record<string, unknown>;
+  @ApiProperty({ nullable: true }) timezone: string | null;
+  @ApiProperty({ type: ReportPeriodDto }) period: ReportPeriodDto;
+  @ApiProperty({ type: ReportMetricsDto }) summary: ReportMetricsDto;
+  @ApiProperty({ type: [ReportBucketDto] }) buckets: ReportBucketDto[];
+  @ApiProperty({ type: [ReportGroupDto], required: false })
+  groups?: ReportGroupDto[];
+}
+
 export class DailyQueueVolumeItemDto {
   @ApiProperty({
     example: 85,
@@ -95,75 +153,4 @@ export class DailyQueueReportResponseDto {
     description: 'Indicateurs clés de performance',
   })
   kpis: DailyQueueKpisItemDto;
-}
-
-export class DashboardSummaryResponseDto {
-  @ApiProperty({
-    example: 3,
-    description: 'Nombre de sites actifs dans le périmètre',
-  })
-  activeSites: number;
-
-  @ApiProperty({ example: 8, description: "Nombre de files d'attente actives" })
-  activeQueues: number;
-
-  @ApiProperty({
-    example: 42,
-    description: 'Total de clients actuellement en attente',
-  })
-  waitingTotal: number;
-
-  @ApiProperty({
-    example: 30,
-    description: 'Clients sans rendez-vous en attente',
-  })
-  waitingWalkin: number;
-
-  @ApiProperty({
-    example: 12,
-    description: 'Clients sur rendez-vous en attente',
-  })
-  waitingAppointment: number;
-
-  @ApiProperty({
-    example: 25,
-    description: "Nombre total de rendez-vous programmés pour aujourd'hui",
-  })
-  appointmentsToday: number;
-}
-
-export class DashboardQueueLoadItemDto {
-  @ApiProperty({ example: 1, description: 'ID de la file' })
-  queueId: number;
-
-  @ApiProperty({ example: 'A00', description: 'Code de la file' })
-  queueCode: string;
-
-  @ApiProperty({
-    example: 'Consultation Générale',
-    description: 'Nom de la file',
-  })
-  queueName: string;
-
-  @ApiProperty({ example: 1, description: 'ID du site' })
-  siteId: number;
-
-  @ApiProperty({ example: 'Hôpital Aziza Othmana', description: 'Nom du site' })
-  siteName: string;
-
-  @ApiProperty({
-    example: 'hybrid',
-    enum: ['walkin', 'hybrid'],
-    description: 'Type de gestion de la file',
-  })
-  queueType: string;
-
-  @ApiProperty({ example: 15, description: 'Nombre de personnes en attente' })
-  waitingCount: number;
-
-  @ApiProperty({
-    example: 'Standard',
-    description: 'Forfait le plus représenté dans la file',
-  })
-  dominantTier: string;
 }

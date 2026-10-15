@@ -1,4 +1,5 @@
 import { OpenAPIObject } from '@nestjs/swagger';
+import { ParameterObject } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
 import { normalizeOpenApiDocument } from './openapi.config';
 
 describe('normalizeOpenApiDocument', () => {
@@ -71,5 +72,84 @@ describe('normalizeOpenApiDocument', () => {
       name: string;
     }>;
     expect(parameters.map(({ name }) => name)).toEqual(['page']);
+  });
+
+  it('documents scalar and referenced properties and calendar query formats', () => {
+    const document = {
+      openapi: '3.0.0',
+      info: { title: 'test', version: '1' },
+      paths: {
+        '/registrations': {
+          get: {
+            operationId: 'RegistrationsController_findRegistrations',
+            description: 'Recherche.',
+            responses: {},
+            parameters: [
+              { name: 'dateFrom', in: 'query', schema: { type: 'string' } },
+              { name: 'dateTo', in: 'query', schema: { type: 'string' } },
+            ],
+          },
+        },
+      },
+      components: {
+        schemas: {
+          Child: { type: 'object', properties: { value: { type: 'string' } } },
+          Parent: {
+            type: 'object',
+            properties: {
+              child: { $ref: '#/components/schemas/Child' },
+              createdAt: { type: 'string' },
+            },
+          },
+        },
+      },
+    } as OpenAPIObject;
+
+    normalizeOpenApiDocument(document);
+
+    const parent = document.components!.schemas!.Parent as {
+      properties: Record<string, { description?: string; allOf?: unknown[] }>;
+    };
+    expect(parent.properties.child.description).toBeTruthy();
+    expect(parent.properties.child.allOf).toHaveLength(1);
+    expect(parent.properties.createdAt.description).toBeTruthy();
+    const parameters = document.paths['/registrations'].get!
+      .parameters! as ParameterObject[];
+    for (const parameter of parameters) {
+      expect(parameter.description).toBeTruthy();
+      expect(parameter.schema).toMatchObject({
+        type: 'string',
+        format: 'date',
+        pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+      });
+    }
+  });
+
+  it('removes inherited bearer security and irrelevant errors from public operations', () => {
+    const document = {
+      openapi: '3.0.0',
+      info: { title: 'test', version: '1' },
+      paths: {
+        '/webhook': {
+          post: {
+            operationId: 'NotificationsController_handleWebhook',
+            security: [{ bearer: [] }],
+            responses: {
+              '200': { description: 'ok' },
+              '401': { description: 'unauthenticated' },
+              '403': { description: 'forbidden' },
+            },
+          },
+        },
+      },
+      components: { schemas: {} },
+    } as OpenAPIObject;
+
+    normalizeOpenApiDocument(document);
+
+    const operation = document.paths['/webhook'].post!;
+    expect(operation.security).toEqual([]);
+    expect(operation.responses['401']).toBeDefined();
+    expect(operation.responses['403']).toBeUndefined();
   });
 });

@@ -67,6 +67,32 @@ export class RegistrationResponseDto {
     description: 'Dernière modification',
   })
   updatedAt: string;
+
+  @ApiProperty({ example: true }) isActive: boolean;
+
+  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  deletedAt?: string | null;
+
+  @ApiPropertyOptional({ example: 'Leila' }) firstName?: string;
+  @ApiPropertyOptional({ example: 'Ben Ali' }) lastName?: string;
+  @ApiPropertyOptional({ example: 'Accueil général' }) queueName?: string;
+  @ApiPropertyOptional({ example: 'Standard' }) tierName?: string;
+
+  @ApiPropertyOptional({
+    example: 45,
+    nullable: true,
+    description:
+      "ID de la session opérateur ayant pris en charge l'inscription",
+  })
+  servedBySessionId?: number | null;
+
+  @ApiPropertyOptional({
+    example: 12,
+    nullable: true,
+    description:
+      "ID de l'utilisateur ayant pris en charge l'inscription, conservé directement sur l'inscription",
+  })
+  servedByUserId?: number | null;
 }
 
 export class CreateRegistrationResponseDto {
@@ -80,9 +106,17 @@ export class CreateRegistrationResponseDto {
   @ApiProperty() status: string;
   @ApiProperty({ type: 'object' }) tier: Record<string, unknown>;
   @ApiProperty({ format: 'date-time' }) priorityReferenceTime: string;
-  @ApiPropertyOptional({ nullable: true }) trackingUrl?: string | null;
-  @ApiPropertyOptional({ format: 'date-time', nullable: true })
-  registrationTrackingTokenValidUntil?: string | null;
+  @ApiProperty({
+    format: 'uuid',
+    description:
+      'Jeton public de suivi, toujours retourné lors de la création de l’inscription',
+  })
+  registrationTrackingToken: string;
+  @ApiProperty({
+    format: 'date-time',
+    description: 'Date et heure d’expiration du jeton public de suivi',
+  })
+  registrationTrackingTokenValidUntil: string;
 }
 
 export class RescheduleRegistrationResponseDto {
@@ -137,18 +171,31 @@ export class SlotAvailabilityItemDto {
   isAvailable: boolean;
 }
 
+export class DailyAvailabilityItemDto {
+  @ApiProperty({ example: '2026-10-01', format: 'date' }) businessDate: string;
+  @ApiProperty({ example: true }) isOpen: boolean;
+  @ApiProperty({ example: 36 }) capacity: number;
+  @ApiProperty({ example: 8 }) booked: number;
+  @ApiProperty({ example: 28 }) available: number;
+  @ApiPropertyOptional({ type: [SlotAvailabilityItemDto] })
+  slots?: SlotAvailabilityItemDto[];
+}
+
 export class RegistrationAvailabilityResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la file' })
   queueId: number;
 
-  @ApiProperty({ example: '2026-09-27', description: 'Date interrogée' })
-  date: string;
+  @ApiProperty({ example: 'Europe/Berlin' }) timezone: string;
+
+  @ApiProperty({ example: '2026-10-01', format: 'date' }) dateFrom: string;
+
+  @ApiProperty({ example: '2026-10-07', format: 'date' }) dateTo: string;
 
   @ApiProperty({
-    type: [SlotAvailabilityItemDto],
-    description: 'Créneaux horaires et disponibilités',
+    type: [DailyAvailabilityItemDto],
+    description: 'Disponibilités agrégées par journée',
   })
-  slots: SlotAvailabilityItemDto[];
+  days: DailyAvailabilityItemDto[];
 }
 
 export class RegistrationPositionResponseDto {

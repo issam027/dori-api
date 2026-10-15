@@ -12,7 +12,7 @@ import {
   SiteResponseDto,
   SiteManagerResponseDto,
 } from './dto/site-response.dto';
-import { UpdateSiteDto } from './dto/update-site.dto';
+import { SiteFilterDto, UpdateSiteDto } from './dto/update-site.dto';
 import { SitesRepository } from './sites.repository';
 
 @Injectable()
@@ -24,7 +24,7 @@ export class SitesService {
   ) {}
 
   async findSites(
-    pagination: PaginationDto,
+    pagination: SiteFilterDto,
     user: AuthenticatedUser,
   ): Promise<PaginatedResult<SiteResponseDto>> {
     const scope = await this.scopeService.getUserScope(user);
@@ -36,8 +36,9 @@ export class SitesService {
       ['site_id', 'site_name', 'site_type', 'created_at', 'updated_at'],
       'created_at',
     );
-    const { items, total } = await this.sitesRepository.findActive(
+    const { items, total } = await this.sitesRepository.findPage(
       scope.isGlobal ? null : scope.siteIds,
+      pagination.isActive ?? true,
       sortField,
       sortOrder,
       pageSize,
@@ -56,7 +57,7 @@ export class SitesService {
 
   async findSiteById(siteId: number, user: AuthenticatedUser) {
     await this.scopeService.checkSiteAccess(user, siteId);
-    const site = await this.sitesRepository.findActiveById(siteId);
+    const site = await this.sitesRepository.findById(siteId);
     if (!site) throw new DoriException('SITE_NOT_FOUND', { siteId });
     return site;
   }
@@ -67,7 +68,7 @@ export class SitesService {
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkSiteAccess(user, siteId);
-    const site = await this.sitesRepository.findActiveById(siteId);
+    const site = await this.sitesRepository.findById(siteId);
     if (!site) throw new DoriException('SITE_NOT_FOUND', { siteId });
     return this.sitesRepository.update(
       siteId,
@@ -79,7 +80,7 @@ export class SitesService {
 
   async deleteSite(siteId: number, user: AuthenticatedUser) {
     await this.scopeService.checkSiteAccess(user, siteId);
-    const site = await this.sitesRepository.findActiveById(siteId);
+    const site = await this.sitesRepository.findById(siteId);
     if (!site) throw new DoriException('SITE_NOT_FOUND', { siteId });
     await this.sitesRepository.deactivate(
       siteId,

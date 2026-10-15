@@ -18,6 +18,11 @@ import {
   SlotAvailabilityItemDto,
 } from './dto/registration-response.dto';
 import { RegistrationsRepository } from './registrations.repository';
+import {
+  DATE_RANGE_LIMITS,
+  inclusiveCalendarDayCount,
+} from '../../core/dates/date-range.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class RegistrationsService {
@@ -26,6 +31,7 @@ export class RegistrationsService {
     private readonly scopeService: ScopeService,
     private readonly clockService: ClockService,
     private readonly personsService: PersonsService,
+    private readonly configService: ConfigService,
   ) {}
 
   private formatTicketNumber(queueCode: string, lastNumber: number): string {
@@ -155,10 +161,7 @@ export class RegistrationsService {
         timezone,
       );
 
-      // 7. Check if tier has includeTrackingLink rule
-      const hasTrackingRule = await tx.hasTrackingRule(dto.queueId, dto.tierId);
-
-      // 8. Insert dori_registration
+      // 7. Insert dori_registration
       const created = await tx.create({
         dto,
         personId,
@@ -172,9 +175,21 @@ export class RegistrationsService {
         userId: user.userId,
         now,
       });
-      const trackingUrl = hasTrackingRule
-        ? `https://suivi.dori.tn/#${created.registration_tracking_token}`
-        : null;
+
+      const trackingUrl = new URL(
+        '/track',
+        this.configService.getOrThrow<string>('tracking.publicWebUrl'),
+      );
+      trackingUrl.searchParams.set(
+        'token',
+        String(created.registration_tracking_token),
+      );
+      await tx.createWelcomeNotifications({
+        registrationId: created.registration_id,
+        trackingUrl: trackingUrl.toString(),
+        ticketNumber: created.ticket_number,
+        now,
+      });
 
       return {
         registrationId: created.registration_id,
@@ -191,10 +206,8 @@ export class RegistrationsService {
           currency: tierInfo.currency,
         },
         priorityReferenceTime: created.priority_reference_time,
-        trackingUrl,
-        registrationTrackingTokenValidUntil: hasTrackingRule
-          ? tokenValidUntil
-          : null,
+        registrationTrackingToken: created.registration_tracking_token,
+        registrationTrackingTokenValidUntil: tokenValidUntil,
       };
     });
   }
@@ -227,12 +240,30 @@ export class RegistrationsService {
     const breakStartStr = q.break_start ?? q.default_break_start;
     const breakEndStr = q.break_end ?? q.default_break_end;
 
-    // Generate slots
-    const slots: SlotAvailabilityItemDto[] = [];
+    const dayCount = inclusiveCalendarDayCount(
+      queryDto.dateFrom,
+      queryDto.dateTo,
+    )!;
+    const maxDays = queryDto.summaryOnly
+      ? DATE_RANGE_LIMITS.availabilitySummaryDays
+      : DATE_RANGE_LIMITS.availabilityDetailedDays;
+    if (dayCount > maxDays) {
+      throw new DoriException(
+        'VALIDATION_ERROR',
+        {},
+        {
+          errors: [
+            `The inclusive availability range must not exceed ${maxDays} days`,
+          ],
+        },
+      );
+    }
+
+    // Generate the slot template once, then apply all bookings loaded by one query.
     const [startH, startM] = startStr.split(':').map(Number);
     const [endH, endM] = endStr.split(':').map(Number);
 
-    let currentMinutes = startH * 60 + startM;
+    const firstSlotMinutes = startH * 60 + startM;
     const endMinutes = endH * 60 + endM;
 
     let breakStartMinutes = -1;
@@ -245,54 +276,75 @@ export class RegistrationsService {
     }
 
     // Count existing bookings for this date and queue
-    const bookedCounts = await this.registrationsRepository.findBookedSlots(
-      queueId,
-      queryDto.date,
-    );
+    const bookedCounts =
+      await this.registrationsRepository.findBookedSlotsBetween(
+        queueId,
+        queryDto.dateFrom,
+        queryDto.dateTo,
+      );
 
     const bookingMap = new Map<string, number>();
     for (const b of bookedCounts) {
       if (b.scheduled_time) {
         bookingMap.set(
-          this.clockService.parse(b.scheduled_time).toISOString(),
+          `${b.business_date}|${this.clockService.parse(b.scheduled_time).toISOString()}`,
           b.count,
         );
       }
     }
 
-    while (currentMinutes + slotDuration <= endMinutes) {
-      // Check break
-      if (
-        breakStartMinutes !== -1 &&
-        currentMinutes >= breakStartMinutes &&
-        currentMinutes < breakEndMinutes
-      ) {
+    const days = Array.from({ length: dayCount }, (_, index) => {
+      const businessDate = this.clockService.addCalendarDays(
+        queryDto.dateFrom,
+        index,
+      );
+      const slots: SlotAvailabilityItemDto[] = [];
+      let currentMinutes = firstSlotMinutes;
+      while (currentMinutes + slotDuration <= endMinutes) {
+        if (
+          breakStartMinutes !== -1 &&
+          currentMinutes >= breakStartMinutes &&
+          currentMinutes < breakEndMinutes
+        ) {
+          currentMinutes += slotDuration;
+          continue;
+        }
+        const h = Math.floor(currentMinutes / 60);
+        const m = currentMinutes % 60;
+        const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
+        const slotIso = this.clockService
+          .fromZonedTime(`${businessDate}T${time}`, q.timezone)
+          .toISOString();
+        const booked = bookingMap.get(`${businessDate}|${slotIso}`) || 0;
+        const available = Math.max(0, slotCapacity - booked);
+        slots.push({
+          time: slotIso,
+          capacity: slotCapacity,
+          booked,
+          available,
+          isAvailable: available > 0,
+        });
         currentMinutes += slotDuration;
-        continue;
       }
-
-      const h = Math.floor(currentMinutes / 60);
-      const m = currentMinutes % 60;
-      const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
-      const slotIso = this.clockService
-        .fromZonedTime(`${queryDto.date}T${timeStr}`, q.timezone)
-        .toISOString();
-
-      const booked = bookingMap.get(slotIso) || 0;
-      const availableSpots = Math.max(0, slotCapacity - booked);
-
-      slots.push({
-        time: slotIso,
-        capacity: slotCapacity,
+      const booked = slots.reduce((sum, slot) => sum + slot.booked, 0);
+      const capacity = slots.reduce((sum, slot) => sum + slot.capacity, 0);
+      return {
+        businessDate,
+        isOpen: slots.length > 0,
+        capacity,
         booked,
-        available: availableSpots,
-        isAvailable: availableSpots > 0,
-      });
+        available: Math.max(0, capacity - booked),
+        ...(queryDto.summaryOnly ? {} : { slots }),
+      };
+    });
 
-      currentMinutes += slotDuration;
-    }
-
-    return { queueId, date: queryDto.date, slots };
+    return {
+      queueId,
+      timezone: q.timezone,
+      dateFrom: queryDto.dateFrom,
+      dateTo: queryDto.dateTo,
+      days,
+    };
   }
 
   async checkIn(registrationId: number, user: AuthenticatedUser) {
@@ -449,6 +501,35 @@ export class RegistrationsService {
     } else if (!scope.isGlobal) {
       if (scope.queueIds.length === 0) return filter.createResponse([], 0);
     }
+    let scheduledBounds: { fromInclusive: Date; toExclusive: Date } | undefined;
+    if (filter.dateFrom && filter.dateTo) {
+      if (!filter.queueId && !filter.siteId) {
+        throw new DoriException(
+          'VALIDATION_ERROR',
+          {},
+          {
+            errors: ['queueId or siteId is required with dateFrom/dateTo'],
+          },
+        );
+      }
+      const timezone = filter.queueId
+        ? (
+            await this.registrationsRepository.findAvailabilityConfig(
+              filter.queueId,
+            )
+          )?.timezone
+        : await this.registrationsRepository.findSiteTimezone(filter.siteId!);
+      if (!timezone) {
+        throw new DoriException(
+          filter.queueId ? 'QUEUE_NOT_FOUND' : 'SITE_NOT_FOUND',
+        );
+      }
+      scheduledBounds = this.clockService.dateRangeToUtcBounds(
+        filter.dateFrom,
+        filter.dateTo,
+        timezone,
+      );
+    }
     const result = await this.registrationsRepository.findPage(
       filter,
       scope.isGlobal || filter.queueId || filter.siteId
@@ -458,6 +539,7 @@ export class RegistrationsService {
       sortOrder,
       pageSize,
       offset,
+      scheduledBounds,
     );
     return filter.createResponse<RegistrationResponseDto>(
       result.items as RegistrationResponseDto[],
@@ -483,7 +565,10 @@ export class RegistrationsService {
     const reg = await this.findRegistrationById(registrationId, user);
     const now = this.clockService.now();
 
-    if (['served', 'no_show', 'expired', 'cancelled'].includes(reg.status)) {
+    if (
+      ['served', 'no_show', 'expired', 'cancelled'].includes(reg.status) &&
+      dto.isActive !== true
+    ) {
       throw new DoriException('REGISTRATION_CLOSED');
     }
 
@@ -500,12 +585,13 @@ export class RegistrationsService {
         });
       }
     }
-    return this.registrationsRepository.update(
+    await this.registrationsRepository.update(
       registrationId,
       dto,
       user.userId,
       now,
     );
+    return this.registrationsRepository.findById(registrationId);
   }
 
   async cancelRegistration(registrationId: number, user: AuthenticatedUser) {

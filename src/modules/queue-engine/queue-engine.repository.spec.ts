@@ -77,6 +77,7 @@ describe('QueueEngineRepository', () => {
     const result = await repository.callNext({
       queueId: 2,
       sessionId: 4,
+      userId: 12,
       businessDate: '2026-10-06',
       now: new Date('2026-10-06T12:00:00Z'),
       baseWalkin: 0,
@@ -89,6 +90,14 @@ describe('QueueEngineRepository', () => {
     expect(result?.score).toBe(42.5);
     expect(query.mock.calls[0][0]).toContain('FOR UPDATE SKIP LOCKED');
     expect(query.mock.calls[0][0]).toContain('$6::date');
+    expect(query.mock.calls[1][0]).toContain('served_by_session_id = $1');
+    expect(query.mock.calls[1][0]).toContain('served_by_user_id = $2');
+    expect(query.mock.calls[1][1]).toEqual([
+      4,
+      12,
+      new Date('2026-10-06T12:00:00Z'),
+      9,
+    ]);
   });
 
   it('binds preview exclusions as an integer array', async () => {

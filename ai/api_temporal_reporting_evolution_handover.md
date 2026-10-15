@@ -106,12 +106,25 @@ Règles de validation :
 - pour une seule journée, le client fournit la même valeur dans `dateFrom` et
   `dateTo`.
 
-Limites suggérées :
+Limites retenues :
 
-- disponibilités détaillées : 31 ou 62 jours ;
+- disponibilités détaillées : 62 jours ;
 - disponibilités en résumé : 366 jours ;
 - reporting synchrone journalier : 366 jours ;
-- au-delà : export asynchrone.
+- filtres d'inscriptions et de notifications : 366 jours ;
+- toute plage supérieure à la limite de l'opération est refusée avec une erreur
+  HTTP 400.
+
+Implémentation de fondation :
+
+- `src/core/dates/date-range.dto.ts` contient `DateRangeQueryDto`, les limites
+  nommées et la validation croisée ;
+- `ClockService.dateRangeToUtcBounds` convertit une période calendaire en borne
+  de début inclusive et borne de fin exclusive dans le fuseau du site ;
+- le calcul ajoute un jour calendaire avant la conversion UTC et non 24 heures
+  à un instant, afin de gérer correctement les journées de 23 h ou 25 h ;
+- aucun champ `timezone` n'est accepté dans le DTO client : le fuseau provient
+  de la configuration du site.
 
 ### 3.2 Requêtes SQL ensemblistes
 
@@ -269,7 +282,7 @@ une seule opération. Exemple pour une file :
 
 ```http
 GET /api/v1/reports/series
-    ?queueId=10
+    ?queueIds=10
     &dateFrom=2026-09-01
     &dateTo=2026-09-30
     &granularity=day
@@ -299,8 +312,9 @@ GET /api/v1/reports/series
     &includeEmpty=true
 ```
 
-Exactement un filtre de périmètre doit être fourni parmi `queueId`, `queueIds`
-et `siteId`. Le paramètre `groupBy` est optionnel et peut prendre les valeurs
+Exactement un filtre de périmètre doit être fourni parmi `queueIds` et
+`siteId`. `queueIds` est une chaîne d'identifiants positifs séparés par des
+virgules ; une file unique s'écrit `queueIds=10`. Le paramètre `groupBy` est optionnel et peut prendre les valeurs
 `site`, `queue`, `tier`, `entryType`, `hour` ou `weekday`.
 
 Valeurs de granularité :
@@ -316,11 +330,8 @@ month
 ```json
 {
   "scope": {
-    "type": "queue",
-    "queueId": 10,
-    "queueCode": "H000B",
-    "queueName": "Accueil B",
-    "siteName": "Site principal"
+    "type": "queues",
+    "queueIds": [10]
   },
   "timezone": "Europe/Paris",
   "period": {
@@ -438,7 +449,6 @@ un fuseau global unique si plusieurs fuseaux sont présents.
 
 Le périmètre est résolu via `ScopeService` :
 
-- `checkQueueAccess` pour `queueId` ;
 - `checkSiteAccess` pour `siteId` ;
 - vérification de chaque identifiant fourni dans `queueIds` ;
 - intersection systématique avec les sites et files autorisés du compte ;
@@ -459,7 +469,7 @@ Le périmètre est résolu via `ScopeService` :
 - [ ] Créer un DTO unique `ReportSeriesQueryDto`.
 - [ ] Créer les DTO de synthèse, période et buckets.
 - [ ] Ajouter l’endpoint `/series`.
-- [ ] Ajouter `queueId`, `queueIds` et `siteId` avec validation d'exclusivité.
+- [x] Ajouter `queueIds` et `siteId` avec validation d'exclusivité.
 - [ ] Ajouter les dimensions réellement nécessaires au frontend.
 - [ ] Réutiliser `ScopeService` pour limiter toutes les données agrégées.
 - [ ] Supprimer l'endpoint `/daily` et son paramètre `date`.
@@ -763,7 +773,10 @@ Lors d'une réactivation (`isActive: true`) :
 
 Lors d'une désactivation (`isActive: false`), conserver les règles métier de
 désactivation existantes et renseigner `deleted_at` lorsque le module utilise
-le soft delete.
+le soft delete. La désactivation d'un site, par `DELETE` ou par `PATCH`,
+désactive toutes ses files actives dans la même transaction. La réactivation
+du site ne réactive jamais automatiquement ces files : elles doivent être
+réactivées explicitement afin de préserver les désactivations antérieures.
 
 ### 8.4 Sécurité et cas particuliers
 
@@ -825,19 +838,19 @@ Règles :
 - supprimer `trackingUrl` du DTO de réponse, du service et de Swagger ;
 - exposer `registrationTrackingToken` au format UUID ;
 - conserver `registrationTrackingTokenValidUntil` ;
-- lorsque la règle métier de tracking n'est pas active pour le forfait,
-  retourner `registrationTrackingToken` et sa date d'expiration à `null` ;
+- retourner systématiquement `registrationTrackingToken` et sa date
+  d'expiration, indépendamment du forfait et de ses règles de notification ;
 - ne jamais reconstruire une URL dans l'API ; le client décide de la route à
   utiliser avec le token ;
 - ne pas journaliser le token en clair.
 
 Checkpoints :
 
-- [ ] Remplacer `trackingUrl` dans `CreateRegistrationResponseDto`.
-- [ ] Retourner le token créé par la transaction sans transformation.
-- [ ] Mettre à jour les tests du service et du contrôleur.
-- [ ] Régénérer et vérifier `openapi.json` et `openapi.yaml`.
-- [ ] Vérifier que `trackingUrl` n'apparaît plus dans le contrat OpenAPI.
+- [x] Remplacer `trackingUrl` dans `CreateRegistrationResponseDto`.
+- [x] Retourner le token créé par la transaction sans transformation.
+- [x] Mettre à jour les tests du service et du contrôleur.
+- [x] Régénérer et vérifier `openapi.json` et `openapi.yaml`.
+- [x] Vérifier que `trackingUrl` n'apparaît plus dans le contrat OpenAPI.
 
 ## 10. Indexation et performance
 
@@ -957,24 +970,24 @@ git diff --check
 
 ### Phase 1 — Fondation temporelle
 
-- [ ] Créer le DTO commun de période.
-- [ ] Ajouter les validations croisées.
-- [ ] Fixer les limites de plage.
-- [ ] Normaliser les règles de fuseau horaire.
+- [x] Créer le DTO commun de période.
+- [x] Ajouter les validations croisées.
+- [x] Fixer les limites de plage.
+- [x] Normaliser les règles de fuseau horaire.
 
 ### Phase 2 — Réduction immédiate des appels
 
-- [ ] Ajouter le calendrier de disponibilités sur une période.
-- [ ] Ajouter le reporting unifié par file, sélection de files ou site.
-- [ ] Ajouter les plages aux inscriptions.
-- [ ] Ajouter les plages aux notifications.
+- [x] Ajouter le calendrier de disponibilités sur une période.
+- [x] Ajouter le reporting unifié par file, sélection de files ou site.
+- [x] Ajouter les plages aux inscriptions.
+- [x] Ajouter les plages aux notifications.
 
 ### Phase 3 — Ressources désactivées et tracking
 
-- [ ] Ajouter le filtre `isActive` aux opérations listées.
-- [ ] Permettre la lecture, la modification et la réactivation des ressources désactivées.
-- [ ] Remplacer `trackingUrl` par `registrationTrackingToken` à la création d'une inscription.
-- [ ] Mettre à jour et régénérer Swagger.
+- [x] Ajouter le filtre `isActive` aux opérations listées.
+- [x] Permettre la lecture, la modification et la réactivation des ressources désactivées.
+- [x] Remplacer `trackingUrl` par `registrationTrackingToken` à la création d'une inscription.
+- [x] Mettre à jour et régénérer Swagger.
 
 ### Phase 4 — Validation et performance
 
@@ -1055,3 +1068,79 @@ Priorité de validation :
 <!-- CHECKPOINT id="ckpt_mv83tfk9_z8cwm5" time="2026-10-14T12:46:43.977Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 <!-- CHECKPOINT id="ckpt_mv846ajg_nyfm4c" time="2026-10-14T12:56:43.996Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv84j5i9_x137lq" time="2026-10-14T13:06:44.001Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv84w0h5_hnxz6e" time="2026-10-14T13:16:44.009Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv858vfx_0p3fvz" time="2026-10-14T13:26:44.013Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv85lqep_si4coe" time="2026-10-14T13:36:44.017Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv85yldk_8gqwsx" time="2026-10-14T13:46:44.024Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv86bgcm_uw93pi" time="2026-10-14T13:56:44.038Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv86obbf_e3jyal" time="2026-10-14T14:06:44.043Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8716a4_pib447" time="2026-10-14T14:16:44.044Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv87e18o_jrqigk" time="2026-10-14T14:26:44.040Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv87qw82_ibbhr0" time="2026-10-14T14:36:44.066Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv883r6y_okmbor" time="2026-10-14T14:46:44.074Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv88gm62_6huxsq" time="2026-10-14T14:56:44.090Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv88th4n_2j9qhd" time="2026-10-14T15:06:44.087Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv896c3i_e029mq" time="2026-10-14T15:16:44.094Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv89n7zf_c0wrwa" time="2026-10-14T15:29:51.915Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8a02yh_2iwsq5" time="2026-10-14T15:39:51.929Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8acxxa_sg8i8v" time="2026-10-14T15:49:51.934Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8apsw7_8e67bk" time="2026-10-14T15:59:51.943Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8b2nuw_c45x9c" time="2026-10-14T16:09:51.944Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8bfitx_ds66aq" time="2026-10-14T16:19:51.957Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8djigu_eriu47" time="2026-10-14T17:18:57.342Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8dwdfy_qcgdog" time="2026-10-14T17:28:57.358Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8e98er_xhymnj" time="2026-10-14T17:38:57.363Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8em3es_p0hpd5" time="2026-10-14T17:48:57.412Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8msbhj_f2iurn" time="2026-10-14T21:37:44.743Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8n56g4_aii2na" time="2026-10-14T21:47:44.740Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8ni1ey_s6x8gm" time="2026-10-14T21:57:44.746Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8nuwdv_9wwjl9" time="2026-10-14T22:07:44.755Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8o7rcm_kzqw69" time="2026-10-14T22:17:44.758Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8okmb9_71tjwz" time="2026-10-14T22:27:44.757Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8oxhab_d77u1b" time="2026-10-14T22:37:44.771Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8pilqr_5ib9g4" time="2026-10-14T22:54:10.323Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8s4zlf_blk9ah" time="2026-10-15T00:07:33.939Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv8z03k3_gtnrw8" time="2026-10-15T03:19:43.107Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv96oqc7_oj24pg" time="2026-10-15T06:54:49.687Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv971l89_ptrdqq" time="2026-10-15T07:04:49.593Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv97eg75_qtc55c" time="2026-10-15T07:14:49.601Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv97rb65_hunbcq" time="2026-10-15T07:24:49.613Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

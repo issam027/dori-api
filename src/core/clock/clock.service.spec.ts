@@ -34,4 +34,37 @@ describe('ClockService', () => {
         .toISOString(),
     ).toBe('2026-07-01T10:00:00.000Z');
   });
+
+  it.each([
+    [
+      '2026-03-29',
+      '2026-03-29',
+      '2026-03-28T23:00:00.000Z',
+      '2026-03-29T22:00:00.000Z',
+    ],
+    [
+      '2026-10-25',
+      '2026-10-25',
+      '2026-10-24T22:00:00.000Z',
+      '2026-10-25T23:00:00.000Z',
+    ],
+    [
+      '2026-03-28',
+      '2026-03-30',
+      '2026-03-27T23:00:00.000Z',
+      '2026-03-30T22:00:00.000Z',
+    ],
+  ])(
+    'converts the inclusive range %s to %s using Europe/Berlin calendar boundaries',
+    (dateFrom, dateTo, expectedFrom, expectedTo) => {
+      const bounds = clock.dateRangeToUtcBounds(
+        dateFrom,
+        dateTo,
+        'Europe/Berlin',
+      );
+
+      expect(bounds.fromInclusive.toISOString()).toBe(expectedFrom);
+      expect(bounds.toExclusive.toISOString()).toBe(expectedTo);
+    },
+  );
 });

@@ -20,15 +20,16 @@ interface UserStatusRow {
 export class SitesRepository {
   constructor(private readonly dataSource: DataSource) {}
 
-  async findActive(
+  async findPage(
     siteIds: number[] | null,
+    isActive: boolean,
     sortField: string,
     sortOrder: 'ASC' | 'DESC',
     pageSize: number,
     offset: number,
   ): Promise<{ items: SiteResponseDto[]; total: number }> {
-    let filter = 'WHERE is_active = TRUE';
-    const params: unknown[] = [];
+    let filter = 'WHERE is_active = $1';
+    const params: unknown[] = [isActive];
     if (siteIds) {
       params.push(siteIds);
       filter += ` AND site_id = ANY($${params.length})`;
@@ -98,9 +99,9 @@ export class SitesRepository {
     return rows[0];
   }
 
-  async findActiveById(siteId: number): Promise<SiteResponseDto | null> {
+  async findById(siteId: number): Promise<SiteResponseDto | null> {
     const rows = await this.dataSource.query<SiteResponseDto[]>(
-      'SELECT * FROM dori_site WHERE site_id = $1 AND is_active = TRUE',
+      'SELECT * FROM dori_site WHERE site_id = $1',
       [siteId],
     );
     return rows[0] ?? null;
@@ -159,14 +160,34 @@ export class SitesRepository {
     add('default_daily_reset_time', dto.defaultDailyResetTime);
     add('default_locale', dto.defaultLocale);
     add('is_active', dto.isActive);
+    if (dto.isActive !== undefined)
+      add('deleted_at', dto.isActive ? null : now);
     add('updated_by_user_id', userId);
     add('updated_at', now);
     values.push(siteId);
-    const rows = await this.dataSource.query<SiteResponseDto[]>(
-      `UPDATE dori_site SET ${fields.join(', ')} WHERE site_id = $${values.length} RETURNING *`,
-      values,
-    );
-    return rows[0];
+    const updateSite = async (query: DataSource['query']) => {
+      const rows = (await query.call(
+        this.dataSource,
+        `UPDATE dori_site SET ${fields.join(', ')} WHERE site_id = $${values.length} RETURNING *`,
+        values,
+      )) as SiteResponseDto[];
+      if (dto.isActive === false) {
+        await query.call(
+          this.dataSource,
+          `UPDATE dori_queue SET is_active = FALSE, deleted_at = $1,
+           updated_by_user_id = $2, updated_at = $1
+           WHERE site_id = $3 AND is_active = TRUE`,
+          [now, userId, siteId],
+        );
+      }
+      return rows[0];
+    };
+    if (dto.isActive === false) {
+      return this.dataSource.transaction((manager) =>
+        updateSite(manager.query.bind(manager)),
+      );
+    }
+    return updateSite(this.dataSource.query.bind(this.dataSource));
   }
 
   deactivate(siteId: number, userId: number, now: Date): Promise<void> {
@@ -177,7 +198,7 @@ export class SitesRepository {
         [now, userId, siteId],
       );
       await manager.query(
-        `UPDATE dori_site_queue_thread SET is_active = FALSE, deleted_at = $1,
+        `UPDATE dori_queue SET is_active = FALSE, deleted_at = $1,
          updated_by_user_id = $2, updated_at = $1
          WHERE site_id = $3 AND is_active = TRUE`,
         [now, userId, siteId],
@@ -192,7 +213,7 @@ export class SitesRepository {
     pageSize: number,
     offset: number,
   ): Promise<{ items: SiteManagerResponseDto[]; total: number }> {
-    const from = `FROM dori_user_site us JOIN dori_user u ON u.user_id = us.user_id
+    const from = `FROM dori_user_site_assignment us JOIN dori_user u ON u.user_id = us.user_id
       WHERE us.site_id = $1 AND u.is_active = TRUE`;
     const [count] = await this.dataSource.query<CountRow[]>(
       `SELECT COUNT(*)::int AS total ${from}`,
@@ -230,7 +251,7 @@ export class SitesRepository {
     now: Date,
   ) {
     await this.dataSource.query(
-      `INSERT INTO dori_user_site (user_id, site_id, assigned_at, assigned_by_user_id)
+      `INSERT INTO dori_user_site_assignment (user_id, site_id, assigned_at, assigned_by_user_id)
        VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, site_id) DO NOTHING`,
       [userId, siteId, now, assignedBy],
     );
@@ -238,7 +259,7 @@ export class SitesRepository {
 
   async removeManager(siteId: number, userId: number) {
     await this.dataSource.query(
-      'DELETE FROM dori_user_site WHERE user_id = $1 AND site_id = $2',
+      'DELETE FROM dori_user_site_assignment WHERE user_id = $1 AND site_id = $2',
       [userId, siteId],
     );
   }

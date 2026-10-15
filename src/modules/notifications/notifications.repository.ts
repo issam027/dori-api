@@ -59,11 +59,18 @@ export class NotificationsRepository {
       params.push(query.queueIds);
       where += ` AND c.queue_id = ANY($${params.length})`;
     }
+    if (query.filter.queueId !== undefined) {
+      params.push(query.filter.queueId);
+      where += ` AND c.queue_id = $${params.length}`;
+    }
+    if (query.filter.siteId !== undefined) {
+      params.push(query.filter.siteId);
+      where += ` AND q.site_id = $${params.length}`;
+    }
     const filters: Array<[unknown, string]> = [
       [query.filter.registrationId, 'n.registration_id'],
       [query.filter.channel, 'n.channel'],
       [query.filter.status, 'n.notification_status'],
-      [query.filter.businessDate, 'c.business_date'],
     ];
     for (const [value, column] of filters) {
       if (value !== undefined) {
@@ -71,10 +78,18 @@ export class NotificationsRepository {
         where += ` AND ${column} = $${params.length}`;
       }
     }
+    if (query.filter.dateFrom !== undefined) {
+      params.push(query.filter.dateFrom);
+      where += ` AND c.business_date >= $${params.length}`;
+    }
+    if (query.filter.dateTo !== undefined) {
+      params.push(query.filter.dateTo);
+      where += ` AND c.business_date <= $${params.length}`;
+    }
     const from = `FROM dori_notification n
       JOIN dori_registration c ON c.registration_id = n.registration_id
       JOIN dori_person p ON p.person_id = c.person_id
-      JOIN dori_site_queue_thread q ON q.queue_id = c.queue_id
+      JOIN dori_queue q ON q.queue_id = c.queue_id
       WHERE ${where}`;
     const countRows: Array<{ total: number }> = await this.dataSource.query(
       `SELECT COUNT(*)::int AS total ${from}`,
@@ -177,7 +192,7 @@ export class NotificationsRepository {
               q.average_wait_time, s.timezone, s.default_locale
        FROM dori_registration c
        JOIN dori_person p ON p.person_id = c.person_id
-       JOIN dori_site_queue_thread q ON q.queue_id = c.queue_id
+       JOIN dori_queue q ON q.queue_id = c.queue_id
        JOIN dori_site s ON s.site_id = q.site_id
        WHERE c.queue_id = $1 AND c.status = 'waiting' AND c.is_active = TRUE
        ORDER BY c.priority_reference_time ASC`,
@@ -187,7 +202,7 @@ export class NotificationsRepository {
 
   async countActiveThreads(queueId: number): Promise<number> {
     const rows: Array<{ count: number }> = await this.dataSource.query(
-      `SELECT COUNT(*)::int AS count FROM dori_queue_session
+      `SELECT COUNT(*)::int AS count FROM dori_operator_session
        WHERE queue_id = $1 AND disconnected_at IS NULL AND mode = 'active'`,
       [queueId],
     );
@@ -196,7 +211,7 @@ export class NotificationsRepository {
 
   async findThresholdRules(queueId: number): Promise<ThresholdRuleRow[]> {
     return this.dataSource.query(
-      `SELECT * FROM dori_tier_notification_rule
+      `SELECT * FROM dori_queue_tier_notification_rule
        WHERE queue_id = $1 AND notification_type = 'threshold' AND is_active = TRUE`,
       [queueId],
     );

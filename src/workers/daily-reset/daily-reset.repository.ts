@@ -33,7 +33,7 @@ export class DailyResetRepository {
       `SELECT q.queue_id, q.carry_over_waiting, q.daily_reset_mode, q.daily_reset_time,
               s.site_id, s.timezone, s.default_carry_over_waiting,
               s.default_daily_reset_mode, s.default_daily_reset_time
-       FROM dori_site_queue_thread q JOIN dori_site s ON s.site_id = q.site_id
+       FROM dori_queue q JOIN dori_site s ON s.site_id = q.site_id
        WHERE q.is_active = TRUE AND s.is_active = TRUE`,
     );
   }
@@ -49,7 +49,7 @@ export class DailyResetRepository {
       if (!lock[0]?.acquired) return false;
       const marker = returningRows<{ queue_id: number }>(
         await manager.query(
-          `INSERT INTO dori_queue_daily_reset (queue_id, business_date, executed_at)
+          `INSERT INTO dori_queue_daily_reset_execution (queue_id, business_date, executed_at)
          VALUES ($1, $2::date, $3) ON CONFLICT (queue_id, business_date) DO NOTHING RETURNING queue_id`,
           [input.queueId, input.businessDate, input.now],
         ),
@@ -57,7 +57,7 @@ export class DailyResetRepository {
       if (!marker.length) return false;
 
       await manager.query(
-        `UPDATE dori_queue_session SET disconnected_at = $1, closure_reason = 'daily_reset'
+        `UPDATE dori_operator_session SET disconnected_at = $1, closure_reason = 'daily_reset'
          WHERE queue_id = $2 AND disconnected_at IS NULL`,
         [input.now, input.queueId],
       );

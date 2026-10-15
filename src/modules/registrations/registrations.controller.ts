@@ -60,7 +60,7 @@ export class RegistrationsController {
   @ApiOperation({
     summary: 'Disponibilité des créneaux de RDV',
     description:
-      "Retourne la liste des créneaux horaires d'une date donnée avec leur capacité restante.",
+      'Retourne les disponibilités journalières sur une plage inclusive. Les créneaux peuvent être omis avec summaryOnly=true.',
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
   @ApiDoriOkResponse(
@@ -81,7 +81,7 @@ export class RegistrationsController {
   @ApiOperation({
     summary: 'Lister les inscriptions',
     description:
-      'Recherche et filtre paginé des inscriptions selon la file, la date ou le statut.',
+      'Recherche paginée, avec dateFrom/dateTo appliqués à scheduledTime dans le fuseau du site ou de la file.',
   })
   @ApiDoriOkResponse(
     PaginatedRegistrationResponseDto,

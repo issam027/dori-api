@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
 
-@Entity('dori_user_site')
+@Entity('dori_user_site_assignment')
 export class DoriUserSite {
   @PrimaryColumn({ type: 'int' })
   user_id: number;

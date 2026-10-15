@@ -28,7 +28,7 @@
    - 3.3 [Switcher de Périmètre Territorial Intelligent (Site & File)](#33-switcher-de-périmètre-territorial-intelligent-site--file)
    - 3.4 [Garde-fous Visuels Anti-Escalade de Pouvoir](#34-garde-fous-visuels-anti-escalade-de-pouvoir)
 4. [Espace Guichet & Accueil : Smart Desk Cockpit Augmenté](#4-espace-guichet--accueil--smart-desk-cockpit-augmenté)
-   - 4.1 [Règle Métier Fondamentale : Les Deux États de l'Hôtesse Connectée](#41-règle-métier-fondamentale--les-deux-états-de-lhôtesse-connectée)
+   - 4.1 [Règle Métier Fondamentale : Les Deux États de l'Opérateur Connectée](#41-règle-métier-fondamentale--les-deux-états-de-lopérateur-connectée)
    - 4.2 [Maquettes Comparatives : Avant et Après Occupation du Guichet](#42-maquettes-comparatives--avant-et-après-occupation-du-guichet)
    - 4.3 [Pilotage de Guichet : Occupation, Appel et Libération](#43-pilotage-de-guichet--occupation-appel-et-libération)
    - 4.4 [Fiche Personne & Notes Sécurisées](#44-fiche-personne--notes-sécurisées)
@@ -221,7 +221,7 @@ Chaque utilisateur connecté possède un rang maximal (`maxRank`) dérivé de se
 [Rang 5 — Root]      ❯ Supervision SaaS globale, tous sites, gestion technique complète.
 [Rang 4 — Admin]     ❯ Administration d'entreprise/réseau de cliniques, gestion des managers.
 [Rang 3 — Manager]   ❯ Responsable d'un ou plusieurs sites, supervision des files, rapports.
-[Rang 2 — Opérateur] ❯ Secrétaire, hôtesse d'accueil, guichetier, médecin.
+[Rang 2 — Opérateur] ❯ Secrétaire, opérateur d'accueil, guichetier, médecin.
 [Rang 1 — Kiosk]     ❯ Compte technique autonome de la borne tactile.
 ```
 
@@ -258,9 +258,9 @@ Dans les modules de gestion des utilisateurs :
 
 ## 4. Espace Guichet & Accueil : Smart Desk Cockpit Augmenté
 
-### 4.1 Règle Métier Fondamentale : Les Deux États de l'Hôtesse Connectée
+### 4.1 Règle Métier Fondamentale : Les Deux États de l'Opérateur Connectée
 
-Lorsqu'une hôtesse, secrétaire ou opératrice se connecte à l'application (`POST /auth/login`), **elle n'est rattachée à aucun guichet physique par défaut**. Elle entre dans un état dit **« Mode Accueil Flottant / Consultation »** :
+Lorsqu'une opérateur, secrétaire ou opératrice se connecte à l'application (`POST /auth/login`), **elle n'est rattachée à aucun guichet physique par défaut**. Elle entre dans un état dit **« Mode Accueil Flottant / Consultation »** :
 
 ```mermaid
 stateDiagram-v2
@@ -286,15 +286,15 @@ stateDiagram-v2
 ```
 
 1. **État A : Mode « Accueil Flottant » (Par défaut à la connexion)** :
-   - L'hôtesse dispose de **l'intégralité de ses permissions administratives et de saisie** : recherche de dossiers, création de nouvelles fiches personnes (`POST /persons`), ajout de notes internes (`POST /persons/:id/notes`), émission de tickets (`POST /registrations`), enregistrement de présences (*check-in*) et planification de rendez-vous dans l'agenda.
+   - L'opérateur dispose de **l'intégralité de ses permissions administratives et de saisie** : recherche de dossiers, création de nouvelles fiches personnes (`POST /persons`), ajout de notes internes (`POST /persons/:id/notes`), émission de tickets (`POST /registrations`), enregistrement de présences (*check-in*) et planification de rendez-vous dans l'agenda.
    - En revanche, elle **ne peut pas appeler d'usagers ni faire avancer la file d'attente** : le bouton « Appeler Suivant » est grisé et verrouillé avec l'infobulle : *« 🔒 Vous devez d'abord occuper un guichet physique pour appeler les usagers de cette file »*.
    - Aucun guichet n'est bloqué indûment sur les écrans TV de la salle ou dans le dashboard du manager.
 2. **État B : Mode « Guichet Actif » (Consommation & Appel de la file)** :
-   - Pour commencer à appeler, l'hôtesse choisit un guichet libre (ex. *Guichet 2*) dans le sélecteur et clique sur le bouton bien visible **« [ 🪑 Occuper le Guichet 2 ] »**.
+   - Pour commencer à appeler, l'opérateur choisit un guichet libre (ex. *Guichet 2*) dans le sélecteur et clique sur le bouton bien visible **« [ 🪑 Occuper le Guichet 2 ] »**.
    - L'IHM déclenche l'appel API `POST /api/v1/queues/:queueId/sessions` (`threadNumber: 2`, `mode: 'active'`).
    - Dès confirmation, le poste bascule à l'état **occupé** : le bouton « Appeler Suivant » devient actif, la session apparaît sur la Live Control Room et les actions `next`, `served` et `no-show` sont disponibles.
 3. **Libération du Guichet (« Quitter le Poste »)** :
-   - Lorsqu'elle s'absente, change de tâche ou termine son service d'appel, l'hôtesse clique sur **« [ 🚪 Libérer le Guichet ] »** (`DELETE /api/v1/queues/:queueId/sessions/:sessionId`).
+   - Lorsqu'elle s'absente, change de tâche ou termine son service d'appel, l'opérateur clique sur **« [ 🚪 Libérer le Guichet ] »** (`DELETE /api/v1/queues/:queueId/sessions/:sessionId`).
    - Elle redevient immédiatement en mode « Accueil Flottant » sans être déconnectée de son compte DORI, et le guichet redevient instantanément libre pour ses collègues.
 
 ---
@@ -693,7 +693,7 @@ L'assistant est une **saga reprise sur erreur** pilotée par le front. Il conser
 
 Le front ne code pas ses menus sur le nom du rôle. Il part des permissions et scopes de `/auth/me` :
 
-- **Opérateur/hôtesse** : desk, agenda, personnes et inscriptions autorisées; appel uniquement avec poste actif.
+- **Opérateur/opérateur** : desk, agenda, personnes et inscriptions autorisées; appel uniquement avec poste actif.
 - **Manager de site** : fonctions opérateur + control room, paramétrage et rapports dans son périmètre.
 - **Administrateur** : sites/files/utilisateurs/tiers/règles/traductions selon permissions et anti-escalade.
 - **Root** : scopes globaux, synthèse multi-sites, administration et santé de l'API.

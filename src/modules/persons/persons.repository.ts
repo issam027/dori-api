@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
-import { PersonIdentityDto, UpdatePersonDto } from './dto/person.dto';
+import {
+  PersonIdentityDto,
+  UpdatePersonDto,
+  UpdatePersonNoteDto,
+} from './dto/person.dto';
 
 export type PersonRow = Record<string, unknown> & {
   person_id: number;
@@ -14,6 +18,7 @@ export type PersonNoteRow = Record<string, unknown> & {
 
 export interface PersonListQuery {
   siteId: number;
+  isActive: boolean;
   search?: string;
   sortField: string;
   sortOrder: 'ASC' | 'DESC';
@@ -23,6 +28,7 @@ export interface PersonListQuery {
 
 export interface PersonNoteListQuery {
   personId: number;
+  isActive: boolean;
   sortField: string;
   sortOrder: 'ASC' | 'DESC';
   pageSize: number;
@@ -41,7 +47,6 @@ export class PersonsRepository {
     const rows: Array<{ person_id: number }> = await this.dataSource.query(
       `SELECT person_id FROM dori_person
        WHERE person_id = $1 AND site_id = ANY($2)
-         AND is_active = TRUE AND deleted_at IS NULL
        LIMIT 1`,
       [personId, siteIds],
     );
@@ -51,11 +56,11 @@ export class PersonsRepository {
   async findPersons(
     query: PersonListQuery,
   ): Promise<{ items: PersonRow[]; total: number }> {
-    const params: unknown[] = [query.siteId];
-    let where = `p.site_id = $1 AND p.is_active = TRUE AND p.deleted_at IS NULL`;
+    const params: unknown[] = [query.siteId, query.isActive];
+    let where = `p.site_id = $1 AND p.is_active = $2`;
     if (query.search) {
       params.push(`%${query.search}%`);
-      where += ` AND (p.first_name ILIKE $2 OR p.last_name ILIKE $2 OR p.email ILIKE $2 OR p.phone_number ILIKE $2)`;
+      where += ` AND (p.first_name ILIKE $3 OR p.last_name ILIKE $3 OR p.email ILIKE $3 OR p.phone_number ILIKE $3)`;
     }
     const countRows: Array<{ total: number }> = await this.dataSource.query(
       `SELECT COUNT(DISTINCT p.person_id)::int AS total FROM dori_person p WHERE ${where}`,
@@ -69,10 +74,10 @@ export class PersonsRepository {
     return { items, total: countRows[0]?.total ?? 0 };
   }
 
-  async findActiveById(personId: number): Promise<PersonRow | null> {
+  async findById(personId: number): Promise<PersonRow | null> {
     const rows: PersonRow[] = await this.dataSource.query(
       `SELECT * FROM dori_person
-       WHERE person_id = $1 AND is_active = TRUE AND deleted_at IS NULL
+       WHERE person_id = $1
        LIMIT 1`,
       [personId],
     );
@@ -151,6 +156,10 @@ export class PersonsRepository {
       ['birth_date', dto.birthDate],
       ['language_preference', dto.languagePreference],
       ['is_active', dto.isActive],
+      [
+        'deleted_at',
+        dto.isActive === undefined ? undefined : dto.isActive ? null : now,
+      ],
     ];
     const values: unknown[] = [];
     const assignments = columns
@@ -176,17 +185,17 @@ export class PersonsRepository {
   ): Promise<{ items: PersonNoteRow[]; total: number }> {
     const countRows: Array<{ total: number }> = await this.dataSource.query(
       `SELECT COUNT(*)::int AS total FROM dori_person_note
-       WHERE person_id = $1 AND is_active = TRUE`,
-      [query.personId],
+       WHERE person_id = $1 AND is_active = $2`,
+      [query.personId, query.isActive],
     );
     const items: PersonNoteRow[] = await this.dataSource.query(
-      `SELECT n.note_id, n.person_id, n.content, n.created_by_user_id,
+      `SELECT n.note_id, n.person_id, n.content, n.is_active, n.deleted_at, n.created_by_user_id,
               u.username AS author_username, n.created_at, n.updated_at
        FROM dori_person_note n
        JOIN dori_user u ON u.user_id = n.created_by_user_id
-       WHERE n.person_id = $1 AND n.is_active = TRUE
-       ORDER BY n.${query.sortField} ${query.sortOrder} LIMIT $2 OFFSET $3`,
-      [query.personId, query.pageSize, query.offset],
+       WHERE n.person_id = $1 AND n.is_active = $2
+       ORDER BY n.${query.sortField} ${query.sortOrder} LIMIT $3 OFFSET $4`,
+      [query.personId, query.isActive, query.pageSize, query.offset],
     );
     return { items, total: countRows[0]?.total ?? 0 };
   }
@@ -209,15 +218,24 @@ export class PersonsRepository {
   async updateNote(
     personId: number,
     noteId: number,
-    content: string,
+    dto: UpdatePersonNoteDto,
     userId: number,
     now: Date,
   ): Promise<PersonNoteRow | null> {
     const rows: PersonNoteRow[] = await this.dataSource.query(
-      `UPDATE dori_person_note SET content = $1, updated_by_user_id = $2, updated_at = $3
-       WHERE note_id = $4 AND person_id = $5 AND is_active = TRUE
-       RETURNING note_id, person_id, content, created_by_user_id, created_at, updated_at`,
-      [content, userId, now, noteId, personId],
+      `UPDATE dori_person_note SET content = COALESCE($1, content),
+       is_active = COALESCE($2, is_active),
+       deleted_at = CASE WHEN $2::boolean IS TRUE THEN NULL WHEN $2::boolean IS FALSE THEN $3 ELSE deleted_at END,
+       updated_by_user_id = $4, updated_at = $3
+       WHERE note_id = $5 AND person_id = $6 RETURNING *`,
+      [
+        dto.content ?? null,
+        dto.isActive ?? null,
+        now,
+        userId,
+        noteId,
+        personId,
+      ],
     );
     return rows[0] ?? null;
   }

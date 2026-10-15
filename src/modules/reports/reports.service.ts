@@ -2,16 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { DoriException } from '../../core/errors/dori.exception';
 import { ScopeService } from '../../core/rbac/services/scope.service';
-import { ReportScope, ReportsRepository } from './reports.repository';
-
-const EMPTY_SUMMARY = {
-  activeSites: 0,
-  activeQueues: 0,
-  waitingTotal: 0,
-  waitingWalkin: 0,
-  waitingAppointment: 0,
-  appointmentsToday: 0,
-};
+import { ReportsRepository } from './reports.repository';
+import { ReportSeriesQueryDto } from './dto/report-query.dto';
 
 @Injectable()
 export class ReportsService {
@@ -20,86 +12,122 @@ export class ReportsService {
     private readonly scopeService: ScopeService,
   ) {}
 
-  async getDailyQueueReport(
-    queueId: number,
-    date: string,
-    user: AuthenticatedUser,
-  ) {
-    await this.scopeService.checkQueueAccess(user, queueId);
-    const queue = await this.reportsRepository.findQueueIdentity(queueId);
-    if (!queue) throw new DoriException('QUEUE_NOT_FOUND', { queueId });
-    const row = await this.reportsRepository.getDailyStats(queueId, date);
-    const totalServed = row.total_served || 0;
-    const totalNoShow = row.total_no_show || 0;
-    const handledTotal = totalServed + totalNoShow;
-    return {
-      queueId,
-      queueCode: queue.queue_code,
-      queueName: queue.queue_name,
-      siteName: queue.site_name,
-      businessDate: date,
-      volume: {
-        totalRegistered: row.total_registered || 0,
-        totalWalkin: row.total_walkin || 0,
-        totalAppointment: row.total_appointment || 0,
-        totalServed,
-        totalNoShow,
-        totalExpired: row.total_expired || 0,
-        totalCancelled: row.total_cancelled || 0,
-        totalOpen:
-          row.total_registered -
-          row.total_expired -
-          row.total_cancelled -
-          handledTotal,
-      },
-      kpis: {
-        noShowRate:
-          handledTotal > 0
-            ? Number((totalNoShow / handledTotal).toFixed(3))
-            : 0,
-        averageWaitMinutes: Number(row.avg_wait_minutes || 0),
-        averageServiceMinutes: Number(row.avg_service_minutes || 0),
-      },
-    };
-  }
-
-  async getDashboardSummary(siteId?: number, user?: AuthenticatedUser) {
-    const scope = await this.resolveScope(siteId, user);
-    if (!scope) return EMPTY_SUMMARY;
-    const row = await this.reportsRepository.getDashboardSummary(scope);
-    return {
-      activeSites: row.active_sites || 0,
-      activeQueues: row.active_queues || 0,
-      waitingTotal: row.waiting_total || 0,
-      waitingWalkin: row.waiting_walkin || 0,
-      waitingAppointment: row.waiting_appointment || 0,
-      appointmentsToday: row.appointments_today || 0,
-    };
-  }
-
-  async getDashboardQueueLoad(
-    limit = 4,
-    siteId?: number,
-    user?: AuthenticatedUser,
-  ) {
-    const scope = await this.resolveScope(siteId, user);
-    if (!scope) return [];
-    return this.reportsRepository.getDashboardQueueLoad(scope, limit);
-  }
-
-  private async resolveScope(
-    siteId?: number,
-    user?: AuthenticatedUser,
-  ): Promise<ReportScope | null> {
-    if (siteId !== undefined) {
-      if (user) await this.scopeService.checkSiteAccess(user, siteId);
-      return { siteId };
+  async getSeries(query: ReportSeriesQueryDto, user: AuthenticatedUser) {
+    const requestedQueueIds = query.queueIds
+      ? [
+          ...new Set(
+            query.queueIds.split(',').map((item) => Number(item.trim())),
+          ),
+        ]
+      : undefined;
+    if (requestedQueueIds) {
+      for (const queueId of requestedQueueIds) {
+        await this.scopeService.checkQueueAccess(user, queueId);
+      }
+    } else {
+      await this.scopeService.checkSiteAccess(user, query.siteId!);
     }
-    if (!user) return {};
-    const scope = await this.scopeService.getUserScope(user);
-    if (scope.isGlobal) return {};
-    if (scope.siteIds.length) return { siteIds: scope.siteIds };
-    if (scope.queueIds.length) return { queueIds: scope.queueIds };
-    return null;
+    const identities = await this.reportsRepository.findScopeIdentities({
+      queueIds: requestedQueueIds,
+      siteId: query.siteId,
+    });
+    if (
+      requestedQueueIds &&
+      identities.length !== new Set(requestedQueueIds).size
+    ) {
+      throw new DoriException('QUEUE_NOT_FOUND');
+    }
+    const queueIds = identities.map((item) => item.queue_id!);
+    const rows = await this.reportsRepository.getSeries({
+      queueIds,
+      dateFrom: query.dateFrom,
+      dateTo: query.dateTo,
+      granularity: query.granularity,
+      includeEmpty: query.includeEmpty,
+      groupBy: query.groupBy,
+    });
+    const mapMetrics = (row: Record<string, unknown>) => {
+      const value = (key: string) =>
+        row[key] == null ? null : Number(row[key]);
+      const registered = Number(row.registered ?? 0);
+      const served = Number(row.served ?? 0);
+      const noShow = Number(row.no_show ?? 0);
+      const rate = (numerator: number, denominator: number) =>
+        denominator === 0 ? null : Number((numerator / denominator).toFixed(4));
+      return {
+        volume: {
+          registered,
+          walkin: Number(row.walkin ?? 0),
+          appointments: Number(row.appointments ?? 0),
+          served,
+          noShow,
+          expired: Number(row.expired ?? 0),
+          cancelled: Number(row.cancelled ?? 0),
+        },
+        timing: {
+          averageWaitMinutes: value('avg_wait'),
+          medianWaitMinutes: value('median_wait'),
+          p90WaitMinutes: value('p90_wait'),
+          averageServiceMinutes: value('avg_service'),
+          medianServiceMinutes: value('median_service'),
+          p90ServiceMinutes: value('p90_service'),
+        },
+        rates: {
+          noShowRate: rate(noShow, served + noShow),
+          cancellationRate: rate(Number(row.cancelled ?? 0), registered),
+          expirationRate: rate(Number(row.expired ?? 0), registered),
+        },
+      };
+    };
+    const summaryRow = rows.find((row) => row.row_type === 'summary')!;
+    const buckets = rows
+      .filter((row) => row.row_type === 'bucket')
+      .map((row) => ({
+        periodStart: row.period_start,
+        periodEnd: row.period_end,
+        ...mapMetrics(row),
+      }));
+    const groupSummaries = rows.filter(
+      (row) => row.row_type === 'group_summary',
+    );
+    const groups = query.groupBy
+      ? groupSummaries.map((summary) => ({
+          dimension: {
+            type: query.groupBy,
+            value: summary.group_key,
+            label: summary.group_label,
+          },
+          timezone: summary.timezone,
+          ...mapMetrics(summary),
+          buckets: rows
+            .filter(
+              (row) =>
+                row.row_type === 'group_bucket' &&
+                row.group_key === summary.group_key,
+            )
+            .map((row) => ({
+              periodStart: row.period_start,
+              periodEnd: row.period_end,
+              ...mapMetrics(row),
+            })),
+        }))
+      : undefined;
+    const timezones = new Set(identities.map((item) => item.timezone));
+    const first = identities[0];
+    const scope = query.queueIds
+      ? { type: 'queues', queueIds }
+      : { type: 'site', siteId: query.siteId, siteName: first?.site_name };
+    return {
+      scope,
+      timezone: timezones.size === 1 ? (first?.timezone ?? null) : null,
+      period: {
+        dateFrom: query.dateFrom,
+        dateTo: query.dateTo,
+        granularity: query.granularity,
+      },
+      summary: mapMetrics(summaryRow),
+      buckets,
+      ...(groups ? { groups } : {}),
+    };
   }
 }

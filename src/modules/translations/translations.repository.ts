@@ -28,27 +28,27 @@ interface VersionedResult<T> {
 export class TranslationsRepository {
   constructor(private readonly dataSource: DataSource) {}
 
-  async getBundle(category: string, locale: string) {
+  async getBundle(category: string, locale: string, isActive: boolean) {
     const [versions, rows] = await Promise.all([
       this.dataSource.query<Array<{ version: number }>>(
-        'SELECT version FROM dori_translation_version WHERE category = $1',
+        'SELECT version FROM dori_translation_category_version WHERE category = $1',
         [category],
       ),
       this.dataSource.query<
         Array<{ translation_key: string; content: string }>
       >(
         `SELECT translation_key, content FROM dori_translation
-         WHERE category = $1 AND locale = $2 AND is_active = TRUE`,
-        [category, locale],
+         WHERE category = $1 AND locale = $2 AND is_active = $3`,
+        [category, locale, isActive],
       ),
     ]);
     return { version: versions[0]?.version ?? 1, rows };
   }
 
-  async findActive(filter: TranslationFilterDto, sortField: string) {
+  async findPage(filter: TranslationFilterDto, sortField: string) {
     const { pageSize, offset, sortOrder } = filter.getParams();
-    let where = 'WHERE is_active = TRUE';
-    const params: unknown[] = [];
+    let where = 'WHERE is_active = $1';
+    const params: unknown[] = [filter.isActive ?? true];
     const add = (clause: string, value: unknown) => {
       params.push(value);
       where += ` AND ${clause.replace('?', `$${params.length}`)}`;
@@ -97,7 +97,7 @@ export class TranslationsRepository {
 
   async findById(translationId: number): Promise<TranslationRow | null> {
     const rows = await this.dataSource.query<TranslationRow[]>(
-      `SELECT * FROM dori_translation WHERE translation_id = $1 AND is_active = TRUE`,
+      `SELECT * FROM dori_translation WHERE translation_id = $1`,
       [translationId],
     );
     return rows[0] ?? null;
@@ -112,7 +112,7 @@ export class TranslationsRepository {
     return this.dataSource.transaction(async (manager) => {
       const existing = await manager.query<TranslationRow[]>(
         `SELECT * FROM dori_translation
-         WHERE translation_id=$1 AND is_active=TRUE FOR UPDATE`,
+         WHERE translation_id=$1 FOR UPDATE`,
         [translationId],
       );
       const current = existing[0];
@@ -128,6 +128,9 @@ export class TranslationsRepository {
       add('content', dto.content);
       add('expected_params', dto.expectedParams);
       add('is_active', dto.isActive);
+      if (dto.isActive !== undefined) {
+        add('deleted_at', dto.isActive ? null : now);
+      }
       add('updated_by_user_id', userId);
       add('updated_at', now);
       values.push(translationId);
@@ -174,9 +177,9 @@ export class TranslationsRepository {
     now: Date,
   ) {
     const rows = await manager.query<Array<{ version: number }>>(
-      `INSERT INTO dori_translation_version (category, version, updated_at)
+      `INSERT INTO dori_translation_category_version (category, version, updated_at)
        VALUES ($1,1,$2) ON CONFLICT (category) DO UPDATE SET
-       version=dori_translation_version.version+1, updated_at=$2 RETURNING version`,
+       version=dori_translation_category_version.version+1, updated_at=$2 RETURNING version`,
       [category, now],
     );
     return Number(rows[0].version);

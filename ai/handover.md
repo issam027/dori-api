@@ -58,7 +58,7 @@
   * `src/modules/users/users.controller.ts` — pose des protections `@RequireAnyPermission` sur `findUsers`, `createUser`, `findUserById`, `updateUser`, `updateUserStatus`, `setUserPassword`, `assignUserRole`, `removeUserRole`, `getRoles`
   * `src/modules/users/users.service.ts` — enrichissement de `checkAntiEscalation` et `getCallerMaxManageRank` :
     * Vérification du profil de celui qui modifie : empêche toute modification d'un utilisateur de rang supérieur ou égal (`FORBIDDEN_ROLE_ESCALATION`).
-    * Vérification du profil du user à modifier : calcule le plafond de rang accordé par les permissions du modificateur (`user_manage_kiosk` = 1, `user_manage_hostess` = 2, `user_manage_manager` = 3, `user_manage_admin` = 4, `root` / `system_manage` = 5). Si un modificateur ne possède que la permission `user_manage_hostess`, il ne peut pas modifier un utilisateur ayant un profil supérieur à l'hôtesse (`FORBIDDEN_PERMISSION`).
+    * Vérification du profil du user à modifier : calcule le plafond de rang accordé par les permissions du modificateur (`user_manage_kiosk` = 1, `user_manage_operator` = 2, `user_manage_manager` = 3, `user_manage_admin` = 4, `root` / `system_manage` = 5). Si un modificateur ne possède que la permission `user_manage_operator`, il ne peut pas modifier un utilisateur ayant un profil supérieur à l'opérateur (`FORBIDDEN_PERMISSION`).
     * Validation stricte étendue aux opérations de mise à jour (`updateUser`, `updateUserStatus`, `setUserPassword`), d'assignation/retrait de rôles (`assignUserRole`, `removeUserRole`), de création (`createUser`) et de consultation détaillée (`findUserById`).
   * `src/modules/users/users.service.spec.ts` & `src/core/rbac/guards/permissions.guard.spec.ts` — suites de tests unitaires validant l'ensemble des règles RBAC et anti-escalade.
 
@@ -98,11 +98,11 @@
        - Révoque toutes les sessions actives de la cible (`reason = 'force_logout'`).
 
 ### SEC-04 — Asymétrie de contrôle de rôle lors des affectations
-> ✅ **RÉSOLU le 2026-09-29** — Vérification d'existence, d'état actif (`is_active = TRUE` et non supprimé) et de rôle requis (`manager` pour site, `hotesse`/`operator` pour file) ajoutée dans `assignSiteManager` et `assignOperator`.
+> ✅ **RÉSOLU le 2026-09-29** — Vérification d'existence, d'état actif (`is_active = TRUE` et non supprimé) et de rôle requis (`manager` pour site, `operator` pour file) ajoutée dans `assignSiteManager` et `assignOperator`.
 
 * **Fichiers modifiés** :
   * `src/modules/sites/sites.service.ts` (`assignSiteManager`) — vérification préalable que `targetUserId` existe et est actif dans `dori_user` avant de vérifier son rôle `manager` actif.
-  * `src/modules/queues/queues.service.ts` (`assignOperator`) — vérification préalable que `targetUserId` existe et est actif dans `dori_user`, puis contrôle que l'utilisateur possède bien le rôle `hotesse` (ou `operator`) actif avant d'insérer dans `dori_user_queue`.
+  * `src/modules/queues/queues.service.ts` (`assignOperator`) — vérification préalable que `targetUserId` existe et est actif dans `dori_user`, puis contrôle que l'utilisateur possède bien le rôle `operator` (ou `operator`) actif avant d'insérer dans `dori_user_queue_assignment`.
   * `src/modules/queues/queues.service.spec.ts` — suite de 4 tests unitaires couvrant : utilisateur inexistant (`USER_NOT_FOUND`), compte inactif (`ACCOUNT_LOCKED`), rôle manquant (`FORBIDDEN_ROLE_ESCALATION`), assignation valide.
   * `src/modules/sites/sites.service.spec.ts` — suite de 4 tests unitaires couvrant : utilisateur inexistant (`USER_NOT_FOUND`), compte inactif (`ACCOUNT_LOCKED`), rôle manquant (`FORBIDDEN_ROLE_ESCALATION`), assignation valide.
 
@@ -123,21 +123,21 @@
   Le worker utilise cette condition d'idempotence :
   ```ts
   const counter = await this.dataSource.query(
-    `SELECT last_number FROM dori_queue_counter WHERE queue_id = $1 AND business_date = $2`,
+    `SELECT last_number FROM dori_queue_daily_ticket_counter WHERE queue_id = $1 AND business_date = $2`,
     [q.queue_id, tomorrow],
   );
   if (counter && counter.length > 0) continue;
   ```
-  1. Si un usager a réservé un rendez-vous pour demain au cours de la journée, `dori_queue_counter` existe déjà pour `tomorrow`. Le reset est alors **définitivement ignoré** pour cette file.
-  2. La transaction du worker ne crée même pas la ligne dans `dori_queue_counter` pour `tomorrow`.
+  1. Si un usager a réservé un rendez-vous pour demain au cours de la journée, `dori_queue_daily_ticket_counter` existe déjà pour `tomorrow`. Le reset est alors **définitivement ignoré** pour cette file.
+  2. La transaction du worker ne crée même pas la ligne dans `dori_queue_daily_ticket_counter` pour `tomorrow`.
 * **Comportement attendu** :  
-  Créer une table ou colonne dédiée d'audit des resets (ex : `dori_queue_daily_reset_log` ou `last_daily_reset_date` sur la file) pour garantir l'idempotence indépendamment de la présence de compteurs futurs.
+  Créer une table ou colonne dédiée d'audit des resets (ex : `dori_queue_daily_reset_execution_log` ou `last_daily_reset_date` sur la file) pour garantir l'idempotence indépendamment de la présence de compteurs futurs.
 
 ### DAT-02 — Absence de transaction sur l'inscription client
 * **Fichier impacté** : `src/modules/registrations/registrations.service.ts` (lignes 154–220)
 * **Problème constaté** :  
   `registerRegistration` enchaîne :
-  1. Incrément du compteur (`dori_queue_counter`)
+  1. Incrément du compteur (`dori_queue_daily_ticket_counter`)
   2. Création éventuelle de la personne (`dori_person`)
   3. Insertion de l'inscription (`dori_registration`)
   4. Création de la notification de bienvenue (`dori_notification`)
@@ -166,9 +166,9 @@
 > ✅ **RÉSOLU le 2026-09-29** — Mise en œuvre d'un cycle de vie de suppression logique (soft-delete) uniforme pour `User`, `Person` et `Queue`, avec vérification préalable d'existence, validation des permissions / hiérarchie anti-escalade, et cascade de désactivation.
 
 * **Fichiers modifiés** :
-  * `src/modules/queues/queues.service.ts` (`deleteQueue`) — vérifie l'existence active via `findQueueById`, applique le soft delete (`is_active = FALSE, deleted_at = now`), cascade la désactivation sur les forfaits de file (`dori_queue_service_tier`) et force la clôture des sessions guichet ouvertes (`dori_queue_session`).
+  * `src/modules/queues/queues.service.ts` (`deleteQueue`) — vérifie l'existence active via `findQueueById`, applique le soft delete (`is_active = FALSE, deleted_at = now`), cascade la désactivation sur les forfaits de file (`dori_queue_service_tier`) et force la clôture des sessions guichet ouvertes (`dori_operator_session`).
   * `src/modules/persons/persons.service.ts` & `persons.controller.ts` (`deletePerson`, `DELETE /api/v1/persons/:personId`) — vérifie le scope et l'existence active via `findPersonById`, applique le soft delete (`is_active = FALSE, deleted_at = now`) et cascade la désactivation sur les notes rattachées (`dori_person_note`). Protégé par `@RequirePermission('registration_delete')`.
-  * `src/modules/users/users.service.ts`, `users.controller.ts` & `dto/user.dto.ts` (`deleteUser`, `DELETE /api/v1/users/:userId`, `UserDeleteResponseDto`) — vérifie la hiérarchie anti-escalade (`checkAntiEscalation`) et l'existence active (`findUserById`), applique le soft delete (`is_active = FALSE, deleted_at = now`), révoque immédiatement toutes les sessions actives en base (`dori_user_session`) et invalide le scope. Protégé par `@RequireAnyPermission('user_manage_kiosk', 'user_manage_hostess', 'user_manage_manager', 'user_manage_admin')`.
+  * `src/modules/users/users.service.ts`, `users.controller.ts` & `dto/user.dto.ts` (`deleteUser`, `DELETE /api/v1/users/:userId`, `UserDeleteResponseDto`) — vérifie la hiérarchie anti-escalade (`checkAntiEscalation`) et l'existence active (`findUserById`), applique le soft delete (`is_active = FALSE, deleted_at = now`), révoque immédiatement toutes les sessions actives en base (`dori_user_session`) et invalide le scope. Protégé par `@RequireAnyPermission('user_manage_kiosk', 'user_manage_operator', 'user_manage_manager', 'user_manage_admin')`.
   * Suites de tests unitaires dédiées dans `queues.service.spec.ts`, `persons.service.spec.ts` et `users.service.spec.ts`.
 
 ---
@@ -454,11 +454,11 @@ Cette checklist est prête pour l'exécution tâche par tâche par un agent IA :
   - [x] SEC-02 : Ajouter le `sessionId` au payload JWT et vérifier la session spécifique dans `JwtStrategy`. ✅ *2026-09-28*
   - [x] SEC-03 : Ajouter `LogoutDto` avec `refreshToken` optionnel pour supporter le logout mobile/SPA sans cookie et cibler la session active. ✅ *2026-09-28*
   - [x] SEC-03/BUG2 : Révision complète du mécanisme de logout — session unique (défaut), global_logout (userId = soi), force-disconnect hiérarchique (userId = autre, manager/admin/root). ✅ *2026-09-29*
-  - [x] SEC-04 : Valider l'existence et le rôle `hotesse`/opérateur dans `QueuesService.assignOperator` et l'existence dans `SitesService.assignSiteManager`. ✅ *2026-09-29*
+  - [x] SEC-04 : Valider l'existence et le rôle `operator`/opérateur dans `QueuesService.assignOperator` et l'existence dans `SitesService.assignSiteManager`. ✅ *2026-09-29*
   - [ ] SEC-05 : Valider l'état de la session dans `RealtimeGateway.handleConnection`.
 
 - [ ] **Phase 2 — Workers & Robustesse Données**
-  - [ ] DAT-01 : Corriger l'idempotence du `DailyResetWorker` (découpler de `dori_queue_counter`).
+  - [ ] DAT-01 : Corriger l'idempotence du `DailyResetWorker` (découpler de `dori_queue_daily_ticket_counter`).
   - [ ] DAT-02 : Envelopper `RegistrationsService.registerRegistration` dans une transaction atomique.
   - [ ] DAT-03 : Verrouiller la vérification de capacité des créneaux de RDV (`FOR UPDATE`).
   - [ ] WRK-01 : Corriger la lecture du résultat de la requête SQL dans `AppointmentExpiryWorker`.

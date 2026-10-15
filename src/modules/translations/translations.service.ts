@@ -26,6 +26,7 @@ export class TranslationsService {
     const { version, rows } = await this.translationsRepository.getBundle(
       category,
       query.locale,
+      query.isActive ?? true,
     );
     return {
       locale: query.locale,
@@ -51,7 +52,7 @@ export class TranslationsService {
       ],
       'translation_id',
     );
-    const { items, total } = await this.translationsRepository.findActive(
+    const { items, total } = await this.translationsRepository.findPage(
       filter,
       sortField,
     );

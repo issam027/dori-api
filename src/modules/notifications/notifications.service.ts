@@ -45,6 +45,11 @@ export class NotificationsService {
       'notification_id',
     );
 
+    if (filter.queueId)
+      await this.scopeService.checkQueueAccess(user, filter.queueId);
+    if (filter.siteId)
+      await this.scopeService.checkSiteAccess(user, filter.siteId);
+
     if (!scope.isGlobal) {
       if (scope.queueIds.length === 0) return filter.createResponse([], 0);
     }

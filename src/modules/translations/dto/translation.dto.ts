@@ -8,6 +8,8 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../../core/pagination/pagination.dto';
+import { Transform } from 'class-transformer';
+import { strictBoolean } from '../../../core/validation/strict-boolean.transformer';
 
 export class CreateTranslationDto {
   @ApiProperty({
@@ -19,13 +21,13 @@ export class CreateTranslationDto {
   translationKey: string;
 
   @ApiProperty({
-    enum: ['ihm', 'sms', 'error'],
+    enum: ['ihm', 'sms', 'email', 'error'],
     example: 'ihm',
     description: "Catégorie d'usage",
   })
-  @IsIn(['ihm', 'sms', 'error'])
+  @IsIn(['ihm', 'sms', 'email', 'error'])
   @IsNotEmpty()
-  category: 'ihm' | 'sms' | 'error';
+  category: 'ihm' | 'sms' | 'email' | 'error';
 
   @ApiProperty({
     example: 'fr',
@@ -80,13 +82,18 @@ export class UpdateTranslationDto {
 }
 
 export class TranslationFilterDto extends PaginationDto {
+  @ApiPropertyOptional({ type: Boolean, default: true })
+  @Transform(({ obj, key }) => strictBoolean(obj[key]))
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
   @ApiPropertyOptional({
-    enum: ['ihm', 'sms', 'error'],
+    enum: ['ihm', 'sms', 'email', 'error'],
     description: 'Filtrer par catégorie',
   })
-  @IsIn(['ihm', 'sms', 'error'])
+  @IsIn(['ihm', 'sms', 'email', 'error'])
   @IsOptional()
-  category?: 'ihm' | 'sms' | 'error';
+  category?: 'ihm' | 'sms' | 'email' | 'error';
 
   @ApiPropertyOptional({ example: 'fr', description: 'Filtrer par locale' })
   @IsString()
@@ -103,16 +110,21 @@ export class TranslationFilterDto extends PaginationDto {
 }
 
 export class TranslationBundleQueryDto {
+  @ApiPropertyOptional({ type: Boolean, default: true })
+  @Transform(({ obj, key }) => strictBoolean(obj[key]))
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
   @ApiProperty({ example: 'fr', description: 'Locale demandée pour le bundle' })
   @IsString()
   @IsNotEmpty()
   locale: string;
 
   @ApiPropertyOptional({
-    enum: ['ihm', 'sms', 'error'],
+    enum: ['ihm', 'sms', 'email', 'error'],
     description: 'Catégorie optionnelle pour filtrer le bundle',
   })
-  @IsIn(['ihm', 'sms', 'error'])
+  @IsIn(['ihm', 'sms', 'email', 'error'])
   @IsOptional()
-  category?: 'ihm' | 'sms' | 'error';
+  category?: 'ihm' | 'sms' | 'email' | 'error';
 }

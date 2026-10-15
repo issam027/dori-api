@@ -1,5 +1,6 @@
 import {
   IsDateString,
+  IsBoolean,
   IsIn,
   IsInt,
   IsNotEmpty,
@@ -8,7 +9,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PersonIdentityDto } from '../../persons/dto/person.dto';
 import { PaginationDto } from '../../../core/pagination/pagination.dto';
@@ -17,6 +18,13 @@ import {
   ValidRegistrationLookup,
   ValidRegistrationSchedule,
 } from '../../../core/validation/domain-validation.decorators';
+import {
+  DATE_RANGE_LIMITS,
+  DateRangeQueryDto,
+  IsCalendarDate,
+  ValidDateRange,
+} from '../../../core/dates/date-range.dto';
+import { strictBoolean } from '../../../core/validation/strict-boolean.transformer';
 
 @ExactlyOneOf(['personId', 'person'])
 @ValidRegistrationSchedule()
@@ -87,6 +95,11 @@ export class UpdateRegistrationDto {
   @IsString()
   @IsOptional()
   languagePreference?: string;
+
+  @ApiPropertyOptional({ description: "Activer ou désactiver l'inscription" })
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }
 
 export class RescheduleRegistrationDto {
@@ -123,7 +136,18 @@ export class LookupRegistrationDto {
   scheduledTime?: string;
 }
 
+@ValidDateRange(DATE_RANGE_LIMITS.registrationFilterDays)
 export class RegistrationFilterDto extends PaginationDto {
+  @ApiPropertyOptional({
+    type: Boolean,
+    default: true,
+    description:
+      'true retourne les inscriptions actives, false les désactivées. Sans paramètre, seules les actives sont retournées.',
+  })
+  @Transform(({ obj, key }) => strictBoolean(obj[key]))
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
   @ApiPropertyOptional({ example: 1 })
   @IsInt()
   @Min(1)
@@ -140,11 +164,23 @@ export class RegistrationFilterDto extends PaginationDto {
 
   @ApiPropertyOptional({
     example: '2026-10-01',
-    description: 'Date métier (YYYY-MM-DD)',
+    format: 'date',
+    description:
+      'Première schedule date incluse. Doit être fournie avec dateTo et avec queueId ou siteId.',
   })
-  @IsDateString()
+  @IsCalendarDate()
   @IsOptional()
-  businessDate?: string;
+  dateFrom?: string;
+
+  @ApiPropertyOptional({
+    example: '2026-10-31',
+    format: 'date',
+    description:
+      'Dernière schedule date incluse. La période complète est limitée à 366 jours.',
+  })
+  @IsCalendarDate()
+  @IsOptional()
+  dateTo?: string;
 
   @ApiPropertyOptional({
     example: 'waiting',
@@ -167,8 +203,18 @@ export class RegistrationFilterDto extends PaginationDto {
   @IsOptional()
   entryType?: string;
 
-  @ApiPropertyOptional({ example: 'booked' })
-  @IsIn(['booked', 'confirmed', 'checked_in', 'cancelled'])
+  @ApiPropertyOptional({
+    example: 'booked',
+    enum: [
+      'n/a',
+      'booked',
+      'checked_in',
+      'rescheduled',
+      'cancelled',
+      'expired',
+    ],
+  })
+  @IsIn(['n/a', 'booked', 'checked_in', 'rescheduled', 'cancelled', 'expired'])
   @IsOptional()
   appointmentStatus?: string;
 
@@ -192,12 +238,14 @@ export class RegistrationFilterDto extends PaginationDto {
   search?: string;
 }
 
-export class RegistrationAvailabilityQueryDto {
-  @ApiProperty({
-    example: '2026-10-01',
-    description: 'Date à consulter (YYYY-MM-DD)',
+export class RegistrationAvailabilityQueryDto extends DateRangeQueryDto {
+  @ApiPropertyOptional({
+    default: false,
+    description:
+      'Omet les créneaux et retourne uniquement les totaux journaliers.',
   })
-  @IsDateString()
-  @IsNotEmpty()
-  date: string;
+  @Transform(({ obj, key }) => strictBoolean(obj[key]))
+  @IsBoolean()
+  @IsOptional()
+  summaryOnly: boolean = false;
 }

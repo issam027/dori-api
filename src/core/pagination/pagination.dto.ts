@@ -26,14 +26,23 @@ export class LimitQueryDto {
 }
 
 export class PaginationDto {
-  @ApiPropertyOptional({ default: 1, minimum: 1 })
+  @ApiPropertyOptional({
+    default: 1,
+    minimum: 1,
+    description: 'Numéro de page, à partir de 1',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   page: number = 1;
 
-  @ApiPropertyOptional({ default: 25, minimum: 1, maximum: 100 })
+  @ApiPropertyOptional({
+    default: 25,
+    minimum: 1,
+    maximum: 100,
+    description: "Nombre d'éléments par page, entre 1 et 100",
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()

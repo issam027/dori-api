@@ -14,10 +14,12 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../../core/pagination/pagination.dto';
+import { Transform } from 'class-transformer';
+import { strictBoolean } from '../../../core/validation/strict-boolean.transformer';
 
 export class CreateUserDto {
   @ApiProperty({
-    example: 'hostesse_tunis',
+    example: 'operator_tunis',
     description: "Nom d'utilisateur unique",
   })
   @IsString()
@@ -26,7 +28,7 @@ export class CreateUserDto {
   username: string;
 
   @ApiPropertyOptional({
-    example: 'hostesse@hopital.tn',
+    example: 'operator@hopital.tn',
     description: 'Adresse e-mail',
   })
   @IsEmail()
@@ -84,6 +86,11 @@ export class UpdateUserDto {
   @MaxLength(10)
   @IsOptional()
   languagePreference?: string;
+
+  @ApiPropertyOptional({ description: 'Activer ou désactiver le compte' })
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }
 
 export class UpdateUserStatusDto {
@@ -127,6 +134,11 @@ export class UpdateRolePermissionsDto {
 }
 
 export class UserFilterDto extends PaginationDto {
+  @ApiPropertyOptional({ type: Boolean, default: true })
+  @Transform(({ obj, key }) => strictBoolean(obj[key]))
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
   @ApiPropertyOptional({
     enum: ['human', 'kiosk'],
     description: 'Filtrer par type de compte',

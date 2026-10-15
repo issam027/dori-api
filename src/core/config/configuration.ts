@@ -41,6 +41,17 @@ export function validateEnvironment(
     }
   }
 
+  if (environment.PUBLIC_WEB_URL) {
+    try {
+      const publicWebUrl = new URL(String(environment.PUBLIC_WEB_URL));
+      if (!['http:', 'https:'].includes(publicWebUrl.protocol)) {
+        throw new Error('unsupported protocol');
+      }
+    } catch {
+      throw new Error('PUBLIC_WEB_URL must be a valid HTTP(S) URL');
+    }
+  }
+
   return environment;
 }
 
@@ -83,6 +94,7 @@ export default () => {
   return {
     port: parseInteger('PORT', process.env.PORT, 3000),
     nodeEnv: process.env.NODE_ENV ?? 'development',
+    swaggerExport: process.env.SWAGGER_EXPORT === 'true',
 
     platform: {
       isVercel: !!process.env.VERCEL,
@@ -156,6 +168,7 @@ export default () => {
 
     tracking: {
       closedGraceMinutes: 60,
+      publicWebUrl: process.env.PUBLIC_WEB_URL ?? 'http://localhost:5173',
     },
 
     security: {

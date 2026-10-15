@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity('dori_site_queue_thread')
+@Entity('dori_queue')
 export class DoriQueue {
   @PrimaryGeneratedColumn()
   queue_id: number;

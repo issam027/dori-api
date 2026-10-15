@@ -8,7 +8,7 @@ describe('QueuesRepository', () => {
       query: jest.fn().mockResolvedValue([row]),
     } as unknown as DataSource;
 
-    const result = await new QueuesRepository(dataSource).findActiveById(5);
+    const result = await new QueuesRepository(dataSource).findById(5);
 
     expect(result).toBe(row);
     expect(dataSource.query).toHaveBeenCalledWith(

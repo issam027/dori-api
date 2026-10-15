@@ -29,6 +29,30 @@ export class ClockService {
     return fromZonedTime(value, timezone);
   }
 
+  startOfDayInTimezone(date: string, timezone: string): Date {
+    return fromZonedTime(`${date}T00:00:00.000`, timezone);
+  }
+
+  addCalendarDays(date: string, days: number): string {
+    const [year, month, day] = date.split('-').map(Number);
+    const result = new Date(Date.UTC(year, month - 1, day + days));
+    return result.toISOString().slice(0, 10);
+  }
+
+  dateRangeToUtcBounds(
+    dateFrom: string,
+    dateTo: string,
+    timezone: string,
+  ): { fromInclusive: Date; toExclusive: Date } {
+    return {
+      fromInclusive: this.startOfDayInTimezone(dateFrom, timezone),
+      toExclusive: this.startOfDayInTimezone(
+        this.addCalendarDays(dateTo, 1),
+        timezone,
+      ),
+    };
+  }
+
   addMilliseconds(date: Date, milliseconds: number): Date {
     return new Date(date.getTime() + milliseconds);
   }

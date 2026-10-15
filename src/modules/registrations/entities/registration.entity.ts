@@ -53,7 +53,10 @@ export class DoriRegistration {
     | 'cancelled';
 
   @Column({ type: 'int', nullable: true })
-  current_session_id: number | null;
+  served_by_session_id: number | null;
+
+  @Column({ type: 'int', nullable: true })
+  served_by_user_id: number | null;
 
   @Column({ type: 'timestamptz', nullable: true })
   called_at: Date | null;

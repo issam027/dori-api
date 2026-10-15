@@ -23,7 +23,7 @@ describe('PersonsService', () => {
     repository = {
       existsInSites: jest.fn(),
       findPersons: jest.fn(),
-      findActiveById: jest.fn(),
+      findById: jest.fn(),
       findByPhone: jest.fn(),
       findByEmail: jest.fn(),
       create: jest.fn(),
@@ -108,7 +108,7 @@ describe('PersonsService', () => {
   });
 
   it('soft deletes a person and its notes through one repository operation', async () => {
-    repository.findActiveById.mockResolvedValue({ person_id: 42, site_id: 1 });
+    repository.findById.mockResolvedValue({ person_id: 42, site_id: 1 });
     await expect(service.deletePerson(42, user)).resolves.toEqual({
       id: 42,
       deleted: true,
@@ -132,6 +132,7 @@ describe('PersonsService', () => {
     const result = await service.findPersonNotes(10, pagination, user);
     expect(repository.findNotes).toHaveBeenCalledWith({
       personId: 10,
+      isActive: true,
       sortField: 'created_at',
       sortOrder: 'DESC',
       pageSize: 2,

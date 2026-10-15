@@ -192,7 +192,7 @@ export class AuthService {
     const targetMaxRank =
       await this.authRepository.getMaxRoleRank(targetUserId);
 
-    // Un manager (rank 3) ne peut déconnecter que des users de rang < 3 (hôtesse, kiosk)
+    // Un manager (rank 3) ne peut déconnecter que des users de rang < 3 (opérateur, kiosk)
     // Un admin (rank 4) peut déconnecter jusqu'au rang 3 (manager)
     const maxDisconnectableRank = callerMaxRank - 1;
     if (

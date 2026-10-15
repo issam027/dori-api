@@ -18,4 +18,12 @@ describe('Bootstrap — BOOT-001 & CORE-004', () => {
     );
     expect(mainContent).not.toMatch(/process\.env/);
   });
+
+  it('keeps implicit DTO conversion disabled so string booleans are rejected', () => {
+    const mainContent = fs.readFileSync(
+      path.resolve(__dirname, 'main.ts'),
+      'utf8',
+    );
+    expect(mainContent).toMatch(/enableImplicitConversion:\s*false/);
+  });
 });

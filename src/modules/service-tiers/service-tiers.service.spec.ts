@@ -162,7 +162,7 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
   describe('getNotificationRules', () => {
     it('should return all notification rules without artificial limit/truncation', async () => {
       dataSourceMock.query.mockImplementation(async (sql: string) => {
-        if (sql.includes('FROM dori_tier_notification_rule')) {
+        if (sql.includes('FROM dori_queue_tier_notification_rule')) {
           return [
             {
               rule_id: 1,

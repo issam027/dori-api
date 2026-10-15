@@ -13,14 +13,18 @@ import {
 } from '../src/core/swagger/openapi.config';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { logger: false });
+  process.env.SWAGGER_EXPORT = 'true';
+  const app = await NestFactory.create(AppModule, { logger: ['error'] });
 
   const document = normalizeOpenApiDocument(
     SwaggerModule.createDocument(app, createOpenApiConfig()),
   );
 
-  writeFileSync('./openapi.json', JSON.stringify(document, null, 2), 'utf8');
+  const jsonDocument = JSON.stringify(document, null, 2);
+  writeFileSync('./openapi.json', jsonDocument, 'utf8');
+  writeFileSync('./ai/docs-json.json', jsonDocument, 'utf8');
   console.log('✅  openapi.json generated');
+  console.log('✅  ai/docs-json.json generated');
 
   try {
     const yamlStr = yaml.dump(document, { indent: 2, lineWidth: 120 });

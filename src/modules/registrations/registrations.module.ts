@@ -6,9 +6,16 @@ import { ClockModule } from '../../core/clock/clock.module';
 import { DatabaseModule } from '../../core/database/database.module';
 import { RbacModule } from '../../core/rbac/rbac.module';
 import { RegistrationsRepository } from './registrations.repository';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [DatabaseModule, ClockModule, RbacModule, PersonsModule],
+  imports: [
+    ConfigModule,
+    DatabaseModule,
+    ClockModule,
+    RbacModule,
+    PersonsModule,
+  ],
   controllers: [RegistrationsController],
   providers: [RegistrationsService, RegistrationsRepository],
   exports: [RegistrationsService],

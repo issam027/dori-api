@@ -44,14 +44,14 @@ describe('PermissionsGuard', () => {
   it('should allow if user has at least one of the any_permissions', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key) => {
       if (key === 'any_permissions') {
-        return ['user_manage_hostess', 'user_manage_admin'];
+        return ['user_manage_operator', 'user_manage_admin'];
       }
       return undefined;
     });
 
     const context = createMockContext({
       userId: 2,
-      permissions: ['user_manage_hostess'],
+      permissions: ['user_manage_operator'],
     });
 
     expect(guard.canActivate(context)).toBe(true);
@@ -67,7 +67,7 @@ describe('PermissionsGuard', () => {
 
     const context = createMockContext({
       userId: 2,
-      permissions: ['user_manage_hostess'],
+      permissions: ['user_manage_operator'],
     });
 
     expect(() => guard.canActivate(context)).toThrow(DoriException);

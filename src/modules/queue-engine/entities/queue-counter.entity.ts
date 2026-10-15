@@ -1,6 +1,6 @@
 import { Column, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
-@Entity('dori_queue_counter')
+@Entity('dori_queue_daily_ticket_counter')
 export class DoriQueueCounter {
   @PrimaryColumn({ type: 'int' })
   queue_id: number;

@@ -7,8 +7,9 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { PaginationDto } from '../../../core/pagination/pagination.dto';
+import { strictBoolean } from '../../../core/validation/strict-boolean.transformer';
 
 export class UpdateQueueDto extends PartialType(CreateQueueDto) {
   @ApiPropertyOptional({ description: 'Activer / désactiver la queue' })
@@ -32,7 +33,7 @@ export class QueueFilterDto extends PaginationDto {
   @ApiPropertyOptional({ description: 'Filtrer par statut actif' })
   @IsBoolean()
   @IsOptional()
-  @Type(() => Boolean)
+  @Transform(({ obj, key }) => strictBoolean(obj[key]))
   isActive?: boolean;
 }
 

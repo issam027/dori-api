@@ -346,7 +346,7 @@ Unifier `HH:mm` / `HH:mm:ss` / ISO 8601. Documenter UTC vs heure locale. Ajouter
 **Source** : handover_2.md  
 **1 fichier + migration SQL**
 
-Créer `dori_queue_daily_reset_log` ou ajouter `last_daily_reset_date` sur `dori_site_queue_thread`. Découpler l'idempotence de `dori_queue_counter`.
+Créer `dori_queue_daily_reset_execution_log` ou ajouter `last_daily_reset_date` sur `dori_queue`. Découpler l'idempotence de `dori_queue_daily_ticket_counter`.
 
 **Fichier** : `src/workers/daily-reset/daily-reset.worker.ts`
 

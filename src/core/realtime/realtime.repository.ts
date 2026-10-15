@@ -28,7 +28,7 @@ export class RealtimeRepository {
     lastSeenAt: Date,
   ) {
     return this.dataSource.query(
-      `UPDATE dori_queue_session
+      `UPDATE dori_operator_session
        SET last_seen_at = $4
        WHERE session_id = $1 AND queue_id = $2 AND user_id = $3
          AND disconnected_at IS NULL`,

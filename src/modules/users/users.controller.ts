@@ -63,7 +63,7 @@ export class UsersController {
   @Get('users')
   @RequireAnyPermission(
     'user_manage_kiosk',
-    'user_manage_hostess',
+    'user_manage_operator',
     'user_manage_manager',
     'user_manage_admin',
     'system_manage',
@@ -86,7 +86,7 @@ export class UsersController {
   @Post('users')
   @RequireAnyPermission(
     'user_manage_kiosk',
-    'user_manage_hostess',
+    'user_manage_operator',
     'user_manage_manager',
     'user_manage_admin',
   )
@@ -107,7 +107,7 @@ export class UsersController {
   @Get('users/:userId')
   @RequireAnyPermission(
     'user_manage_kiosk',
-    'user_manage_hostess',
+    'user_manage_operator',
     'user_manage_manager',
     'user_manage_admin',
     'system_manage',
@@ -135,7 +135,7 @@ export class UsersController {
   @Patch('users/:userId')
   @RequireAnyPermission(
     'user_manage_kiosk',
-    'user_manage_hostess',
+    'user_manage_operator',
     'user_manage_manager',
     'user_manage_admin',
   )
@@ -164,7 +164,7 @@ export class UsersController {
   @Patch('users/:userId/status')
   @RequireAnyPermission(
     'user_manage_kiosk',
-    'user_manage_hostess',
+    'user_manage_operator',
     'user_manage_manager',
     'user_manage_admin',
   )
@@ -193,7 +193,7 @@ export class UsersController {
   @Delete('users/:userId')
   @RequireAnyPermission(
     'user_manage_kiosk',
-    'user_manage_hostess',
+    'user_manage_operator',
     'user_manage_manager',
     'user_manage_admin',
   )
@@ -218,7 +218,7 @@ export class UsersController {
   @Patch('users/:userId/password')
   @RequireAnyPermission(
     'user_manage_kiosk',
-    'user_manage_hostess',
+    'user_manage_operator',
     'user_manage_manager',
     'user_manage_admin',
   )
@@ -247,7 +247,7 @@ export class UsersController {
   @Post('users/:userId/roles')
   @RequireAnyPermission(
     'user_manage_kiosk',
-    'user_manage_hostess',
+    'user_manage_operator',
     'user_manage_manager',
     'user_manage_admin',
   )
@@ -274,7 +274,7 @@ export class UsersController {
   @Delete('users/:userId/roles/:roleId')
   @RequireAnyPermission(
     'user_manage_kiosk',
-    'user_manage_hostess',
+    'user_manage_operator',
     'user_manage_manager',
     'user_manage_admin',
   )
@@ -305,7 +305,7 @@ export class UsersController {
   @Get('roles')
   @RequireAnyPermission(
     'user_manage_kiosk',
-    'user_manage_hostess',
+    'user_manage_operator',
     'user_manage_manager',
     'user_manage_admin',
     'system_manage',

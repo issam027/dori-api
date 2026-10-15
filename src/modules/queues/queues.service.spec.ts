@@ -71,7 +71,7 @@ describe('QueuesService — SEC-04 assignOperator', () => {
 
   it('should throw USER_NOT_FOUND when target user does not exist in dori_user', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('SELECT site_id FROM dori_site_queue_thread')) {
+      if (sql.includes('SELECT site_id FROM dori_queue')) {
         return [{ site_id: 10 }];
       }
       if (sql.includes('SELECT user_id, is_active FROM dori_user')) {
@@ -87,7 +87,7 @@ describe('QueuesService — SEC-04 assignOperator', () => {
 
   it('should throw ACCOUNT_LOCKED when target user is inactive', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('SELECT site_id FROM dori_site_queue_thread')) {
+      if (sql.includes('SELECT site_id FROM dori_queue')) {
         return [{ site_id: 10 }];
       }
       if (sql.includes('SELECT user_id, is_active FROM dori_user')) {
@@ -101,15 +101,15 @@ describe('QueuesService — SEC-04 assignOperator', () => {
     );
   });
 
-  it('should throw FORBIDDEN_ROLE_ESCALATION when target user does not have hotesse/operator role', async () => {
+  it('should throw FORBIDDEN_ROLE_ESCALATION when target user does not have operator role', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('SELECT site_id FROM dori_site_queue_thread')) {
+      if (sql.includes('SELECT site_id FROM dori_queue')) {
         return [{ site_id: 10 }];
       }
       if (sql.includes('SELECT user_id, is_active FROM dori_user')) {
         return [{ user_id: 2, is_active: true }];
       }
-      if (sql.includes("r.role_name IN ('hotesse', 'operator')")) {
+      if (sql.includes("r.role_name = 'operator'")) {
         return [];
       }
       return [];
@@ -120,18 +120,18 @@ describe('QueuesService — SEC-04 assignOperator', () => {
     );
   });
 
-  it('should assign operator successfully when user exists, is active and has hotesse role', async () => {
+  it('should assign operator successfully when user exists, is active and has operator role', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('SELECT site_id FROM dori_site_queue_thread')) {
+      if (sql.includes('SELECT site_id FROM dori_queue')) {
         return [{ site_id: 10 }];
       }
       if (sql.includes('SELECT user_id, is_active FROM dori_user')) {
         return [{ user_id: 2, is_active: true }];
       }
-      if (sql.includes("r.role_name IN ('hotesse', 'operator')")) {
+      if (sql.includes("r.role_name = 'operator'")) {
         return [{ user_id: 2 }];
       }
-      if (sql.includes('INSERT INTO dori_user_queue')) {
+      if (sql.includes('INSERT INTO dori_user_queue_assignment')) {
         return [];
       }
       return [];
@@ -204,7 +204,7 @@ describe('QueuesService — SEC-04 assignOperator', () => {
   describe('deleteQueue (DAT-05)', () => {
     it('should throw QUEUE_NOT_FOUND when queue does not exist or is inactive', async () => {
       dataSourceMock.query.mockImplementation(async (sql: string) => {
-        if (sql.includes('FROM dori_site_queue_thread q')) {
+        if (sql.includes('FROM dori_queue q')) {
           return [];
         }
         return [];
@@ -220,7 +220,7 @@ describe('QueuesService — SEC-04 assignOperator', () => {
       dataSourceMock.query.mockImplementation(
         async (sql: string, params: any[]) => {
           queries.push({ sql, params });
-          if (sql.includes('FROM dori_site_queue_thread q')) {
+          if (sql.includes('FROM dori_queue q')) {
             return [{ queue_id: 5, is_active: true }];
           }
           return [];
@@ -232,7 +232,7 @@ describe('QueuesService — SEC-04 assignOperator', () => {
 
       const queueUpdate = queries.find(
         (q) =>
-          q.sql.includes('UPDATE dori_site_queue_thread') &&
+          q.sql.includes('UPDATE dori_queue') &&
           q.sql.includes('SET is_active = FALSE'),
       );
       expect(queueUpdate).toBeDefined();
@@ -248,7 +248,7 @@ describe('QueuesService — SEC-04 assignOperator', () => {
 
       const sessionsUpdate = queries.find(
         (q) =>
-          q.sql.includes('UPDATE dori_queue_session') &&
+          q.sql.includes('UPDATE dori_operator_session') &&
           q.sql.includes("closure_reason = 'forced'"),
       );
       expect(sessionsUpdate).toBeDefined();

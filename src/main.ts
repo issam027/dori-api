@@ -74,7 +74,10 @@ async function createApp(): Promise<NestExpressApplication> {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
-      transformOptions: { enableImplicitConversion: true },
+      // Query conversions are explicit on their DTO properties. Keeping
+      // implicit conversion disabled prevents JSON strings such as "false"
+      // from being silently converted to the boolean true.
+      transformOptions: { enableImplicitConversion: false },
     }),
   );
 

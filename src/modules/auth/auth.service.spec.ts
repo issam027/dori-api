@@ -71,7 +71,7 @@ describe('AuthService — SEC-03 Logout Specific Session', () => {
     const caller: AuthenticatedUser = {
       userId: 5,
       username: 'agent1',
-      roles: ['hotesse'],
+      roles: ['operator'],
       permissions: [],
       userType: 'human',
       sessionId: 'session-uuid-device-1',
@@ -95,7 +95,7 @@ describe('AuthService — SEC-03 Logout Specific Session', () => {
     const caller: AuthenticatedUser = {
       userId: 5,
       username: 'agent1',
-      roles: ['hotesse'],
+      roles: ['operator'],
       permissions: [],
       userType: 'human',
       sessionId: 'session-uuid-device-1',
@@ -110,11 +110,11 @@ describe('AuthService — SEC-03 Logout Specific Session', () => {
     );
   });
 
-  it('CAS 3 — should throw FORBIDDEN_PERMISSION when a hotesse tries to force-disconnect another user', async () => {
+  it('CAS 3 — should throw FORBIDDEN_PERMISSION when a operator tries to force-disconnect another user', async () => {
     const caller: AuthenticatedUser = {
       userId: 5,
       username: 'agent1',
-      roles: ['hotesse'],
+      roles: ['operator'],
       permissions: [],
       userType: 'human',
       sessionId: 'session-uuid-1',
@@ -135,7 +135,7 @@ describe('AuthService — SEC-03 Logout Specific Session', () => {
       sessionId: 'session-mgr',
     };
 
-    // caller rank = 3, target rank = 2 (hotesse)
+    // caller rank = 3, target rank = 2 (operator)
     dataSourceMock.query
       .mockResolvedValueOnce([{ max_rank: 3 }]) // callerRankRes
       .mockResolvedValueOnce([{ max_rank: 2 }]) // targetRankRes

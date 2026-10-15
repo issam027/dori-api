@@ -52,17 +52,17 @@
 
 * **Fichier impacté** : `src/workers/daily-reset/daily-reset.worker.ts` (lignes 60–70, 75–135)
 * **Problème** :  
-  La condition d'idempotence du worker repose sur `dori_queue_counter` :
+  La condition d'idempotence du worker repose sur `dori_queue_daily_ticket_counter` :
   ```ts
   const counter = await this.dataSource.query(
-    `SELECT last_number FROM dori_queue_counter WHERE queue_id = $1 AND business_date = $2`,
+    `SELECT last_number FROM dori_queue_daily_ticket_counter WHERE queue_id = $1 AND business_date = $2`,
     [q.queue_id, tomorrow],
   );
   if (counter && counter.length > 0) continue;
   ```
-  Si un usager a réservé un RDV pour demain, `dori_queue_counter` existe déjà pour `tomorrow` → le reset est **définitivement ignoré** pour cette file, bloquant l'incrémentation quotidienne.
+  Si un usager a réservé un RDV pour demain, `dori_queue_daily_ticket_counter` existe déjà pour `tomorrow` → le reset est **définitivement ignoré** pour cette file, bloquant l'incrémentation quotidienne.
 * **Action à réaliser** :  
-  Créer une table ou colonne d'audit des resets indépendante des compteurs (ex : `dori_queue_daily_reset_log` avec colonnes `queue_id` + `reset_date` + `executed_at`, ou ajouter `last_daily_reset_date` sur la file `dori_site_queue_thread`). Conditionner l'idempotence sur cette table dédiée, pas sur `dori_queue_counter`.
+  Créer une table ou colonne d'audit des resets indépendante des compteurs (ex : `dori_queue_daily_reset_execution_log` avec colonnes `queue_id` + `reset_date` + `executed_at`, ou ajouter `last_daily_reset_date` sur la file `dori_queue`). Conditionner l'idempotence sur cette table dédiée, pas sur `dori_queue_daily_ticket_counter`.
 * **Fichiers à modifier** :
   * `src/workers/daily-reset/daily-reset.worker.ts`
   * Migration SQL pour créer la table/colonne d'audit
@@ -74,7 +74,7 @@
 * **Fichier impacté** : `src/modules/registrations/registrations.service.ts` (méthode `createRegistration`, lignes ~45–220)
 * **Problème** :  
   `registerRegistration` enchaîne sans transaction :
-  1. Incrément du compteur (`dori_queue_counter`)
+  1. Incrément du compteur (`dori_queue_daily_ticket_counter`)
   2. Création éventuelle de la personne (`dori_person`)
   3. Insertion de l'inscription (`dori_registration`)
   4. Création de la notification de bienvenue (`dori_notification`)
@@ -100,7 +100,7 @@
 * **Action à réaliser** :  
   Dans la transaction atomique (DAT-02), verrouiller le créneau avant le count :
   ```sql
-  SELECT slot_capacity FROM dori_site_queue_thread WHERE queue_id = $1 FOR UPDATE
+  SELECT slot_capacity FROM dori_queue WHERE queue_id = $1 FOR UPDATE
   ```
   ou utiliser une contrainte d'exclusion PostgreSQL sur `(queue_id, scheduled_time)`.
 * **Fichiers à modifier** :
@@ -230,7 +230,7 @@
   - [ ] SEC-05 : Valider l'état de la session dans `RealtimeGateway.handleConnection`.
 
 - [ ] **Phase 2 — Workers & Robustesse Données**
-  - [ ] DAT-01 : Corriger l'idempotence du `DailyResetWorker` (découpler de `dori_queue_counter`).
+  - [ ] DAT-01 : Corriger l'idempotence du `DailyResetWorker` (découpler de `dori_queue_daily_ticket_counter`).
   - [ ] DAT-02 : Envelopper `RegistrationsService.registerRegistration` dans une transaction atomique.
   - [ ] DAT-03 : Verrouiller la vérification de capacité des créneaux de RDV (`FOR UPDATE`).
   - [ ] DAT-04 : Décider et homogénéiser TypeORM vs SQL brut (dette technique — décision stratégique).

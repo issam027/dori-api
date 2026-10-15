@@ -66,7 +66,7 @@ export class UsersService {
     if (permissions.has('user_manage_manager')) {
       return 3;
     }
-    if (permissions.has('user_manage_hostess')) {
+    if (permissions.has('user_manage_operator')) {
       return 2;
     }
     if (permissions.has('user_manage_kiosk')) {
@@ -89,7 +89,7 @@ export class UsersService {
 
     if (
       callerRank < 3 ||
-      caller.roles?.includes('hotesse') ||
+      caller.roles?.includes('operator') ||
       caller.roles?.includes('kiosk')
     ) {
       throw new DoriException('FORBIDDEN_PERMISSION');
@@ -210,6 +210,14 @@ export class UsersService {
     await this.findUserById(userId, user);
 
     const now = this.clockService.now();
+    if (dto.isActive !== undefined) {
+      await this.usersRepository.updateUserStatus(
+        userId,
+        dto.isActive,
+        user.userId,
+        now,
+      );
+    }
     return this.usersRepository.updateUser(userId, dto, user.userId, now);
   }
 

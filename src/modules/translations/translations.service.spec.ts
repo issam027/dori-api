@@ -28,7 +28,7 @@ describe('TranslationsService', () => {
       create: jest.fn(),
       delete: jest.fn(),
       getBundle: jest.fn(),
-      findActive: jest.fn(),
+      findPage: jest.fn(),
     };
     clockMock = {
       now: jest.fn().mockReturnValue(fixedDate),

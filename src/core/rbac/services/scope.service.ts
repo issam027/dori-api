@@ -36,7 +36,7 @@ export class ScopeService {
     if (user.roles?.includes('manager')) {
       // Managers have access to their assigned sites and ALL queues of those sites (§4.10)
       siteIds = await this.scopeRepository.findUserSiteIds(user.userId);
-      queueIds = await this.scopeRepository.findActiveQueueIdsBySites(siteIds);
+      queueIds = await this.scopeRepository.findQueueIdsBySites(siteIds);
     } else {
       const queueScope = await this.scopeRepository.findUserQueueScope(
         user.userId,

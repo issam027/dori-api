@@ -1,5 +1,4 @@
 import {
-  IsDateString,
   IsIn,
   IsInt,
   IsNotEmpty,
@@ -10,6 +9,11 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../../core/pagination/pagination.dto';
+import {
+  DATE_RANGE_LIMITS,
+  IsCalendarDate,
+  ValidDateRange,
+} from '../../../core/dates/date-range.dto';
 
 export class SendManualNotificationDto {
   @ApiProperty({
@@ -46,6 +50,7 @@ export class SendManualNotificationDto {
   recipient?: string;
 }
 
+@ValidDateRange(DATE_RANGE_LIMITS.notificationFilterDays)
 export class NotificationFilterDto extends PaginationDto {
   @ApiPropertyOptional({ description: "Filtrer par ID d'inscription" })
   @IsInt()
@@ -72,11 +77,36 @@ export class NotificationFilterDto extends PaginationDto {
 
   @ApiPropertyOptional({
     example: '2026-09-27',
-    description: 'Date métier (YYYY-MM-DD)',
+    format: 'date',
+    description: 'Première date métier incluse. Doit être fournie avec dateTo.',
   })
-  @IsDateString()
+  @IsCalendarDate()
   @IsOptional()
-  businessDate?: string;
+  dateFrom?: string;
+
+  @ApiPropertyOptional({
+    example: '2026-10-31',
+    format: 'date',
+    description:
+      'Dernière date métier incluse. La période complète est limitée à 366 jours.',
+  })
+  @IsCalendarDate()
+  @IsOptional()
+  dateTo?: string;
+
+  @ApiPropertyOptional({ example: 1, description: 'Filtrer par file' })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  queueId?: number;
+
+  @ApiPropertyOptional({ example: 1, description: 'Filtrer par site' })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  siteId?: number;
 }
 
 export class WebhookDeliveryDto {

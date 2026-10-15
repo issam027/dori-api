@@ -24,6 +24,8 @@ import { DatabaseSeedService } from './database-seed.service';
           : false,
         entities: ALL_ENTITIES,
         synchronize: false,
+        manualInitialization:
+          configService.get<boolean>('swaggerExport') ?? false,
         logging:
           configService.get<string>('nodeEnv') === 'development'
             ? ['error', 'warn']

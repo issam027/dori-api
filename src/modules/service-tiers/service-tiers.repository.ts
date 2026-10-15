@@ -146,7 +146,7 @@ export class ServiceTiersRepository {
               t.tier_code, t.tier_name, t.description, t.is_system
        FROM dori_queue_service_tier qt
        JOIN dori_service_tier t ON t.tier_id = qt.tier_id
-       JOIN dori_site_queue_thread q ON q.queue_id = qt.queue_id
+       JOIN dori_queue q ON q.queue_id = qt.queue_id
        JOIN dori_site s ON s.site_id = q.site_id
        WHERE qt.queue_id = $1 AND qt.tier_id = $2`,
       [queueId, tierId],
@@ -176,7 +176,7 @@ export class ServiceTiersRepository {
               t.tier_code, t.tier_name, t.description AS tier_description, t.is_system
        FROM dori_queue_service_tier qt
        JOIN dori_service_tier t ON t.tier_id = qt.tier_id
-       JOIN dori_site_queue_thread q ON q.queue_id = qt.queue_id
+       JOIN dori_queue q ON q.queue_id = qt.queue_id
        JOIN dori_site s ON s.site_id = q.site_id
        WHERE qt.queue_id = $1 AND qt.is_active = TRUE
        ORDER BY qt.${input.sortField} ${input.sortOrder}, qt.tier_id ASC LIMIT $2 OFFSET $3`,
@@ -282,12 +282,12 @@ export class ServiceTiersRepository {
     offset: number;
   }): Promise<{ items: NotificationRuleRow[]; total: number }> {
     const counts: Array<{ total: number }> = await this.dataSource.query(
-      `SELECT COUNT(*)::int AS total FROM dori_tier_notification_rule
+      `SELECT COUNT(*)::int AS total FROM dori_queue_tier_notification_rule
        WHERE queue_id = $1 AND tier_id = $2 AND is_active = TRUE`,
       [input.queueId, input.tierId],
     );
     const items: NotificationRuleRow[] = await this.dataSource.query(
-      `SELECT * FROM dori_tier_notification_rule
+      `SELECT * FROM dori_queue_tier_notification_rule
        WHERE queue_id = $1 AND tier_id = $2 AND is_active = TRUE
        ORDER BY ${input.sortField} ${input.sortOrder} LIMIT $3 OFFSET $4`,
       [input.queueId, input.tierId, input.pageSize, input.offset],
@@ -301,7 +301,7 @@ export class ServiceTiersRepository {
     ruleId: number,
   ): Promise<NotificationRuleRow | null> {
     const rows: NotificationRuleRow[] = await this.dataSource.query(
-      `SELECT * FROM dori_tier_notification_rule
+      `SELECT * FROM dori_queue_tier_notification_rule
        WHERE rule_id = $1 AND queue_id = $2 AND tier_id = $3
          AND deleted_at IS NULL`,
       [ruleId, queueId, tierId],
@@ -314,7 +314,7 @@ export class ServiceTiersRepository {
     tierId: number,
   ): Promise<NotificationRuleRow[]> {
     return this.dataSource.query(
-      `SELECT * FROM dori_tier_notification_rule
+      `SELECT * FROM dori_queue_tier_notification_rule
        WHERE queue_id = $1 AND tier_id = $2 AND is_active = TRUE
        ORDER BY rule_id ASC`,
       [queueId, tierId],
@@ -338,7 +338,7 @@ export class ServiceTiersRepository {
         ? (dto.thresholdValue ?? null)
         : null;
     const rows: NotificationRuleRow[] = await this.dataSource.query(
-      `INSERT INTO dori_tier_notification_rule (
+      `INSERT INTO dori_queue_tier_notification_rule (
         queue_id, tier_id, notification_type, channel, threshold_position,
         threshold_minutes, include_tracking_link, created_by_user_id,
         updated_by_user_id, created_at, updated_at
@@ -376,7 +376,7 @@ export class ServiceTiersRepository {
       ['is_active', dto.isActive],
     ];
     return this.dynamicUpdate<NotificationRuleRow>(
-      'dori_tier_notification_rule',
+      'dori_queue_tier_notification_rule',
       entries,
       userId,
       now,
@@ -396,7 +396,7 @@ export class ServiceTiersRepository {
     now: Date,
   ): Promise<void> {
     await this.dataSource.query(
-      `UPDATE dori_tier_notification_rule
+      `UPDATE dori_queue_tier_notification_rule
        SET is_active = FALSE, deleted_at = $1, updated_by_user_id = $2, updated_at = $1
        WHERE rule_id = $3 AND queue_id = $4 AND tier_id = $5`,
       [now, userId, ruleId, queueId, tierId],

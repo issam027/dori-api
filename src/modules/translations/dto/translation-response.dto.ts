@@ -13,7 +13,7 @@ export class TranslationResponseDto {
 
   @ApiProperty({
     example: 'ihm',
-    enum: ['ihm', 'sms', 'error'],
+    enum: ['ihm', 'sms', 'email', 'error'],
     description: "Catégorie d'usage",
   })
   category: string;

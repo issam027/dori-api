@@ -27,7 +27,7 @@ export class RegistrationsTransaction {
        s.default_appointments_enabled, s.default_appointment_slot_duration, s.default_slot_capacity,
        s.default_working_hours_start, s.default_working_hours_end, s.default_break_start,
        s.default_break_end, s.default_late_tolerance_minutes
-       FROM dori_site_queue_thread q JOIN dori_site s ON s.site_id = q.site_id
+       FROM dori_queue q JOIN dori_site s ON s.site_id = q.site_id
        WHERE q.queue_id = $1 AND q.is_active = TRUE`,
       [queueId],
     );
@@ -49,7 +49,7 @@ export class RegistrationsTransaction {
               t.tier_code, t.tier_name
        FROM dori_queue_service_tier qt
        JOIN dori_service_tier t ON t.tier_id = qt.tier_id
-       JOIN dori_site_queue_thread q ON q.queue_id = qt.queue_id
+       JOIN dori_queue q ON q.queue_id = qt.queue_id
        JOIN dori_site s ON s.site_id = q.site_id
        WHERE qt.queue_id = $1 AND qt.tier_id = $2 AND qt.is_active = TRUE`,
       [queueId, tierId],
@@ -89,21 +89,12 @@ export class RegistrationsTransaction {
 
   async nextTicketNumber(queueId: number, businessDate: string, now: Date) {
     const rows = await this.manager.query(
-      `INSERT INTO dori_queue_counter (queue_id, business_date, last_number) VALUES ($1,$2,1)
+      `INSERT INTO dori_queue_daily_ticket_counter (queue_id, business_date, last_number) VALUES ($1,$2,1)
        ON CONFLICT (queue_id,business_date) DO UPDATE SET
-       last_number = dori_queue_counter.last_number + 1, updated_at = $3 RETURNING last_number`,
+       last_number = dori_queue_daily_ticket_counter.last_number + 1, updated_at = $3 RETURNING last_number`,
       [queueId, businessDate, now],
     );
     return Number(rows[0].last_number);
-  }
-
-  async hasTrackingRule(queueId: number, tierId: number) {
-    const rows = await this.manager.query(
-      `SELECT 1 FROM dori_tier_notification_rule WHERE queue_id = $1 AND tier_id = $2
-       AND include_tracking_link = TRUE AND is_active = TRUE LIMIT 1`,
-      [queueId, tierId],
-    );
-    return rows.length > 0;
   }
 
   async create(input: {
@@ -145,6 +136,87 @@ export class RegistrationsTransaction {
     return rows[0];
   }
 
+  async createWelcomeNotifications(input: {
+    registrationId: number;
+    trackingUrl: string;
+    ticketNumber: string;
+    now: Date;
+  }): Promise<number> {
+    const rules: Array<{
+      rule_id: number;
+      channel: 'sms' | 'email';
+      include_tracking_link: boolean;
+      locale: string;
+      first_name: string | null;
+      phone_number: string | null;
+      email: string | null;
+    }> = await this.manager.query(
+      `SELECT nr.rule_id, nr.channel, nr.include_tracking_link,
+              COALESCE(r.language_preference, p.language_preference, s.default_locale, 'fr') AS locale,
+              p.first_name, p.phone_number, p.email
+       FROM dori_registration r
+       JOIN dori_person p ON p.person_id = r.person_id
+       JOIN dori_queue q ON q.queue_id = r.queue_id
+       JOIN dori_site s ON s.site_id = q.site_id
+       JOIN dori_queue_tier_notification_rule nr
+         ON nr.queue_id = r.queue_id AND nr.tier_id = r.tier_id
+       WHERE r.registration_id = $1
+         AND nr.notification_type = 'welcome'
+         AND nr.is_active = TRUE`,
+      [input.registrationId],
+    );
+
+    let createdCount = 0;
+    for (const rule of rules) {
+      const recipient = rule.channel === 'sms' ? rule.phone_number : rule.email;
+      if (!recipient) continue;
+
+      const templateKey = `${rule.channel}.welcome${
+        rule.include_tracking_link ? '_with_tracking' : ''
+      }`;
+      const translations: Array<{ content: string }> = await this.manager.query(
+        `SELECT content FROM dori_translation
+         WHERE translation_key = $1 AND locale IN ($2, 'fr') AND is_active = TRUE
+         ORDER BY CASE WHEN locale = $2 THEN 0 ELSE 1 END
+         LIMIT 1`,
+        [templateKey, rule.locale],
+      );
+      const template = translations[0]?.content;
+      if (!template) continue;
+
+      const values: Record<string, string> = {
+        ticket: input.ticketNumber,
+        firstName: rule.first_name ?? '',
+        trackingUrl: input.trackingUrl,
+      };
+      const content = template.replace(
+        /\{(ticket|firstName|trackingUrl)\}/g,
+        (_placeholder, name: string) => values[name],
+      );
+      const inserted: Array<{ notification_id: number }> =
+        await this.manager.query(
+          `INSERT INTO dori_notification (
+             registration_id, rule_id, channel, notification_type, locale, recipient,
+             notification_content, notification_status, attempt_count, created_at, updated_at
+           ) VALUES ($1, $2, $3, 'welcome', $4, $5, $6, 'pending', 0, $7, $7)
+           ON CONFLICT (registration_id, notification_type, channel)
+           WHERE notification_status <> 'failed' DO NOTHING
+           RETURNING notification_id`,
+          [
+            input.registrationId,
+            rule.rule_id,
+            rule.channel,
+            rule.locale,
+            recipient,
+            content,
+            input.now,
+          ],
+        );
+      createdCount += inserted.length;
+    }
+    return createdCount;
+  }
+
   async reschedule(
     registrationId: number,
     newTime: Date,
@@ -177,26 +249,35 @@ export class RegistrationsRepository {
     const rows = await this.dataSource.query(
       `SELECT q.*, s.timezone, s.default_appointments_enabled, s.default_appointment_slot_duration,
        s.default_slot_capacity, s.default_working_hours_start, s.default_working_hours_end,
-       s.default_break_start, s.default_break_end FROM dori_site_queue_thread q
+       s.default_break_start, s.default_break_end FROM dori_queue q
        JOIN dori_site s ON s.site_id=q.site_id WHERE q.queue_id=$1 AND q.is_active=TRUE`,
       [queueId],
     );
     return rows[0] ?? null;
   }
 
-  findBookedSlots(queueId: number, businessDate: string) {
+  findBookedSlotsBetween(queueId: number, dateFrom: string, dateTo: string) {
     return this.dataSource.query(
-      `SELECT scheduled_time, COUNT(*)::int AS count FROM dori_registration
-       WHERE queue_id=$1 AND business_date=$2 AND status IN ('booked','waiting','in_progress')
-       AND is_active=TRUE GROUP BY scheduled_time`,
-      [queueId, businessDate],
+      `SELECT business_date, scheduled_time, COUNT(*)::int AS count FROM dori_registration
+       WHERE queue_id=$1 AND business_date BETWEEN $2 AND $3
+       AND status IN ('booked','waiting','in_progress') AND is_active=TRUE
+       GROUP BY business_date, scheduled_time`,
+      [queueId, dateFrom, dateTo],
     );
+  }
+
+  async findSiteTimezone(siteId: number): Promise<string | null> {
+    const rows = await this.dataSource.query(
+      `SELECT timezone FROM dori_site WHERE site_id=$1`,
+      [siteId],
+    );
+    return rows[0]?.timezone ?? null;
   }
 
   async findForCheckIn(registrationId: number) {
     const rows = await this.dataSource.query(
       `SELECT r.*,q.late_tolerance_minutes,s.default_late_tolerance_minutes
-       FROM dori_registration r JOIN dori_site_queue_thread q ON q.queue_id=r.queue_id
+       FROM dori_registration r JOIN dori_queue q ON q.queue_id=r.queue_id
        JOIN dori_site s ON s.site_id=q.site_id WHERE r.registration_id=$1 AND r.is_active=TRUE`,
       [registrationId],
     );
@@ -223,7 +304,7 @@ export class RegistrationsRepository {
   async findForReschedule(registrationId: number) {
     const rows = await this.dataSource.query(
       `SELECT r.*,q.slot_capacity,s.default_slot_capacity,s.timezone FROM dori_registration r
-       JOIN dori_site_queue_thread q ON q.queue_id=r.queue_id JOIN dori_site s ON s.site_id=q.site_id
+       JOIN dori_queue q ON q.queue_id=r.queue_id JOIN dori_site s ON s.site_id=q.site_id
        WHERE r.registration_id=$1 AND r.is_active=TRUE`,
       [registrationId],
     );
@@ -266,9 +347,12 @@ export class RegistrationsRepository {
     sortOrder: 'ASC' | 'DESC',
     pageSize: number,
     offset: number,
+    scheduledBounds?: { fromInclusive: Date; toExclusive: Date },
   ) {
     const params: unknown[] = [];
-    let where = 'r.is_active=TRUE';
+    const activeFilter = filter.isActive ?? true;
+    params.push(activeFilter);
+    let where = `r.is_active=$${params.length}`;
     const add = (value: unknown, column: string) => {
       if (value !== undefined) {
         params.push(value);
@@ -281,7 +365,12 @@ export class RegistrationsRepository {
       params.push(scopeQueueIds);
       where += ` AND r.queue_id=ANY($${params.length})`;
     }
-    add(filter.businessDate, 'r.business_date');
+    if (scheduledBounds) {
+      params.push(scheduledBounds.fromInclusive);
+      where += ` AND r.scheduled_time >= $${params.length}`;
+      params.push(scheduledBounds.toExclusive);
+      where += ` AND r.scheduled_time < $${params.length}`;
+    }
     add(filter.status, 'r.status');
     add(filter.entryType, 'r.entry_type');
     add(filter.appointmentStatus, 'r.appointment_status');
@@ -292,14 +381,16 @@ export class RegistrationsRepository {
       where += ` AND (r.ticket_number ILIKE $${params.length} OR p.last_name ILIKE $${params.length} OR p.first_name ILIKE $${params.length})`;
     }
     const from = `FROM dori_registration r JOIN dori_person p ON p.person_id=r.person_id
-      JOIN dori_site_queue_thread q ON q.queue_id=r.queue_id JOIN dori_service_tier t ON t.tier_id=r.tier_id WHERE ${where}`;
+      JOIN dori_queue q ON q.queue_id=r.queue_id JOIN dori_service_tier t ON t.tier_id=r.tier_id
+      WHERE ${where}`;
     const counts = await this.dataSource.query(
       `SELECT COUNT(*)::int AS total ${from}`,
       params,
     );
     const items = await this.dataSource.query(
       `SELECT r.*,p.first_name,p.last_name,p.phone_number,p.email,
-      q.queue_name,q.queue_code,t.tier_code,t.tier_name ${from} ORDER BY r.${sortField} ${sortOrder}
+      q.queue_name,q.queue_code,t.tier_code,t.tier_name
+      ${from} ORDER BY r.${sortField} ${sortOrder}
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
       [...params, pageSize, offset],
     );
@@ -310,8 +401,9 @@ export class RegistrationsRepository {
     const rows = await this.dataSource.query(
       `SELECT r.*,p.first_name,p.last_name,p.phone_number,p.email,
       q.queue_name,q.queue_code,t.tier_code,t.tier_name FROM dori_registration r
-      JOIN dori_person p ON p.person_id=r.person_id JOIN dori_site_queue_thread q ON q.queue_id=r.queue_id
-      JOIN dori_service_tier t ON t.tier_id=r.tier_id WHERE r.registration_id=$1 AND r.is_active=TRUE`,
+      JOIN dori_person p ON p.person_id=r.person_id JOIN dori_queue q ON q.queue_id=r.queue_id
+      JOIN dori_service_tier t ON t.tier_id=r.tier_id
+      WHERE r.registration_id=$1`,
       [registrationId],
     );
     return rows[0] ?? null;
@@ -341,6 +433,12 @@ export class RegistrationsRepository {
       values.push(dto.languagePreference);
       fields.push(`language_preference=$${values.length}`);
     }
+    if (dto.isActive !== undefined) {
+      values.push(dto.isActive);
+      fields.push(`is_active=$${values.length}`);
+      values.push(dto.isActive ? null : now);
+      fields.push(`deleted_at=$${values.length}`);
+    }
     values.push(userId);
     fields.push(`updated_by_user_id=$${values.length}`);
     values.push(now);
@@ -364,7 +462,7 @@ export class RegistrationsRepository {
 
   async findByTrackingToken(token: string) {
     const rows = await this.dataSource.query(
-      `SELECT r.*,q.average_wait_time FROM dori_registration r JOIN dori_site_queue_thread q ON q.queue_id=r.queue_id
+      `SELECT r.*,q.average_wait_time FROM dori_registration r JOIN dori_queue q ON q.queue_id=r.queue_id
      WHERE r.registration_tracking_token=$1`,
       [token],
     );
@@ -382,7 +480,7 @@ export class RegistrationsRepository {
 
   async countActiveThreads(queueId: number) {
     const rows = await this.dataSource.query(
-      `SELECT COUNT(*)::int AS count FROM dori_queue_session WHERE queue_id=$1 AND disconnected_at IS NULL AND mode='active'`,
+      `SELECT COUNT(*)::int AS count FROM dori_operator_session WHERE queue_id=$1 AND disconnected_at IS NULL AND mode='active'`,
       [queueId],
     );
     return rows[0]?.count ?? 0;

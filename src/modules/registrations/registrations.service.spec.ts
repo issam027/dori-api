@@ -7,6 +7,7 @@ import { PersonsService } from '../persons/persons.service';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { DoriException } from '../../core/errors/dori.exception';
 import { RegistrationsRepository } from './registrations.repository';
+import { ConfigService } from '@nestjs/config';
 
 describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
   let service: RegistrationsService;
@@ -61,6 +62,10 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
           },
         },
         { provide: PersonsService, useValue: personsServiceMock },
+        {
+          provide: ConfigService,
+          useValue: { getOrThrow: jest.fn(() => 'http://localhost:5173') },
+        },
       ],
     }).compile();
 
@@ -69,7 +74,7 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
 
   it('should throw PERSON_NOT_FOUND (404) when personId does not exist in dori_person', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('FROM dori_site_queue_thread')) {
+      if (sql.includes('FROM dori_queue q JOIN dori_site')) {
         return [{ site_id: 7 }];
       }
       if (sql.includes('SELECT person_id FROM dori_person')) {
@@ -95,7 +100,7 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
 
   it('should throw PERSON_NOT_FOUND (404) when person exists but is inactive or deleted', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('FROM dori_site_queue_thread')) {
+      if (sql.includes('FROM dori_queue q JOIN dori_site')) {
         return [{ site_id: 7 }];
       }
       if (sql.includes('SELECT person_id FROM dori_person')) {
@@ -118,7 +123,7 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
 
   it('should proceed to tier validation when person belongs to the queue site', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('FROM dori_site_queue_thread')) {
+      if (sql.includes('FROM dori_queue q JOIN dori_site')) {
         return [{ site_id: 7 }];
       }
       if (sql.includes('SELECT person_id FROM dori_person')) {
@@ -153,7 +158,7 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
 
   it('creates an inline person in the queue site', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('FROM dori_site_queue_thread')) {
+      if (sql.includes('FROM dori_queue q JOIN dori_site')) {
         return [{ site_id: 7 }];
       }
       if (sql.includes('FROM dori_queue_service_tier')) return [];
@@ -182,5 +187,82 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
       adminUser,
       expect.objectContaining({ query: expect.any(Function) }),
     );
+  });
+});
+
+describe('RegistrationsService — creation response', () => {
+  const user: AuthenticatedUser = {
+    userId: 1,
+    username: 'admin',
+    roles: ['admin'],
+    permissions: ['registration_create'],
+    userType: 'human',
+  };
+
+  it('always returns the raw tracking token and its expiration', async () => {
+    const token = '550e8400-e29b-41d4-a716-446655440000';
+    const tx = {
+      manager: {},
+      findQueueConfig: jest.fn().mockResolvedValue({
+        site_id: 7,
+        queue_code: 'A-',
+        timezone: 'Europe/Berlin',
+      }),
+      personExistsInSite: jest.fn().mockResolvedValue(true),
+      findOfferedTier: jest.fn().mockResolvedValue({
+        tier_code: 'STD',
+        price: 0,
+        currency: 'EUR',
+      }),
+      hasOpenRegistration: jest.fn().mockResolvedValue(false),
+      nextTicketNumber: jest.fn().mockResolvedValue(1),
+      create: jest.fn().mockResolvedValue({
+        registration_id: 10,
+        registration_tracking_token: token,
+        ticket_number: 'A-001',
+        business_date: '2026-10-14',
+        entry_type: 'walkin',
+        appointment_status: 'n/a',
+        scheduled_time: null,
+        status: 'waiting',
+        priority_reference_time: new Date('2026-10-14T10:00:00Z'),
+      }),
+      createWelcomeNotifications: jest.fn().mockResolvedValue(0),
+    };
+    const repository = {
+      transaction: jest.fn((work: (value: typeof tx) => unknown) => work(tx)),
+    };
+    const clock = {
+      now: jest.fn(() => new Date('2026-10-14T10:00:00Z')),
+      todayInTimezone: jest.fn(() => '2026-10-14'),
+      endOfDayInTimezone: jest.fn(() => new Date('2026-10-14T21:59:59Z')),
+    };
+    const service = new RegistrationsService(
+      repository as unknown as RegistrationsRepository,
+      { checkQueueAccess: jest.fn() } as unknown as ScopeService,
+      clock as unknown as ClockService,
+      {} as PersonsService,
+      {
+        getOrThrow: jest.fn(() => 'http://localhost:5173'),
+      } as unknown as ConfigService,
+    );
+
+    const response = await service.createRegistration(
+      { personId: 3, queueId: 2, tierId: 1, entryType: 'walkin' },
+      user,
+    );
+
+    expect(response).toMatchObject({
+      registrationTrackingToken: token,
+      registrationTrackingTokenValidUntil: new Date('2026-10-14T21:59:59Z'),
+    });
+    expect(response).not.toHaveProperty('trackingUrl');
+    expect(tx.createWelcomeNotifications).toHaveBeenCalledWith({
+      registrationId: 10,
+      trackingUrl:
+        'http://localhost:5173/track?token=550e8400-e29b-41d4-a716-446655440000',
+      ticketNumber: 'A-001',
+      now: new Date('2026-10-14T10:00:00Z'),
+    });
   });
 });

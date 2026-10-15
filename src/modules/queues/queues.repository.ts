@@ -34,7 +34,7 @@ export class QueuesRepository {
       );
       if (!sites.length) return null;
       const rows: Array<{ queue_id: number }> = await manager.query(
-        `INSERT INTO dori_site_queue_thread (
+        `INSERT INTO dori_queue (
           queue_code, site_id, queue_name, average_wait_time, thread_count, currency,
           appointments_enabled, appointment_slot_duration, slot_capacity,
           working_hours_start, working_hours_end, break_start, break_end,
@@ -121,7 +121,7 @@ export class QueuesRepository {
       params.push(`%${input.search}%`);
       where += ` AND (q.queue_name ILIKE $${params.length} OR q.queue_code ILIKE $${params.length})`;
     }
-    const from = `FROM dori_site_queue_thread q
+    const from = `FROM dori_queue q
       JOIN dori_site s ON s.site_id = q.site_id ${where}`;
     const counts: Array<{ total: number }> = await this.dataSource.query(
       `SELECT COUNT(*)::int AS total ${from}`,
@@ -144,7 +144,7 @@ export class QueuesRepository {
     return { items, total: counts[0]?.total ?? 0 };
   }
 
-  async findActiveById(queueId: number): Promise<QueueDetailRow | null> {
+  async findById(queueId: number): Promise<QueueDetailRow | null> {
     const rows: QueueDetailRow[] = await this.dataSource.query(
       `SELECT q.*, s.site_name, s.timezone AS site_timezone,
               s.default_currency, s.default_locale,
@@ -155,9 +155,9 @@ export class QueuesRepository {
               s.default_base_weight_appointment, s.default_escalation_rate_walkin,
               s.default_escalation_rate_appointment, s.default_carry_over_waiting,
               s.default_daily_reset_mode, s.default_daily_reset_time
-       FROM dori_site_queue_thread q
+       FROM dori_queue q
        JOIN dori_site s ON s.site_id = q.site_id
-       WHERE q.queue_id = $1 AND q.is_active = TRUE`,
+       WHERE q.queue_id = $1`,
       [queueId],
     );
     return rows[0] ?? null;
@@ -198,11 +198,13 @@ export class QueuesRepository {
     add('daily_reset_time', dto.dailyResetTime, '::time');
     add('locale', dto.locale);
     add('is_active', dto.isActive);
+    if (dto.isActive !== undefined)
+      add('deleted_at', dto.isActive ? null : now);
     add('updated_by_user_id', userId);
     add('updated_at', now);
     values.push(queueId);
     const rows: Array<{ queue_id: number }> = await this.dataSource.query(
-      `UPDATE dori_site_queue_thread SET ${fields.join(', ')}
+      `UPDATE dori_queue SET ${fields.join(', ')}
        WHERE queue_id = $${values.length} RETURNING queue_id`,
       values,
     );
@@ -212,7 +214,7 @@ export class QueuesRepository {
   deactivate(queueId: number, userId: number, now: Date): Promise<void> {
     return this.dataSource.transaction(async (manager) => {
       await manager.query(
-        `UPDATE dori_site_queue_thread SET is_active = FALSE, deleted_at = $1,
+        `UPDATE dori_queue SET is_active = FALSE, deleted_at = $1,
          updated_by_user_id = $2, updated_at = $1 WHERE queue_id = $3`,
         [now, userId, queueId],
       );
@@ -223,7 +225,7 @@ export class QueuesRepository {
         [now, userId, queueId],
       );
       await manager.query(
-        `UPDATE dori_queue_session SET disconnected_at = $1,
+        `UPDATE dori_operator_session SET disconnected_at = $1,
          closure_reason = 'forced', closed_by_user_id = $2
          WHERE queue_id = $3 AND disconnected_at IS NULL`,
         [now, userId, queueId],
@@ -249,7 +251,7 @@ export class QueuesRepository {
     }> = await this.dataSource.query(
       `SELECT q.average_wait_time, q.carry_over_waiting, q.daily_reset_mode,
               s.timezone, s.default_carry_over_waiting, s.default_daily_reset_mode
-       FROM dori_site_queue_thread q JOIN dori_site s ON s.site_id = q.site_id
+       FROM dori_queue q JOIN dori_site s ON s.site_id = q.site_id
        WHERE q.queue_id = $1`,
       [queueId],
     );
@@ -265,7 +267,7 @@ export class QueuesRepository {
         [queueId, businessDate],
       ),
       this.dataSource.query<Array<{ count: number }>>(
-        `SELECT COUNT(*)::int AS count FROM dori_queue_session
+        `SELECT COUNT(*)::int AS count FROM dori_operator_session
          WHERE queue_id = $1 AND disconnected_at IS NULL AND mode = 'active'`,
         [queueId],
       ),
@@ -290,8 +292,8 @@ export class QueuesRepository {
         Array<{ thread_number: number; ticket_number: string | null }>
       >(
         `SELECT qs.thread_number, c.ticket_number
-         FROM dori_queue_session qs
-         LEFT JOIN dori_registration c ON c.current_session_id = qs.session_id
+         FROM dori_operator_session qs
+         LEFT JOIN dori_registration c ON c.served_by_session_id = qs.session_id
            AND c.status = 'in_progress' AND c.is_active = TRUE
          WHERE qs.queue_id = $1 AND qs.disconnected_at IS NULL AND qs.mode = 'active'
          ORDER BY qs.thread_number ASC`,
@@ -326,7 +328,7 @@ export class QueuesRepository {
   }): Promise<void> {
     return this.dataSource.transaction(async (manager) => {
       await manager.query(
-        `UPDATE dori_queue_session SET disconnected_at = $1,
+        `UPDATE dori_operator_session SET disconnected_at = $1,
          closure_reason = 'daily_reset', closed_by_user_id = $2
          WHERE queue_id = $3 AND disconnected_at IS NULL`,
         [input.now, input.userId, input.queueId],
@@ -380,7 +382,7 @@ export class QueuesRepository {
     pageSize: number;
     offset: number;
   }) {
-    const from = `FROM dori_user_queue uq JOIN dori_user u ON u.user_id = uq.user_id
+    const from = `FROM dori_user_queue_assignment uq JOIN dori_user u ON u.user_id = uq.user_id
       WHERE uq.queue_id = $1 AND u.is_active = TRUE`;
     const count: Array<{ total: number }> = await this.dataSource.query(
       `SELECT COUNT(*)::int AS total ${from}`,
@@ -396,7 +398,7 @@ export class QueuesRepository {
 
   async findQueueSiteId(queueId: number): Promise<number | null> {
     const rows = await this.dataSource.query(
-      'SELECT site_id FROM dori_site_queue_thread WHERE queue_id = $1',
+      'SELECT site_id FROM dori_queue WHERE queue_id = $1',
       [queueId],
     );
     return rows[0]?.site_id ?? null;
@@ -415,7 +417,7 @@ export class QueuesRepository {
   async hasOperatorRole(userId: number): Promise<boolean> {
     const rows = await this.dataSource.query(
       `SELECT ur.user_id FROM dori_user_role ur JOIN dori_role r ON r.role_id = ur.role_id
-       WHERE ur.user_id = $1 AND r.role_name IN ('hotesse', 'operator')
+       WHERE ur.user_id = $1 AND r.role_name = 'operator'
          AND r.is_active = TRUE LIMIT 1`,
       [userId],
     );
@@ -429,7 +431,7 @@ export class QueuesRepository {
     now: Date,
   ) {
     await this.dataSource.query(
-      `INSERT INTO dori_user_queue (user_id, queue_id, assigned_at, assigned_by_user_id)
+      `INSERT INTO dori_user_queue_assignment (user_id, queue_id, assigned_at, assigned_by_user_id)
        VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, queue_id) DO NOTHING`,
       [userId, queueId, now, assignedBy],
     );
@@ -437,7 +439,7 @@ export class QueuesRepository {
 
   async removeOperator(queueId: number, userId: number) {
     await this.dataSource.query(
-      'DELETE FROM dori_user_queue WHERE user_id = $1 AND queue_id = $2',
+      'DELETE FROM dori_user_queue_assignment WHERE user_id = $1 AND queue_id = $2',
       [userId, queueId],
     );
   }

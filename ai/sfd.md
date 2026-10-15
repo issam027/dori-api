@@ -65,7 +65,7 @@
 Le système gère l'intégralité du cycle de vie de l'accueil physique :
 - La prise de rendez-vous en amont ou l'accueil spontané sur borne tactile (*kiosk* / *walk-in*).
 - La génération et l'ordonnancement dynamique des tickets de passage selon des critères d'urgence, de forfait souscrit (service tiers) et d'équité temporelle.
-- L'orientation des usagers vers des guichets physiques ou virtuels animés par des opérateurs (hôtesses, médecins, agents administratifs).
+- L'orientation des usagers vers des guichets physiques ou virtuels animés par des opérateurs (médecins, agents administratifs).
 - L'information en temps réel des usagers via écrans d'affichage dynamique, notifications SMS/email et lien de suivi web personnalisé.
 - Le suivi statistique et le reporting d'affluence et de performance opérationnelle.
 
@@ -74,9 +74,9 @@ Le système gère l'intégralité du cycle de vie de l'accueil physique :
 | Terme | Définition Métier | Entité Système Associée |
 | :--- | :--- | :--- |
 | **Site** | Établissement physique autonome (ex. Hôpital Habib Bourguiba) possédant son propre fuseau horaire, devise et paramètres par défaut. | `dori_site` |
-| **Queue (File)** | File d'attente thématique attachée à un site (ex. "Consultation Pédiatrie", "Guichet Facturation"). | `dori_site_queue_thread` |
-| **Thread (Guichet / Ligne)** | Canal physique ou logique d'appel au sein d'une file (ex. Guichet 1, Guichet 2). | `thread_number` dans `dori_queue_session` |
-| **Session d'Opérateur** | Connexion active d'un utilisateur sur une file d'attente donnée, lui attribuant un guichet (`thread_number`) pour appeler des usagers. | `dori_queue_session` |
+| **Queue (File)** | File d'attente thématique attachée à un site (ex. "Consultation Pédiatrie", "Guichet Facturation"). | `dori_queue` |
+| **Thread (Guichet / Ligne)** | Canal physique ou logique d'appel au sein d'une file (ex. Guichet 1, Guichet 2). | `thread_number` dans `dori_operator_session` |
+| **Session d'Opérateur** | Connexion active d'un utilisateur sur une file d'attente donnée, lui attribuant un guichet (`thread_number`) pour appeler des usagers. | `dori_operator_session` |
 | **Person (Usager/Patient)** | Fiche identitaire d'une personne physique (nom, prénom, téléphone normalisé E.164, email). Rattachée obligatoirement à un site. | `dori_person` |
 | **Service Tier (Forfait)** | Catégorie de service déterminant la tarification, la priorité d'appel et les politiques de notification (ex. Standard, VIP, Urgence). | `dori_service_tier` |
 | **Queue Service Tier** | Association d'un forfait à une file donnée avec surcharge éventuelle du prix, de la devise et du forfait par défaut. | `dori_queue_service_tier` |
@@ -84,7 +84,7 @@ Le système gère l'intégralité du cycle de vie de l'accueil physique :
 | **Appointment (Rendez-vous)** | Inscription planifiée à une heure précise (`scheduled_time`), nécessitant un enregistrement préalable (`check-in`) avant appel. | `dori_registration` (`entry_type = 'appointment'`) |
 | **Walk-in** | Inscription spontanée sans rendez-vous prise le jour même (sur borne ou guichet). | `dori_registration` (`entry_type = 'walkin'`) |
 | **Tracking Token** | Identifiant opaque (UUID v4) permettant à un usager de suivre anonymement sa position en file d'attente sans compte applicatif. | `registration_tracking_token` |
-| **Daily Reset** | Procédure automatisée nocturne remettant à zéro les compteurs journaliers et clôturant/reportant les tickets ouverts. | `dori_queue_daily_reset` |
+| **Daily Reset** | Procédure automatisée nocturne remettant à zéro les compteurs journaliers et clôturant/reportant les tickets ouverts. | `dori_queue_daily_reset_execution` |
 
 ### 1.3 Typologie des Acteurs & Utilisateurs
 
@@ -94,15 +94,15 @@ Le système applique un contrôle d'accès fondé sur les rôles (RBAC) étanche
 graph TD
     Root["Rang 5 — Root (Super Administrateur Technique)"] --> Admin["Rang 4 — Administrateur Système"]
     Admin --> Manager["Rang 3 — Responsable de Site / Manager"]
-    Manager --> Hostess["Rang 2 — Opérateur / Hôtesse d'Accueil / Guichetier"]
-    Hostess --> Kiosk["Rang 1 — Borne Tactile Interactive (Kiosk)"]
+    Manager --> Operator["Rang 2 — Opérateur / Opérateur d'Accueil / Guichetier"]
+    Operator --> Kiosk["Rang 1 — Borne Tactile Interactive (Kiosk)"]
     Kiosk -.-> Visitor["Usager sur borne préauthentifiée"]
 ```
 
 - **Rang 5 — Root (`root`)** : Super-utilisateur de maintenance globale, accès total sans restriction de périmètre de site.
 - **Rang 4 — Admin (`admin`)** : Administration générale, paramétrage des rôles, gestion des sites et supervision globale.
 - **Rang 3 — Manager (`manager`)** : Gestion locale d'un ou plusieurs sites affectés, supervision des files, assignation des opérateurs, extraction des rapports.
-- **Rang 2 — Hostess / Opérateur (`hostess`, `operator`)** : Prise en charge des guichets, ouverture de session, appel des prochains tickets (`callNext`), validation des présences et clôtures.
+- **Rang 2 — Opérateur (`operator`)** : Prise en charge des guichets, ouverture de session, appel des prochains tickets (`callNext`), validation des présences et clôtures.
 - **Rang 1 — Kiosk (`kiosk`)** : Compte technique de borne en libre-service, restreint à l'émission de tickets, recherche d'usagers et check-in.
 - **Usager / Public** : Client anonyme consultant son statut via `registration_tracking_token` ou écrans d'affichage passifs via le canal WebSocket dédié.
 
@@ -221,18 +221,18 @@ sequenceDiagram
 
 ```mermaid
 erDiagram
-    dori_site ||--o{ dori_site_queue_thread : "possède"
+    dori_site ||--o{ dori_queue : "possède"
     dori_site ||--o{ dori_person : "héberge"
-    dori_site ||--o{ dori_user_site : "affecté à"
+    dori_site ||--o{ dori_user_site_assignment : "affecté à"
     
-    dori_site_queue_thread ||--o{ dori_queue_service_tier : "propose"
-    dori_site_queue_thread ||--o{ dori_queue_session : "héberge"
-    dori_site_queue_thread ||--o{ dori_registration : "ordonnance"
-    dori_site_queue_thread ||--o{ dori_queue_counter : "maintient"
-    dori_site_queue_thread ||--o{ dori_user_queue : "affecté à"
+    dori_queue ||--o{ dori_queue_service_tier : "propose"
+    dori_queue ||--o{ dori_operator_session : "héberge"
+    dori_queue ||--o{ dori_registration : "ordonnance"
+    dori_queue ||--o{ dori_queue_daily_ticket_counter : "maintient"
+    dori_queue ||--o{ dori_user_queue_assignment : "affecté à"
 
     dori_service_tier ||--o{ dori_queue_service_tier : "décline"
-    dori_queue_service_tier ||--o{ dori_tier_notification_rule : "configure"
+    dori_queue_service_tier ||--o{ dori_queue_tier_notification_rule : "configure"
     dori_queue_service_tier ||--o{ dori_registration : "qualifie"
 
     dori_person ||--o{ dori_registration : "effectue"
@@ -240,13 +240,13 @@ erDiagram
 
     dori_user ||--o{ dori_user_role : "détient"
     dori_user ||--o{ dori_user_session : "ouvre"
-    dori_user ||--o{ dori_queue_session : "opère"
+    dori_user ||--o{ dori_operator_session : "opère"
     dori_role ||--o{ dori_user_role : "attribué à"
     dori_role ||--o{ dori_role_permission : "contient"
     dori_permission ||--o{ dori_role_permission : "associée à"
 
     dori_registration ||--o{ dori_notification : "déclenche"
-    dori_tier_notification_rule ||--o{ dori_notification : "génère"
+    dori_queue_tier_notification_rule ||--o{ dori_notification : "génère"
 ```
 
 ### 3.2 Dictionnaire des Tables & Contraintes
@@ -278,7 +278,7 @@ erDiagram
 | `default_daily_reset_time` | TIME | Non | `'03:00'` | Heure locale d'exécution du reset nocturne |
 | `default_locale` | VARCHAR(10) | Non | `'fr'` | Langue IHM par défaut du site |
 
-#### 2. `dori_site_queue_thread` — Files d'Attente
+#### 2. `dori_queue` — Files d'Attente
 | Colonne | Type | Nullable | Valeur par défaut | Description & Contraintes |
 | :--- | :--- | :--- | :--- | :--- |
 | `queue_id` | SERIAL | Non | Auto-incrément | Clé primaire |
@@ -308,7 +308,7 @@ erDiagram
 | :--- | :--- | :--- | :--- |
 | `registration_id` | SERIAL | Non | Clé primaire |
 | `person_id` | INT | Non | Référence `dori_person(person_id)` |
-| `queue_id` | INT | Non | Référence `dori_site_queue_thread(queue_id)` |
+| `queue_id` | INT | Non | Référence `dori_queue(queue_id)` |
 | `tier_id` | INT | Non | Forfait souscrit (`dori_queue_service_tier(queue_id, tier_id)`) |
 | `business_date` | DATE | Non | Date métier de validité du passage |
 | `ticket_number` | VARCHAR(14) | Non | Numéro affiché (ex. `'A001'`). Unique par `(queue_id, business_date, ticket_number)`. |
@@ -318,14 +318,14 @@ erDiagram
 | `appointment_status` | VARCHAR(20) | Non | Statut RDV (`'n/a'`, `'booked'`, `'checked_in'`, `'rescheduled'`, `'cancelled'`, `'expired'`) |
 | `priority_reference_time` | TIMESTAMPTZ | Non | Horodatage servant de base au calcul de l'ancienneté d'attente |
 | `status` | VARCHAR(20) | Non | Statut file (`'booked'`, `'waiting'`, `'in_progress'`, `'served'`, `'no_show'`, `'expired'`, `'cancelled'`) |
-| `current_session_id` | INT | Oui | Référence session opérateur en cours (`dori_queue_session`) |
+| `served_by_session_id` | INT | Oui | Référence session opérateur en cours (`dori_operator_session`) |
 | `called_at` | TIMESTAMPTZ | Oui | Horodatage de l'appel au guichet |
 | `served_at` | TIMESTAMPTZ | Oui | Horodatage du début/fin de prise en charge effective |
 | `closed_at` | TIMESTAMPTZ | Oui | Horodatage de clôture définitive |
 | `registration_tracking_token` | UUID | Non | Token secret opaque généré (`gen_random_uuid()`) pour consultation usager |
 | `registration_tracking_token_valid_until`| TIMESTAMPTZ | Non | Expiration du token de consultation |
 
-#### 5. `dori_queue_session` — Postes d'Opérateurs Actifs
+#### 5. `dori_operator_session` — Postes d'Opérateurs Actifs
 | Colonne | Type | Nullable | Description & Contraintes |
 | :--- | :--- | :--- | :--- |
 | `session_id` | SERIAL | Non | Clé primaire |
@@ -434,7 +434,7 @@ Chaque rôle possède un attribut immuable `rank` (entier de 1 à 5).
 | **5** | `root` | `system_manage` | Aucun plafond (peut gérer rangs 1 à 4). Ne peut être rétrogradé par personne. |
 | **4** | `admin` | `user_manage_admin` | Peut créer/modifier des utilisateurs de rang 1 à 3. |
 | **3** | `manager` | `user_manage_manager` | Peut créer/modifier des utilisateurs de rang 1 à 2. |
-| **2** | `hostess` / `operator` | `user_manage_hostess` | Peut uniquement gérer les bornes (rang 1). |
+| **2** | `operator` | `user_manage_operator` | Peut uniquement gérer les bornes (rang 1). |
 | **1** | `kiosk` | `user_manage_kiosk` | Aucun privilège d'administration. |
 
 #### Règle Fondamentale d'Anti-Escalade de Privilèges (`checkAntiEscalation`)
@@ -448,8 +448,8 @@ Lors de toute modification d'un compte (création, mise à jour de profil, chang
 
 Le service `ScopeService` assure qu'aucun utilisateur (hors rôle `root`) ne puisse accéder à des données de sites ou de files qui ne lui sont pas explicitement affectés :
 - Si l'utilisateur possède le rôle `root`, l'accès territorial est sans limite.
-- Pour tout autre utilisateur, la table de liaison `dori_user_site` est consultée. Une tentative d'accès à un site non lié déclenche `SITE_ACCESS_DENIED`.
-- Pour les files d'attente, `ScopeService.checkQueueAccess` vérifie que la file demandée appartient à un site autorisé de l'utilisateur ou est explicitement reliée via `dori_user_queue`. À défaut, `QUEUE_OUT_OF_SCOPE` est déclenché.
+- Pour tout autre utilisateur, la table de liaison `dori_user_site_assignment` est consultée. Une tentative d'accès à un site non lié déclenche `SITE_ACCESS_DENIED`.
+- Pour les files d'attente, `ScopeService.checkQueueAccess` vérifie que la file demandée appartient à un site autorisé de l'utilisateur ou est explicitement reliée via `dori_user_queue_assignment`. À défaut, `QUEUE_OUT_OF_SCOPE` est déclenché.
 - Le résultat de cette vérification est mis en cache mémoire à courte durée (30 secondes) pour éviter les requêtes répétitives à fort trafic.
 
 ### 4.5 Sécurité des Webhooks Entrants
@@ -554,7 +554,7 @@ Si aucun usager à l'heure n'est en attente, le moteur vérifie s'il existe des 
 
 Dès l'élection du candidat :
 1. Le statut passe immédiatement à `'in_progress'`.
-2. Le `current_session_id` et `called_at` sont enregistrés.
+2. Le `served_by_session_id` et `called_at` sont enregistrés.
 3. Trois diffusions temps réel sont déclenchées :
    - Vers les opérateurs : `queue:{queueId}:ops` (détails complets du patient).
    - Vers l'affichage public : `queue:{queueId}:display` (uniquement le numéro de ticket et le numéro de guichet, zéro donnée personnelle).
@@ -607,7 +607,7 @@ La connexion anonyme est formellement rejetée. Deux mécanismes d'authentificat
 
 ### 7.1 Règles de Notification par Forfait & File
 
-Le système permet de configurer des règles d'alerte automatisées rattachées au couple `(queue_id, tier_id)` dans `dori_tier_notification_rule` :
+Le système permet de configurer des règles d'alerte automatisées rattachées au couple `(queue_id, tier_id)` dans `dori_queue_tier_notification_rule` :
 - **Canaux supportés** : `'sms'`, `'email'`.
 - **Types de notification** :
   1. `'welcome'` : Notification de bienvenue expédiée immédiatement après l'inscription (ticket créé). Ne supporte aucun seuil.
@@ -672,12 +672,12 @@ Pour autoriser le déploiement multi-instances sans risque de doubler l'envoi de
   4. Compare l'heure locale avec l'heure de réinitialisation programmée (`daily_reset_time`, par défaut `'03:00'`).
   5. Dès que l'heure locale correspond, le reset est exécuté pour la date métier de la veille.
 - **Opérations transactionnelles du Reset** :
-  - **Vérification d'idempotence** : vérifie dans `dori_queue_daily_reset` que le reset pour ce `(queue_id, business_date)` n'a pas déjà été exécuté.
+  - **Vérification d'idempotence** : vérifie dans `dori_queue_daily_reset_execution` que le reset pour ce `(queue_id, business_date)` n'a pas déjà été exécuté.
   - **Fermeture des sessions d'opérateurs** : toutes les sessions actives sur la file sont clôturées avec `closure_reason = 'daily_reset'`.
   - **Gestion des tickets restants** :
     - En mode `'close_all'` : tous les tickets restants en statut `'waiting'` ou `'in_progress'` passent à `'expired'` et `is_active = FALSE`.
     - En mode `'close_served_only'` avec `carry_over_waiting = true` : les usagers encore en attente sont reportés à la date métier suivante (`business_date = nextDate`, `carried_over_from_date = businessDate`), leur token de suivi est prolongé de 24h, et ils conservent leur antériorité d'attente.
-  - **Enregistrement de confirmation** : insertion dans `dori_queue_daily_reset`.
+  - **Enregistrement de confirmation** : insertion dans `dori_queue_daily_reset_execution`.
 
 ### 8.2 Expiration des Rendez-vous Dépassés (`AppointmentExpiryWorker`)
 
@@ -710,7 +710,7 @@ DORI intègre un moteur de traduction dynamique hébergé en base de données (`
 
 1. **Validation stricte à l'enregistrement** : Lors de la création ou modification d'une traduction (`TranslationsService`), le système extrait par regex les variables `{param}` présentes dans le texte et valide qu'elles correspondent exactement aux paramètres déclarés dans `expectedParams`. En cas d'incohérence, une exception `TEMPLATE_PARAMETER_MISMATCH` est levée.
 2. **Gestion des versions & Cache distribué** :  
-   La table `dori_translation_version` maintient un compteur de version pour chaque catégorie. Dès qu'une modification est validée :
+   La table `dori_translation_category_version` maintient un compteur de version pour chaque catégorie. Dès qu'une modification est validée :
    - Le numéro de version de la catégorie est incrémenté en base.
    - Un événement WebSocket `translation_cache_invalidated` est diffusé sur la salle `system:translations` afin que les bornes tactiles et clients rafraîchissent instantanément leur bundle local sans redémarrage.
 3. **Endpoint Public de Bundle** :  
@@ -873,7 +873,7 @@ DORI intègre un moteur de traduction dynamique hébergé en base de données (`
 
 ## 11. Rapports, Métriques & Tableaux de Bord
 
-Le module `reports` exploite les données consolidées des tables `dori_registration` et `dori_queue_counter` pour fournir des indicateurs de pilotage d'activité :
+Le module `reports` exploite les données consolidées des tables `dori_registration` et `dori_queue_daily_ticket_counter` pour fournir des indicateurs de pilotage d'activité :
 
 1. **Temps Moyen d'Attente ($\text{TMA}$)** :
    $$\text{TMA} = \frac{\sum (\text{called\_at} - \text{priority\_reference\_time})}{\text{Nombre de tickets appelés}}$$
@@ -897,7 +897,7 @@ Sur la base de l'audit approfondi consigné dans les handovers techniques (`ai/c
 3. **Entités TypeORM Dormantes** :  
    21 classes d'entités TypeORM résident dans le sous-dossier `entities/` mais ne sont jamais utilisées par les repositories qui fonctionnent exclusivement en SQL natif direct (`dataSource.query`).
 4. **Dépendances Redis & BullMQ non raccordées** :  
-   Les packages `@nestjs/bullmq` et `ioredis` sont installés dans le projet, mais les files d'attente et crons sont entièrement opérés en base de données PostgreSQL via `@nestjs/schedule` et les tables `dori_notification` / `dori_queue_daily_reset`.
+   Les packages `@nestjs/bullmq` et `ioredis` sont installés dans le projet, mais les files d'attente et crons sont entièrement opérés en base de données PostgreSQL via `@nestjs/schedule` et les tables `dori_notification` / `dori_queue_daily_reset_execution`.
 5. **Couverture de Tests d'Intégration Concurrente (`TEST-001` / `TEST-002`)** :  
    Bien que les contrats unitaires et SQL soient strictement testés (38 suites de tests réussies), le test de concurrence multi-connexions réelles sur `FOR UPDATE SKIP LOCKED` requiert un PostgreSQL éphémère provisionné en CI/CD.
 

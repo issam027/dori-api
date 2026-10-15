@@ -124,14 +124,14 @@ export class UsersRepository {
       SELECT DISTINCT u.user_id, u.username, u.email, u.user_type, u.is_active,
              u.language_preference, u.last_login, u.created_at, u.updated_at
       FROM dori_user u
-      LEFT JOIN dori_user_site us ON us.user_id = u.user_id
-      LEFT JOIN dori_user_queue uq ON uq.user_id = u.user_id
-      LEFT JOIN dori_site_queue_thread sqt ON sqt.queue_id = uq.queue_id
+      LEFT JOIN dori_user_site_assignment us ON us.user_id = u.user_id
+      LEFT JOIN dori_user_queue_assignment uq ON uq.user_id = u.user_id
+      LEFT JOIN dori_queue sqt ON sqt.queue_id = uq.queue_id
       LEFT JOIN dori_user_role ur ON ur.user_id = u.user_id
       LEFT JOIN dori_role r ON r.role_id = ur.role_id
-      WHERE u.deleted_at IS NULL
+      WHERE u.is_active = $1
     `;
-    const params: any[] = [];
+    const params: any[] = [filter.isActive ?? true];
 
     if (!scope.isGlobal) {
       if (scope.siteIds.length === 0) {
@@ -169,7 +169,7 @@ export class UsersRepository {
   async findUserById(userId: number): Promise<UserDetailsResult | null> {
     const users = await this.dataSource.query(
       `SELECT user_id, username, email, user_type, is_active, language_preference, last_login, created_at, updated_at
-       FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL`,
+       FROM dori_user WHERE user_id = $1`,
       [userId],
     );
 
@@ -189,7 +189,7 @@ export class UsersRepository {
 
     const sites = await this.dataSource.query(
       `SELECT s.site_id, s.site_name, s.site_type
-       FROM dori_user_site us
+       FROM dori_user_site_assignment us
        JOIN dori_site s ON s.site_id = us.site_id
        WHERE us.user_id = $1`,
       [userId],
@@ -197,8 +197,8 @@ export class UsersRepository {
 
     const queues = await this.dataSource.query(
       `SELECT q.queue_id, q.queue_code, q.queue_name, q.site_id
-       FROM dori_user_queue uq
-       JOIN dori_site_queue_thread q ON q.queue_id = uq.queue_id
+       FROM dori_user_queue_assignment uq
+       JOIN dori_queue q ON q.queue_id = uq.queue_id
        WHERE uq.user_id = $1`,
       [userId],
     );
@@ -306,7 +306,8 @@ export class UsersRepository {
     await this.dataSource.transaction(async (manager) => {
       await manager.query(
         `UPDATE dori_user
-         SET is_active = $1, updated_by_user_id = $2, updated_at = $3
+         SET is_active = $1, deleted_at = CASE WHEN $1 THEN NULL ELSE $3 END,
+             updated_by_user_id = $2, updated_at = $3
          WHERE user_id = $4`,
         [isActive, updaterUserId, now, userId],
       );

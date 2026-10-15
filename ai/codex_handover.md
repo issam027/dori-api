@@ -198,7 +198,7 @@ Les autres points ont été revérifiés et sont détaillés ci-dessous.
 
 ### [x] RESET-001 — Créer atomiquement le marqueur de reset
 
-- **État vérifié : corrigé.** `dori_queue_daily_reset`, advisory lock transactionnel et `ON CONFLICT DO NOTHING` garantissent un marqueur unique.
+- **État vérifié : corrigé.** `dori_queue_daily_reset_execution`, advisory lock transactionnel et `ON CONFLICT DO NOTHING` garantissent un marqueur unique.
 - **Reste à faire :** test multi-connexion réel dans TEST-002.
 
 ### [x] RESET-002 — Découpler le reset du compteur de tickets

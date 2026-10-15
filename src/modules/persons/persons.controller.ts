@@ -29,6 +29,7 @@ import {
   PersonFilterDto,
   CreatePersonNoteDto,
   UpdatePersonNoteDto,
+  PersonNoteFilterDto,
 } from './dto/person.dto';
 import {
   PersonResponseDto,
@@ -37,7 +38,6 @@ import {
   PaginatedPersonNoteResponseDto,
   DeleteItemResponseDto,
 } from './dto/person-response.dto';
-import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
@@ -136,7 +136,7 @@ export class PersonsController {
   )
   async getNotes(
     @Param('personId', ParseIntPipe) personId: number,
-    @Query() pagination: PaginationDto,
+    @Query() pagination: PersonNoteFilterDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.personsService.findPersonNotes(personId, pagination, user);

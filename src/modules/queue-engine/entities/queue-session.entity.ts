@@ -1,6 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity('dori_queue_session')
+@Entity('dori_operator_session')
 export class DoriQueueSession {
   @PrimaryGeneratedColumn()
   session_id: number;

@@ -46,7 +46,7 @@ Une fonctionnalité absente du Swagger ne doit pas être simulée comme persista
 | Root | Globale | Tous les sites, administration, traductions, santé |
 | Admin | Multi-sites autorisés | Portefeuille, configuration, onboarding, santé |
 | Manager | Un ou plusieurs sites autorisés | Opérations, supervision, rapports, configuration locale |
-| Hôtesse / opérateur | Site courant et files affectées | Cockpit, mes files, rendez-vous, notifications autorisées |
+| Opérateur / opérateur | Site courant et files affectées | Cockpit, mes files, rendez-vous, notifications autorisées |
 | Kiosque | Un site, compte technique | Borne tactile et écran public |
 
 Les écrans et actions sont réellement autorisés à partir de `GET /api/v1/auth/me`, de `permissions` et de `scope`. Les noms de rôle ne constituent qu’une présentation et un jeu de démonstration.
@@ -676,7 +676,7 @@ Les traductions globales ne sont administrables que par Root/Admin, mais leur bu
 9. notes consultation/ajout ;
 10. onboarding complet et reprise après erreur ;
 11. association Gratuit/Standard/Premium et règles ;
-12. permissions Root/Admin/Manager/Hôtesse/Kiosque.
+12. permissions Root/Admin/Manager/Opérateur/Kiosque.
 
 Tests visuels aux largeurs desktop, tablette, mobile, TV 16:9 et pour les quatre thèmes. Les captures de référence doivent être comparées à la maquette validée.
 

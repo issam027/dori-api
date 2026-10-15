@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity('dori_tier_notification_rule')
+@Entity('dori_queue_tier_notification_rule')
 export class DoriTierNotificationRule {
   @PrimaryGeneratedColumn()
   rule_id: number;

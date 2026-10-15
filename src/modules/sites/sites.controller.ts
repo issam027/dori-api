@@ -24,7 +24,11 @@ import {
 } from '../../core/swagger/api-dori-response.decorator';
 import { SitesService } from './sites.service';
 import { CreateSiteDto } from './dto/create-site.dto';
-import { UpdateSiteDto, AssignManagerDto } from './dto/update-site.dto';
+import {
+  UpdateSiteDto,
+  AssignManagerDto,
+  SiteFilterDto,
+} from './dto/update-site.dto';
 import {
   SiteResponseDto,
   PaginatedSiteResponseDto,
@@ -54,7 +58,7 @@ export class SitesController {
   })
   @ApiDoriOkResponse(PaginatedSiteResponseDto, 'Liste paginée des sites')
   async findSites(
-    @Query() pagination: PaginationDto,
+    @Query() pagination: SiteFilterDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.sitesService.findSites(pagination, user);
@@ -96,7 +100,7 @@ export class SitesController {
   @ApiOperation({
     summary: 'Modifier un site',
     description:
-      'Met à jour la configuration générale, les horaires ou les poids de priorité du site.',
+      'Met à jour la configuration générale, les horaires ou les poids de priorité du site. isActive=false désactive aussi toutes ses files. isActive=true réactive uniquement le site ; chaque file doit être réactivée explicitement afin de ne pas remettre en service une file précédemment arrêtée.',
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
   @ApiDoriOkResponse(SiteResponseDto, 'Site mis à jour avec succès')
@@ -112,7 +116,8 @@ export class SitesController {
   @RequirePermission('site_delete')
   @ApiOperation({
     summary: 'Désactiver (supprimer) un site',
-    description: 'Désactive logiquement le site et ses files associées.',
+    description:
+      'Désactive logiquement le site et toutes ses files associées dans une transaction unique. Une réactivation ultérieure du site ne réactive pas automatiquement les files.',
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
   @ApiDoriOkResponse(DeleteSiteResponseDto, 'Site désactivé avec succès')

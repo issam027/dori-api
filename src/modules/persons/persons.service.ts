@@ -6,6 +6,7 @@ import {
   PersonFilterDto,
   CreatePersonNoteDto,
   UpdatePersonNoteDto,
+  PersonNoteFilterDto,
 } from './dto/person.dto';
 import {
   PaginationDto,
@@ -65,6 +66,7 @@ export class PersonsService {
 
     const result = await this.personsRepository.findPersons({
       siteId: filter.siteId,
+      isActive: filter.isActive ?? true,
       search: filter.search,
       sortField: safeSortField,
       sortOrder,
@@ -80,7 +82,7 @@ export class PersonsService {
   async findPersonById(personId: number, user: AuthenticatedUser) {
     await this.checkPersonScope(personId, user);
 
-    const person = await this.personsRepository.findActiveById(personId);
+    const person = await this.personsRepository.findById(personId);
     if (!person) {
       throw new DoriException('PERSON_NOT_FOUND', { personId });
     }
@@ -144,7 +146,7 @@ export class PersonsService {
   // Notes (§3.5, §4.16, §5.6)
   async findPersonNotes(
     personId: number,
-    pagination: PaginationDto,
+    pagination: PersonNoteFilterDto,
     user: AuthenticatedUser,
   ): Promise<PaginatedResult<PersonNoteResponseDto>> {
     await this.checkPersonScope(personId, user);
@@ -156,6 +158,7 @@ export class PersonsService {
 
     const result = await this.personsRepository.findNotes({
       personId,
+      isActive: pagination.isActive ?? true,
       sortField,
       sortOrder,
       pageSize,
@@ -195,7 +198,7 @@ export class PersonsService {
     const note = await this.personsRepository.updateNote(
       personId,
       noteId,
-      dto.content,
+      dto,
       user.userId,
       now,
     );

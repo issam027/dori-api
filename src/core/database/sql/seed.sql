@@ -1,5 +1,60 @@
 -- Seed Data according to §3.6, §3.13, §4.9
 
+-- Rename the former rank-2 role without losing user assignments or its id.
+DO $$
+DECLARE old_role_id INT; new_role_id INT;
+BEGIN
+  SELECT role_id INTO old_role_id FROM dori_role WHERE role_name = 'hotesse';
+  SELECT role_id INTO new_role_id FROM dori_role WHERE role_name = 'operator';
+  IF old_role_id IS NOT NULL THEN
+    UPDATE dori_user_session
+    SET revoked_at = CURRENT_TIMESTAMP, revoked_reason = 'admin'
+    WHERE revoked_at IS NULL
+      AND user_id IN (
+        SELECT user_id FROM dori_user_role WHERE role_id = old_role_id
+      );
+  END IF;
+  IF old_role_id IS NOT NULL AND new_role_id IS NULL THEN
+    UPDATE dori_role SET role_name = 'operator',
+      description = 'Opère les queues assignées : inscription, guichet, appel, RDV',
+      updated_at = CURRENT_TIMESTAMP WHERE role_id = old_role_id;
+  ELSIF old_role_id IS NOT NULL AND new_role_id IS NOT NULL THEN
+    INSERT INTO dori_user_role (user_id, role_id, assigned_at, assigned_by_user_id)
+    SELECT user_id, new_role_id, assigned_at, assigned_by_user_id
+    FROM dori_user_role WHERE role_id = old_role_id
+    ON CONFLICT (user_id, role_id) DO NOTHING;
+    INSERT INTO dori_role_permission (role_id, permission_id, assigned_at, assigned_by_user_id)
+    SELECT new_role_id, permission_id, assigned_at, assigned_by_user_id
+    FROM dori_role_permission WHERE role_id = old_role_id
+    ON CONFLICT (role_id, permission_id) DO NOTHING;
+    DELETE FROM dori_user_role WHERE role_id = old_role_id;
+    DELETE FROM dori_role_permission WHERE role_id = old_role_id;
+    DELETE FROM dori_role WHERE role_id = old_role_id;
+  END IF;
+END $$;
+
+-- Rename the associated hierarchy permission and preserve every role mapping.
+DO $$
+DECLARE old_permission_id INT; new_permission_id INT;
+BEGIN
+  SELECT permission_id INTO old_permission_id
+  FROM dori_permission WHERE permission_name = 'user_manage_hostess';
+  SELECT permission_id INTO new_permission_id
+  FROM dori_permission WHERE permission_name = 'user_manage_operator';
+  IF old_permission_id IS NOT NULL AND new_permission_id IS NULL THEN
+    UPDATE dori_permission SET permission_name = 'user_manage_operator',
+      description = 'Créer/modifier/désactiver un compte opérateur',
+      updated_at = CURRENT_TIMESTAMP WHERE permission_id = old_permission_id;
+  ELSIF old_permission_id IS NOT NULL AND new_permission_id IS NOT NULL THEN
+    INSERT INTO dori_role_permission (role_id, permission_id, assigned_at, assigned_by_user_id)
+    SELECT role_id, new_permission_id, assigned_at, assigned_by_user_id
+    FROM dori_role_permission WHERE permission_id = old_permission_id
+    ON CONFLICT (role_id, permission_id) DO NOTHING;
+    DELETE FROM dori_role_permission WHERE permission_id = old_permission_id;
+    DELETE FROM dori_permission WHERE permission_id = old_permission_id;
+  END IF;
+END $$;
+
 -- 1. Service Tiers (§3.6)
 INSERT INTO dori_service_tier (tier_code, tier_name, is_system, description) VALUES
 ('free',     'Gratuit',  TRUE,  'Aucune notification — le client attend sur place'),
@@ -35,7 +90,7 @@ INSERT INTO dori_permission (permission_name, description) VALUES
 ('notification_view',      'Consulter l''historique des notifications'),
 ('translation_manage',     'Gérer le catalogue de traduction (IHM + SMS)'),
 ('user_manage_kiosk',      'Créer/modifier/désactiver un compte borne'),
-('user_manage_hostess',    'Créer/modifier/désactiver un compte hôtesse'),
+('user_manage_operator',    'Créer/modifier/désactiver un compte opérateur'),
 ('user_manage_manager',    'Créer/modifier/désactiver un compte manager'),
 ('user_manage_admin',      'Créer/modifier/désactiver un compte admin'),
 ('user_queue_assign',      'Affecter/retirer un compte sur une queue'),
@@ -47,7 +102,7 @@ ON CONFLICT (permission_name) DO NOTHING;
 -- 3. Roles (§4.9)
 INSERT INTO dori_role (role_name, rank, description) VALUES
 ('kiosk',   1, 'Borne libre-service ou écran d''affichage : inscription client, recherche et check-in de RDV, affichage de file'),
-('hotesse', 2, 'Opère les queues assignées : inscription, guichet, appel, RDV'),
+('operator', 2, 'Opère les queues assignées : inscription, guichet, appel, RDV'),
 ('manager', 3, 'Gère un ou plusieurs sites : queues, forfaits, comptes opérateurs'),
 ('admin',   4, 'Gère les sites et les managers au niveau système'),
 ('root',    5, 'Accès total, y compris la gestion des comptes admin')
@@ -63,9 +118,9 @@ FROM dori_permission WHERE permission_name IN (
 )
 ON CONFLICT (role_id, permission_id) DO NOTHING;
 
--- Hotesse
+-- Operator
 INSERT INTO dori_role_permission (role_id, permission_id)
-SELECT (SELECT role_id FROM dori_role WHERE role_name='hotesse'), permission_id
+SELECT (SELECT role_id FROM dori_role WHERE role_name='operator'), permission_id
 FROM dori_permission WHERE permission_name IN (
   'queue_view','tier_view','registration_register',
   'registration_view','registration_edit','registration_delete','registration_call',
@@ -86,7 +141,7 @@ FROM dori_permission WHERE permission_name IN (
   'person_note_view','person_note_manage','notification_view',
   'site_view','site_edit',
   'queue_create','queue_edit','queue_delete','queue_tier_manage',
-  'user_manage_kiosk','user_manage_hostess','user_queue_assign',
+  'user_manage_kiosk','user_manage_operator','user_queue_assign',
   'notification_send','report_view'
 )
 ON CONFLICT (role_id, permission_id) DO NOTHING;
@@ -102,7 +157,7 @@ FROM dori_permission WHERE permission_name IN (
   'person_note_view','person_note_manage','notification_view',
   'site_view','site_edit',
   'queue_create','queue_edit','queue_delete','queue_tier_manage',
-  'user_manage_kiosk','user_manage_hostess','user_queue_assign',
+  'user_manage_kiosk','user_manage_operator','user_queue_assign',
   'notification_send','report_view',
   'site_create','site_delete','user_manage_manager','user_site_assign',
   'tier_catalog_manage','translation_manage'
@@ -116,9 +171,10 @@ FROM dori_permission
 ON CONFLICT (role_id, permission_id) DO NOTHING;
 
 -- 5. Translation Versions (§3.13)
-INSERT INTO dori_translation_version (category, version) VALUES
+INSERT INTO dori_translation_category_version (category, version) VALUES
 ('ihm', 1),
 ('sms', 1),
+('email', 1),
 ('error', 1)
 ON CONFLICT (category) DO NOTHING;
 
@@ -127,9 +183,18 @@ INSERT INTO dori_translation (translation_key, category, locale, content, expect
 ('ihm.queue.position_update', 'ihm', 'fr', 'Vous êtes en {position}ᵉ position, environ {minutes} min', ARRAY['position', 'minutes']),
 ('ihm.button.call_next', 'ihm', 'fr', 'Appeler le suivant', NULL),
 ('ihm.status.no_show', 'ihm', 'fr', 'Absent', NULL),
-('sms.welcome', 'sms', 'fr', 'Bienvenue. Votre ticket est {ticket}. Suivez votre avancée : {trackingUrl}', ARRAY['ticket', 'trackingUrl']),
+('sms.welcome', 'sms', 'fr', 'Bienvenue. Votre ticket est {ticket}.', ARRAY['ticket']),
+('sms.welcome_with_tracking', 'sms', 'fr', 'Bienvenue. Votre ticket est {ticket}. Suivez votre avancée : {trackingUrl}', ARRAY['ticket', 'trackingUrl']),
+('email.welcome', 'email', 'fr', 'Bienvenue. Votre ticket est {ticket}.', ARRAY['ticket']),
+('email.welcome_with_tracking', 'email', 'fr', 'Bienvenue. Votre ticket est {ticket}. Suivez votre avancée : {trackingUrl}', ARRAY['ticket', 'trackingUrl']),
 ('sms.threshold_reached', 'sms', 'fr', '{firstName}, votre tour approche. Ticket {ticket}.', ARRAY['firstName', 'ticket'])
 ON CONFLICT (translation_key, locale) DO NOTHING;
+
+UPDATE dori_translation
+SET content = 'Bienvenue. Votre ticket est {ticket}.',
+    expected_params = ARRAY['ticket'], category = 'sms',
+    is_active = TRUE, deleted_at = NULL
+WHERE translation_key = 'sms.welcome' AND locale = 'fr';
 
 -- 7. Default Root User (password: Root@123456)
 INSERT INTO dori_user (username, email, password_hash, user_type, is_active, language_preference)

@@ -89,9 +89,9 @@ export function ApiDoriErrorResponses(
     omit422?: boolean;
   } = {},
 ) {
-  opts.omit404 ??= true;
-  opts.omit409 ??= true;
-  opts.omit422 ??= true;
+  opts.omit404 ??= false;
+  opts.omit409 ??= false;
+  opts.omit422 ??= false;
   const decorators: MethodDecorator[] = [ApiExtraModels(ErrorResponseDto)];
 
   decorators.push(

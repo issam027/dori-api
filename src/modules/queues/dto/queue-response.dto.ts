@@ -286,13 +286,13 @@ export class QueueOperatorResponseDto {
   userId: number;
 
   @ApiProperty({
-    example: 'hotesse1',
+    example: 'operator1',
     description: "Identifiant de l'opérateur",
   })
   username: string;
 
   @ApiProperty({
-    example: 'hotesse1@dori.local',
+    example: 'operator1@dori.local',
     description: "Email de l'opérateur",
   })
   email: string;

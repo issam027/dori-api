@@ -289,7 +289,7 @@ export class RoleResponseDto {
   isActive: boolean;
 
   @ApiProperty({
-    example: ['user_manage_kiosk', 'user_manage_hostess', 'queue_view'],
+    example: ['user_manage_kiosk', 'user_manage_operator', 'queue_view'],
     type: [String],
     description: 'Permissions attribuées',
   })

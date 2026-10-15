@@ -1,16 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
-export interface ReportScope {
-  siteId?: number;
-  siteIds?: number[];
-  queueIds?: number[];
-}
-
 export interface QueueIdentityRow {
+  queue_id?: number;
+  site_id?: number;
   queue_name: string;
   queue_code: string;
   site_name: string;
+  timezone?: string;
+}
+
+export interface SeriesRow extends Record<string, unknown> {
+  row_type: 'summary' | 'bucket' | 'group_summary' | 'group_bucket';
+  period_start: string | null;
+  period_end: string | null;
+  group_key: string | null;
+  group_label: string | null;
+  timezone: string | null;
 }
 
 export interface DailyStatsRow {
@@ -25,26 +31,6 @@ export interface DailyStatsRow {
   avg_service_minutes: string | null;
 }
 
-export interface DashboardSummaryRow {
-  active_sites: number;
-  active_queues: number;
-  waiting_total: number;
-  waiting_walkin: number;
-  waiting_appointment: number;
-  appointments_today: number;
-}
-
-export interface QueueLoadRow {
-  queue_id: number;
-  queue_code: string;
-  queue_name: string;
-  site_id: number;
-  site_name: string;
-  queue_type: 'walkin' | 'hybrid';
-  waiting_count: number;
-  dominant_tier: string;
-}
-
 @Injectable()
 export class ReportsRepository {
   constructor(private readonly dataSource: DataSource) {}
@@ -52,12 +38,122 @@ export class ReportsRepository {
   async findQueueIdentity(queueId: number): Promise<QueueIdentityRow | null> {
     const rows = await this.dataSource.query<QueueIdentityRow[]>(
       `SELECT q.queue_name, q.queue_code, s.site_name
-       FROM dori_site_queue_thread q
+       FROM dori_queue q
        JOIN dori_site s ON s.site_id = q.site_id
        WHERE q.queue_id = $1`,
       [queueId],
     );
     return rows[0] ?? null;
+  }
+
+  findScopeIdentities(input: {
+    queueIds?: number[];
+    siteId?: number;
+  }): Promise<QueueIdentityRow[]> {
+    const params: unknown[] = [];
+    let where = '1=1';
+    if (input.queueIds) {
+      params.push(input.queueIds);
+      where += ` AND q.queue_id = ANY($${params.length})`;
+    }
+    if (input.siteId !== undefined) {
+      params.push(input.siteId);
+      where += ` AND s.site_id = $${params.length}`;
+    }
+    return this.dataSource.query(
+      `SELECT q.queue_id, q.queue_code, q.queue_name, s.site_id, s.site_name, s.timezone
+       FROM dori_queue q JOIN dori_site s ON s.site_id=q.site_id
+       WHERE ${where} ORDER BY q.queue_id`,
+      params,
+    );
+  }
+
+  getSeries(input: {
+    queueIds: number[];
+    dateFrom: string;
+    dateTo: string;
+    granularity: 'day' | 'week' | 'month';
+    includeEmpty: boolean;
+    groupBy?: 'site' | 'queue' | 'tier' | 'entryType' | 'hour' | 'weekday';
+  }): Promise<SeriesRow[]> {
+    const bucketExpressions = {
+      day: 'r.business_date',
+      week: `date_trunc('week', r.business_date)::date`,
+      month: `date_trunc('month', r.business_date)::date`,
+    } as const;
+    const intervalExpressions = {
+      day: `interval '1 day'`,
+      week: `interval '1 week'`,
+      month: `interval '1 month'`,
+    } as const;
+    const groupExpressions = {
+      site: [`s.site_id::text`, 's.site_name', 's.timezone'],
+      queue: [`q.queue_id::text`, 'q.queue_name', 's.timezone'],
+      tier: [`t.tier_id::text`, 't.tier_name', 's.timezone'],
+      entryType: ['r.entry_type', 'r.entry_type', 's.timezone'],
+      hour: [
+        `to_char(r.scheduled_time AT TIME ZONE s.timezone, 'HH24')`,
+        `to_char(r.scheduled_time AT TIME ZONE s.timezone, 'HH24')`,
+        's.timezone',
+      ],
+      weekday: [
+        `extract(isodow from r.business_date)::text`,
+        `extract(isodow from r.business_date)::text`,
+        's.timezone',
+      ],
+    } as const;
+    const bucket = bucketExpressions[input.granularity];
+    const stride = intervalExpressions[input.granularity];
+    const metrics = (alias: string) => `
+      COUNT(${alias}.registration_id)::int AS registered,
+      COUNT(${alias}.registration_id) FILTER (WHERE ${alias}.entry_type='walkin')::int AS walkin,
+      COUNT(${alias}.registration_id) FILTER (WHERE ${alias}.entry_type='appointment')::int AS appointments,
+      COUNT(${alias}.registration_id) FILTER (WHERE ${alias}.status='served')::int AS served,
+      COUNT(${alias}.registration_id) FILTER (WHERE ${alias}.status='no_show')::int AS no_show,
+      COUNT(${alias}.registration_id) FILTER (WHERE ${alias}.status='expired')::int AS expired,
+      COUNT(${alias}.registration_id) FILTER (WHERE ${alias}.status='cancelled')::int AS cancelled,
+      ROUND(AVG(EXTRACT(EPOCH FROM (${alias}.called_at-${alias}.priority_reference_time))/60) FILTER (WHERE ${alias}.called_at IS NOT NULL)::numeric, 2) AS avg_wait,
+      ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (${alias}.called_at-${alias}.priority_reference_time))/60) FILTER (WHERE ${alias}.called_at IS NOT NULL)::numeric, 2) AS median_wait,
+      ROUND(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (${alias}.called_at-${alias}.priority_reference_time))/60) FILTER (WHERE ${alias}.called_at IS NOT NULL)::numeric, 2) AS p90_wait,
+      ROUND(AVG(EXTRACT(EPOCH FROM (${alias}.served_at-${alias}.called_at))/60) FILTER (WHERE ${alias}.served_at IS NOT NULL AND ${alias}.called_at IS NOT NULL)::numeric, 2) AS avg_service,
+      ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (${alias}.served_at-${alias}.called_at))/60) FILTER (WHERE ${alias}.served_at IS NOT NULL AND ${alias}.called_at IS NOT NULL)::numeric, 2) AS median_service,
+      ROUND(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (${alias}.served_at-${alias}.called_at))/60) FILTER (WHERE ${alias}.served_at IS NOT NULL AND ${alias}.called_at IS NOT NULL)::numeric, 2) AS p90_service`;
+    const group = input.groupBy ? groupExpressions[input.groupBy] : null;
+    const groupSql = group
+      ? `UNION ALL
+         SELECT 'group_summary', NULL::date, NULL::date, ${group[0]}, ${group[1]},
+           CASE WHEN COUNT(DISTINCT ${group[2]})=1 THEN MIN(${group[2]}) ELSE NULL END, ${metrics('r')}
+         FROM scoped r JOIN dori_queue q ON q.queue_id=r.queue_id
+         JOIN dori_site s ON s.site_id=q.site_id LEFT JOIN dori_service_tier t ON t.tier_id=r.tier_id
+         GROUP BY ${group[0]}, ${group[1]}
+         UNION ALL
+         SELECT 'group_bucket', ${bucket}, LEAST($3::date, (${bucket}+${stride}-interval '1 day')::date),
+           ${group[0]}, ${group[1]}, CASE WHEN COUNT(DISTINCT ${group[2]})=1 THEN MIN(${group[2]}) ELSE NULL END, ${metrics('r')}
+         FROM scoped r JOIN dori_queue q ON q.queue_id=r.queue_id
+         JOIN dori_site s ON s.site_id=q.site_id LEFT JOIN dori_service_tier t ON t.tier_id=r.tier_id
+         GROUP BY ${bucket}, ${group[0]}, ${group[1]}`
+      : '';
+    return this.dataSource.query(
+      `WITH scoped AS (
+         SELECT * FROM dori_registration r
+         WHERE r.queue_id=ANY($1) AND r.business_date BETWEEN $2 AND $3
+       ), periods AS (
+         SELECT generate_series(date_trunc('${input.granularity}', $2::date)::date,
+           date_trunc('${input.granularity}', $3::date)::date, ${stride})::date AS period_start
+       )
+       SELECT 'summary' AS row_type, NULL::date AS period_start, NULL::date AS period_end,
+         NULL::text AS group_key, NULL::text AS group_label, NULL::text AS timezone, ${metrics('r')}
+       FROM scoped r
+       UNION ALL
+       SELECT 'bucket', p.period_start, LEAST($3::date, (p.period_start+${stride}-interval '1 day')::date),
+         NULL, NULL, NULL, ${metrics('r')}
+       FROM periods p LEFT JOIN scoped r ON ${bucket}=p.period_start
+       GROUP BY p.period_start
+       ${input.includeEmpty ? '' : 'HAVING COUNT(r.registration_id)>0'}
+       ${groupSql}
+       ORDER BY row_type, group_key NULLS FIRST, period_start NULLS FIRST`,
+      [input.queueIds, input.dateFrom, input.dateTo],
+    );
   }
 
   async getDailyStats(queueId: number, date: string): Promise<DailyStatsRow> {
@@ -77,65 +173,5 @@ export class ReportsRepository {
       [queueId, date],
     );
     return rows[0];
-  }
-
-  async getDashboardSummary(scope: ReportScope): Promise<DashboardSummaryRow> {
-    const { siteFilter, queueFilter, params } = this.buildScope(scope);
-    const rows = await this.dataSource.query<DashboardSummaryRow[]>(
-      `SELECT COUNT(DISTINCT s.site_id)::int AS active_sites,
-       COUNT(DISTINCT q.queue_id)::int AS active_queues,
-       COUNT(c.registration_id) FILTER (WHERE c.status = 'waiting' AND c.is_active)::int AS waiting_total,
-       COUNT(c.registration_id) FILTER (WHERE c.status = 'waiting' AND c.is_active AND c.entry_type = 'walkin')::int AS waiting_walkin,
-       COUNT(c.registration_id) FILTER (WHERE c.status = 'waiting' AND c.is_active AND c.entry_type = 'appointment')::int AS waiting_appointment,
-       COUNT(c.registration_id) FILTER (WHERE c.entry_type = 'appointment' AND c.is_active AND c.business_date = CURRENT_DATE)::int AS appointments_today
-       FROM dori_site s
-       LEFT JOIN dori_site_queue_thread q ON q.site_id = s.site_id AND ${queueFilter}
-       LEFT JOIN dori_registration c ON c.queue_id = q.queue_id AND c.is_active
-       WHERE ${siteFilter}`,
-      params,
-    );
-    return rows[0];
-  }
-
-  getDashboardQueueLoad(
-    scope: ReportScope,
-    limit: number,
-  ): Promise<QueueLoadRow[]> {
-    const { siteFilter, queueFilter, params } = this.buildScope(scope);
-    params.push(limit);
-    return this.dataSource.query<QueueLoadRow[]>(
-      `SELECT q.queue_id, q.queue_code, q.queue_name, s.site_id, s.site_name,
-       CASE WHEN (q.appointments_enabled IS TRUE OR (q.appointments_enabled IS NULL AND s.default_appointments_enabled IS TRUE))
-         THEN 'hybrid' ELSE 'walkin' END AS queue_type,
-       COUNT(c.registration_id) FILTER (WHERE c.status = 'waiting' AND c.is_active)::int AS waiting_count,
-       COALESCE((SELECT st.tier_name FROM dori_registration dc
-         JOIN dori_service_tier st ON st.tier_id = dc.tier_id
-         WHERE dc.queue_id = q.queue_id AND dc.status = 'waiting' AND dc.is_active
-         GROUP BY st.tier_name ORDER BY COUNT(*) DESC LIMIT 1), 'free') AS dominant_tier
-       FROM dori_site_queue_thread q JOIN dori_site s ON s.site_id = q.site_id
-       LEFT JOIN dori_registration c ON c.queue_id = q.queue_id AND c.status = 'waiting' AND c.is_active
-       WHERE ${siteFilter} AND ${queueFilter}
-       GROUP BY q.queue_id, q.queue_code, q.queue_name, s.site_id, s.site_name,
-         q.appointments_enabled, s.default_appointments_enabled
-       ORDER BY waiting_count DESC, q.queue_id ASC LIMIT $${params.length}`,
-      params,
-    );
-  }
-
-  private buildScope(scope: ReportScope) {
-    const params: unknown[] = [];
-    let siteFilter = 's.is_active = TRUE';
-    let queueFilter = 'q.is_active = TRUE';
-    if (scope.siteId !== undefined) {
-      params.push(scope.siteId);
-      siteFilter += ` AND s.site_id = $${params.length}`;
-    } else if (scope.siteIds?.length) {
-      params.push(scope.siteIds);
-      siteFilter += ` AND s.site_id = ANY($${params.length})`;
-    } else if (scope.queueIds?.length) {
-      params.push(scope.queueIds);
-      queueFilter += ` AND q.queue_id = ANY($${params.length})`;
-    }
-    return { siteFilter, queueFilter, params };
   }
 }

@@ -25,7 +25,7 @@ export class AppointmentExpiryRepository {
         `UPDATE dori_registration c
          SET status = 'expired', appointment_status = 'expired',
              closed_at = $1, is_active = FALSE, updated_at = $1
-         FROM dori_site_queue_thread q
+         FROM dori_queue q
          JOIN dori_site s ON s.site_id = q.site_id
          WHERE c.queue_id = q.queue_id
            AND c.entry_type = 'appointment'

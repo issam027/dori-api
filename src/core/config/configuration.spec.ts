@@ -15,8 +15,24 @@ describe('validateEnvironment', () => {
     [{ ...valid, PORT: 'NaN' }, 'PORT'],
     [{ ...valid, DB_PORT: '70000' }, 'DB_PORT'],
     [{ ...valid, DATABASE_URL: 'not-a-url' }, 'DATABASE_URL'],
+    [{ ...valid, PUBLIC_WEB_URL: 'ftp://example.com' }, 'PUBLIC_WEB_URL'],
   ])('rejects an unsafe environment', (environment, message) => {
     expect(() => validateEnvironment(environment)).toThrow(message);
+  });
+});
+
+describe('configuration public tracking URL', () => {
+  it('exposes the configured web application URL', () => {
+    const original = process.env.PUBLIC_WEB_URL;
+    try {
+      process.env.PUBLIC_WEB_URL = 'https://app.dori.example';
+      expect(configuration().tracking.publicWebUrl).toBe(
+        'https://app.dori.example',
+      );
+    } finally {
+      if (original === undefined) delete process.env.PUBLIC_WEB_URL;
+      else process.env.PUBLIC_WEB_URL = original;
+    }
   });
 });
 

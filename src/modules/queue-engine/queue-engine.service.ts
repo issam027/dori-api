@@ -1,4 +1,4 @@
-﻿import { Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { OpenQueueSessionDto } from './dto/session.dto';
 import { QueueSessionResponseDto } from './dto/engine-response.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
@@ -283,6 +283,7 @@ export class QueueEngineService {
     const candidate = await this.queueEngineRepository.callNext({
       queueId,
       sessionId: context.session.session_id,
+      userId: user.userId,
       businessDate,
       now,
       baseWalkin: context.config.baseWalkin,
@@ -359,7 +360,7 @@ export class QueueEngineService {
       status: 'served',
       servedAt: now,
       closedAt: now,
-      handledBySessionId: reg.current_session_id,
+      handledBySessionId: reg.served_by_session_id,
       handledByUserId: user.userId,
     };
   }
@@ -393,7 +394,7 @@ export class QueueEngineService {
       status: 'no_show',
       servedAt: null,
       closedAt: now,
-      handledBySessionId: reg.current_session_id,
+      handledBySessionId: reg.served_by_session_id,
       handledByUserId: user.userId,
     };
   }

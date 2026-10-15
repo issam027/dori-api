@@ -66,17 +66,17 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
     service = module.get<UsersService>(UsersService);
   });
 
-  it('should prevent an operator/user with user_manage_hostess from updating a manager (higher profile)', async () => {
+  it('should prevent an operator/user with user_manage_operator from updating a manager (higher profile)', async () => {
     const caller: AuthenticatedUser = {
       userId: 10,
       username: 'manager_or_supervisor',
       roles: ['manager'],
-      permissions: ['user_manage_hostess', 'user_manage_kiosk'],
+      permissions: ['user_manage_operator', 'user_manage_kiosk'],
       userType: 'human',
     };
 
     // When checking caller max rank: manager rank 3
-    // When checking caller permissions: only user_manage_hostess -> maxManageRank = 2
+    // When checking caller permissions: only user_manage_operator -> maxManageRank = 2
     // Target user (userId 20) is manager: rank 3
     dataSourceMock.query.mockImplementation(
       async (sql: string, params?: any[]) => {
@@ -91,7 +91,7 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
           params?.[0] === 10
         ) {
           return [
-            { permission_name: 'user_manage_hostess' },
+            { permission_name: 'user_manage_operator' },
             { permission_name: 'user_manage_kiosk' },
           ];
         }
@@ -126,12 +126,12 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
     }
   });
 
-  it('should allow a manager (rank 3, user_manage_hostess) to update an hostess (rank 2)', async () => {
+  it('should allow a manager (rank 3, user_manage_operator) to update an operator (rank 2)', async () => {
     const caller: AuthenticatedUser = {
       userId: 10,
       username: 'manager1',
       roles: ['manager'],
-      permissions: ['user_manage_hostess', 'user_manage_kiosk'],
+      permissions: ['user_manage_operator', 'user_manage_kiosk'],
       userType: 'human',
     };
 
@@ -148,7 +148,7 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
           params?.[0] === 10
         ) {
           return [
-            { permission_name: 'user_manage_hostess' },
+            { permission_name: 'user_manage_operator' },
             { permission_name: 'user_manage_kiosk' },
           ];
         }
@@ -164,19 +164,19 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
           sql.includes('SELECT MAX(r.rank) as max_rank') &&
           params?.[0] === 25
         ) {
-          return [{ max_rank: 2 }]; // target is rank 2 (hotesse)
+          return [{ max_rank: 2 }]; // target is rank 2 (operator)
         }
         if (
           sql.includes('SELECT user_id, username, email') &&
           params?.[0] === 25
         ) {
           return [
-            { user_id: 25, username: 'hotesse1', email: 'old@dori.local' },
+            { user_id: 25, username: 'operator1', email: 'old@dori.local' },
           ];
         }
         if (sql.includes('UPDATE dori_user SET')) {
           return [
-            { user_id: 25, username: 'hotesse1', email: 'updated@dori.local' },
+            { user_id: 25, username: 'operator1', email: 'updated@dori.local' },
           ];
         }
         return [];
@@ -192,12 +192,12 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
     expect(result.email).toBe('updated@dori.local');
   });
 
-  it('should prevent assigning a role higher than hostess when only having user_manage_hostess', async () => {
+  it('should prevent assigning a role higher than operator when only having user_manage_operator', async () => {
     const caller: AuthenticatedUser = {
       userId: 10,
       username: 'manager1',
       roles: ['manager'],
-      permissions: ['user_manage_hostess', 'user_manage_kiosk'],
+      permissions: ['user_manage_operator', 'user_manage_kiosk'],
       userType: 'human',
     };
 
@@ -213,7 +213,7 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
           sql.includes('SELECT DISTINCT p.permission_name') &&
           params?.[0] === 10
         ) {
-          return [{ permission_name: 'user_manage_hostess' }];
+          return [{ permission_name: 'user_manage_operator' }];
         }
         if (
           sql.includes(
@@ -227,7 +227,7 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
           sql.includes('SELECT MAX(r.rank) as max_rank') &&
           params?.[0] === 30
         ) {
-          return [{ max_rank: 2 }]; // target is rank 2 (hotesse)
+          return [{ max_rank: 2 }]; // target is rank 2 (operator)
         }
         if (
           sql.includes('SELECT rank FROM dori_role WHERE role_id = $1') &&
@@ -250,7 +250,7 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
   });
 
   describe('deleteUser (DAT-05)', () => {
-    it('should throw USER_NOT_FOUND when user does not exist or deleted_at IS NOT NULL', async () => {
+    it('should throw USER_NOT_FOUND when user does not exist', async () => {
       const rootCaller: AuthenticatedUser = {
         userId: 1,
         username: 'root_user',
@@ -260,11 +260,7 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
       };
 
       dataSourceMock.query.mockImplementation(async (sql: string) => {
-        if (
-          sql.includes(
-            'FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL',
-          )
-        ) {
+        if (sql.includes('FROM dori_user WHERE user_id = $1')) {
           return [];
         }
         return [];
@@ -288,11 +284,7 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
       dataSourceMock.query.mockImplementation(
         async (sql: string, params: any[]) => {
           queries.push({ sql, params });
-          if (
-            sql.includes(
-              'FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL',
-            )
-          ) {
+          if (sql.includes('FROM dori_user WHERE user_id = $1')) {
             return [{ user_id: 25, username: 'operator1', is_active: true }];
           }
           return [];
@@ -321,11 +313,11 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
   });
 
   describe('BUG1 — Hiérarchie RBAC & Listing total par site', () => {
-    it('should forbid an hostess from modifying any user (even self)', async () => {
-      const hostessCaller: AuthenticatedUser = {
+    it('should forbid an operator from modifying any user (even self)', async () => {
+      const operatorCaller: AuthenticatedUser = {
         userId: 25,
-        username: 'hotesse1',
-        roles: ['hotesse'],
+        username: 'operator1',
+        roles: ['operator'],
         permissions: ['session_operate'],
         userType: 'human',
       };
@@ -343,7 +335,7 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
       );
 
       await expect(
-        service.updateUser(25, { email: 'new@dori.local' }, hostessCaller),
+        service.updateUser(25, { email: 'new@dori.local' }, operatorCaller),
       ).rejects.toThrow(new DoriException('FORBIDDEN_PERMISSION'));
     });
 
@@ -352,7 +344,7 @@ describe('UsersService — RBAC Anti-Escalation & Role Profiles', () => {
         userId: 10,
         username: 'manager1',
         roles: ['manager'],
-        permissions: ['user_manage_hostess'],
+        permissions: ['user_manage_operator'],
         userType: 'human',
       };
 

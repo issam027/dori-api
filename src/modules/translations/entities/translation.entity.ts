@@ -15,7 +15,7 @@ export class DoriTranslation {
   translation_key: string;
 
   @Column({ type: 'varchar', length: 20, default: 'ihm' })
-  category: 'ihm' | 'sms' | 'error';
+  category: 'ihm' | 'sms' | 'email' | 'error';
 
   @Column({ type: 'varchar', length: 10 })
   locale: string;
