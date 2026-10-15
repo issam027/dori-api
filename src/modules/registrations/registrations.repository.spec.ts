@@ -1,5 +1,8 @@
-import { EntityManager } from 'typeorm';
-import { RegistrationsTransaction } from './registrations.repository';
+import { DataSource, EntityManager } from 'typeorm';
+import {
+  RegistrationsRepository,
+  RegistrationsTransaction,
+} from './registrations.repository';
 import { NotificationTemplateService } from '../../core/notifications/notification-template.service';
 import { ConfigService } from '@nestjs/config';
 
@@ -98,5 +101,21 @@ describe('RegistrationsTransaction welcome notifications', () => {
       status: 'failed',
       failure_reason: 'RECIPIENT_MISSING:email',
     });
+  });
+});
+
+describe('RegistrationsRepository public position', () => {
+  it('loads the session that called the registration', async () => {
+    const query = jest.fn().mockResolvedValueOnce([]);
+    const repository = new RegistrationsRepository({
+      query,
+    } as unknown as DataSource);
+
+    await repository.findByTrackingToken(
+      '550e8400-e29b-41d4-a716-446655440000',
+    );
+
+    expect(query.mock.calls[0][0]).toContain('LEFT JOIN dori_operator_session');
+    expect(query.mock.calls[0][0]).toContain('os.counter_name');
   });
 });

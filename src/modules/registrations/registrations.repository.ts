@@ -17,6 +17,10 @@ export type RegistrationRow = Record<string, unknown> & {
   status: string;
   average_wait_time: number;
   ticket_number: string;
+  called_at: Date | string | null;
+  counter_name: string | null;
+  thread_number: number | null;
+  queue_name: string;
 };
 
 export class RegistrationsTransaction {
@@ -505,8 +509,13 @@ export class RegistrationsRepository {
 
   async findByTrackingToken(token: string) {
     const rows = await this.dataSource.query(
-      `SELECT r.*,q.average_wait_time FROM dori_registration r JOIN dori_queue q ON q.queue_id=r.queue_id
-     WHERE r.registration_tracking_token=$1`,
+      `SELECT r.*, q.average_wait_time, q.queue_name,
+              os.thread_number, os.counter_name
+       FROM dori_registration r
+       JOIN dori_queue q ON q.queue_id = r.queue_id
+       LEFT JOIN dori_operator_session os
+         ON os.session_id = r.served_by_session_id
+       WHERE r.registration_tracking_token = $1`,
       [token],
     );
     return rows[0] ?? null;

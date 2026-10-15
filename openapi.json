@@ -17930,10 +17930,36 @@
             "example": "waiting",
             "description": "Statut du ticket"
           },
+          "registrationStatus": {
+            "type": "string",
+            "enum": [
+              "waiting",
+              "in_progress",
+              "served",
+              "no_show",
+              "cancelled",
+              "expired"
+            ],
+            "example": "served",
+            "description": "Statut métier réel de l'inscription, y compris après sa clôture"
+          },
           "counterNumber": {
             "type": "number",
             "example": 2,
             "description": "Numéro du guichet si appelé"
+          },
+          "counterName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Guichet 04",
+            "description": "Nom complet du guichet ayant appelé le client"
+          },
+          "calledAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2026-10-15T09:42:18.000Z",
+            "description": "Date et heure de l'appel du client"
           },
           "queueName": {
             "type": "string",
@@ -17942,7 +17968,8 @@
           }
         },
         "required": [
-          "status"
+          "status",
+          "registrationStatus"
         ]
       },
       "QueueCandidatePersonItemDto": {

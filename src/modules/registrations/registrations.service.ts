@@ -638,15 +638,20 @@ export class RegistrationsService {
         this.configService.getOrThrow<number>('tracking.closedGraceMinutes') *
           60_000
     ) {
-      return { status: 'closed' };
+      return { status: 'closed', registrationStatus: reg.status };
     }
 
     if (reg.status === 'in_progress') {
       return {
         ticketNumber: reg.ticket_number,
         status: 'in_progress',
+        registrationStatus: reg.status,
         position: 0,
         estimatedWaitMinutes: 0,
+        counterNumber: reg.thread_number,
+        counterName: reg.counter_name,
+        calledAt: reg.called_at,
+        queueName: reg.queue_name,
       };
     }
 
@@ -667,14 +672,23 @@ export class RegistrationsService {
       return {
         ticketNumber: reg.ticket_number,
         status: 'waiting',
+        registrationStatus: reg.status,
         position,
         estimatedWaitMinutes,
+        counterName: null,
+        calledAt: null,
+        queueName: reg.queue_name,
       };
     }
 
     return {
       ticketNumber: reg.ticket_number,
       status: reg.status,
+      registrationStatus: reg.status,
+      counterNumber: reg.thread_number,
+      counterName: reg.counter_name,
+      calledAt: reg.called_at,
+      queueName: reg.queue_name,
     };
   }
 }

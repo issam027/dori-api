@@ -217,11 +217,43 @@ export class RegistrationPositionResponseDto {
   @ApiProperty({ example: 'waiting', description: 'Statut du ticket' })
   status: string;
 
+  @ApiProperty({
+    enum: [
+      'waiting',
+      'in_progress',
+      'served',
+      'no_show',
+      'cancelled',
+      'expired',
+    ],
+    example: 'served',
+    description:
+      "Statut métier réel de l'inscription, y compris après sa clôture",
+  })
+  registrationStatus: string;
+
   @ApiPropertyOptional({
     example: 2,
     description: 'Numéro du guichet si appelé',
   })
   counterNumber?: number;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    example: 'Guichet 04',
+    description: 'Nom complet du guichet ayant appelé le client',
+  })
+  counterName?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    example: '2026-10-15T09:42:18.000Z',
+    description: "Date et heure de l'appel du client",
+  })
+  calledAt?: string | null;
 
   @ApiPropertyOptional({
     example: 'Consultation Cardiologie',
