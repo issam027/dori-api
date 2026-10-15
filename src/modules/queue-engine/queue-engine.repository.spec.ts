@@ -56,6 +56,42 @@ describe('QueueEngineRepository', () => {
     );
   });
 
+  it('persists the complete counter name when opening a session', async () => {
+    const query = jest.fn().mockResolvedValueOnce([
+      {
+        session_id: 8,
+        queue_id: 5,
+        user_id: 2,
+        thread_number: 1,
+        counter_name: 'Bureau A',
+      },
+    ]);
+    const repository = new QueueEngineRepository({
+      query,
+    } as unknown as DataSource);
+    const now = new Date('2026-10-15T09:00:00Z');
+
+    const session = await repository.createSession({
+      queueId: 5,
+      userId: 2,
+      threadNumber: 1,
+      counterName: 'Bureau A',
+      mode: 'active',
+      now,
+    });
+
+    expect(query.mock.calls[0][0]).toContain('counter_name');
+    expect(query.mock.calls[0][1]).toEqual([
+      5,
+      2,
+      1,
+      'Bureau A',
+      'active',
+      now,
+    ]);
+    expect(session.counter_name).toBe('Bureau A');
+  });
+
   it('selects and transitions the next candidate in one transaction', async () => {
     const query = jest
       .fn()

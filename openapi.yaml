@@ -9351,6 +9351,11 @@ components:
           type: string
           format: date-time
           description: Valeur du champ « last seen at ».
+        counterName:
+          type: string
+          nullable: true
+          example: Guichet 04
+          description: Valeur du champ « counter name ».
         inactiveMinutes:
           type: number
           minimum: 0
@@ -9434,6 +9439,11 @@ components:
           minimum: 1
           nullable: true
           description: Valeur du champ « thread number ».
+        counterName:
+          type: string
+          nullable: true
+          example: Guichet 04
+          description: Valeur du champ « counter name ».
         userId:
           type: number
           minimum: 1
@@ -9505,6 +9515,11 @@ components:
     OpenQueueSessionDto:
       type: object
       properties:
+        counterName:
+          type: string
+          example: Guichet 04
+          maxLength: 100
+          description: Nom complet et libre du point de service, par exemple Bureau A, Guichet 04 ou Cabinet 2
         threadNumber:
           type: number
           example: 1

@@ -5,6 +5,7 @@ export interface ActiveThreadSessionRow {
   session_id: number;
   user_id: number;
   thread_number: number;
+  counter_name: string | null;
   username: string;
   connected_at: Date | string;
   last_seen_at: Date | string;
@@ -16,6 +17,7 @@ export interface QueueSessionRow extends Record<string, unknown> {
   queue_id: number;
   user_id: number;
   thread_number: number | null;
+  counter_name: string | null;
   mode: 'active' | 'consultation_only';
   connected_at: Date | string;
   last_seen_at: Date | string;
@@ -108,14 +110,22 @@ export class QueueEngineRepository {
     queueId: number;
     userId: number;
     threadNumber: number | null;
+    counterName: string | null;
     mode: 'active' | 'consultation_only';
     now: Date;
   }): Promise<QueueSessionRow> {
     const rows: QueueSessionRow[] = await this.dataSource.query(
       `INSERT INTO dori_operator_session
-         (queue_id, user_id, thread_number, mode, connected_at, last_seen_at)
-       VALUES ($1, $2, $3, $4, $5, $5) RETURNING *`,
-      [input.queueId, input.userId, input.threadNumber, input.mode, input.now],
+         (queue_id, user_id, thread_number, counter_name, mode, connected_at, last_seen_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $6) RETURNING *`,
+      [
+        input.queueId,
+        input.userId,
+        input.threadNumber,
+        input.counterName,
+        input.mode,
+        input.now,
+      ],
     );
     return rows[0];
   }
@@ -123,9 +133,13 @@ export class QueueEngineRepository {
   async findActiveUserSession(
     queueId: number,
     userId: number,
-  ): Promise<Pick<QueueSessionRow, 'session_id' | 'thread_number'> | null> {
+  ): Promise<Pick<
+    QueueSessionRow,
+    'session_id' | 'thread_number' | 'counter_name' | 'connected_at'
+  > | null> {
     const rows = await this.dataSource.query(
-      `SELECT session_id, thread_number FROM dori_operator_session
+      `SELECT session_id, thread_number, counter_name, connected_at
+       FROM dori_operator_session
        WHERE queue_id = $1 AND user_id = $2
          AND disconnected_at IS NULL AND mode = 'active'`,
       [queueId, userId],
@@ -150,6 +164,7 @@ export class QueueEngineRepository {
   takeOverThread(input: {
     queueId: number;
     threadNumber: number;
+    counterName: string | null;
     userId: number;
     now: Date;
   }): Promise<{
@@ -174,9 +189,15 @@ export class QueueEngineRepository {
       );
       const created: QueueSessionRow[] = await manager.query(
         `INSERT INTO dori_operator_session
-           (queue_id, user_id, thread_number, mode, connected_at, last_seen_at)
-         VALUES ($1, $2, $3, 'active', $4, $4) RETURNING *`,
-        [input.queueId, input.userId, input.threadNumber, input.now],
+           (queue_id, user_id, thread_number, counter_name, mode, connected_at, last_seen_at)
+         VALUES ($1, $2, $3, $4, 'active', $5, $5) RETURNING *`,
+        [
+          input.queueId,
+          input.userId,
+          input.threadNumber,
+          input.counterName,
+          input.now,
+        ],
       );
       const clients: Array<{ registration_id: number }> = await manager.query(
         `SELECT registration_id FROM dori_registration
@@ -252,7 +273,7 @@ export class QueueEngineRepository {
       [input.queueId],
     );
     const items: QueueSessionRow[] = await this.dataSource.query(
-      `SELECT qs.session_id, qs.queue_id, qs.thread_number, qs.user_id,
+      `SELECT qs.session_id, qs.queue_id, qs.thread_number, qs.counter_name, qs.user_id,
               u.username, qs.mode, qs.connected_at, qs.disconnected_at ${from}
        ORDER BY ${input.sortField} ${input.sortOrder} LIMIT $2 OFFSET $3`,
       [input.queueId, input.pageSize, input.offset],

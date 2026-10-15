@@ -61,6 +61,7 @@ export class QueueEngineService {
             sessionId: s.session_id,
             userId: s.user_id,
             username: s.username,
+            counterName: s.counter_name,
             connectedAt: s.connected_at,
             lastSeenAt: s.last_seen_at,
             inactiveMinutes,
@@ -100,6 +101,7 @@ export class QueueEngineService {
           queueId,
           userId: user.userId,
           threadNumber: null,
+          counterName: dto.counterName ?? null,
           mode: 'consultation_only',
           now,
         });
@@ -114,6 +116,7 @@ export class QueueEngineService {
         queueId: session.queue_id,
         userId: session.user_id,
         threadNumber: null,
+        counterName: session.counter_name,
         mode: 'consultation_only',
         connectedAt: session.connected_at,
       };
@@ -159,8 +162,9 @@ export class QueueEngineService {
           queueId,
           userId: user.userId,
           threadNumber: dto.threadNumber,
+          counterName: existingUserSession.counter_name,
           mode: 'active',
-          connectedAt: now,
+          connectedAt: existingUserSession.connected_at,
           takenOverFromSessionId: null,
           reassignedRegistrationId: null,
         };
@@ -197,6 +201,7 @@ export class QueueEngineService {
       const takeover = await this.queueEngineRepository.takeOverThread({
         queueId,
         threadNumber: dto.threadNumber,
+        counterName: dto.counterName ?? occupied.counter_name ?? null,
         userId: user.userId,
         now,
       });
@@ -206,6 +211,7 @@ export class QueueEngineService {
         queueId: takeover.session.queue_id,
         userId: takeover.session.user_id,
         threadNumber: takeover.session.thread_number,
+        counterName: takeover.session.counter_name,
         mode: 'active',
         connectedAt: takeover.session.connected_at,
         takenOverFromSessionId: takeover.previousSessionId,
@@ -220,6 +226,7 @@ export class QueueEngineService {
         queueId,
         userId: user.userId,
         threadNumber: dto.threadNumber,
+        counterName: dto.counterName ?? null,
         mode: 'active',
         now,
       });
@@ -240,6 +247,7 @@ export class QueueEngineService {
       queueId: session.queue_id,
       userId: session.user_id,
       threadNumber: session.thread_number,
+      counterName: session.counter_name,
       mode: 'active',
       connectedAt: session.connected_at,
       takenOverFromSessionId: null,
@@ -423,6 +431,7 @@ export class QueueEngineService {
         'qs.connected_at',
         'qs.session_id',
         'qs.thread_number',
+        'qs.counter_name',
         'qs.mode',
         'u.username',
       ],
@@ -443,6 +452,7 @@ export class QueueEngineService {
         userId: session.user_id,
         username: session.username,
         threadNumber: session.thread_number,
+        counterName: session.counter_name,
         mode: session.mode,
         connectedAt: session.connected_at,
         disconnectedAt: session.disconnected_at,

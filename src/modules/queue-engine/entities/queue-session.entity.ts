@@ -14,6 +14,9 @@ export class DoriQueueSession {
   @Column({ type: 'int', nullable: true })
   thread_number: number | null;
 
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  counter_name: string | null;
+
   @Column({ type: 'varchar', length: 20, default: 'active' })
   mode: 'active' | 'consultation_only';
 

@@ -29,6 +29,8 @@ export class ThreadSessionItemDto {
   @ApiProperty() username: string;
   @ApiProperty({ format: 'date-time' }) connectedAt: string;
   @ApiProperty({ format: 'date-time' }) lastSeenAt: string;
+  @ApiPropertyOptional({ type: String, nullable: true, example: 'Guichet 04' })
+  counterName?: string | null;
   @ApiProperty({ minimum: 0 }) inactiveMinutes: number;
   @ApiPropertyOptional({ minimum: 1, nullable: true }) currentRegistrationId?:
     number | null;
@@ -51,6 +53,8 @@ export class QueueSessionResponseDto {
   @ApiProperty({ minimum: 1 }) queueId: number;
   @ApiPropertyOptional({ minimum: 1, nullable: true }) threadNumber?:
     number | null;
+  @ApiPropertyOptional({ type: String, nullable: true, example: 'Guichet 04' })
+  counterName?: string | null;
   @ApiProperty({ minimum: 1 }) userId: number;
   @ApiProperty({ enum: ['active', 'consultation_only'] }) mode: string;
   @ApiProperty({ format: 'date-time' }) connectedAt: string;

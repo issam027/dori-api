@@ -1,9 +1,32 @@
-import { IsBoolean, IsIn, IsInt, IsOptional, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+  MinLength,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ValidSessionMode } from '../../../core/validation/domain-validation.decorators';
+import { Transform } from 'class-transformer';
 
 @ValidSessionMode()
 export class OpenQueueSessionDto {
+  @ApiPropertyOptional({
+    example: 'Guichet 04',
+    maxLength: 100,
+    description:
+      'Nom complet et libre du point de service, par exemple Bureau A, Guichet 04 ou Cabinet 2',
+  })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @MinLength(1)
+  @MaxLength(100)
+  @IsOptional()
+  counterName?: string;
+
   @ApiPropertyOptional({
     example: 1,
     description: 'Numéro du guichet (thread) à ouvrir (requis si mode=active)',

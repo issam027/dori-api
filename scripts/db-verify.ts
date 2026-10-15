@@ -49,14 +49,18 @@ async function main(): Promise<void> {
          JOIN dori_queue q ON q.queue_id = uq.queue_id
          LEFT JOIN dori_user_site_assignment us
            ON us.user_id = uq.user_id AND us.site_id = q.site_id
-         WHERE us.user_id IS NULL) AS queue_assignments_without_site
+         WHERE us.user_id IS NULL) AS queue_assignments_without_site,
+        (SELECT COUNT(*)::int FROM dori_operator_session
+         WHERE counter_name IS NOT NULL
+           AND LENGTH(BTRIM(counter_name)) NOT BETWEEN 1 AND 100) AS invalid_counter_names
     `);
     const constraints = await client.query<{ conname: string }>(`
       SELECT conname FROM pg_constraint
       WHERE conname IN (
         'ck_registration_served_by_pair',
         'ck_registration_served_by_status',
-        'ck_notification_dispatchable'
+        'ck_notification_dispatchable',
+        'ck_operator_session_counter_name'
       ) ORDER BY conname
     `);
     process.stdout.write(
