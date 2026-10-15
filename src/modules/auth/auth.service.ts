@@ -53,8 +53,14 @@ export class AuthService {
     if (!passwordMatches) {
       const failedAttempts = (user.failed_attempts || 0) + 1;
       let lockedUntil: Date | null = null;
-      if (failedAttempts >= 5) {
-        lockedUntil = this.clockService.addMinutes(now, 15);
+      const maxFailedAttempts = this.configService.getOrThrow<number>(
+        'security.maxFailedAttempts',
+      );
+      if (failedAttempts >= maxFailedAttempts) {
+        lockedUntil = this.clockService.addMinutes(
+          now,
+          this.configService.getOrThrow<number>('security.lockoutMinutes'),
+        );
       }
 
       await this.authRepository.recordFailedLogin(

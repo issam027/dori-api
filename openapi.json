@@ -628,69 +628,6 @@
         ]
       }
     },
-    "/api/v1/health": {
-      "get": {
-        "operationId": "HealthController_check",
-        "summary": "Vérification de santé complète (Health Check)",
-        "description": "Vérifie la connectivité à PostgreSQL, l'uptime et l'état de la mémoire du serveur",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "API et Base de données opérationnelles",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HealthResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Données invalides (validation échouée)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Trop de requêtes — limite de débit atteinte",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erreur interne sans exposition de détails techniques",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Base de données inaccessible ou service dégradé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HealthResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Health"
-        ]
-      }
-    },
     "/api/v1/sites": {
       "get": {
         "operationId": "SitesController_findSites",
@@ -9171,9 +9108,10 @@
             "required": true,
             "in": "header",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
-            "description": "Valeur du paramètre « x-registration-token »."
+            "description": "Jeton UUID opaque retourné lors de la création de l’inscription. À transmettre uniquement dans cet en-tête."
           }
         ],
         "responses": {
@@ -14140,16 +14078,198 @@
         ]
       }
     },
-    "/api/v1/reports/series": {
+    "/api/v1/monitoring/health": {
       "get": {
-        "operationId": "ReportsController_getSeries",
+        "operationId": "MonitoringController_health",
+        "summary": "État de santé de l’API et de PostgreSQL",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Service opérationnel",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoringHealthResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service dégradé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoringHealthResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Monitoring"
+        ]
+      }
+    },
+    "/api/v1/monitoring/metrics": {
+      "get": {
+        "operationId": "MonitoringController_metrics",
+        "x-required-permissions": {
+          "mode": "all",
+          "permissions": [
+            "system_manage"
+          ]
+        },
+        "summary": "Métriques techniques du processus et des workers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Métriques techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "OK",
+                      "description": "Code applicatif du résultat"
+                    },
+                    "translationKey": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": null,
+                      "description": "Clé de traduction du message (null si aucun message)"
+                    },
+                    "translationParams": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "example": {},
+                      "description": "Paramètres de traduction"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/MonitoringMetricsResponseDto"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "translationKey",
+                    "translationParams",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Monitoring"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/monitoring/activity": {
+      "get": {
+        "operationId": "MonitoringController_activity",
+        "x-required-permissions": {
+          "mode": "all",
+          "permissions": [
+            "system_manage"
+          ]
+        },
+        "summary": "Instantané de l’activité opérationnelle",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Activité opérationnelle",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "OK",
+                      "description": "Code applicatif du résultat"
+                    },
+                    "translationKey": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": null,
+                      "description": "Clé de traduction du message (null si aucun message)"
+                    },
+                    "translationParams": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "example": {},
+                      "description": "Paramètres de traduction"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/MonitoringActivityResponseDto"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "translationKey",
+                    "translationParams",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Monitoring"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/monitoring/series": {
+      "get": {
+        "operationId": "MonitoringController_series",
         "x-required-permissions": {
           "mode": "all",
           "permissions": [
             "report_view"
           ]
         },
-        "summary": "Série de reporting sur une période",
+        "summary": "Série d’activité sur une période",
         "description": "Agrège une file, plusieurs files ou un site par jour, semaine ou mois. Exactement un périmètre doit être fourni : queueIds ou siteId. La période est inclusive, ordonnée et limitée à 366 jours.",
         "parameters": [
           {
@@ -14242,7 +14362,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Série et synthèse de reporting",
+            "description": "Série et synthèse d’activité",
             "content": {
               "application/json": {
                 "schema": {
@@ -14277,90 +14397,10 @@
                 }
               }
             }
-          },
-          "400": {
-            "description": "Données invalides (validation échouée)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié — token manquant ou expiré",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès interdit — permission insuffisante",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Ressource introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflit métier (doublon, slot plein, compte verrouillé…)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Entité non traitable — règle métier enfreinte",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Trop de requêtes — limite de débit atteinte",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erreur interne sans exposition de détails techniques",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
           }
         },
         "tags": [
-          "Reports"
+          "Monitoring"
         ],
         "security": [
           {
@@ -14423,12 +14463,8 @@
       "description": "Gestion des traductions et bundles"
     },
     {
-      "name": "Reports",
-      "description": "Rapports statistiques et indicateurs d'activité"
-    },
-    {
-      "name": "Health",
-      "description": "Santé des composants et dépendances"
+      "name": "Monitoring",
+      "description": "Santé technique, métriques et indicateurs d’activité"
     }
   ],
   "servers": [
@@ -14819,107 +14855,6 @@
         "required": [
           "currentPassword",
           "newPassword"
-        ]
-      },
-      "HealthMemoryUsageDto": {
-        "type": "object",
-        "properties": {
-          "rss": {
-            "type": "number",
-            "example": 12345678,
-            "description": "Valeur du champ « rss »."
-          },
-          "heapTotal": {
-            "type": "number",
-            "example": 9876543,
-            "description": "Valeur du champ « heap total »."
-          },
-          "heapUsed": {
-            "type": "number",
-            "example": 7654321,
-            "description": "Valeur du champ « heap used »."
-          },
-          "external": {
-            "type": "number",
-            "example": 1234567,
-            "description": "Valeur du champ « external »."
-          },
-          "arrayBuffers": {
-            "type": "number",
-            "example": 0,
-            "description": "Valeur du champ « array buffers »."
-          }
-        },
-        "required": [
-          "rss",
-          "heapTotal",
-          "heapUsed",
-          "external",
-          "arrayBuffers"
-        ]
-      },
-      "HealthChecksDto": {
-        "type": "object",
-        "properties": {
-          "database": {
-            "type": "string",
-            "enum": [
-              "up",
-              "down"
-            ],
-            "example": "up",
-            "description": "Valeur du champ « database »."
-          },
-          "memoryUsage": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/HealthMemoryUsageDto"
-              }
-            ],
-            "description": "Valeur du champ « memory usage »."
-          }
-        },
-        "required": [
-          "database",
-          "memoryUsage"
-        ]
-      },
-      "HealthResponseDto": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "ok",
-              "degraded"
-            ],
-            "example": "ok",
-            "description": "Valeur du champ « status »."
-          },
-          "timestamp": {
-            "type": "string",
-            "example": "2026-09-28T15:00:00.000Z",
-            "description": "Valeur du champ « timestamp »."
-          },
-          "uptime": {
-            "type": "number",
-            "example": 3600.5,
-            "description": "Uptime du process en secondes"
-          },
-          "checks": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/HealthChecksDto"
-              }
-            ],
-            "description": "Valeur du champ « checks »."
-          }
-        },
-        "required": [
-          "status",
-          "timestamp",
-          "uptime",
-          "checks"
         ]
       },
       "SiteResponseDto": {
@@ -19729,6 +19664,162 @@
         },
         "required": [
           "permissionNames"
+        ]
+      },
+      "HealthMemoryUsageDto": {
+        "type": "object",
+        "properties": {
+          "rss": {
+            "type": "number",
+            "description": "Valeur du champ « rss »."
+          },
+          "heapTotal": {
+            "type": "number",
+            "description": "Valeur du champ « heap total »."
+          },
+          "heapUsed": {
+            "type": "number",
+            "description": "Valeur du champ « heap used »."
+          },
+          "external": {
+            "type": "number",
+            "description": "Valeur du champ « external »."
+          },
+          "arrayBuffers": {
+            "type": "number",
+            "description": "Valeur du champ « array buffers »."
+          }
+        },
+        "required": [
+          "rss",
+          "heapTotal",
+          "heapUsed",
+          "external",
+          "arrayBuffers"
+        ]
+      },
+      "HealthChecksDto": {
+        "type": "object",
+        "properties": {
+          "database": {
+            "type": "string",
+            "enum": [
+              "up",
+              "down"
+            ],
+            "description": "Valeur du champ « database »."
+          },
+          "memoryUsage": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HealthMemoryUsageDto"
+              }
+            ],
+            "description": "Valeur du champ « memory usage »."
+          }
+        },
+        "required": [
+          "database",
+          "memoryUsage"
+        ]
+      },
+      "MonitoringHealthResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "degraded"
+            ],
+            "description": "Valeur du champ « status »."
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Valeur du champ « timestamp »."
+          },
+          "uptime": {
+            "type": "number",
+            "description": "Valeur du champ « uptime »."
+          },
+          "checks": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HealthChecksDto"
+              }
+            ],
+            "description": "Valeur du champ « checks »."
+          }
+        },
+        "required": [
+          "status",
+          "timestamp",
+          "uptime",
+          "checks"
+        ]
+      },
+      "MonitoringMetricsResponseDto": {
+        "type": "object",
+        "properties": {
+          "counters": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Valeur du champ « counters »."
+          },
+          "derived": {
+            "type": "object",
+            "example": {
+              "averageHttpRequestDurationMs": 12.5
+            },
+            "description": "Valeur du champ « derived »."
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Valeur du champ « generated at »."
+          }
+        },
+        "required": [
+          "counters",
+          "derived",
+          "generatedAt"
+        ]
+      },
+      "MonitoringActivityResponseDto": {
+        "type": "object",
+        "properties": {
+          "notifications": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Valeur du champ « notifications »."
+          },
+          "openOperatorSessions": {
+            "type": "number",
+            "description": "Valeur du champ « open operator sessions »."
+          },
+          "registrations": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Valeur du champ « registrations »."
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Valeur du champ « generated at »."
+          }
+        },
+        "required": [
+          "notifications",
+          "openOperatorSessions",
+          "registrations",
+          "generatedAt"
         ]
       },
       "ReportPeriodDto": {

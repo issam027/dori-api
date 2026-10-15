@@ -24,7 +24,7 @@ export class AppointmentExpiryRepository {
       const raw: unknown = await manager.query(
         `UPDATE dori_registration c
          SET status = 'expired', appointment_status = 'expired',
-             closed_at = $1, is_active = FALSE, updated_at = $1
+             closed_at = $1, updated_at = $1
          FROM dori_queue q
          JOIN dori_site s ON s.site_id = q.site_id
          WHERE c.queue_id = q.queue_id

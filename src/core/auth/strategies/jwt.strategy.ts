@@ -17,10 +17,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly jwtSessionRepository: JwtSessionRepository,
     private readonly clockService: ClockService,
   ) {
+    const algorithm = configService.get<'HS256' | 'RS256'>('jwt.algorithm');
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.getOrThrow<string>('jwt.secret'),
+      secretOrKey:
+        algorithm === 'RS256'
+          ? configService.getOrThrow<string>('jwt.publicKey')
+          : configService.getOrThrow<string>('jwt.secret'),
+      algorithms: [algorithm ?? 'HS256'],
     });
   }
 

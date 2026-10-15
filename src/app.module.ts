@@ -12,7 +12,6 @@ import { ClockModule } from './core/clock/clock.module';
 import { RbacModule } from './core/rbac/rbac.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { RealtimeModule } from './core/realtime/realtime.module';
-import { HealthModule } from './core/health/health.module';
 
 import { SitesModule } from './modules/sites/sites.module';
 import { QueuesModule } from './modules/queues/queues.module';
@@ -23,8 +22,9 @@ import { QueueEngineModule } from './modules/queue-engine/queue-engine.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { TranslationsModule } from './modules/translations/translations.module';
 import { UsersModule } from './modules/users/users.module';
-import { ReportsModule } from './modules/reports/reports.module';
 import { WorkersModule } from './workers/workers.module';
+import { MonitoringModule } from './core/monitoring/monitoring.module';
+import { RequestMetricsInterceptor } from './core/monitoring/request-metrics.interceptor';
 
 import { JwtAuthGuard } from './core/auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from './core/rbac/guards/permissions.guard';
@@ -66,7 +66,6 @@ import { GlobalExceptionFilter } from './core/errors/global-exception.filter';
     RbacModule,
     AuthModule,
     RealtimeModule,
-    HealthModule,
     SitesModule,
     QueuesModule,
     ServiceTiersModule,
@@ -76,8 +75,8 @@ import { GlobalExceptionFilter } from './core/errors/global-exception.filter';
     NotificationsModule,
     TranslationsModule,
     UsersModule,
-    ReportsModule,
     WorkersModule,
+    MonitoringModule,
   ],
   providers: [
     {
@@ -95,6 +94,10 @@ import { GlobalExceptionFilter } from './core/errors/global-exception.filter';
     {
       provide: APP_INTERCEPTOR,
       useClass: CorrelationIdInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: RequestMetricsInterceptor,
     },
     {
       provide: APP_INTERCEPTOR,

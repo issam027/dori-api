@@ -187,7 +187,10 @@ INSERT INTO dori_translation (translation_key, category, locale, content, expect
 ('sms.welcome_with_tracking', 'sms', 'fr', 'Bienvenue. Votre ticket est {ticket}. Suivez votre avancée : {trackingUrl}', ARRAY['ticket', 'trackingUrl']),
 ('email.welcome', 'email', 'fr', 'Bienvenue. Votre ticket est {ticket}.', ARRAY['ticket']),
 ('email.welcome_with_tracking', 'email', 'fr', 'Bienvenue. Votre ticket est {ticket}. Suivez votre avancée : {trackingUrl}', ARRAY['ticket', 'trackingUrl']),
-('sms.threshold_reached', 'sms', 'fr', '{firstName}, votre tour approche. Ticket {ticket}.', ARRAY['firstName', 'ticket'])
+('sms.threshold', 'sms', 'fr', '{firstName}, votre tour approche. Ticket {ticket}.', ARRAY['firstName', 'ticket']),
+('sms.threshold_with_tracking', 'sms', 'fr', '{firstName}, votre tour approche. Ticket {ticket}. Suivi : {trackingUrl}', ARRAY['firstName', 'ticket', 'trackingUrl']),
+('email.threshold', 'email', 'fr', '{firstName}, votre tour approche. Ticket {ticket}.', ARRAY['firstName', 'ticket']),
+('email.threshold_with_tracking', 'email', 'fr', '{firstName}, votre tour approche. Ticket {ticket}. Suivi : {trackingUrl}', ARRAY['firstName', 'ticket', 'trackingUrl'])
 ON CONFLICT (translation_key, locale) DO NOTHING;
 
 UPDATE dori_translation

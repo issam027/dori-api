@@ -20,6 +20,9 @@ describe('JwtStrategy', () => {
 
   const createStrategy = (rows: unknown[]) => {
     const config = {
+      get: jest.fn((key: string) =>
+        key === 'jwt.algorithm' ? 'HS256' : undefined,
+      ),
       getOrThrow: jest
         .fn()
         .mockReturnValue('a-secure-secret-with-at-least-32-characters'),

@@ -28,8 +28,10 @@ export function createOpenApiConfig(): Omit<OpenAPIObject, 'paths'> {
     .addTag('Notifications', 'Gestion et envoi des notifications')
     .addTag('Tiers', 'Gestion des forfaits et priorités de service')
     .addTag('Translations', 'Gestion des traductions et bundles')
-    .addTag('Reports', "Rapports statistiques et indicateurs d'activité")
-    .addTag('Health', 'Santé des composants et dépendances')
+    .addTag(
+      'Monitoring',
+      'Santé technique, métriques et indicateurs d’activité',
+    )
     .addBearerAuth(
       {
         type: 'http',
@@ -103,7 +105,7 @@ export function normalizeOpenApiDocument(
     'if-none-match': 'ETag reçu lors du précédent téléchargement du bundle.',
   };
   const operationRules: Record<string, string> = {
-    ReportsController_getSeries:
+    MonitoringController_series:
       ' Exactement un périmètre doit être fourni : queueIds ou siteId. La période est inclusive, ordonnée et limitée à 366 jours.',
     RegistrationsController_findRegistrations:
       ' dateFrom et dateTo doivent être fournies ensemble. Une recherche par période exige queueId ou siteId et couvre au maximum 366 jours.',
@@ -367,6 +369,19 @@ export function normalizeOpenApiDocument(
           description: 'Jeton de suivi expiré',
           content: operation.responses['401']?.content,
         };
+      }
+      if (
+        operation.operationId === 'RegistrationsController_getPublicPosition'
+      ) {
+        const tokenHeader = operation.parameters?.find(
+          (parameter: ParameterObject | ReferenceObject) =>
+            'name' in parameter && parameter.name === 'X-Registration-Token',
+        );
+        if (tokenHeader && 'schema' in tokenHeader) {
+          tokenHeader.schema = { type: 'string', format: 'uuid' };
+          tokenHeader.description =
+            'Jeton UUID opaque retourné lors de la création de l’inscription. À transmettre uniquement dans cet en-tête.';
+        }
       }
       for (const status of Object.keys(operation.responses)) {
         if (/^[45]/.test(status) && !contract.keepErrors.includes(status)) {

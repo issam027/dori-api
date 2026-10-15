@@ -5,6 +5,7 @@ import {
   RegistrationFilterDto,
   UpdateRegistrationDto,
 } from './dto/registration.dto';
+import { NotificationTemplateService } from '../../core/notifications/notification-template.service';
 
 export type RegistrationRow = Record<string, unknown> & {
   registration_id: number;
@@ -138,9 +139,10 @@ export class RegistrationsTransaction {
 
   async createWelcomeNotifications(input: {
     registrationId: number;
-    trackingUrl: string;
+    trackingToken: string;
     ticketNumber: string;
     now: Date;
+    templateService: NotificationTemplateService;
   }): Promise<number> {
     const rules: Array<{
       rule_id: number;
@@ -165,56 +167,97 @@ export class RegistrationsTransaction {
          AND nr.is_active = TRUE`,
       [input.registrationId],
     );
+    if (!rules.length) return 0;
 
-    let createdCount = 0;
-    for (const rule of rules) {
+    const templateKeys = rules.map((rule) =>
+      input.templateService.templateKey(
+        rule.channel,
+        'welcome',
+        rule.include_tracking_link,
+      ),
+    );
+    const locales = [...new Set([...rules.map((rule) => rule.locale), 'fr'])];
+    const translations: Array<{
+      translation_key: string;
+      locale: string;
+      content: string;
+    }> = await this.manager.query(
+      `SELECT translation_key, locale, content FROM dori_translation
+       WHERE translation_key = ANY($1) AND locale = ANY($2) AND is_active = TRUE`,
+      [templateKeys, locales],
+    );
+    const translationMap = new Map(
+      translations.map((row) => [
+        `${row.translation_key}:${row.locale}`,
+        row.content,
+      ]),
+    );
+    const trackingUrl = input.templateService.buildTrackingUrl(
+      input.trackingToken,
+    );
+    const notifications = rules.map((rule) => {
+      const templateKey = input.templateService.templateKey(
+        rule.channel,
+        'welcome',
+        rule.include_tracking_link,
+      );
+      const template =
+        translationMap.get(`${templateKey}:${rule.locale}`) ??
+        translationMap.get(`${templateKey}:fr`);
       const recipient = rule.channel === 'sms' ? rule.phone_number : rule.email;
-      if (!recipient) continue;
-
-      const templateKey = `${rule.channel}.welcome${
-        rule.include_tracking_link ? '_with_tracking' : ''
-      }`;
-      const translations: Array<{ content: string }> = await this.manager.query(
-        `SELECT content FROM dori_translation
-         WHERE translation_key = $1 AND locale IN ($2, 'fr') AND is_active = TRUE
-         ORDER BY CASE WHEN locale = $2 THEN 0 ELSE 1 END
-         LIMIT 1`,
-        [templateKey, rule.locale],
-      );
-      const template = translations[0]?.content;
-      if (!template) continue;
-
-      const values: Record<string, string> = {
-        ticket: input.ticketNumber,
-        firstName: rule.first_name ?? '',
-        trackingUrl: input.trackingUrl,
+      const rendered = template
+        ? input.templateService.render(template, {
+            ticket: input.ticketNumber,
+            firstName: rule.first_name ?? '',
+            trackingUrl,
+          })
+        : { content: null, failureReason: `TEMPLATE_NOT_FOUND:${templateKey}` };
+      const failureReason =
+        (!recipient ? `RECIPIENT_MISSING:${rule.channel}` : null) ??
+        rendered.failureReason;
+      return {
+        registrationId: input.registrationId,
+        ruleId: rule.rule_id,
+        channel: rule.channel,
+        locale: rule.locale,
+        recipient,
+        content: rendered.content,
+        status: failureReason ? 'failed' : 'pending',
+        failureReason,
       };
-      const content = template.replace(
-        /\{(ticket|firstName|trackingUrl)\}/g,
-        (_placeholder, name: string) => values[name],
+    });
+    const inserted: Array<{ notification_id: number }> =
+      await this.manager.query(
+        `INSERT INTO dori_notification (
+           registration_id, rule_id, channel, notification_type, locale, recipient,
+           notification_content, notification_status, failure_reason,
+           attempt_count, created_at, updated_at
+         )
+         SELECT x.registration_id, x.rule_id, x.channel, 'welcome', x.locale,
+                x.recipient, x.content, x.status, x.failure_reason, 0, $2, $2
+         FROM jsonb_to_recordset($1::jsonb) AS x(
+           registration_id int, rule_id int, channel varchar, locale varchar,
+           recipient varchar, content text, status varchar, failure_reason text
+         )
+         ON CONFLICT (registration_id, notification_type, channel) DO NOTHING
+         RETURNING notification_id`,
+        [
+          JSON.stringify(
+            notifications.map((notification) => ({
+              registration_id: notification.registrationId,
+              rule_id: notification.ruleId,
+              channel: notification.channel,
+              locale: notification.locale,
+              recipient: notification.recipient,
+              content: notification.content,
+              status: notification.status,
+              failure_reason: notification.failureReason,
+            })),
+          ),
+          input.now,
+        ],
       );
-      const inserted: Array<{ notification_id: number }> =
-        await this.manager.query(
-          `INSERT INTO dori_notification (
-             registration_id, rule_id, channel, notification_type, locale, recipient,
-             notification_content, notification_status, attempt_count, created_at, updated_at
-           ) VALUES ($1, $2, $3, 'welcome', $4, $5, $6, 'pending', 0, $7, $7)
-           ON CONFLICT (registration_id, notification_type, channel)
-           WHERE notification_status <> 'failed' DO NOTHING
-           RETURNING notification_id`,
-          [
-            input.registrationId,
-            rule.rule_id,
-            rule.channel,
-            rule.locale,
-            recipient,
-            content,
-            input.now,
-          ],
-        );
-      createdCount += inserted.length;
-    }
-    return createdCount;
+    return inserted.length;
   }
 
   async reschedule(
@@ -287,7 +330,7 @@ export class RegistrationsRepository {
   expire(registrationId: number, now: Date) {
     return this.dataSource.query(
       `UPDATE dori_registration SET status='expired',appointment_status='expired',closed_at=$1,
-       is_active=FALSE,updated_at=$1 WHERE registration_id=$2`,
+       updated_at=$1 WHERE registration_id=$2`,
       [now, registrationId],
     );
   }
@@ -454,7 +497,7 @@ export class RegistrationsRepository {
   cancel(registrationId: number, userId: number, now: Date) {
     return this.dataSource.query(
       `UPDATE dori_registration SET status='cancelled',appointment_status=CASE WHEN entry_type='appointment'
-     THEN 'cancelled' ELSE appointment_status END,closed_at=$1,is_active=FALSE,deleted_at=$1,
+     THEN 'cancelled' ELSE appointment_status END,closed_at=$1,
      updated_by_user_id=$2,updated_at=$1 WHERE registration_id=$3`,
       [now, userId, registrationId],
     );

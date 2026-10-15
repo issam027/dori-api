@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
+import { runMigrations } from './migration-runner';
 
 @Injectable()
 export class DatabaseSeedService implements OnApplicationBootstrap {
@@ -20,21 +21,31 @@ export class DatabaseSeedService implements OnApplicationBootstrap {
         'databaseInitialization.autoRunMigrations',
       ) === true
     ) {
-      await this.runSchemaAndSeed();
+      await this.runMigrationsAndSeed();
     }
   }
 
-  async runSchemaAndSeed(): Promise<void> {
+  async runMigrationsAndSeed(): Promise<void> {
     try {
-      this.logger.log('Executing database schema and seed...');
-      const schemaPath = path.join(__dirname, 'sql', 'schema.sql');
+      this.logger.log('Executing database migrations and seed...');
+      const migrationsPath = path.join(__dirname, 'sql', 'migrations');
       const seedPath = path.join(__dirname, 'sql', 'seed.sql');
-
-      if (fs.existsSync(schemaPath)) {
-        const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-        await this.dataSource.query(schemaSql);
-        this.logger.log('Database schema executed successfully.');
-      }
+      await runMigrations(
+        {
+          query: (sql, parameters) => this.dataSource.query(sql, parameters),
+          transaction: (work) =>
+            this.dataSource.transaction((manager) =>
+              work({
+                query: (sql, parameters) => manager.query(sql, parameters),
+                transaction: () => {
+                  throw new Error('Nested migrations are not supported.');
+                },
+              }),
+            ),
+        },
+        migrationsPath,
+        (message) => this.logger.log(message),
+      );
 
       if (fs.existsSync(seedPath)) {
         const seedSql = fs.readFileSync(seedPath, 'utf8');

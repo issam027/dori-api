@@ -29,7 +29,7 @@ describe('QueueEngineRepository', () => {
 
     expect(query.mock.calls[0][0]).toContain("status = 'served'");
     expect(query.mock.calls[1][0]).toContain("status = 'no_show'");
-    expect(query.mock.calls[1][0]).toContain('is_active = FALSE');
+    expect(query.mock.calls[1][0]).not.toContain('is_active');
   });
 
   it('binds pagination for active session lists', async () => {

@@ -233,7 +233,7 @@ export class QueueEngineRepository {
     }
     await this.dataSource.query(
       `UPDATE dori_registration SET status = 'no_show', closed_at = $1,
-       is_active = FALSE, updated_at = $1 WHERE registration_id = $2`,
+       updated_at = $1 WHERE registration_id = $2`,
       [now, registrationId],
     );
   }

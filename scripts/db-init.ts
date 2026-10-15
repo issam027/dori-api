@@ -1,7 +1,7 @@
 /**
  * scripts/db-init.ts
  *
- * Standalone script to initialize the Dori database schema and seed data.
+ * Standalone script to apply the Dori database migrations and seed data.
  * Supports both local PostgreSQL and cloud-managed databases (Aiven, Neon, Supabase, etc.).
  *
  * Usage:
@@ -16,6 +16,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Client, ClientConfig } from 'pg';
 import * as dotenv from 'dotenv';
+import { runMigrations } from '../src/core/database/migration-runner';
 
 // Load .env from project root
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
@@ -58,16 +59,15 @@ const isCloudManaged =
   DB_HOST.includes('supabase.co') ||
   DB_HOST.includes('neon.tech');
 
-const DB_SKIP_CREATE =
-  process.env.DB_SKIP_CREATE === 'true' || isCloudManaged;
+const DB_SKIP_CREATE = process.env.DB_SKIP_CREATE === 'true' || isCloudManaged;
 
 const args = process.argv.slice(2);
 const runSeed = args.includes('--seed');
 const force = args.includes('--force');
 
-const SCHEMA_PATH = path.join(
+const MIGRATIONS_PATH = path.join(
   __dirname,
-  '../src/core/database/sql/schema.sql',
+  '../src/core/database/sql/migrations',
 );
 const SEED_PATH = path.join(__dirname, '../src/core/database/sql/seed.sql');
 
@@ -138,7 +138,9 @@ async function main() {
       await adminClient.end();
     }
   } else {
-    log(`Skipping CREATE DATABASE (DB_SKIP_CREATE=true or cloud-managed provider detected).`);
+    log(
+      `Skipping CREATE DATABASE (DB_SKIP_CREATE=true or cloud-managed provider detected).`,
+    );
   }
 
   // Connect to target database and execute schema & seed
@@ -151,16 +153,42 @@ async function main() {
 
     if (force && DB_SKIP_CREATE) {
       log(`--force flag set on managed DB: resetting public schema…`);
-      await appClient.query(`DROP SCHEMA public CASCADE; CREATE SCHEMA public;`);
+      await appClient.query(
+        `DROP SCHEMA public CASCADE; CREATE SCHEMA public;`,
+      );
       log(`Public schema reset.`);
     }
 
-    await execSqlFile(appClient, SCHEMA_PATH, 'schema.sql');
+    await runMigrations(
+      {
+        query: (sql, parameters) => appClient.query(sql, parameters),
+        transaction: async (work) => {
+          await appClient.query('BEGIN');
+          try {
+            const result = await work({
+              query: (sql, parameters) => appClient.query(sql, parameters),
+              transaction: () => {
+                throw new Error('Nested migrations are not supported.');
+              },
+            });
+            await appClient.query('COMMIT');
+            return result;
+          } catch (error) {
+            await appClient.query('ROLLBACK');
+            throw error;
+          }
+        },
+      },
+      MIGRATIONS_PATH,
+      log,
+    );
 
     if (runSeed) {
       await execSqlFile(appClient, SEED_PATH, 'seed.sql');
     } else {
-      log('Seed skipped (pass --seed or run "npm run db:init:seed" to include it).');
+      log(
+        'Seed skipped (pass --seed or run "npm run db:init:seed" to include it).',
+      );
     }
 
     log('Database initialisation complete!');

@@ -19,13 +19,29 @@ import { JwtSessionRepository } from '../../core/auth/repositories/jwt-session.r
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.getOrThrow<string>('jwt.secret'),
-        signOptions: {
-          expiresIn:
-            configService.get<string>('jwt.accessTokenExpiresIn') || '60m',
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const algorithm = configService.get<'HS256' | 'RS256'>('jwt.algorithm');
+        return {
+          secret:
+            algorithm === 'RS256'
+              ? undefined
+              : configService.getOrThrow<string>('jwt.secret'),
+          privateKey:
+            algorithm === 'RS256'
+              ? configService.getOrThrow<string>('jwt.privateKey')
+              : undefined,
+          publicKey:
+            algorithm === 'RS256'
+              ? configService.getOrThrow<string>('jwt.publicKey')
+              : undefined,
+          signOptions: {
+            algorithm,
+            expiresIn:
+              configService.get<string>('jwt.accessTokenExpiresIn') || '60m',
+          },
+          verifyOptions: { algorithms: [algorithm ?? 'HS256'] },
+        };
+      },
     }),
     DatabaseModule,
     ClockModule,

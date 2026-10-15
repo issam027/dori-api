@@ -23,6 +23,10 @@ import {
   inclusiveCalendarDayCount,
 } from '../../core/dates/date-range.dto';
 import { ConfigService } from '@nestjs/config';
+import { NotificationTemplateService } from '../../core/notifications/notification-template.service';
+
+const TRACKING_TOKEN_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 @Injectable()
 export class RegistrationsService {
@@ -32,6 +36,7 @@ export class RegistrationsService {
     private readonly clockService: ClockService,
     private readonly personsService: PersonsService,
     private readonly configService: ConfigService,
+    private readonly notificationTemplateService: NotificationTemplateService,
   ) {}
 
   private formatTicketNumber(queueCode: string, lastNumber: number): string {
@@ -156,9 +161,19 @@ export class RegistrationsService {
       const ticketNumber = this.formatTicketNumber(q.queue_code, lastNumber);
 
       // End of business date for tracking token
-      const tokenValidUntil = this.clockService.endOfDayInTimezone(
+      const endOfBusinessDay = this.clockService.endOfDayInTimezone(
         businessDate,
         timezone,
+      );
+      const tokenTtlMinutes = this.configService.getOrThrow<number>(
+        'tracking.tokenTtlMinutes',
+      );
+      const configuredExpiry = this.clockService.addMinutes(
+        now,
+        tokenTtlMinutes,
+      );
+      const tokenValidUntil = new Date(
+        Math.min(endOfBusinessDay.getTime(), configuredExpiry.getTime()),
       );
 
       // 7. Insert dori_registration
@@ -176,19 +191,12 @@ export class RegistrationsService {
         now,
       });
 
-      const trackingUrl = new URL(
-        '/track',
-        this.configService.getOrThrow<string>('tracking.publicWebUrl'),
-      );
-      trackingUrl.searchParams.set(
-        'token',
-        String(created.registration_tracking_token),
-      );
       await tx.createWelcomeNotifications({
         registrationId: created.registration_id,
-        trackingUrl: trackingUrl.toString(),
+        trackingToken: String(created.registration_tracking_token),
         ticketNumber: created.ticket_number,
         now,
+        templateService: this.notificationTemplateService,
       });
 
       return {
@@ -605,7 +613,7 @@ export class RegistrationsService {
 
   // Public Tracking Endpoint (§4.14, §6.8)
   async getPublicPosition(trackingToken: string) {
-    if (!trackingToken) {
+    if (!trackingToken || !TRACKING_TOKEN_PATTERN.test(trackingToken)) {
       throw new DoriException('UNAUTHENTICATED');
     }
 
@@ -627,7 +635,8 @@ export class RegistrationsService {
     if (
       reg.closed_at &&
       now.getTime() - this.clockService.parse(reg.closed_at).getTime() >
-        60 * 60 * 1000
+        this.configService.getOrThrow<number>('tracking.closedGraceMinutes') *
+          60_000
     ) {
       return { status: 'closed' };
     }

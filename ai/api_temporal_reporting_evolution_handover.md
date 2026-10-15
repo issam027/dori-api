@@ -1144,3 +1144,25 @@ Priorité de validation :
 <!-- CHECKPOINT id="ckpt_mv97eg75_qtc55c" time="2026-10-15T07:14:49.601Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 <!-- CHECKPOINT id="ckpt_mv97rb65_hunbcq" time="2026-10-15T07:24:49.613Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv984657_krn95k" time="2026-10-15T07:34:49.627Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv98h13o_ghsoex" time="2026-10-15T07:44:49.620Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv98tw2x_x6duaq" time="2026-10-15T07:54:49.641Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv996r1s_uc6wss" time="2026-10-15T08:04:49.648Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv99jm15_wvrmoi" time="2026-10-15T08:14:49.673Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv99wgzd_9zszjk" time="2026-10-15T08:24:49.658Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv9a9bya_igmy4h" time="2026-10-15T08:34:49.666Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv9am6x3_naf69y" time="2026-10-15T08:44:49.671Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv9az1wb_obhomy" time="2026-10-15T08:54:49.691Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv9bbwv6_p4yb58" time="2026-10-15T09:04:49.698Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mv9boru3_746ol9" time="2026-10-15T09:14:49.707Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

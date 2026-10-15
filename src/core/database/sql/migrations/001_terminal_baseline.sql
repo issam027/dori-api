@@ -490,6 +490,41 @@ FROM dori_operator_session s
 WHERE r.served_by_session_id = s.session_id
   AND r.served_by_user_id IS NULL;
 
+ALTER TABLE dori_registration DROP CONSTRAINT IF EXISTS ck_registration_served_by_pair;
+ALTER TABLE dori_registration ADD CONSTRAINT ck_registration_served_by_pair CHECK (
+    (served_by_session_id IS NULL AND served_by_user_id IS NULL)
+    OR (served_by_session_id IS NOT NULL AND served_by_user_id IS NOT NULL)
+);
+ALTER TABLE dori_registration DROP CONSTRAINT IF EXISTS ck_registration_served_by_status;
+ALTER TABLE dori_registration ADD CONSTRAINT ck_registration_served_by_status CHECK (
+    status NOT IN ('in_progress','served','no_show')
+    OR (served_by_session_id IS NOT NULL AND served_by_user_id IS NOT NULL)
+);
+
+CREATE OR REPLACE FUNCTION dori_check_registration_served_by() RETURNS trigger AS $$
+DECLARE session_user_id INT;
+BEGIN
+    IF NEW.served_by_session_id IS NULL THEN RETURN NEW; END IF;
+    SELECT user_id INTO session_user_id FROM dori_operator_session
+    WHERE session_id = NEW.served_by_session_id;
+    IF session_user_id IS NULL OR session_user_id <> NEW.served_by_user_id THEN
+        RAISE EXCEPTION 'served_by_user_id % does not own session %',
+            NEW.served_by_user_id, NEW.served_by_session_id
+            USING ERRCODE = '23514';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS trg_registration_served_by ON dori_registration;
+CREATE CONSTRAINT TRIGGER trg_registration_served_by
+AFTER INSERT OR UPDATE OF served_by_session_id, served_by_user_id ON dori_registration
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION dori_check_registration_served_by();
+
+-- Business lifecycle statuses are not soft-deletion markers.
+UPDATE dori_registration SET is_active = TRUE, deleted_at = NULL
+WHERE status IN ('served','no_show','expired','cancelled') AND is_active = FALSE;
+
 -- 17. dori_queue_daily_ticket_counter (§3.11)
 CREATE TABLE IF NOT EXISTS dori_queue_daily_ticket_counter (
     queue_id INT NOT NULL REFERENCES dori_queue(queue_id),
@@ -515,7 +550,7 @@ CREATE TABLE IF NOT EXISTS dori_notification (
         CHECK (channel IN ('sms','email')),
     notification_type VARCHAR(20) NOT NULL,
     locale VARCHAR(10) NOT NULL,
-    recipient VARCHAR(255) NOT NULL,
+    recipient VARCHAR(255),
     notification_content TEXT,
     notification_status VARCHAR(20) NOT NULL DEFAULT 'pending'
         CHECK (notification_status IN ('pending','processing','sent','delivered','failed')),
@@ -552,9 +587,27 @@ CREATE TABLE IF NOT EXISTS dori_webhook_event (
 
 ALTER TABLE dori_notification ADD COLUMN IF NOT EXISTS provider VARCHAR(50);
 ALTER TABLE dori_notification ADD COLUMN IF NOT EXISTS processing_started_at TIMESTAMPTZ;
+ALTER TABLE dori_notification ALTER COLUMN recipient DROP NOT NULL;
+ALTER TABLE dori_notification ALTER COLUMN notification_content DROP NOT NULL;
+UPDATE dori_notification SET failure_reason = 'LEGACY_FAILURE'
+WHERE notification_status = 'failed' AND failure_reason IS NULL;
+UPDATE dori_notification
+SET notification_status = 'failed',
+    failure_reason = CASE
+        WHEN recipient IS NULL THEN 'LEGACY_RECIPIENT_MISSING'
+        ELSE 'LEGACY_CONTENT_MISSING'
+    END
+WHERE notification_status <> 'failed'
+  AND (recipient IS NULL OR notification_content IS NULL);
 ALTER TABLE dori_notification DROP CONSTRAINT IF EXISTS dori_notification_notification_status_check;
 ALTER TABLE dori_notification ADD CONSTRAINT dori_notification_notification_status_check
     CHECK (notification_status IN ('pending','processing','sent','delivered','failed'));
+ALTER TABLE dori_notification DROP CONSTRAINT IF EXISTS ck_notification_dispatchable;
+ALTER TABLE dori_notification ADD CONSTRAINT ck_notification_dispatchable CHECK (
+    (notification_status = 'failed' AND failure_reason IS NOT NULL)
+    OR
+    (notification_status <> 'failed' AND recipient IS NOT NULL AND notification_content IS NOT NULL)
+);
 
 -- 19. dori_translation (§3.13)
 CREATE TABLE IF NOT EXISTS dori_translation (
@@ -766,7 +819,18 @@ FOR EACH ROW EXECUTE FUNCTION dori_check_registration_person_site();
 CREATE UNIQUE INDEX IF NOT EXISTS uk_operator_session_queue_thread_active ON dori_operator_session (queue_id, thread_number) WHERE disconnected_at IS NULL AND thread_number IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_operator_session_queue_user_active ON dori_operator_session (queue_id, user_id) WHERE disconnected_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_registration_person_open ON dori_registration (queue_id, person_id) WHERE status IN ('booked','waiting','in_progress') AND is_active;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_notification_once ON dori_notification (registration_id, notification_type, channel) WHERE notification_status <> 'failed';
+WITH duplicates AS (
+  SELECT notification_id,
+         ROW_NUMBER() OVER (
+           PARTITION BY registration_id, notification_type, channel
+           ORDER BY created_at ASC, notification_id ASC
+         ) AS row_number
+  FROM dori_notification
+)
+DELETE FROM dori_notification n USING duplicates d
+WHERE n.notification_id = d.notification_id AND d.row_number > 1;
+DROP INDEX IF EXISTS uk_notification_once;
+CREATE UNIQUE INDEX uk_notification_once ON dori_notification (registration_id, notification_type, channel);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_queue_tier_default ON dori_queue_service_tier (queue_id) WHERE is_default AND is_active;
 DROP INDEX IF EXISTS idx_notification_provider_msg;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_notification_provider_msg ON dori_notification (provider, provider_message_id) WHERE provider IS NOT NULL AND provider_message_id IS NOT NULL;

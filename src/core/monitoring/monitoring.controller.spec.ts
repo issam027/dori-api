@@ -1,13 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { ReportsController } from './reports.controller';
-import { ReportsService } from './reports.service';
-import { ReportSeriesQueryDto } from './dto/report-query.dto';
-import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
+import { ReportsService } from '../../modules/reports/reports.service';
+import { ReportSeriesQueryDto } from '../../modules/reports/dto/report-query.dto';
+import { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
+import { MonitoringController } from './monitoring.controller';
+import { MonitoringService } from './monitoring.service';
 
-describe('ReportsController & DTO Validation (VAL-03)', () => {
-  let controller: ReportsController;
+describe('MonitoringController series & DTO Validation (VAL-03)', () => {
+  let controller: MonitoringController;
   let serviceMock: {
     getSeries: jest.Mock;
   };
@@ -26,8 +27,12 @@ describe('ReportsController & DTO Validation (VAL-03)', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [ReportsController],
+      controllers: [MonitoringController],
       providers: [
+        {
+          provide: MonitoringService,
+          useValue: {},
+        },
         {
           provide: ReportsService,
           useValue: serviceMock,
@@ -35,7 +40,7 @@ describe('ReportsController & DTO Validation (VAL-03)', () => {
       ],
     }).compile();
 
-    controller = module.get<ReportsController>(ReportsController);
+    controller = module.get<MonitoringController>(MonitoringController);
   });
 
   describe('ReportSeriesQueryDto validation', () => {
@@ -67,14 +72,14 @@ describe('ReportsController & DTO Validation (VAL-03)', () => {
     });
   });
 
-  describe('ReportsController endpoint delegation', () => {
-    it('getSeries forwards the complete query and user', async () => {
+  describe('MonitoringController endpoint delegation', () => {
+    it('series forwards the complete query and user', async () => {
       const query = plainToInstance(ReportSeriesQueryDto, {
         queueIds: '42',
         dateFrom: '2026-09-01',
         dateTo: '2026-09-29',
       });
-      const res = await controller.getSeries(query, testUser);
+      const res = await controller.series(query, testUser);
       expect(serviceMock.getSeries).toHaveBeenCalledWith(query, testUser);
       expect(res).toEqual({ buckets: [] });
     });

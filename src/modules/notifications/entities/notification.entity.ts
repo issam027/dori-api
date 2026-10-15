@@ -26,8 +26,8 @@ export class DoriNotification {
   @Column({ type: 'varchar', length: 10 })
   locale: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  recipient: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  recipient: string | null;
 
   @Column({ type: 'text', nullable: true })
   notification_content: string | null;

@@ -382,7 +382,7 @@ export class QueueEngineService {
       throw new DoriException('FORBIDDEN_PERMISSION');
     }
 
-    // no-show is terminal and sets is_active = FALSE (Â§4.7)
+    // no-show is a terminal business status; it does not soft-delete the registration.
     await this.queueEngineRepository.closeRegistration(
       registrationId,
       'no_show',

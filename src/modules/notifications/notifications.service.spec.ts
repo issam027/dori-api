@@ -4,6 +4,7 @@ import { NotificationsService } from './notifications.service';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { NotificationsRepository } from './notifications.repository';
+import { NotificationTemplateService } from '../../core/notifications/notification-template.service';
 
 describe('NotificationsService webhooks', () => {
   const now = new Date('2026-10-05T12:00:00.000Z');
@@ -34,6 +35,7 @@ describe('NotificationsService webhooks', () => {
       {} as ScopeService,
       clock,
       config,
+      new NotificationTemplateService(config),
     );
     return { service, repository };
   };

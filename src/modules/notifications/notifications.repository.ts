@@ -36,6 +36,7 @@ export interface WaitingRegistrationRow extends NotificationRegistrationRow {
   p_lang?: string;
   average_wait_time: number;
   default_locale?: string;
+  registration_tracking_token: string;
 }
 
 export interface ThresholdRuleRow extends Record<string, unknown> {
@@ -44,6 +45,7 @@ export interface ThresholdRuleRow extends Record<string, unknown> {
   channel: 'sms' | 'email';
   threshold_position?: number;
   threshold_minutes?: number;
+  include_tracking_link: boolean;
 }
 
 @Injectable()
@@ -188,6 +190,7 @@ export class NotificationsRepository {
   ): Promise<WaitingRegistrationRow[]> {
     return this.dataSource.query(
       `SELECT c.registration_id, c.ticket_number, c.tier_id, c.language_preference,
+              c.registration_tracking_token,
               p.first_name, p.last_name, p.phone_number, p.email, p.language_preference AS p_lang,
               q.average_wait_time, s.timezone, s.default_locale
        FROM dori_registration c
@@ -217,31 +220,65 @@ export class NotificationsRepository {
     );
   }
 
-  async createThresholdIfAbsent(input: {
-    registrationId: number;
-    ruleId: number;
-    channel: string;
-    locale: string;
-    recipient: string;
-    content: string;
-    now: Date;
-  }): Promise<void> {
-    await this.dataSource.query(
-      `INSERT INTO dori_notification (
-        registration_id, rule_id, channel, notification_type, locale, recipient,
-        notification_content, notification_status, attempt_count, created_at, updated_at
-      ) VALUES ($1, $2, $3, 'threshold', $4, $5, $6, 'pending', 0, $7, $7)
-      ON CONFLICT (registration_id, notification_type, channel)
-      WHERE notification_status <> 'failed' DO NOTHING`,
-      [
-        input.registrationId,
-        input.ruleId,
-        input.channel,
-        input.locale,
-        input.recipient,
-        input.content,
-        input.now,
-      ],
+  async findActiveTemplates(
+    keys: string[],
+    locales: string[],
+  ): Promise<
+    Array<{ translation_key: string; locale: string; content: string }>
+  > {
+    if (!keys.length) return [];
+    return this.dataSource.query(
+      `SELECT translation_key, locale, content FROM dori_translation
+       WHERE translation_key = ANY($1) AND locale = ANY($2) AND is_active = TRUE`,
+      [keys, locales],
     );
+  }
+
+  async createThresholdNotifications(
+    notifications: Array<{
+      registrationId: number;
+      ruleId: number;
+      channel: string;
+      locale: string;
+      recipient: string | null | undefined;
+      content: string | null;
+      status: 'pending' | 'failed';
+      failureReason: string | null;
+    }>,
+    now: Date,
+  ): Promise<number> {
+    if (!notifications.length) return 0;
+    const rows: Array<{ notification_id: number }> =
+      await this.dataSource.query(
+        `INSERT INTO dori_notification (
+         registration_id, rule_id, channel, notification_type, locale, recipient,
+         notification_content, notification_status, failure_reason,
+         attempt_count, created_at, updated_at
+       )
+       SELECT x.registration_id, x.rule_id, x.channel, 'threshold', x.locale,
+              x.recipient, x.content, x.status, x.failure_reason, 0, $2, $2
+       FROM jsonb_to_recordset($1::jsonb) AS x(
+         registration_id int, rule_id int, channel varchar, locale varchar,
+         recipient varchar, content text, status varchar, failure_reason text
+       )
+       ON CONFLICT (registration_id, notification_type, channel) DO NOTHING
+       RETURNING notification_id`,
+        [
+          JSON.stringify(
+            notifications.map((notification) => ({
+              registration_id: notification.registrationId,
+              rule_id: notification.ruleId,
+              channel: notification.channel,
+              locale: notification.locale,
+              recipient: notification.recipient ?? null,
+              content: notification.content,
+              status: notification.status,
+              failure_reason: notification.failureReason,
+            })),
+          ),
+          now,
+        ],
+      );
+    return rows.length;
   }
 }

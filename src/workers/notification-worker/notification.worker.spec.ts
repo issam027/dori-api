@@ -23,10 +23,9 @@ describe('NotificationWorker', () => {
       now: jest.fn().mockReturnValue(now),
     } as unknown as ClockService;
 
-    await new NotificationWorker(
-      repository,
-      clock,
-    ).processPendingNotifications();
+    await new NotificationWorker(repository, clock, {
+      increment: jest.fn(),
+    } as any).processPendingNotifications();
 
     expect(repository.claimPending).toHaveBeenCalledWith(now);
     expect(repository.markDelivered).toHaveBeenCalledWith(

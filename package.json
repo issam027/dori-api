@@ -27,6 +27,7 @@
     "db:init:seed": "ts-node -r tsconfig-paths/register scripts/db-init.ts --seed",
     "db:schema": "ts-node -r tsconfig-paths/register scripts/db-init.ts",
     "db:seed": "ts-node -r tsconfig-paths/register scripts/db-init.ts --seed",
+    "db:verify": "ts-node -r tsconfig-paths/register scripts/db-verify.ts",
     "swagger:export": "ts-node -r tsconfig-paths/register scripts/swagger-export.ts"
   },
   "dependencies": {

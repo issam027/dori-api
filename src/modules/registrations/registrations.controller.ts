@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Headers,
+  Header,
   HttpCode,
   HttpStatus,
   Param,
@@ -250,6 +251,8 @@ export class RegistrationsController {
 
   @Public()
   @ApiSecurity('registration-token')
+  @Header('Cache-Control', 'no-store, private')
+  @Header('Referrer-Policy', 'no-referrer')
   @Get('public/registrations/position')
   @ApiDoriPublicErrorResponses({
     include401: true,

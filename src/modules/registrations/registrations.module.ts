@@ -7,6 +7,7 @@ import { DatabaseModule } from '../../core/database/database.module';
 import { RbacModule } from '../../core/rbac/rbac.module';
 import { RegistrationsRepository } from './registrations.repository';
 import { ConfigModule } from '@nestjs/config';
+import { NotificationTemplateModule } from '../../core/notifications/notification-template.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ConfigModule } from '@nestjs/config';
     ClockModule,
     RbacModule,
     PersonsModule,
+    NotificationTemplateModule,
   ],
   controllers: [RegistrationsController],
   providers: [RegistrationsService, RegistrationsRepository],

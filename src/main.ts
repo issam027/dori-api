@@ -26,6 +26,7 @@ async function createApp(): Promise<NestExpressApplication> {
 
   app.use(
     helmet({
+      referrerPolicy: { policy: 'no-referrer' },
       contentSecurityPolicy: {
         directives: {
           ...helmet.contentSecurityPolicy.getDefaultDirectives(),

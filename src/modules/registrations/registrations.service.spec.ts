@@ -8,6 +8,7 @@ import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interf
 import { DoriException } from '../../core/errors/dori.exception';
 import { RegistrationsRepository } from './registrations.repository';
 import { ConfigService } from '@nestjs/config';
+import { NotificationTemplateService } from '../../core/notifications/notification-template.service';
 
 describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
   let service: RegistrationsService;
@@ -59,12 +60,30 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
             todayInTimezone: jest.fn(() => '2026-09-29'),
             endOfDayInTimezone: jest.fn(() => new Date('2026-09-29T23:59:59Z')),
             dateInTimezone: jest.fn(() => '2026-09-29'),
+            addMinutes: jest.fn(
+              (date: Date, minutes: number) =>
+                new Date(date.getTime() + minutes * 60_000),
+            ),
           },
         },
         { provide: PersonsService, useValue: personsServiceMock },
         {
           provide: ConfigService,
-          useValue: { getOrThrow: jest.fn(() => 'http://localhost:5173') },
+          useValue: {
+            getOrThrow: jest.fn((key: string) =>
+              key === 'tracking.tokenTtlMinutes'
+                ? 1440
+                : 'http://localhost:5173',
+            ),
+          },
+        },
+        {
+          provide: NotificationTemplateService,
+          useValue: {
+            templateKey: jest.fn(),
+            buildTrackingUrl: jest.fn(),
+            render: jest.fn(),
+          },
         },
       ],
     }).compile();
@@ -236,6 +255,10 @@ describe('RegistrationsService — creation response', () => {
       now: jest.fn(() => new Date('2026-10-14T10:00:00Z')),
       todayInTimezone: jest.fn(() => '2026-10-14'),
       endOfDayInTimezone: jest.fn(() => new Date('2026-10-14T21:59:59Z')),
+      addMinutes: jest.fn(
+        (date: Date, minutes: number) =>
+          new Date(date.getTime() + minutes * 60_000),
+      ),
     };
     const service = new RegistrationsService(
       repository as unknown as RegistrationsRepository,
@@ -243,8 +266,15 @@ describe('RegistrationsService — creation response', () => {
       clock as unknown as ClockService,
       {} as PersonsService,
       {
-        getOrThrow: jest.fn(() => 'http://localhost:5173'),
+        getOrThrow: jest.fn((key: string) =>
+          key === 'tracking.tokenTtlMinutes' ? 1440 : 'http://localhost:5173',
+        ),
       } as unknown as ConfigService,
+      {
+        templateKey: jest.fn(),
+        buildTrackingUrl: jest.fn(),
+        render: jest.fn(),
+      } as any,
     );
 
     const response = await service.createRegistration(
@@ -257,12 +287,13 @@ describe('RegistrationsService — creation response', () => {
       registrationTrackingTokenValidUntil: new Date('2026-10-14T21:59:59Z'),
     });
     expect(response).not.toHaveProperty('trackingUrl');
-    expect(tx.createWelcomeNotifications).toHaveBeenCalledWith({
-      registrationId: 10,
-      trackingUrl:
-        'http://localhost:5173/track?token=550e8400-e29b-41d4-a716-446655440000',
-      ticketNumber: 'A-001',
-      now: new Date('2026-10-14T10:00:00Z'),
-    });
+    expect(tx.createWelcomeNotifications).toHaveBeenCalledWith(
+      expect.objectContaining({
+        registrationId: 10,
+        trackingToken: '550e8400-e29b-41d4-a716-446655440000',
+        ticketNumber: 'A-001',
+        now: new Date('2026-10-14T10:00:00Z'),
+      }),
+    );
   });
 });

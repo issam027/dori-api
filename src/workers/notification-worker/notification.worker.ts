@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { randomUUID } from 'crypto';
 import { ClockService } from '../../core/clock/clock.service';
 import { NotificationWorkerRepository } from './notification-worker.repository';
+import { MonitoringService } from '../../core/monitoring/monitoring.service';
 
 @Injectable()
 export class NotificationWorker {
@@ -12,12 +13,14 @@ export class NotificationWorker {
   constructor(
     private readonly repository: NotificationWorkerRepository,
     private readonly clockService: ClockService,
+    private readonly metricsService: MonitoringService,
   ) {}
 
   @Cron(CronExpression.EVERY_10_SECONDS)
   async processPendingNotifications() {
     if (this.isProcessing) return;
     this.isProcessing = true;
+    this.metricsService.increment('notification_worker_runs_total');
 
     try {
       const claimTime = this.clockService.now();
@@ -41,6 +44,7 @@ export class NotificationWorker {
             providerMessageId,
             now,
           );
+          this.metricsService.increment('notifications_delivered_total');
 
           this.logger.log(
             `Notification ${notif.notification_id} [${notif.channel}] sent to ${notif.recipient} (msgId: ${providerMessageId})`,
@@ -53,9 +57,11 @@ export class NotificationWorker {
             err.message,
             now,
           );
+          this.metricsService.increment('notification_delivery_failures_total');
         }
       }
     } catch (err: any) {
+      this.metricsService.increment('notification_worker_errors_total');
       this.logger.error(
         `Error processing notifications: ${err.message}`,
         err.stack,

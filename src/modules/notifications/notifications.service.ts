@@ -16,6 +16,7 @@ import {
   NotificationsRepository,
   ThresholdRuleRow,
 } from './notifications.repository';
+import { NotificationTemplateService } from '../../core/notifications/notification-template.service';
 
 @Injectable()
 export class NotificationsService {
@@ -26,6 +27,7 @@ export class NotificationsService {
     private readonly scopeService: ScopeService,
     private readonly clockService: ClockService,
     private readonly configService: ConfigService,
+    private readonly notificationTemplateService: NotificationTemplateService,
   ) {}
 
   async findNotifications(
@@ -215,6 +217,11 @@ export class NotificationsService {
       rulesByTier.get(r.tier_id)!.push(r);
     }
 
+    const matches: Array<{
+      client: (typeof waitingClients)[number];
+      rule: ThresholdRuleRow;
+      locale: string;
+    }> = [];
     for (let i = 0; i < waitingClients.length; i++) {
       const client = waitingClients[i];
       const position = i + 1;
@@ -231,30 +238,76 @@ export class NotificationsService {
           rule.threshold_minutes != null &&
           estimatedMinutes <= rule.threshold_minutes;
 
-        if (thresholdPosSatisfied || thresholdMinSatisfied) {
-          // Idempotency: check if already sent (§3.12, §4.1)
-          const recipient =
-            rule.channel === 'sms' ? client.phone_number : client.email;
-          if (recipient) {
-            const locale =
+        if (thresholdPosSatisfied || thresholdMinSatisfied)
+          matches.push({
+            client,
+            rule,
+            locale:
               client.language_preference ||
               client.p_lang ||
               client.default_locale ||
-              'fr';
-            const content =
-              `${client.first_name || ''}, votre tour approche. Ticket ${client.ticket_number}.`.trim();
-            await this.notificationsRepository.createThresholdIfAbsent({
-              registrationId: client.registration_id,
-              ruleId: rule.rule_id,
-              channel: rule.channel,
-              locale,
-              recipient,
-              content,
-              now,
-            });
-          }
-        }
+              'fr',
+          });
       }
     }
+    if (!matches.length) return;
+
+    const keys = matches.map(({ rule }) =>
+      this.notificationTemplateService.templateKey(
+        rule.channel,
+        'threshold',
+        rule.include_tracking_link,
+      ),
+    );
+    const locales = [
+      ...new Set([...matches.map(({ locale }) => locale), 'fr']),
+    ];
+    const templates = await this.notificationsRepository.findActiveTemplates(
+      [...new Set(keys)],
+      locales,
+    );
+    const templateMap = new Map(
+      templates.map((template) => [
+        `${template.translation_key}:${template.locale}`,
+        template.content,
+      ]),
+    );
+    const notifications = matches.map(({ client, rule, locale }) => {
+      const key = this.notificationTemplateService.templateKey(
+        rule.channel,
+        'threshold',
+        rule.include_tracking_link,
+      );
+      const template =
+        templateMap.get(`${key}:${locale}`) ?? templateMap.get(`${key}:fr`);
+      const recipient =
+        rule.channel === 'sms' ? client.phone_number : client.email;
+      const rendered = template
+        ? this.notificationTemplateService.render(template, {
+            firstName: client.first_name ?? '',
+            ticket: client.ticket_number,
+            trackingUrl: this.notificationTemplateService.buildTrackingUrl(
+              client.registration_tracking_token,
+            ),
+          })
+        : { content: null, failureReason: `TEMPLATE_NOT_FOUND:${key}` };
+      const failureReason =
+        (!recipient ? `RECIPIENT_MISSING:${rule.channel}` : null) ??
+        rendered.failureReason;
+      return {
+        registrationId: client.registration_id,
+        ruleId: rule.rule_id,
+        channel: rule.channel,
+        locale,
+        recipient,
+        content: rendered.content,
+        status: failureReason ? ('failed' as const) : ('pending' as const),
+        failureReason,
+      };
+    });
+    await this.notificationsRepository.createThresholdNotifications(
+      notifications,
+      now,
+    );
   }
 }

@@ -63,13 +63,13 @@ export class DailyResetRepository {
       );
       if (!input.carryOverWaiting) {
         await manager.query(
-          `UPDATE dori_registration SET status = 'expired', closed_at = $1, is_active = FALSE, updated_at = $1
+          `UPDATE dori_registration SET status = 'expired', closed_at = $1, updated_at = $1
            WHERE queue_id = $2 AND business_date = $3::date AND status IN ('booked', 'waiting') AND is_active = TRUE`,
           [input.now, input.queueId, input.businessDate],
         );
       } else {
         await manager.query(
-          `UPDATE dori_registration SET status = 'expired', closed_at = $1, is_active = FALSE, updated_at = $1
+          `UPDATE dori_registration SET status = 'expired', closed_at = $1, updated_at = $1
            WHERE queue_id = $2 AND business_date = $3::date AND status IN ('booked', 'waiting')
              AND is_active = TRUE AND ticket_number LIKE 'OLD-%'`,
           [input.now, input.queueId, input.businessDate],
@@ -90,15 +90,6 @@ export class DailyResetRepository {
           ],
         );
       }
-      const status =
-        input.resetMode === 'close_all'
-          ? "status IN ('served', 'no_show', 'expired', 'cancelled')"
-          : "status = 'served'";
-      await manager.query(
-        `UPDATE dori_registration SET is_active = FALSE, deleted_at = $1, updated_at = $1
-         WHERE queue_id = $2 AND business_date = $3::date AND ${status} AND is_active = TRUE`,
-        [input.now, input.queueId, input.businessDate],
-      );
       return true;
     });
   }
