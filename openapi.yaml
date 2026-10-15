@@ -1560,8 +1560,8 @@ paths:
         mode: all
         permissions:
           - user_queue_assign
-      summary: Assigner un opérateur à la file
-      description: Donne l'autorisation à un utilisateur d'opérer les guichets de cette file.
+      summary: Assigner un opérateur ou une borne à la file
+      description: Affecte un opérateur ou une borne à la file et garantit également son affectation au site parent.
       parameters:
         - name: queueId
           required: true
@@ -1621,8 +1621,10 @@ paths:
         mode: all
         permissions:
           - user_queue_assign
-      summary: Retirer un opérateur de la file
-      description: Révoque l'affectation d'un opérateur sur cette file d'attente.
+      summary: Retirer un opérateur ou une borne de la file
+      description: >-
+        Révoque l'affectation à la file. L'affectation au site parent est aussi retirée si l'utilisateur n'est affecté à
+        aucune autre file de ce site.
       parameters:
         - name: queueId
           required: true
@@ -8053,7 +8055,7 @@ components:
       properties:
         userId:
           type: number
-          description: ID de l'opérateur à affecter
+          description: ID de l'opérateur ou de la borne à affecter
           example: 3
           minimum: 1
       required:

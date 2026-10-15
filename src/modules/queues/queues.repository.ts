@@ -405,10 +405,10 @@ export class QueuesRepository {
     return rows[0] ?? null;
   }
 
-  async hasOperatorRole(userId: number): Promise<boolean> {
+  async hasQueueAssignableRole(userId: number): Promise<boolean> {
     const rows = await this.dataSource.query(
       `SELECT ur.user_id FROM dori_user_role ur JOIN dori_role r ON r.role_id = ur.role_id
-       WHERE ur.user_id = $1 AND r.role_name = 'operator'
+       WHERE ur.user_id = $1 AND r.role_name IN ('operator', 'kiosk')
          AND r.is_active = TRUE LIMIT 1`,
       [userId],
     );
@@ -417,21 +417,66 @@ export class QueuesRepository {
 
   async assignOperator(
     queueId: number,
+    siteId: number,
     userId: number,
     assignedBy: number,
     now: Date,
   ) {
-    await this.dataSource.query(
-      `INSERT INTO dori_user_queue_assignment (user_id, queue_id, assigned_at, assigned_by_user_id)
-       VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, queue_id) DO NOTHING`,
-      [userId, queueId, now, assignedBy],
-    );
+    await this.dataSource.transaction(async (manager) => {
+      await manager.query(
+        `INSERT INTO dori_user_site_assignment
+           (user_id, site_id, assigned_at, assigned_by_user_id)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (user_id, site_id) DO NOTHING`,
+        [userId, siteId, now, assignedBy],
+      );
+      await manager.query(
+        `SELECT 1 FROM dori_user_site_assignment
+         WHERE user_id = $1 AND site_id = $2 FOR UPDATE`,
+        [userId, siteId],
+      );
+      await manager.query(
+        `INSERT INTO dori_user_queue_assignment
+           (user_id, queue_id, assigned_at, assigned_by_user_id)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (user_id, queue_id) DO NOTHING`,
+        [userId, queueId, now, assignedBy],
+      );
+    });
   }
 
   async removeOperator(queueId: number, userId: number) {
-    await this.dataSource.query(
-      'DELETE FROM dori_user_queue_assignment WHERE user_id = $1 AND queue_id = $2',
-      [userId, queueId],
-    );
+    return this.dataSource.transaction(async (manager) => {
+      const queues: Array<{ site_id: number }> = await manager.query(
+        'SELECT site_id FROM dori_queue WHERE queue_id = $1',
+        [queueId],
+      );
+      const siteId = queues[0]?.site_id;
+      if (siteId == null) return false;
+
+      await manager.query(
+        `SELECT 1 FROM dori_user_site_assignment
+         WHERE user_id = $1 AND site_id = $2 FOR UPDATE`,
+        [userId, siteId],
+      );
+      const removed: Array<{ user_id: number }> = await manager.query(
+        `DELETE FROM dori_user_queue_assignment
+         WHERE user_id = $1 AND queue_id = $2 RETURNING user_id`,
+        [userId, queueId],
+      );
+      if (!removed.length) return false;
+
+      await manager.query(
+        `DELETE FROM dori_user_site_assignment us
+         WHERE us.user_id = $1 AND us.site_id = $2
+           AND NOT EXISTS (
+             SELECT 1 FROM dori_user_queue_assignment uq
+             JOIN dori_queue q ON q.queue_id = uq.queue_id
+             WHERE uq.user_id = $1 AND q.site_id = $2
+           )`,
+        [userId, siteId],
+      );
+      return true;
+    });
   }
 }

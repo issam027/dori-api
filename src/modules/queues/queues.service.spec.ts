@@ -109,7 +109,7 @@ describe('QueuesService — SEC-04 assignOperator', () => {
       if (sql.includes('SELECT user_id, is_active FROM dori_user')) {
         return [{ user_id: 2, is_active: true }];
       }
-      if (sql.includes("r.role_name = 'operator'")) {
+      if (sql.includes("r.role_name IN ('operator', 'kiosk')")) {
         return [];
       }
       return [];
@@ -128,7 +128,7 @@ describe('QueuesService — SEC-04 assignOperator', () => {
       if (sql.includes('SELECT user_id, is_active FROM dori_user')) {
         return [{ user_id: 2, is_active: true }];
       }
-      if (sql.includes("r.role_name = 'operator'")) {
+      if (sql.includes("r.role_name IN ('operator', 'kiosk')")) {
         return [{ user_id: 2 }];
       }
       if (sql.includes('INSERT INTO dori_user_queue_assignment')) {

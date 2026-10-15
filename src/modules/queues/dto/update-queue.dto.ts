@@ -39,7 +39,7 @@ export class QueueFilterDto extends PaginationDto {
 
 export class AssignOperatorDto {
   @ApiProperty({
-    description: "ID de l'opérateur à affecter",
+    description: "ID de l'opérateur ou de la borne à affecter",
     example: 3,
   })
   @IsInt()

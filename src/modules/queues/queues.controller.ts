@@ -215,9 +215,9 @@ export class QueuesController {
   @RequirePermission('user_queue_assign')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Assigner un opérateur à la file',
+    summary: 'Assigner un opérateur ou une borne à la file',
     description:
-      "Donne l'autorisation à un utilisateur d'opérer les guichets de cette file.",
+      'Affecte un opérateur ou une borne à la file et garantit également son affectation au site parent.',
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
   @ApiDoriCreatedResponse(
@@ -235,9 +235,9 @@ export class QueuesController {
   @Delete('queues/:queueId/operators/:userId')
   @RequirePermission('user_queue_assign')
   @ApiOperation({
-    summary: 'Retirer un opérateur de la file',
+    summary: 'Retirer un opérateur ou une borne de la file',
     description:
-      "Révoque l'affectation d'un opérateur sur cette file d'attente.",
+      "Révoque l'affectation à la file. L'affectation au site parent est aussi retirée si l'utilisateur n'est affecté à aucune autre file de ce site.",
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
   @ApiParam({

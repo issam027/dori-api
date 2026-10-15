@@ -96,4 +96,60 @@ describe('QueuesRepository', () => {
     await repository.deactivate(8, 1, now);
     expect(query).toHaveBeenCalledTimes(3);
   });
+
+  it('assigns a user to the parent site and queue in one transaction', async () => {
+    const query = jest.fn().mockResolvedValue([]);
+    const dataSource = {
+      transaction: jest.fn((callback) => callback({ query })),
+    } as unknown as DataSource;
+
+    await new QueuesRepository(dataSource).assignOperator(
+      8,
+      2,
+      4,
+      1,
+      new Date('2026-10-15T12:00:00Z'),
+    );
+
+    expect(query).toHaveBeenCalledTimes(3);
+    expect(query.mock.calls[0][0]).toContain(
+      'INSERT INTO dori_user_site_assignment',
+    );
+    expect(query.mock.calls[2][0]).toContain(
+      'INSERT INTO dori_user_queue_assignment',
+    );
+  });
+
+  it('accepts active operator and kiosk roles for queue assignment', async () => {
+    const query = jest.fn().mockResolvedValue([{ user_id: 4 }]);
+    const dataSource = { query } as unknown as DataSource;
+
+    await expect(
+      new QueuesRepository(dataSource).hasQueueAssignableRole(4),
+    ).resolves.toBe(true);
+    expect(query.mock.calls[0][0]).toContain(
+      "r.role_name IN ('operator', 'kiosk')",
+    );
+  });
+
+  it('removes the site assignment only when no queue assignment remains', async () => {
+    const query = jest
+      .fn()
+      .mockResolvedValueOnce([{ site_id: 2 }])
+      .mockResolvedValueOnce([{ '?column?': 1 }])
+      .mockResolvedValueOnce([{ user_id: 4 }])
+      .mockResolvedValueOnce([]);
+    const dataSource = {
+      transaction: jest.fn((callback) => callback({ query })),
+    } as unknown as DataSource;
+
+    await expect(
+      new QueuesRepository(dataSource).removeOperator(8, 4),
+    ).resolves.toBe(true);
+
+    expect(query.mock.calls[3][0]).toContain('NOT EXISTS');
+    expect(query.mock.calls[3][0]).toContain(
+      'DELETE FROM dori_user_site_assignment',
+    );
+  });
 });

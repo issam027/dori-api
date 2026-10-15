@@ -359,13 +359,14 @@ export class QueuesService {
     }
 
     // SEC-04 : 2. Vérifier que le targetUser possède bien le rôle 'operator' actif
-    if (!(await this.queuesRepository.hasOperatorRole(targetUserId))) {
+    if (!(await this.queuesRepository.hasQueueAssignableRole(targetUserId))) {
       throw new DoriException('FORBIDDEN_ROLE_ESCALATION');
     }
 
     const now = this.clockService.now();
     await this.queuesRepository.assignOperator(
       queueId,
+      siteId,
       targetUserId,
       user.userId,
       now,
@@ -382,9 +383,12 @@ export class QueuesService {
   ) {
     await this.scopeService.checkQueueAccess(user, queueId);
 
-    await this.queuesRepository.removeOperator(queueId, targetUserId);
+    const removed = await this.queuesRepository.removeOperator(
+      queueId,
+      targetUserId,
+    );
 
     this.scopeService.invalidateUserScope(targetUserId);
-    return { queueId, userId: targetUserId, removed: true };
+    return { queueId, userId: targetUserId, removed };
   }
 }
