@@ -21,13 +21,13 @@ export class CreateTranslationDto {
   translationKey: string;
 
   @ApiProperty({
-    enum: ['ihm', 'sms', 'email', 'error'],
+    enum: ['ihm', 'public_ihm', 'sms', 'email', 'error'],
     example: 'ihm',
     description: "Catégorie d'usage",
   })
-  @IsIn(['ihm', 'sms', 'email', 'error'])
+  @IsIn(['ihm', 'public_ihm', 'sms', 'email', 'error'])
   @IsNotEmpty()
-  category: 'ihm' | 'sms' | 'email' | 'error';
+  category: 'ihm' | 'public_ihm' | 'sms' | 'email' | 'error';
 
   @ApiProperty({
     example: 'fr',
@@ -88,12 +88,12 @@ export class TranslationFilterDto extends PaginationDto {
   @IsOptional()
   isActive?: boolean;
   @ApiPropertyOptional({
-    enum: ['ihm', 'sms', 'email', 'error'],
+    enum: ['ihm', 'public_ihm', 'sms', 'email', 'error'],
     description: 'Filtrer par catégorie',
   })
-  @IsIn(['ihm', 'sms', 'email', 'error'])
+  @IsIn(['ihm', 'public_ihm', 'sms', 'email', 'error'])
   @IsOptional()
-  category?: 'ihm' | 'sms' | 'email' | 'error';
+  category?: 'ihm' | 'public_ihm' | 'sms' | 'email' | 'error';
 
   @ApiPropertyOptional({ example: 'fr', description: 'Filtrer par locale' })
   @IsString()
@@ -121,10 +121,10 @@ export class TranslationBundleQueryDto {
   locale: string;
 
   @ApiPropertyOptional({
-    enum: ['ihm', 'sms', 'email', 'error'],
+    enum: ['ihm', 'public_ihm', 'sms', 'email', 'error'],
     description: 'Catégorie optionnelle pour filtrer le bundle',
   })
-  @IsIn(['ihm', 'sms', 'email', 'error'])
+  @IsIn(['ihm', 'public_ihm', 'sms', 'email', 'error'])
   @IsOptional()
-  category?: 'ihm' | 'sms' | 'email' | 'error';
+  category?: 'ihm' | 'public_ihm' | 'sms' | 'email' | 'error';
 }

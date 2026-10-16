@@ -11425,6 +11425,7 @@
             "schema": {
               "enum": [
                 "ihm",
+                "public_ihm",
                 "sms",
                 "email",
                 "error"
@@ -11613,6 +11614,7 @@
             "schema": {
               "enum": [
                 "ihm",
+                "public_ihm",
                 "sms",
                 "email",
                 "error"
@@ -18771,6 +18773,7 @@
             "example": "ihm",
             "enum": [
               "ihm",
+              "public_ihm",
               "sms",
               "email",
               "error"
@@ -18877,6 +18880,7 @@
             "type": "string",
             "enum": [
               "ihm",
+              "public_ihm",
               "sms",
               "email",
               "error"

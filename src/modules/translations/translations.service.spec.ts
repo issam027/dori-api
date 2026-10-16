@@ -44,6 +44,32 @@ describe('TranslationsService', () => {
     );
   });
 
+  it('returns the public_ihm bundle for unauthenticated public pages', async () => {
+    repositoryMock.getBundle = jest.fn().mockResolvedValue({
+      version: 1,
+      rows: [
+        {
+          translation_key: 'services.title',
+          content: 'Nos services',
+        },
+      ],
+    });
+
+    await expect(
+      service.getBundle({ locale: 'fr', category: 'public_ihm' }),
+    ).resolves.toEqual({
+      locale: 'fr',
+      category: 'public_ihm',
+      version: 1,
+      entries: { 'services.title': 'Nos services' },
+    });
+    expect(repositoryMock.getBundle).toHaveBeenCalledWith(
+      'public_ihm',
+      'fr',
+      true,
+    );
+  });
+
   it('validates template params in service and throws TRANSLATION_PARAM_MISMATCH if mismatched', async () => {
     repositoryMock.findById = jest.fn().mockResolvedValue({
       translation_id: 1,

@@ -5103,6 +5103,7 @@ paths:
           schema:
             enum:
               - ihm
+              - public_ihm
               - sms
               - email
               - error
@@ -5238,6 +5239,7 @@ paths:
           schema:
             enum:
               - ihm
+              - public_ihm
               - sms
               - email
               - error
@@ -9903,6 +9905,7 @@ components:
           example: ihm
           enum:
             - ihm
+            - public_ihm
             - sms
             - email
             - error
@@ -9986,6 +9989,7 @@ components:
           type: string
           enum:
             - ihm
+            - public_ihm
             - sms
             - email
             - error

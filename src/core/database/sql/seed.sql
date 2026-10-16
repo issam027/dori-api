@@ -173,6 +173,7 @@ ON CONFLICT (role_id, permission_id) DO NOTHING;
 -- 5. Translation Versions (§3.13)
 INSERT INTO dori_translation_category_version (category, version) VALUES
 ('ihm', 1),
+('public_ihm', 1),
 ('sms', 1),
 ('email', 1),
 ('error', 1)
