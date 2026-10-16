@@ -294,10 +294,17 @@ export class RegistrationsService {
     const bookingMap = new Map<string, number>();
     for (const b of bookedCounts) {
       if (b.scheduled_time) {
-        bookingMap.set(
-          `${b.business_date}|${this.clockService.parse(b.scheduled_time).toISOString()}`,
-          b.count,
-        );
+        const slotIso = this.clockService
+          .parse(b.scheduled_time)
+          .toISOString();
+        const count = Number(b.count) || 0;
+        bookingMap.set(slotIso, count);
+
+        const dateStr =
+          typeof b.business_date === 'string'
+            ? b.business_date
+            : this.clockService.dateInTimezone(b.scheduled_time, q.timezone);
+        bookingMap.set(`${dateStr}|${slotIso}`, count);
       }
     }
 
@@ -323,7 +330,10 @@ export class RegistrationsService {
         const slotIso = this.clockService
           .fromZonedTime(`${businessDate}T${time}`, q.timezone)
           .toISOString();
-        const booked = bookingMap.get(`${businessDate}|${slotIso}`) || 0;
+        const booked =
+          bookingMap.get(slotIso) ??
+          bookingMap.get(`${businessDate}|${slotIso}`) ??
+          0;
         const available = Math.max(0, slotCapacity - booked);
         slots.push({
           time: slotIso,

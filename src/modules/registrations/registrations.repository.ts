@@ -86,7 +86,7 @@ export class RegistrationsTransaction {
     const rows = await this.manager.query(
       `SELECT COUNT(*)::int AS count FROM dori_registration
        WHERE queue_id = $1 AND scheduled_time = $2
-       AND status IN ('booked','waiting','in_progress') AND is_active = TRUE${exclusion}`,
+       AND status NOT IN ('cancelled') AND is_active = TRUE${exclusion}`,
       params,
     );
     return rows[0]?.count ?? 0;
@@ -305,9 +305,13 @@ export class RegistrationsRepository {
 
   findBookedSlotsBetween(queueId: number, dateFrom: string, dateTo: string) {
     return this.dataSource.query(
-      `SELECT business_date, scheduled_time, COUNT(*)::int AS count FROM dori_registration
-       WHERE queue_id=$1 AND business_date BETWEEN $2 AND $3
-       AND status IN ('booked','waiting','in_progress') AND is_active=TRUE
+      `SELECT business_date::text AS business_date, scheduled_time, COUNT(*)::int AS count FROM dori_registration
+       WHERE queue_id=$1
+         AND entry_type='appointment'
+         AND scheduled_time IS NOT NULL
+         AND business_date BETWEEN $2 AND $3
+         AND status NOT IN ('cancelled')
+         AND is_active=TRUE
        GROUP BY business_date, scheduled_time`,
       [queueId, dateFrom, dateTo],
     );

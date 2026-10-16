@@ -377,4 +377,123 @@ describe('RegistrationsService — creation response', () => {
       }),
     );
   });
+
+  describe('getAvailability', () => {
+    it('correctly marks booked slots when bookings exist, even if pg driver returns business_date as a Date object', async () => {
+      const scheduledUtc = '2026-09-01T07:00:00.000Z'; // 08:00 in Africa/Tunis
+      const repository = {
+        findAvailabilityConfig: jest.fn().mockResolvedValue({
+          queue_id: 1,
+          site_id: 2,
+          timezone: 'Africa/Tunis',
+          appointments_enabled: true,
+          appointment_slot_duration: 30,
+          slot_capacity: 1,
+          working_hours_start: '08:00',
+          working_hours_end: '09:00',
+          break_start: null,
+          break_end: null,
+        }),
+        findBookedSlotsBetween: jest.fn().mockResolvedValue([
+          {
+            // pg driver converts DATE into a JS Date object
+            business_date: new Date('2026-08-31T23:00:00.000Z'),
+            scheduled_time: new Date(scheduledUtc),
+            count: 1,
+          },
+        ]),
+      };
+
+      const clock = new ClockService();
+      const service = new RegistrationsService(
+        repository as unknown as RegistrationsRepository,
+        { checkQueueAccess: jest.fn() } as unknown as ScopeService,
+        clock,
+        {} as PersonsService,
+        { getOrThrow: jest.fn() } as unknown as ConfigService,
+        {} as NotificationTemplateService,
+      );
+
+      const result = await service.getAvailability(
+        1,
+        {
+          dateFrom: '2026-09-01',
+          dateTo: '2026-09-01',
+          summaryOnly: false,
+        } as any,
+        user,
+      );
+
+      expect(result.days).toHaveLength(1);
+      const day = result.days[0];
+      expect(day.businessDate).toBe('2026-09-01');
+      expect(day.capacity).toBe(2);
+      expect(day.booked).toBe(1);
+      expect(day.available).toBe(1);
+
+      expect(day.slots).toHaveLength(2);
+      const bookedSlot = day.slots?.find((s) => s.time === scheduledUtc);
+      expect(bookedSlot).toBeDefined();
+      expect(bookedSlot?.booked).toBe(1);
+      expect(bookedSlot?.available).toBe(0);
+      expect(bookedSlot?.isAvailable).toBe(false);
+
+      const freeSlot = day.slots?.find((s) => s.time !== scheduledUtc);
+      expect(freeSlot).toBeDefined();
+      expect(freeSlot?.booked).toBe(0);
+      expect(freeSlot?.available).toBe(1);
+      expect(freeSlot?.isAvailable).toBe(true);
+    });
+
+    it('omits slots and returns correct daily totals when summaryOnly is true', async () => {
+      const scheduledUtc = '2026-09-01T07:00:00.000Z';
+      const repository = {
+        findAvailabilityConfig: jest.fn().mockResolvedValue({
+          queue_id: 1,
+          site_id: 2,
+          timezone: 'Africa/Tunis',
+          appointments_enabled: true,
+          appointment_slot_duration: 30,
+          slot_capacity: 1,
+          working_hours_start: '08:00',
+          working_hours_end: '09:00',
+          break_start: null,
+          break_end: null,
+        }),
+        findBookedSlotsBetween: jest.fn().mockResolvedValue([
+          {
+            business_date: '2026-09-01',
+            scheduled_time: new Date(scheduledUtc),
+            count: 1,
+          },
+        ]),
+      };
+
+      const clock = new ClockService();
+      const service = new RegistrationsService(
+        repository as unknown as RegistrationsRepository,
+        { checkQueueAccess: jest.fn() } as unknown as ScopeService,
+        clock,
+        {} as PersonsService,
+        { getOrThrow: jest.fn() } as unknown as ConfigService,
+        {} as NotificationTemplateService,
+      );
+
+      const result = await service.getAvailability(
+        1,
+        {
+          dateFrom: '2026-09-01',
+          dateTo: '2026-09-01',
+          summaryOnly: true,
+        } as any,
+        user,
+      );
+
+      expect(result.days).toHaveLength(1);
+      expect(result.days[0].slots).toBeUndefined();
+      expect(result.days[0].capacity).toBe(2);
+      expect(result.days[0].booked).toBe(1);
+      expect(result.days[0].available).toBe(1);
+    });
+  });
 });
