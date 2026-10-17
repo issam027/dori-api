@@ -52,10 +52,18 @@ export const ValidRegistrationLookup = (
 ): ClassDecorator =>
   validateObject(
     'validRegistrationLookup',
-    (value) =>
-      value.ticketNumber != null ||
-      (value.lastName != null && value.scheduledTime != null),
-    'Provide ticketNumber or both lastName and scheduledTime',
+    (value) => {
+      const byPhone =
+        value.phoneNumber != null &&
+        value.lastName == null &&
+        value.scheduledTime == null;
+      const byIdentity =
+        value.phoneNumber == null &&
+        value.lastName != null &&
+        value.scheduledTime != null;
+      return byPhone || byIdentity;
+    },
+    'Provide phoneNumber or both lastName and scheduledTime',
     options,
   );
 

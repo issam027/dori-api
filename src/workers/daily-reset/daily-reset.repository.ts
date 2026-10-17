@@ -61,26 +61,28 @@ export class DailyResetRepository {
          WHERE queue_id = $2 AND disconnected_at IS NULL`,
         [input.now, input.queueId],
       );
-      if (!input.carryOverWaiting) {
+      if (input.resetMode === 'close_all' || !input.carryOverWaiting) {
         await manager.query(
           `UPDATE dori_registration SET status = 'expired', closed_at = $1, updated_at = $1
-           WHERE queue_id = $2 AND business_date = $3::date AND status IN ('booked', 'waiting') AND is_active = TRUE`,
+           WHERE queue_id = $2 AND business_date = $3::date
+             AND status IN ('booked', 'waiting', 'in_progress') AND is_active = TRUE`,
           [input.now, input.queueId, input.businessDate],
         );
       } else {
         await manager.query(
           `UPDATE dori_registration SET status = 'expired', closed_at = $1, updated_at = $1
-           WHERE queue_id = $2 AND business_date = $3::date AND status IN ('booked', 'waiting')
-             AND is_active = TRUE AND ticket_number LIKE 'OLD-%'`,
+           WHERE queue_id = $2 AND business_date = $3::date AND is_active = TRUE
+             AND (status = 'in_progress'
+               OR (status IN ('booked', 'waiting') AND ticket_number LIKE '!%'))`,
           [input.now, input.queueId, input.businessDate],
         );
         await manager.query(
           `UPDATE dori_registration
            SET business_date = $1::date, carried_over_from_date = $2::date,
-               ticket_number = 'OLD-' || ticket_number,
+               ticket_number = '!' || ticket_number,
                registration_tracking_token_valid_until = $3, updated_at = $4
            WHERE queue_id = $5 AND business_date = $2::date AND status IN ('booked', 'waiting')
-             AND is_active = TRUE AND ticket_number NOT LIKE 'OLD-%'`,
+             AND is_active = TRUE AND ticket_number NOT LIKE '!%'`,
           [
             input.nextBusinessDate,
             input.businessDate,

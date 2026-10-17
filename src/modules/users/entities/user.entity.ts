@@ -14,6 +14,9 @@ export class DoriUser {
   @Column({ type: 'varchar', length: 50, unique: true })
   username: string;
 
+  @Column({ type: 'varchar', length: 150, nullable: true })
+  full_name: string | null;
+
   @Column({ type: 'varchar', length: 255, nullable: true })
   email: string | null;
 

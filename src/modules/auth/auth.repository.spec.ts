@@ -86,3 +86,19 @@ describe('AuthRepository refresh rotation', () => {
     expect(manager.query.mock.calls[1][1]).toEqual([now, 7]);
   });
 });
+
+describe('AuthRepository login identifier', () => {
+  it('looks up an active user by username or case-insensitive email', async () => {
+    const query = jest.fn().mockResolvedValue([{ user_id: 7 }]);
+    const repository = new AuthRepository({ query } as unknown as DataSource);
+
+    await expect(
+      repository.findActiveUserByUsername('Agent@Example.com'),
+    ).resolves.toEqual({ user_id: 7 });
+
+    expect(query.mock.calls[0][0]).toContain('username = $1');
+    expect(query.mock.calls[0][0]).toContain('LOWER(email) = LOWER($1)');
+    expect(query.mock.calls[0][0]).toContain('deleted_at IS NULL');
+    expect(query.mock.calls[0][1]).toEqual(['Agent@Example.com']);
+  });
+});

@@ -28,6 +28,16 @@ export class CreateUserDto {
   username: string;
 
   @ApiPropertyOptional({
+    example: 'Jean Dupont',
+    description: "Nom complet de l'utilisateur",
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(150)
+  @IsOptional()
+  fullName?: string;
+
+  @ApiPropertyOptional({
     example: 'operator@hopital.tn',
     description: 'Adresse e-mail',
   })
@@ -75,6 +85,13 @@ export class CreateUserDto {
 }
 
 export class UpdateUserDto {
+  @ApiPropertyOptional({ example: 'Jean Dupont' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(150)
+  @IsOptional()
+  fullName?: string;
+
   @ApiPropertyOptional({ example: 'nouvel.email@hopital.tn' })
   @IsEmail()
   @MaxLength(255)
@@ -147,7 +164,9 @@ export class UserFilterDto extends PaginationDto {
   @IsOptional()
   userType?: 'human' | 'kiosk';
 
-  @ApiPropertyOptional({ description: 'Recherche libre (username, email)' })
+  @ApiPropertyOptional({
+    description: 'Recherche libre (nom, username, email)',
+  })
   @IsString()
   @IsOptional()
   search?: string;

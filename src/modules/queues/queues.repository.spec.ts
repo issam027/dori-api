@@ -152,4 +152,29 @@ describe('QueuesRepository', () => {
       'DELETE FROM dori_user_site_assignment',
     );
   });
+
+  it('uses reset mode and ! prefix during a manual carry-over', async () => {
+    const query = jest.fn().mockResolvedValue([]);
+    const dataSource = {
+      transaction: jest.fn((callback) => callback({ query })),
+    } as unknown as DataSource;
+
+    await new QueuesRepository(dataSource).reset({
+      queueId: 4,
+      userId: 2,
+      now: new Date('2026-10-06T03:00:00Z'),
+      businessDate: '2026-10-05',
+      tomorrow: '2026-10-06',
+      trackingValidUntil: new Date('2026-10-07T03:00:00Z'),
+      carryOver: true,
+      resetMode: 'close_served_only',
+    });
+
+    expect(query).toHaveBeenCalledTimes(3);
+    expect(query.mock.calls[1][0]).toContain("ticket_number LIKE '!%'");
+    expect(query.mock.calls[2][0]).toContain(
+      "ticket_number = '!' || ticket_number",
+    );
+    expect(query.mock.calls[2][0]).toContain("ticket_number NOT LIKE '!%'");
+  });
 });

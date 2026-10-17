@@ -93,6 +93,8 @@ export class AuthService {
       user: {
         userId: user.user_id,
         username: user.username,
+        fullName: user.full_name,
+        email: user.email,
         userType: user.user_type,
         roles,
         permissions,
@@ -141,6 +143,8 @@ export class AuthService {
       user: {
         userId: user.user_id,
         username: user.username,
+        fullName: user.full_name,
+        email: user.email,
         userType: user.user_type,
         roles,
         permissions,
@@ -241,6 +245,7 @@ export class AuthService {
     return {
       userId: user.user_id,
       username: user.username,
+      fullName: user.full_name,
       email: user.email,
       userType: user.user_type,
       languagePreference: user.language_preference,

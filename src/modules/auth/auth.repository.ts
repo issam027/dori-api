@@ -4,6 +4,7 @@ import { DataSource } from 'typeorm';
 export interface AuthUserRow {
   user_id: number;
   username: string;
+  full_name?: string | null;
   email?: string | null;
   password_hash: string;
   user_type: 'human' | 'kiosk';
@@ -30,10 +31,13 @@ export type RefreshRotationResult =
 export class AuthRepository {
   constructor(private readonly dataSource: DataSource) {}
 
-  async findActiveUserByUsername(username: string) {
+  async findActiveUserByUsername(usernameOrEmail: string) {
     const rows = await this.dataSource.query<AuthUserRow[]>(
-      `SELECT * FROM dori_user WHERE username = $1 AND is_active = TRUE`,
-      [username],
+      `SELECT * FROM dori_user
+       WHERE (username = $1 OR LOWER(email) = LOWER($1))
+         AND is_active = TRUE AND deleted_at IS NULL
+       ORDER BY CASE WHEN username = $1 THEN 0 ELSE 1 END LIMIT 1`,
+      [usernameOrEmail],
     );
     return rows[0] ?? null;
   }
@@ -48,7 +52,7 @@ export class AuthRepository {
 
   async findUserProfile(userId: number) {
     const rows = await this.dataSource.query<AuthUserRow[]>(
-      `SELECT user_id, username, email, user_type, language_preference, last_login, must_change_password
+      `SELECT user_id, username, full_name, email, user_type, language_preference, last_login, must_change_password
        FROM dori_user WHERE user_id = $1`,
       [userId],
     );

@@ -119,3 +119,49 @@ describe('RegistrationsRepository public position', () => {
     expect(query.mock.calls[0][0]).toContain('os.counter_name');
   });
 });
+
+describe('RegistrationsRepository appointment lookup', () => {
+  it('matches an E.164 phone exactly for the current business day and accessible queues', async () => {
+    const query = jest.fn().mockResolvedValueOnce([]);
+    const repository = new RegistrationsRepository({
+      query,
+    } as unknown as DataSource);
+    const now = new Date('2026-10-17T23:30:00.000Z');
+
+    await repository.lookup({
+      queueIds: [3, 4],
+      phoneNumber: '+21698765432',
+      now,
+    });
+
+    const [sql, params] = query.mock.calls[0];
+    expect(sql).toContain("r.entry_type='appointment'");
+    expect(sql).toContain("r.status='booked'");
+    expect(sql).toContain("r.appointment_status IN ('booked','rescheduled')");
+    expect(sql).toContain('r.queue_id=ANY($1)');
+    expect(sql).toContain('p.phone_number=$2');
+    expect(sql).toContain('AT TIME ZONE s.timezone');
+    expect(params).toEqual([[3, 4], '+21698765432', now]);
+  });
+
+  it('matches the last name and appointment time exactly with the same restrictions', async () => {
+    const query = jest.fn().mockResolvedValueOnce([]);
+    const repository = new RegistrationsRepository({
+      query,
+    } as unknown as DataSource);
+    const scheduledTime = new Date('2026-10-18T08:00:00.000Z');
+
+    await repository.lookup({
+      queueIds: [3],
+      lastName: 'Ben Ali',
+      scheduledTime,
+      now: new Date('2026-10-17T10:00:00.000Z'),
+    });
+
+    const [sql, params] = query.mock.calls[0];
+    expect(sql).toContain('LOWER(p.last_name)=LOWER($2)');
+    expect(sql).toContain('r.scheduled_time=$3');
+    expect(sql).not.toContain('AT TIME ZONE s.timezone');
+    expect(params).toEqual([[3], 'Ben Ali', scheduledTime]);
+  });
+});

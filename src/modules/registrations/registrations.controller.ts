@@ -121,7 +121,7 @@ export class RegistrationsController {
   @ApiOperation({
     summary: 'Rechercher un rendez-vous',
     description:
-      "Retrouve un rendez-vous par son numéro de ticket ou par le nom et l'heure exacte.",
+      "Retrouve un rendez-vous pointable du jour par téléphone, ou par le nom et l'heure exacte.",
   })
   @ApiDoriOkResponse(RegistrationResponseDto, 'Rendez-vous trouvé')
   async lookup(

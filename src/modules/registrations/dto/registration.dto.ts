@@ -6,6 +6,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -115,12 +116,17 @@ export class RescheduleRegistrationDto {
 @ValidRegistrationLookup()
 export class LookupRegistrationDto {
   @ApiPropertyOptional({
-    example: 'A-012',
-    description: 'Numéro de ticket à rechercher',
+    example: '+21698765432',
+    description:
+      'Numéro de téléphone E.164 pour rechercher les rendez-vous du jour',
+    pattern: '^\\+[1-9][0-9]{6,14}$',
   })
   @IsString()
+  @Matches(/^\+[1-9][0-9]{6,14}$/, {
+    message: 'Phone number must be E.164 format with leading +',
+  })
   @IsOptional()
-  ticketNumber?: string;
+  phoneNumber?: string;
 
   @ApiPropertyOptional({
     example: 'Ben Ali',

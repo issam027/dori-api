@@ -160,3 +160,43 @@ describe('QueueEngineService — getSessions & getActiveSessions (VAL-04 Manquem
     expect(capturedSql).not.toContain('maliciousColumn');
   });
 });
+
+describe('QueueEngineService next preview scope', () => {
+  it('keeps only site queues that belong to the user scope', async () => {
+    const user: AuthenticatedUser = {
+      userId: 8,
+      username: 'operator',
+      roles: ['operator'],
+      permissions: ['queue_view'],
+      userType: 'human',
+    };
+    const repository = {
+      findQueueIds: jest.fn().mockResolvedValue([10, 11, 12]),
+      findPreviewCandidates: jest.fn().mockResolvedValue([]),
+    };
+    const scope = {
+      getUserScope: jest.fn().mockResolvedValue({
+        isGlobal: false,
+        siteIds: [5],
+        queueIds: [11, 99],
+      }),
+      checkSiteAccess: jest.fn().mockResolvedValue(undefined),
+    };
+    const now = new Date('2026-10-17T10:00:00Z');
+    const service = new QueueEngineService(
+      repository as unknown as QueueEngineRepository,
+      scope as unknown as ScopeService,
+      { now: jest.fn(() => now) } as unknown as ClockService,
+      {} as RealtimeService,
+    );
+
+    await service.previewNext(user, 5, 10);
+
+    expect(scope.checkSiteAccess).toHaveBeenCalledWith(user, 5);
+    expect(repository.findPreviewCandidates).toHaveBeenCalledWith(
+      [11],
+      now,
+      10,
+    );
+  });
+});

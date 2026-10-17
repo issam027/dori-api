@@ -175,7 +175,7 @@ export class QueuesController {
   }
 
   @Post('queues/:queueId/reset')
-  @RequirePermission('queue_edit')
+  @RequirePermission('queue_reset')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Réinitialiser manuellement la file',

@@ -121,6 +121,7 @@ export class CreateRegistrationResponseDto {
 
 export class RescheduleRegistrationResponseDto {
   @ApiProperty({ minimum: 1 }) registrationId: number;
+  @ApiProperty({ example: 'A-012' }) ticketNumber: string;
   @ApiProperty() status: string;
   @ApiPropertyOptional({ nullable: true }) appointmentStatus?: string | null;
   @ApiPropertyOptional({ format: 'date-time', nullable: true }) scheduledTime?:

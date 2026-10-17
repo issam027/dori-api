@@ -10,6 +10,7 @@ import { UserSummaryItemDto, RoleResponseDto } from './dto/user-response.dto';
 export interface UserDetailsResult {
   user_id: number;
   username: string;
+  full_name: string | null;
   email: string | null;
   user_type: string;
   is_active: boolean;
@@ -110,6 +111,7 @@ export class UsersRepository {
       [
         'u.user_id',
         'u.username',
+        'u.full_name',
         'u.email',
         'u.user_type',
         'u.is_active',
@@ -121,7 +123,7 @@ export class UsersRepository {
     );
 
     let query = `
-      SELECT DISTINCT u.user_id, u.username, u.email, u.user_type, u.is_active,
+      SELECT DISTINCT u.user_id, u.username, u.full_name, u.email, u.user_type, u.is_active,
              u.language_preference, u.last_login, u.created_at, u.updated_at
       FROM dori_user u
       LEFT JOIN dori_user_site_assignment us ON us.user_id = u.user_id
@@ -151,7 +153,7 @@ export class UsersRepository {
     if (filter.search) {
       params.push(`%${filter.search}%`);
       const pIdx = params.length;
-      query += ` AND (u.username ILIKE $${pIdx} OR u.email ILIKE $${pIdx})`;
+      query += ` AND (u.username ILIKE $${pIdx} OR u.full_name ILIKE $${pIdx} OR u.email ILIKE $${pIdx})`;
     }
 
     const countRes = await this.dataSource.query(
@@ -168,7 +170,7 @@ export class UsersRepository {
 
   async findUserById(userId: number): Promise<UserDetailsResult | null> {
     const users = await this.dataSource.query(
-      `SELECT user_id, username, email, user_type, is_active, language_preference, last_login, created_at, updated_at
+      `SELECT user_id, username, email, full_name, user_type, is_active, language_preference, last_login, created_at, updated_at
        FROM dori_user WHERE user_id = $1`,
       [userId],
     );
@@ -213,6 +215,7 @@ export class UsersRepository {
 
   async createUser(params: {
     username: string;
+    fullName?: string;
     email?: string;
     passwordHash: string;
     userType?: string;
@@ -232,12 +235,13 @@ export class UsersRepository {
 
       const res = await manager.query(
         `INSERT INTO dori_user (
-          username, email, password_hash, user_type, language_preference,
+          username, full_name, email, password_hash, user_type, language_preference,
           created_by_user_id, updated_by_user_id, created_at, updated_at
-        ) VALUES ($1, $2, $3, COALESCE($4, 'human'), COALESCE($5, 'fr'), $6, $6, $7, $7)
-        RETURNING user_id, username, email, user_type, is_active, language_preference, created_at`,
+        ) VALUES ($1, $2, $3, $4, COALESCE($5, 'human'), COALESCE($6, 'fr'), $7, $7, $8, $8)
+        RETURNING user_id, username, full_name, email, user_type, is_active, language_preference, created_at`,
         [
           params.username,
+          params.fullName || null,
           params.email || null,
           params.passwordHash,
           params.userType || null,
@@ -272,6 +276,11 @@ export class UsersRepository {
     const values: any[] = [];
     let idx = 1;
 
+    if (dto.fullName !== undefined) {
+      fields.push(`full_name = $${idx++}`);
+      values.push(dto.fullName);
+    }
+
     if (dto.email !== undefined) {
       fields.push(`email = $${idx++}`);
       values.push(dto.email);
@@ -290,7 +299,7 @@ export class UsersRepository {
 
     const res = await this.dataSource.query(
       `UPDATE dori_user SET ${fields.join(', ')} WHERE user_id = $${idx}
-       RETURNING user_id, username, email, user_type, is_active, language_preference, updated_at`,
+       RETURNING user_id, username, full_name, email, user_type, is_active, language_preference, updated_at`,
       values,
     );
 

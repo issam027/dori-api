@@ -154,4 +154,29 @@ describe('QueueEngineRepository', () => {
     expect(query.mock.calls[1][0]).toContain('<> ALL($3::int[])');
     expect(query.mock.calls[1][1][2]).toEqual([1]);
   });
+
+  it('restricts regular and early preview candidates to each site business day', async () => {
+    const query = jest
+      .fn()
+      .mockResolvedValueOnce([{ registration_id: 1 }])
+      .mockResolvedValueOnce([]);
+    const repository = new QueueEngineRepository({
+      query,
+    } as unknown as DataSource);
+
+    await repository.findPreviewCandidates(
+      [2, 3],
+      new Date('2026-10-17T23:30:00Z'),
+      3,
+    );
+
+    for (const call of query.mock.calls) {
+      expect(call[0]).toContain(
+        'c.business_date = ($2::timestamptz AT TIME ZONE s.timezone)::date',
+      );
+      expect(call[0]).toContain("c.appointment_status = 'checked_in'");
+    }
+    expect(query.mock.calls[0][0]).toContain('c.scheduled_time <= $2');
+    expect(query.mock.calls[1][0]).toContain('c.scheduled_time > $2');
+  });
 });

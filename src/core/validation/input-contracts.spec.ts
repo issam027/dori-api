@@ -2,7 +2,10 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { ValidationPipe } from '@nestjs/common';
 import { UpdateSiteDto } from '../../modules/sites/dto/update-site.dto';
-import { RegistrationFilterDto } from '../../modules/registrations/dto/registration.dto';
+import {
+  LookupRegistrationDto,
+  RegistrationFilterDto,
+} from '../../modules/registrations/dto/registration.dto';
 
 describe('API input contracts', () => {
   it('rejects string booleans in JSON bodies when implicit conversion is disabled', async () => {
@@ -38,4 +41,28 @@ describe('API input contracts', () => {
       expect(await validate(dto)).toHaveLength(0);
     },
   );
+
+  it.each([
+    { phoneNumber: '+21698765432' },
+    { lastName: 'Ben Ali', scheduledTime: '2026-10-17T09:00:00Z' },
+  ])('accepts a supported appointment lookup: %j', async (input) => {
+    const dto = plainToInstance(LookupRegistrationDto, input);
+
+    expect(await validate(dto)).toHaveLength(0);
+  });
+
+  it.each([
+    {},
+    { phoneNumber: '0612345678' },
+    { lastName: 'Ben Ali' },
+    {
+      phoneNumber: '+21698765432',
+      lastName: 'Ben Ali',
+      scheduledTime: '2026-10-17T09:00:00Z',
+    },
+  ])('rejects an invalid appointment lookup: %j', async (input) => {
+    const dto = plainToInstance(LookupRegistrationDto, input);
+
+    expect((await validate(dto)).length).toBeGreaterThan(0);
+  });
 });

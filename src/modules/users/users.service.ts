@@ -185,6 +185,7 @@ export class UsersService {
 
     const newUser = await this.usersRepository.createUser({
       username: dto.username,
+      fullName: dto.fullName,
       email: dto.email,
       passwordHash,
       userType: dto.userType,

@@ -7,6 +7,9 @@ export class AuthUserDto {
   @ApiProperty({ example: 'admin', description: "Nom d'utilisateur" })
   username: string;
 
+  @ApiPropertyOptional({ example: 'Jean Dupont' })
+  fullName?: string;
+
   @ApiPropertyOptional({
     example: 'admin@dori.local',
     description: 'Adresse email',

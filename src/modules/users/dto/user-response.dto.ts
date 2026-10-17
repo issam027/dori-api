@@ -8,6 +8,9 @@ export class UserSummaryItemDto {
   @ApiProperty({ example: 'jdupont', description: "Nom d'utilisateur" })
   username: string;
 
+  @ApiPropertyOptional({ example: 'Jean Dupont' })
+  fullName?: string;
+
   @ApiPropertyOptional({
     example: 'jdupont@example.com',
     description: 'Adresse email',
@@ -115,6 +118,9 @@ export class UserResponseDto {
   @ApiProperty({ example: 'jdupont', description: "Nom d'utilisateur" })
   username: string;
 
+  @ApiPropertyOptional({ example: 'Jean Dupont' })
+  fullName?: string;
+
   @ApiPropertyOptional({
     example: 'jdupont@example.com',
     description: 'Adresse email',
@@ -169,6 +175,9 @@ export class CreateUserResponseDto {
   @ApiProperty({ example: 'jdupont', description: "Nom d'utilisateur" })
   username: string;
 
+  @ApiPropertyOptional({ example: 'Jean Dupont' })
+  fullName?: string;
+
   @ApiPropertyOptional({
     example: 'jdupont@example.com',
     description: 'Adresse email',
@@ -201,6 +210,9 @@ export class UpdateUserResponseDto {
 
   @ApiProperty({ example: 'jdupont', description: "Nom d'utilisateur" })
   username: string;
+
+  @ApiPropertyOptional({ example: 'Jean Dupont' })
+  fullName?: string;
 
   @ApiPropertyOptional({
     example: 'jdupont@example.com',

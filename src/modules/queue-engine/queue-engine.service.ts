@@ -479,6 +479,10 @@ export class QueueEngineService {
     } else if (siteId) {
       if (user) await this.scopeService.checkSiteAccess(user, siteId);
       targetQueueIds = await this.queueEngineRepository.findQueueIds(siteId);
+      if (!scope.isGlobal) {
+        const allowedQueueIds = new Set(scope.queueIds);
+        targetQueueIds = targetQueueIds.filter((id) => allowedQueueIds.has(id));
+      }
     } else {
       targetQueueIds = scope.isGlobal
         ? await this.queueEngineRepository.findQueueIds()

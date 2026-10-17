@@ -209,6 +209,127 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
   });
 });
 
+describe('RegistrationsService reschedule ticket numbering', () => {
+  const user: AuthenticatedUser = {
+    userId: 1,
+    username: 'admin',
+    roles: ['admin'],
+    permissions: ['appointment_manage'],
+    userType: 'human',
+  };
+
+  it('allocates a new daily ticket while preserving registrationId when the business day changes', async () => {
+    const now = new Date('2026-10-17T10:00:00Z');
+    const newTime = new Date('2026-10-19T09:00:00Z');
+    const tx = {
+      lockAndCountSlot: jest.fn().mockResolvedValue(0),
+      nextTicketNumber: jest.fn().mockResolvedValue(7),
+      reschedule: jest.fn().mockResolvedValue({
+        registration_id: 42,
+        ticket_number: 'H0007',
+        appointment_status: 'rescheduled',
+        status: 'booked',
+        scheduled_time: newTime,
+        priority_reference_time: newTime,
+      }),
+    };
+    const repository = {
+      findForReschedule: jest.fn().mockResolvedValue({
+        registration_id: 42,
+        queue_id: 3,
+        queue_code: 'H0000',
+        business_date: '2026-10-18',
+        entry_type: 'appointment',
+        status: 'booked',
+        timezone: 'Europe/Berlin',
+        slot_capacity: 2,
+      }),
+      transaction: jest.fn((work) => work(tx)),
+    };
+    const service = new RegistrationsService(
+      repository as unknown as RegistrationsRepository,
+      { checkQueueAccess: jest.fn() } as unknown as ScopeService,
+      {
+        now: jest.fn(() => now),
+        parseInTimezone: jest.fn(() => newTime),
+        dateInTimezone: jest.fn(() => '2026-10-19'),
+      } as unknown as ClockService,
+      {} as PersonsService,
+      {} as ConfigService,
+      {} as NotificationTemplateService,
+    );
+
+    await expect(
+      service.reschedule(42, { scheduledTime: newTime.toISOString() }, user),
+    ).resolves.toMatchObject({ registrationId: 42, ticketNumber: 'H0007' });
+    expect(tx.nextTicketNumber).toHaveBeenCalledWith(3, '2026-10-19', now);
+    expect(tx.reschedule).toHaveBeenCalledWith(
+      42,
+      newTime,
+      '2026-10-19',
+      'H0007',
+      now,
+    );
+  });
+
+  it('keeps the current ticket when the appointment stays on the same business day', async () => {
+    const now = new Date('2026-10-17T10:00:00Z');
+    const newTime = new Date('2026-10-18T14:00:00Z');
+    const tx = {
+      lockAndCountSlot: jest.fn().mockResolvedValue(0),
+      nextTicketNumber: jest.fn(),
+      reschedule: jest.fn().mockResolvedValue({
+        registration_id: 42,
+        ticket_number: 'H0003',
+        appointment_status: 'rescheduled',
+        status: 'booked',
+        scheduled_time: newTime,
+        priority_reference_time: newTime,
+      }),
+    };
+    const repository = {
+      findForReschedule: jest.fn().mockResolvedValue({
+        registration_id: 42,
+        queue_id: 3,
+        queue_code: 'H0000',
+        business_date: '2026-10-18',
+        entry_type: 'appointment',
+        status: 'booked',
+        timezone: 'Europe/Berlin',
+        slot_capacity: 2,
+      }),
+      transaction: jest.fn((work) => work(tx)),
+    };
+    const service = new RegistrationsService(
+      repository as unknown as RegistrationsRepository,
+      { checkQueueAccess: jest.fn() } as unknown as ScopeService,
+      {
+        now: jest.fn(() => now),
+        parseInTimezone: jest.fn(() => newTime),
+        dateInTimezone: jest.fn(() => '2026-10-18'),
+      } as unknown as ClockService,
+      {} as PersonsService,
+      {} as ConfigService,
+      {} as NotificationTemplateService,
+    );
+
+    await service.reschedule(
+      42,
+      { scheduledTime: newTime.toISOString() },
+      user,
+    );
+
+    expect(tx.nextTicketNumber).not.toHaveBeenCalled();
+    expect(tx.reschedule).toHaveBeenCalledWith(
+      42,
+      newTime,
+      '2026-10-18',
+      undefined,
+      now,
+    );
+  });
+});
+
 describe('RegistrationsService public position', () => {
   it('returns the counter name and call timestamp for a called client', async () => {
     const calledAt = new Date('2026-10-15T09:42:18.000Z');

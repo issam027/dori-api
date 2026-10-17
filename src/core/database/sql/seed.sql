@@ -70,7 +70,8 @@ INSERT INTO dori_permission (permission_name, description) VALUES
 ('site_delete',            'Désactiver un site'),
 ('queue_view',             'Voir les queues accessibles et leur état'),
 ('queue_create',           'Créer une queue'),
-('queue_edit',             'Modifier une queue, déclencher sa clôture'),
+('queue_edit',             'Modifier une queue'),
+('queue_reset',            'Déclencher la clôture manuelle d''une queue'),
 ('queue_delete',           'Désactiver une queue'),
 ('queue_tier_manage',      'Associer un forfait à une queue, fixer tarif et règles de notification'),
 ('tier_catalog_manage',    'Gérer le catalogue global de forfaits'),
@@ -140,7 +141,7 @@ FROM dori_permission WHERE permission_name IN (
   'appointment_lookup','appointment_checkin',
   'person_note_view','person_note_manage','notification_view',
   'site_view','site_edit',
-  'queue_create','queue_edit','queue_delete','queue_tier_manage',
+  'queue_create','queue_edit','queue_reset','queue_delete','queue_tier_manage',
   'user_manage_kiosk','user_manage_operator','user_queue_assign',
   'notification_send','report_view'
 )
@@ -156,7 +157,7 @@ FROM dori_permission WHERE permission_name IN (
   'appointment_lookup','appointment_checkin',
   'person_note_view','person_note_manage','notification_view',
   'site_view','site_edit',
-  'queue_create','queue_edit','queue_delete','queue_tier_manage',
+  'queue_create','queue_edit','queue_reset','queue_delete','queue_tier_manage',
   'user_manage_kiosk','user_manage_operator','user_queue_assign',
   'notification_send','report_view',
   'site_create','site_delete','user_manage_manager','user_site_assign',
@@ -201,9 +202,12 @@ SET content = 'Bienvenue. Votre ticket est {ticket}.',
 WHERE translation_key = 'sms.welcome' AND locale = 'fr';
 
 -- 7. Default Root User (password: Root@123456)
-INSERT INTO dori_user (username, email, password_hash, user_type, is_active, language_preference)
-VALUES ('root', 'root@dori.local', '$2b$12$.FmvVZNIhX19sr9Bslc5G.uRbx7jjjJyafmwvkqIe5GXTb3jz8eB2', 'human', TRUE, 'fr')
-ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash;
+INSERT INTO dori_user (username, full_name, email, password_hash, user_type, is_active, language_preference)
+VALUES ('root', 'Administrateur Root', 'root@dori.local', '$2b$12$.FmvVZNIhX19sr9Bslc5G.uRbx7jjjJyafmwvkqIe5GXTb3jz8eB2', 'human', TRUE, 'fr')
+ON CONFLICT (username) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  email = EXCLUDED.email,
+  password_hash = EXCLUDED.password_hash;
 
 -- Assign root role to root user
 INSERT INTO dori_user_role (user_id, role_id)

@@ -294,9 +294,7 @@ export class RegistrationsService {
     const bookingMap = new Map<string, number>();
     for (const b of bookedCounts) {
       if (b.scheduled_time) {
-        const slotIso = this.clockService
-          .parse(b.scheduled_time)
-          .toISOString();
+        const slotIso = this.clockService.parse(b.scheduled_time).toISOString();
         const count = Number(b.count) || 0;
         bookingMap.set(slotIso, count);
 
@@ -442,14 +440,25 @@ export class RegistrationsService {
         timezone,
       );
       const now = this.clockService.now();
+      let ticketNumber: string | undefined;
+      if (newBusinessDate !== String(reg.business_date)) {
+        const lastNumber = await tx.nextTicketNumber(
+          reg.queue_id,
+          newBusinessDate,
+          now,
+        );
+        ticketNumber = this.formatTicketNumber(reg.queue_code, lastNumber);
+      }
       const updated = await tx.reschedule(
         registrationId,
         newTime,
         newBusinessDate,
+        ticketNumber,
         now,
       );
       return {
         registrationId: updated.registration_id,
+        ticketNumber: updated.ticket_number,
         appointmentStatus: updated.appointment_status,
         status: updated.status,
         scheduledTime: updated.scheduled_time,
@@ -465,12 +474,13 @@ export class RegistrationsService {
   async lookup(dto: LookupRegistrationDto, user: AuthenticatedUser) {
     const scope = await this.scopeService.getUserScope(user);
 
-    // Kiosk lookup restricted to today and assigned queues (§5.7, §11.6.3)
-    if (!dto.ticketNumber && (!dto.lastName || !dto.scheduledTime)) {
+    // Queue scope applies to both modes; phone lookup is restricted to the
+    // current business day by the repository using each site's timezone.
+    if (!dto.phoneNumber && (!dto.lastName || !dto.scheduledTime)) {
       throw new DoriException(
         'VALIDATION_ERROR',
         {},
-        { errors: ['Provide ticketNumber OR (lastName and scheduledTime)'] },
+        { errors: ['Provide phoneNumber OR (lastName and scheduledTime)'] },
       );
     }
 
@@ -481,11 +491,12 @@ export class RegistrationsService {
     }
     const registration = await this.registrationsRepository.lookup({
       queueIds: scope.isGlobal ? undefined : scope.queueIds,
-      ticketNumber: dto.ticketNumber,
+      phoneNumber: dto.phoneNumber,
       lastName: dto.lastName,
       scheduledTime: dto.scheduledTime
         ? this.clockService.parse(dto.scheduledTime)
         : undefined,
+      now: this.clockService.now(),
     });
     if (!registration) {
       throw new DoriException('REGISTRATION_NOT_FOUND');

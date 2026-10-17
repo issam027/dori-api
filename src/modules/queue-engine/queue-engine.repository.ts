@@ -441,6 +441,7 @@ export class QueueEngineRepository {
        FROM dori_registration c JOIN dori_queue q ON q.queue_id = c.queue_id
        JOIN dori_site s ON s.site_id = q.site_id JOIN dori_person p ON p.person_id = c.person_id
        WHERE c.queue_id = ANY($1::int[]) AND c.status = 'waiting' AND c.is_active = TRUE
+         AND c.business_date = ($2::timestamptz AT TIME ZONE s.timezone)::date
          AND (c.entry_type = 'walkin' OR
            (c.appointment_status = 'checked_in' AND c.scheduled_time <= $2))
        ORDER BY score DESC LIMIT $3`,
@@ -455,6 +456,7 @@ export class QueueEngineRepository {
        FROM dori_registration c JOIN dori_queue q ON q.queue_id = c.queue_id
        JOIN dori_site s ON s.site_id = q.site_id JOIN dori_person p ON p.person_id = c.person_id
        WHERE c.queue_id = ANY($1::int[]) AND c.status = 'waiting' AND c.is_active = TRUE
+         AND c.business_date = ($2::timestamptz AT TIME ZONE s.timezone)::date
          AND c.entry_type = 'appointment' AND c.appointment_status = 'checked_in'
          AND c.scheduled_time > $2 AND c.registration_id <> ALL($3::int[])
        ORDER BY c.scheduled_time ASC LIMIT $4`,

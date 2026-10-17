@@ -3102,7 +3102,7 @@
         "x-required-permissions": {
           "mode": "all",
           "permissions": [
-            "queue_edit"
+            "queue_reset"
           ]
         },
         "summary": "Réinitialiser manuellement la file",
@@ -8159,15 +8159,16 @@
           ]
         },
         "summary": "Rechercher un rendez-vous",
-        "description": "Retrouve un rendez-vous par son numéro de ticket ou par le nom et l'heure exacte.",
+        "description": "Retrouve un rendez-vous pointable du jour par téléphone, ou par le nom et l'heure exacte.",
         "parameters": [
           {
-            "name": "ticketNumber",
+            "name": "phoneNumber",
             "required": false,
             "in": "query",
-            "description": "Numéro de ticket à rechercher",
+            "description": "Numéro de téléphone E.164 pour rechercher les rendez-vous du jour",
             "schema": {
-              "example": "A-012",
+              "pattern": "^\\+[1-9][0-9]{6,14}$",
+              "example": "+21698765432",
               "type": "string"
             }
           },
@@ -12328,7 +12329,7 @@
             "name": "search",
             "required": false,
             "in": "query",
-            "description": "Recherche libre (username, email)",
+            "description": "Recherche libre (nom, username, email)",
             "schema": {
               "type": "string"
             }
@@ -14558,6 +14559,11 @@
             "example": "admin",
             "description": "Nom d'utilisateur"
           },
+          "fullName": {
+            "type": "string",
+            "example": "Jean Dupont",
+            "description": "Valeur du champ « full name »."
+          },
           "email": {
             "type": "string",
             "example": "admin@dori.local",
@@ -14642,8 +14648,8 @@
         "properties": {
           "username": {
             "type": "string",
-            "example": "root",
-            "description": "Nom d'utilisateur"
+            "example": "root@dori.local",
+            "description": "Nom d'utilisateur ou adresse email"
           },
           "password": {
             "type": "string",
@@ -14766,6 +14772,11 @@
             "type": "string",
             "example": "admin",
             "description": "Nom d'utilisateur"
+          },
+          "fullName": {
+            "type": "string",
+            "example": "Jean Dupont",
+            "description": "Valeur du champ « full name »."
           },
           "email": {
             "type": "string",
@@ -17849,6 +17860,11 @@
             "minimum": 1,
             "description": "Valeur du champ « registration id »."
           },
+          "ticketNumber": {
+            "type": "string",
+            "example": "A-012",
+            "description": "Valeur du champ « ticket number »."
+          },
           "status": {
             "type": "string",
             "description": "Valeur du champ « status »."
@@ -17872,6 +17888,7 @@
         },
         "required": [
           "registrationId",
+          "ticketNumber",
           "status"
         ]
       },
@@ -18974,6 +18991,11 @@
             "example": "jdupont",
             "description": "Nom d'utilisateur"
           },
+          "fullName": {
+            "type": "string",
+            "example": "Jean Dupont",
+            "description": "Valeur du champ « full name »."
+          },
           "email": {
             "type": "string",
             "example": "jdupont@example.com",
@@ -19079,6 +19101,11 @@
             "example": "jdupont",
             "description": "Nom d'utilisateur"
           },
+          "fullName": {
+            "type": "string",
+            "example": "Jean Dupont",
+            "description": "Valeur du champ « full name »."
+          },
           "email": {
             "type": "string",
             "example": "jdupont@example.com",
@@ -19126,6 +19153,11 @@
             "type": "string",
             "example": "operator_tunis",
             "description": "Nom d'utilisateur unique"
+          },
+          "fullName": {
+            "type": "string",
+            "example": "Jean Dupont",
+            "description": "Nom complet de l'utilisateur"
           },
           "email": {
             "type": "string",
@@ -19269,6 +19301,11 @@
             "example": "jdupont",
             "description": "Nom d'utilisateur"
           },
+          "fullName": {
+            "type": "string",
+            "example": "Jean Dupont",
+            "description": "Valeur du champ « full name »."
+          },
           "email": {
             "type": "string",
             "example": "jdupont@example.com",
@@ -19359,6 +19396,11 @@
             "example": "jdupont",
             "description": "Nom d'utilisateur"
           },
+          "fullName": {
+            "type": "string",
+            "example": "Jean Dupont",
+            "description": "Valeur du champ « full name »."
+          },
           "email": {
             "type": "string",
             "example": "jdupont@example.com",
@@ -19402,6 +19444,11 @@
       "UpdateUserDto": {
         "type": "object",
         "properties": {
+          "fullName": {
+            "type": "string",
+            "example": "Jean Dupont",
+            "description": "Valeur du champ « full name »."
+          },
           "email": {
             "type": "string",
             "example": "nouvel.email@hopital.tn",

@@ -268,13 +268,14 @@ export class RegistrationsTransaction {
     registrationId: number,
     newTime: Date,
     businessDate: string,
+    ticketNumber: string | undefined,
     now: Date,
   ) {
     const rows = await this.manager.query(
       `UPDATE dori_registration SET scheduled_time=$1, priority_reference_time=$1, business_date=$2,
-       appointment_status='rescheduled', status='booked', checked_in_at=NULL, updated_at=$3
-       WHERE registration_id=$4 RETURNING *`,
-      [newTime, businessDate, now, registrationId],
+       ticket_number=COALESCE($3, ticket_number), appointment_status='rescheduled', status='booked',
+       checked_in_at=NULL, updated_at=$4 WHERE registration_id=$5 RETURNING *`,
+      [newTime, businessDate, ticketNumber ?? null, now, registrationId],
     );
     return rows[0];
   }
@@ -354,7 +355,8 @@ export class RegistrationsRepository {
 
   async findForReschedule(registrationId: number) {
     const rows = await this.dataSource.query(
-      `SELECT r.*,q.slot_capacity,s.default_slot_capacity,s.timezone FROM dori_registration r
+      `SELECT r.*,r.business_date::text AS business_date,q.queue_code,q.slot_capacity,
+       s.default_slot_capacity,s.timezone FROM dori_registration r
        JOIN dori_queue q ON q.queue_id=r.queue_id JOIN dori_site s ON s.site_id=q.site_id
        WHERE r.registration_id=$1 AND r.is_active=TRUE`,
       [registrationId],
@@ -364,28 +366,37 @@ export class RegistrationsRepository {
 
   async lookup(input: {
     queueIds?: number[];
-    ticketNumber?: string;
+    phoneNumber?: string;
     lastName?: string;
     scheduledTime?: Date;
+    now: Date;
   }) {
     const params: unknown[] = [];
-    let where = 'r.is_active=TRUE';
+    let where = `r.is_active=TRUE
+      AND r.entry_type='appointment'
+      AND r.status='booked'
+      AND r.appointment_status IN ('booked','rescheduled')`;
     if (input.queueIds) {
       params.push(input.queueIds);
       where += ` AND r.queue_id=ANY($${params.length})`;
     }
-    if (input.ticketNumber) {
-      params.push(input.ticketNumber);
-      where += ` AND r.ticket_number=$${params.length}`;
+    if (input.phoneNumber) {
+      params.push(input.phoneNumber);
+      where += ` AND p.phone_number=$${params.length}`;
+      params.push(input.now);
+      where += ` AND r.business_date=($${params.length}::timestamptz AT TIME ZONE s.timezone)::date`;
     } else {
-      params.push(`%${input.lastName}%`);
-      where += ` AND p.last_name ILIKE $${params.length}`;
+      params.push(input.lastName);
+      where += ` AND LOWER(p.last_name)=LOWER($${params.length})`;
       params.push(input.scheduledTime);
       where += ` AND r.scheduled_time=$${params.length}`;
     }
     const rows = await this.dataSource.query(
       `SELECT r.*,p.first_name,p.last_name,p.phone_number FROM dori_registration r
-       JOIN dori_person p ON p.person_id=r.person_id WHERE ${where} LIMIT 1`,
+       JOIN dori_person p ON p.person_id=r.person_id
+       JOIN dori_queue q ON q.queue_id=r.queue_id
+       JOIN dori_site s ON s.site_id=q.site_id
+       WHERE ${where} ORDER BY r.scheduled_time ASC, r.registration_id ASC LIMIT 1`,
       params,
     );
     return rows[0] ?? null;
