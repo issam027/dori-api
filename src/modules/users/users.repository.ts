@@ -105,6 +105,7 @@ export class UsersRepository {
   async findUsers(
     filter: UserFilterDto,
     scope: { isGlobal: boolean; siteIds: number[] },
+    siteIds?: number[],
   ): Promise<PaginatedResult<UserSummaryItemDto>> {
     const { pageSize, offset, sortOrder } = filter.getParams();
     const sortField = filter.getSafeSortField(
@@ -143,6 +144,12 @@ export class UsersRepository {
         const pIdx = params.length;
         query += ` AND (us.site_id = ANY($${pIdx}) OR sqt.site_id = ANY($${pIdx}) OR r.role_name IN ('admin', 'root'))`;
       }
+    }
+
+    if (siteIds) {
+      params.push(siteIds);
+      const pIdx = params.length;
+      query += ` AND (us.site_id = ANY($${pIdx}) OR sqt.site_id = ANY($${pIdx}))`;
     }
 
     if (filter.userType) {

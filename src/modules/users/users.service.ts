@@ -135,7 +135,14 @@ export class UsersService {
 
   async findUsers(filter: UserFilterDto, user: AuthenticatedUser) {
     const scope = await this.scopeService.getUserScope(user);
-    return this.usersRepository.findUsers(filter, scope);
+    const siteIds = filter.siteIds
+      ? [
+          ...new Set(
+            filter.siteIds.split(',').map((item) => Number(item.trim())),
+          ),
+        ]
+      : undefined;
+    return this.usersRepository.findUsers(filter, scope, siteIds);
   }
 
   async findUserById(userId: number, user: AuthenticatedUser) {

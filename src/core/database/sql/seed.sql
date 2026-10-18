@@ -114,7 +114,7 @@ ON CONFLICT (role_name) DO NOTHING;
 INSERT INTO dori_role_permission (role_id, permission_id)
 SELECT (SELECT role_id FROM dori_role WHERE role_name='kiosk'), permission_id
 FROM dori_permission WHERE permission_name IN (
-  'queue_view','tier_view','registration_register',
+  'site_view','queue_view','tier_view','registration_register',
   'appointment_lookup','appointment_checkin'
 )
 ON CONFLICT (role_id, permission_id) DO NOTHING;

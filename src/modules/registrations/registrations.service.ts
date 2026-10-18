@@ -388,7 +388,8 @@ export class RegistrationsService {
       throw new DoriException('APPOINTMENT_EXPIRED');
     }
 
-    return this.registrationsRepository.checkIn(registrationId, now);
+    await this.registrationsRepository.checkIn(registrationId, now);
+    return this.registrationsRepository.findById(registrationId);
   }
 
   async reschedule(

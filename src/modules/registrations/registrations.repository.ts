@@ -392,7 +392,10 @@ export class RegistrationsRepository {
       where += ` AND r.scheduled_time=$${params.length}`;
     }
     const rows = await this.dataSource.query(
-      `SELECT r.*,p.first_name,p.last_name,p.phone_number FROM dori_registration r
+      `SELECT r.*,p.first_name,p.last_name,p.phone_number,
+       (SELECT COUNT(*)::int FROM dori_person_note pn
+        WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
+       FROM dori_registration r
        JOIN dori_person p ON p.person_id=r.person_id
        JOIN dori_queue q ON q.queue_id=r.queue_id
        JOIN dori_site s ON s.site_id=q.site_id
@@ -437,6 +440,7 @@ export class RegistrationsRepository {
     add(filter.entryType, 'r.entry_type');
     add(filter.appointmentStatus, 'r.appointment_status');
     add(filter.personId, 'r.person_id');
+    add(filter.servedByUserId, 'r.served_by_user_id');
     add(filter.tierId, 'r.tier_id');
     if (filter.search) {
       params.push(`%${filter.search}%`);
@@ -451,7 +455,9 @@ export class RegistrationsRepository {
     );
     const items = await this.dataSource.query(
       `SELECT r.*,p.first_name,p.last_name,p.phone_number,p.email,
-      q.queue_name,q.queue_code,t.tier_code,t.tier_name
+      q.queue_name,q.queue_code,t.tier_code,t.tier_name,
+      (SELECT COUNT(*)::int FROM dori_person_note pn
+       WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
       ${from} ORDER BY r.${sortField} ${sortOrder}
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
       [...params, pageSize, offset],
@@ -462,7 +468,10 @@ export class RegistrationsRepository {
   async findById(registrationId: number): Promise<RegistrationRow | null> {
     const rows = await this.dataSource.query(
       `SELECT r.*,p.first_name,p.last_name,p.phone_number,p.email,
-      q.queue_name,q.queue_code,t.tier_code,t.tier_name FROM dori_registration r
+      q.queue_name,q.queue_code,t.tier_code,t.tier_name,
+      (SELECT COUNT(*)::int FROM dori_person_note pn
+       WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
+      FROM dori_registration r
       JOIN dori_person p ON p.person_id=r.person_id JOIN dori_queue q ON q.queue_id=r.queue_id
       JOIN dori_service_tier t ON t.tier_id=r.tier_id
       WHERE r.registration_id=$1`,

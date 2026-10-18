@@ -67,7 +67,10 @@ export class PersonsRepository {
       params,
     );
     const items: PersonRow[] = await this.dataSource.query(
-      `SELECT DISTINCT p.* FROM dori_person p WHERE ${where}
+      `SELECT DISTINCT p.*,
+       (SELECT COUNT(*)::int FROM dori_person_note pn
+        WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
+       FROM dori_person p WHERE ${where}
        ORDER BY p.${query.sortField} ${query.sortOrder} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
       [...params, query.pageSize, query.offset],
     );
@@ -76,8 +79,11 @@ export class PersonsRepository {
 
   async findById(personId: number): Promise<PersonRow | null> {
     const rows: PersonRow[] = await this.dataSource.query(
-      `SELECT * FROM dori_person
-       WHERE person_id = $1
+      `SELECT p.*,
+       (SELECT COUNT(*)::int FROM dori_person_note pn
+        WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
+       FROM dori_person p
+       WHERE p.person_id = $1
        LIMIT 1`,
       [personId],
     );
@@ -90,9 +96,12 @@ export class PersonsRepository {
     manager?: EntityManager,
   ): Promise<PersonRow | null> {
     const rows: PersonRow[] = await this.database(manager).query(
-      `SELECT * FROM dori_person
-       WHERE site_id = $1 AND phone_number = $2
-         AND is_active = TRUE AND deleted_at IS NULL
+      `SELECT p.*,
+       (SELECT COUNT(*)::int FROM dori_person_note pn
+        WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
+       FROM dori_person p
+       WHERE p.site_id = $1 AND p.phone_number = $2
+         AND p.is_active = TRUE AND p.deleted_at IS NULL
        LIMIT 1`,
       [siteId, phoneNumber],
     );
@@ -105,9 +114,12 @@ export class PersonsRepository {
     manager?: EntityManager,
   ): Promise<PersonRow | null> {
     const rows: PersonRow[] = await this.database(manager).query(
-      `SELECT * FROM dori_person
-       WHERE site_id = $1 AND LOWER(email) = LOWER($2)
-         AND is_active = TRUE AND deleted_at IS NULL
+      `SELECT p.*,
+       (SELECT COUNT(*)::int FROM dori_person_note pn
+        WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
+       FROM dori_person p
+       WHERE p.site_id = $1 AND LOWER(p.email) = LOWER($2)
+         AND p.is_active = TRUE AND p.deleted_at IS NULL
        LIMIT 1`,
       [siteId, email],
     );

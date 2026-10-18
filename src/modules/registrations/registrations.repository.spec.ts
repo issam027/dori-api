@@ -165,3 +165,52 @@ describe('RegistrationsRepository appointment lookup', () => {
     expect(params).toEqual([[3], 'Ben Ali', scheduledTime]);
   });
 });
+
+describe('RegistrationsRepository filters', () => {
+  it('returns zero active notes when the registered person has none', async () => {
+    const query = jest
+      .fn()
+      .mockResolvedValueOnce([{ total: 1 }])
+      .mockResolvedValueOnce([{ registration_id: 10, active_note_count: 0 }]);
+    const repository = new RegistrationsRepository({
+      query,
+    } as unknown as DataSource);
+
+    const result = await repository.findPage(
+      { isActive: true } as any,
+      undefined,
+      'registration_id',
+      'ASC',
+      25,
+      0,
+    );
+
+    expect(query.mock.calls[1][0]).toContain('COUNT(*)::int');
+    expect(query.mock.calls[1][0]).toContain('pn.is_active = TRUE');
+    expect(query.mock.calls[1][0]).toContain('pn.deleted_at IS NULL');
+    expect(result.items[0].active_note_count).toBe(0);
+  });
+
+  it('filters registrations by served_by_user_id', async () => {
+    const query = jest
+      .fn()
+      .mockResolvedValueOnce([{ total: 0 }])
+      .mockResolvedValueOnce([]);
+    const repository = new RegistrationsRepository({
+      query,
+    } as unknown as DataSource);
+
+    await repository.findPage(
+      { isActive: true, servedByUserId: 12 } as any,
+      undefined,
+      'registration_id',
+      'ASC',
+      25,
+      0,
+    );
+
+    expect(query.mock.calls[0][0]).toContain('r.served_by_user_id=$2');
+    expect(query.mock.calls[0][1]).toEqual([true, 12]);
+    expect(query.mock.calls[1][1]).toEqual([true, 12, 25, 0]);
+  });
+});

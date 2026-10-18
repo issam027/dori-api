@@ -93,6 +93,13 @@ export class RegistrationResponseDto {
       "ID de l'utilisateur ayant pris en charge l'inscription, conservé directement sur l'inscription",
   })
   servedByUserId?: number | null;
+
+  @ApiProperty({
+    example: 2,
+    minimum: 0,
+    description: 'Nombre de notes actives associées à la personne concernée',
+  })
+  activeNoteCount: number;
 }
 
 export class CreateRegistrationResponseDto {

@@ -122,13 +122,14 @@ export class PersonsService {
       }
     }
 
-    return this.personsRepository.create(
+    const created = await this.personsRepository.create(
       dto,
       siteId,
       user.userId,
       now,
       manager,
     );
+    return { ...created, active_note_count: 0 };
   }
 
   async updatePerson(
@@ -140,7 +141,8 @@ export class PersonsService {
     await this.findPersonById(personId, user);
 
     const now = this.clockService.now();
-    return this.personsRepository.update(personId, dto, user.userId, now);
+    await this.personsRepository.update(personId, dto, user.userId, now);
+    return this.personsRepository.findById(personId);
   }
 
   // Notes (§3.5, §4.16, §5.6)

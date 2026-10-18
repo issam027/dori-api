@@ -139,7 +139,7 @@ describe('QueueEngineRepository', () => {
   it('binds preview exclusions as an integer array', async () => {
     const query = jest
       .fn()
-      .mockResolvedValueOnce([{ registration_id: 1 }])
+      .mockResolvedValueOnce([{ registration_id: 1, queue_id: 2 }])
       .mockResolvedValueOnce([]);
     const repository = new QueueEngineRepository({
       query,
@@ -152,7 +152,21 @@ describe('QueueEngineRepository', () => {
     );
 
     expect(query.mock.calls[1][0]).toContain('<> ALL($3::int[])');
-    expect(query.mock.calls[1][1][2]).toEqual([1]);
+    expect(query.mock.calls[1][1][2]).toEqual([2]);
+  });
+
+  it('returns only queues with an active session owned by the user', async () => {
+    const query = jest.fn().mockResolvedValue([{ queue_id: 3 }]);
+    const repository = new QueueEngineRepository({
+      query,
+    } as unknown as DataSource);
+
+    await expect(
+      repository.findActiveQueueIdsForUser([2, 3], 8),
+    ).resolves.toEqual([3]);
+    expect(query.mock.calls[0][0]).toContain("mode = 'active'");
+    expect(query.mock.calls[0][0]).toContain('disconnected_at IS NULL');
+    expect(query.mock.calls[0][1]).toEqual([[2, 3], 8]);
   });
 
   it('restricts regular and early preview candidates to each site business day', async () => {

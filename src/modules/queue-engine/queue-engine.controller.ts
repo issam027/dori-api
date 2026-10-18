@@ -48,7 +48,7 @@ export class QueueEngineController {
   constructor(private readonly engineService: QueueEngineService) {}
 
   @Get('sites/:siteId/next-preview')
-  @RequirePermission('queue_view')
+  @RequirePermission('queue_view', 'registration_call')
   @ApiOperation({
     summary: 'Prévisualiser les prochains tickets éligibles',
     description:

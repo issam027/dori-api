@@ -11,11 +11,34 @@ import {
   MaxLength,
   Min,
   IsLocale,
+  registerDecorator,
+  ValidationArguments,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../../core/pagination/pagination.dto';
 import { Transform } from 'class-transformer';
 import { strictBoolean } from '../../../core/validation/strict-boolean.transformer';
+
+function IsSiteIdsCsv(): PropertyDecorator {
+  return (target, propertyName) =>
+    registerDecorator({
+      name: 'isSiteIdsCsv',
+      target: target.constructor,
+      propertyName: propertyName.toString(),
+      options: {
+        message: 'siteIds must be a comma-separated list of positive integers',
+      },
+      validator: {
+        validate: (value: unknown, _args: ValidationArguments) =>
+          typeof value === 'string' &&
+          value.length > 0 &&
+          value
+            .split(',')
+            .map((item) => item.trim())
+            .every((item) => /^\d+$/.test(item) && Number(item) > 0),
+      },
+    });
+}
 
 export class CreateUserDto {
   @ApiProperty({
@@ -156,6 +179,18 @@ export class UserFilterDto extends PaginationDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @ApiPropertyOptional({
+    type: String,
+    example: '1,3',
+    description:
+      'Filtrer par sites (affectation directe ou via une file). Format accepté : siteIds=1,2.',
+  })
+  @IsString()
+  @IsSiteIdsCsv()
+  @IsOptional()
+  siteIds?: string;
+
   @ApiPropertyOptional({
     enum: ['human', 'kiosk'],
     description: 'Filtrer par type de compte',

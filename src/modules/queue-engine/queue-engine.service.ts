@@ -488,6 +488,13 @@ export class QueueEngineService {
         ? await this.queueEngineRepository.findQueueIds()
         : scope.queueIds;
     }
+    if (user && targetQueueIds.length) {
+      targetQueueIds =
+        await this.queueEngineRepository.findActiveQueueIdsForUser(
+          targetQueueIds,
+          user.userId,
+        );
+    }
     if (!targetQueueIds.length) return [];
     const candidates = await this.queueEngineRepository.findPreviewCandidates(
       targetQueueIds,

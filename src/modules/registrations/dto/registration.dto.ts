@@ -231,6 +231,17 @@ export class RegistrationFilterDto extends PaginationDto {
   @Type(() => Number)
   personId?: number;
 
+  @ApiPropertyOptional({
+    example: 12,
+    description:
+      "Filtrer par l'identifiant de l'utilisateur ayant servi le client",
+  })
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  @Type(() => Number)
+  servedByUserId?: number;
+
   @ApiPropertyOptional({ example: 1 })
   @IsInt()
   @Min(1)

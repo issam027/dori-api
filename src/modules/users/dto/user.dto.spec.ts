@@ -1,6 +1,6 @@
-import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { CreateUserDto, SetUserPasswordDto } from './user.dto';
+import { validate } from 'class-validator';
+import { CreateUserDto, SetUserPasswordDto, UserFilterDto } from './user.dto';
 
 describe('User DTOs Password Validation', () => {
   it('accepts a valid password between 10 and 20 characters', async () => {
@@ -61,4 +61,22 @@ describe('User DTOs Password Validation', () => {
     const errors = await validate(tooLongDto);
     expect(errors[0].constraints).toHaveProperty('maxLength');
   });
+});
+
+describe('UserFilterDto', () => {
+  it('accepts siteIds as a CSV string', async () => {
+    const dto = plainToInstance(UserFilterDto, { siteIds: '7,8' });
+
+    expect(await validate(dto)).toHaveLength(0);
+    expect(dto.siteIds).toBe('7,8');
+  });
+
+  it.each(['', '7,nope', '0,7', '-1,7', ['7', '8']])(
+    'rejects invalid siteIds %p',
+    async (siteIds) => {
+      const dto = plainToInstance(UserFilterDto, { siteIds });
+
+      expect((await validate(dto)).length).toBeGreaterThan(0);
+    },
+  );
 });

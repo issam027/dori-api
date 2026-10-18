@@ -172,6 +172,7 @@ describe('QueueEngineService next preview scope', () => {
     };
     const repository = {
       findQueueIds: jest.fn().mockResolvedValue([10, 11, 12]),
+      findActiveQueueIdsForUser: jest.fn().mockResolvedValue([11]),
       findPreviewCandidates: jest.fn().mockResolvedValue([]),
     };
     const scope = {
@@ -193,6 +194,10 @@ describe('QueueEngineService next preview scope', () => {
     await service.previewNext(user, 5, 10);
 
     expect(scope.checkSiteAccess).toHaveBeenCalledWith(user, 5);
+    expect(repository.findActiveQueueIdsForUser).toHaveBeenCalledWith(
+      [11],
+      user.userId,
+    );
     expect(repository.findPreviewCandidates).toHaveBeenCalledWith(
       [11],
       now,

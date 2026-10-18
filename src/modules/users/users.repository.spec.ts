@@ -53,4 +53,38 @@ describe('UsersRepository', () => {
     const rank = await repository.getRoleRank(99);
     expect(rank).toBeNull();
   });
+
+  it('findUsers filters users assigned directly or through a queue to a site', async () => {
+    dataSourceMock.query
+      .mockResolvedValueOnce([{ total: 1 }])
+      .mockResolvedValueOnce([{ user_id: 5 }]);
+    const filter = {
+      isActive: true,
+      getParams: () => ({ pageSize: 20, offset: 0, sortOrder: 'ASC' }),
+      getSafeSortField: () => 'u.created_at',
+      createResponse: (items: unknown[], total: number) => ({ items, total }),
+    };
+
+    const result = await repository.findUsers(
+      filter as any,
+      { isGlobal: true, siteIds: [] },
+      [7, 8],
+    );
+
+    expect(dataSourceMock.query).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining(
+        '(us.site_id = ANY($2) OR sqt.site_id = ANY($2))',
+      ),
+      [true, [7, 8]],
+    );
+    expect(dataSourceMock.query).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining(
+        '(us.site_id = ANY($2) OR sqt.site_id = ANY($2))',
+      ),
+      [true, [7, 8]],
+    );
+    expect(result).toEqual({ items: [{ user_id: 5 }], total: 1 });
+  });
 });

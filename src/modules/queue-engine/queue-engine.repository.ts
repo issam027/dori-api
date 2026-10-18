@@ -421,13 +421,27 @@ export class QueueEngineRepository {
     return rows.map((row) => Number(row.queue_id));
   }
 
+  async findActiveQueueIdsForUser(
+    queueIds: number[],
+    userId: number,
+  ): Promise<number[]> {
+    const rows: Array<{ queue_id: number }> = await this.dataSource.query(
+      `SELECT DISTINCT queue_id FROM dori_operator_session
+       WHERE queue_id = ANY($1::int[]) AND user_id = $2
+         AND disconnected_at IS NULL AND mode = 'active'`,
+      [queueIds, userId],
+    );
+    return rows.map((row) => Number(row.queue_id));
+  }
+
   async findPreviewCandidates(
     queueIds: number[],
     now: Date,
     limit: number,
   ): Promise<PreviewCandidateRow[]> {
     const eligible: PreviewCandidateRow[] = await this.dataSource.query(
-      `SELECT c.registration_id, c.ticket_number, c.entry_type, c.scheduled_time,
+      `SELECT * FROM (
+       SELECT c.registration_id, c.ticket_number, c.entry_type, c.scheduled_time,
               c.queue_id, q.queue_code, q.queue_name, s.site_name,
               p.person_id, p.first_name, p.last_name,
               ROUND((CASE WHEN c.entry_type = 'appointment'
@@ -437,30 +451,42 @@ export class QueueEngineRepository {
                 ELSE COALESCE(q.base_weight_walkin, s.default_base_weight_walkin, 0)
                   + EXTRACT(EPOCH FROM ($2 - c.priority_reference_time))/60
                     * COALESCE(q.escalation_rate_walkin, s.default_escalation_rate_walkin, 1)
-              END)::numeric, 2) AS score, FALSE AS called_early
+              END)::numeric, 2) AS score, FALSE AS called_early,
+              ROW_NUMBER() OVER (PARTITION BY c.queue_id ORDER BY
+                CASE WHEN c.entry_type = 'appointment'
+                  THEN COALESCE(q.base_weight_appointment, s.default_base_weight_appointment, 60)
+                    + EXTRACT(EPOCH FROM ($2 - c.priority_reference_time))/60
+                      * COALESCE(q.escalation_rate_appointment, s.default_escalation_rate_appointment, 1)
+                  ELSE COALESCE(q.base_weight_walkin, s.default_base_weight_walkin, 0)
+                    + EXTRACT(EPOCH FROM ($2 - c.priority_reference_time))/60
+                      * COALESCE(q.escalation_rate_walkin, s.default_escalation_rate_walkin, 1)
+                END DESC, c.registration_id ASC) AS queue_rank
        FROM dori_registration c JOIN dori_queue q ON q.queue_id = c.queue_id
        JOIN dori_site s ON s.site_id = q.site_id JOIN dori_person p ON p.person_id = c.person_id
        WHERE c.queue_id = ANY($1::int[]) AND c.status = 'waiting' AND c.is_active = TRUE
          AND c.business_date = ($2::timestamptz AT TIME ZONE s.timezone)::date
          AND (c.entry_type = 'walkin' OR
            (c.appointment_status = 'checked_in' AND c.scheduled_time <= $2))
-       ORDER BY score DESC LIMIT $3`,
+       ) ranked WHERE queue_rank = 1 ORDER BY score DESC LIMIT $3`,
       [queueIds, now, limit],
     );
     if (eligible.length >= limit) return eligible;
-    const ids = eligible.map((row) => row.registration_id);
+    const queueIdsWithEligibleCandidate = eligible.map((row) => row.queue_id);
     const early: PreviewCandidateRow[] = await this.dataSource.query(
-      `SELECT c.registration_id, c.ticket_number, c.entry_type, c.scheduled_time,
+      `SELECT * FROM (
+       SELECT c.registration_id, c.ticket_number, c.entry_type, c.scheduled_time,
               c.queue_id, q.queue_code, q.queue_name, s.site_name,
-              p.person_id, p.first_name, p.last_name, 0 AS score, TRUE AS called_early
+              p.person_id, p.first_name, p.last_name, 0 AS score, TRUE AS called_early,
+              ROW_NUMBER() OVER (PARTITION BY c.queue_id
+                ORDER BY c.scheduled_time ASC, c.registration_id ASC) AS queue_rank
        FROM dori_registration c JOIN dori_queue q ON q.queue_id = c.queue_id
        JOIN dori_site s ON s.site_id = q.site_id JOIN dori_person p ON p.person_id = c.person_id
        WHERE c.queue_id = ANY($1::int[]) AND c.status = 'waiting' AND c.is_active = TRUE
          AND c.business_date = ($2::timestamptz AT TIME ZONE s.timezone)::date
          AND c.entry_type = 'appointment' AND c.appointment_status = 'checked_in'
-         AND c.scheduled_time > $2 AND c.registration_id <> ALL($3::int[])
-       ORDER BY c.scheduled_time ASC LIMIT $4`,
-      [queueIds, now, ids, limit - eligible.length],
+         AND c.scheduled_time > $2 AND c.queue_id <> ALL($3::int[])
+       ) ranked WHERE queue_rank = 1 ORDER BY scheduled_time ASC LIMIT $4`,
+      [queueIds, now, queueIdsWithEligibleCandidate, limit - eligible.length],
     );
     return [...eligible, ...early];
   }

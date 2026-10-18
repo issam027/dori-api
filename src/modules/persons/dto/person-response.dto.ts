@@ -43,10 +43,20 @@ export class PersonResponseDto {
     description: 'Date de création',
   })
   createdAt: string;
+
+  @ApiProperty({
+    example: 2,
+    minimum: 0,
+    description: 'Nombre de notes actives associées à la personne',
+  })
+  activeNoteCount: number;
 }
 
 export class PaginatedPersonResponseDto extends PaginatedResponseDto {
-  @ApiProperty({ type: [PersonResponseDto], description: 'Personnes trouvées' })
+  @ApiProperty({
+    type: [PersonResponseDto],
+    description: 'Personnes trouvées',
+  })
   items: PersonResponseDto[];
 
   @ApiProperty({ example: 1, description: 'Page' })
