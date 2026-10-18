@@ -195,7 +195,12 @@ export function normalizeOpenApiDocument(
       'createdAt',
       'updatedAt',
     ],
-    SitesController_getManagers: ['userId', 'username', 'email', 'assignedAt'],
+    SitesController_getDirectUsers: [
+      'userId',
+      'username',
+      'email',
+      'assignedAt',
+    ],
     TranslationsController_findTranslations: [
       'translationId',
       'category',

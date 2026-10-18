@@ -4,7 +4,7 @@ import { CreateSiteDto } from './dto/create-site.dto';
 import { UpdateSiteDto } from './dto/update-site.dto';
 import {
   SiteResponseDto,
-  SiteManagerResponseDto,
+  SiteDirectUserResponseDto,
 } from './dto/site-response.dto';
 
 interface CountRow {
@@ -206,23 +206,32 @@ export class SitesRepository {
     });
   }
 
-  async findManagers(
+  async findDirectSiteUsers(
     siteId: number,
     sortField: string,
     sortOrder: 'ASC' | 'DESC',
     pageSize: number,
     offset: number,
-  ): Promise<{ items: SiteManagerResponseDto[]; total: number }> {
+    role?: 'admin' | 'manager',
+  ): Promise<{ items: SiteDirectUserResponseDto[]; total: number }> {
     const from = `FROM dori_user_site_assignment us JOIN dori_user u ON u.user_id = us.user_id
-      WHERE us.site_id = $1 AND u.is_active = TRUE`;
+      WHERE us.site_id = $1 AND u.is_active = TRUE
+        AND EXISTS (
+          SELECT 1 FROM dori_user_role ur
+          JOIN dori_role r ON r.role_id = ur.role_id
+          WHERE ur.user_id = u.user_id
+            AND r.role_name IN ('admin', 'manager')
+            AND ($2::text IS NULL OR r.role_name = $2)
+            AND r.is_active = TRUE
+        )`;
     const [count] = await this.dataSource.query<CountRow[]>(
       `SELECT COUNT(*)::int AS total ${from}`,
-      [siteId],
+      [siteId, role ?? null],
     );
-    const items = await this.dataSource.query<SiteManagerResponseDto[]>(
+    const items = await this.dataSource.query<SiteDirectUserResponseDto[]>(
       `SELECT u.user_id, u.username, u.email, u.user_type, u.is_active, us.assigned_at
        ${from} ORDER BY ${sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`,
-      [siteId],
+      [siteId, role ?? null],
     );
     return { items, total: count?.total ?? 0 };
   }
@@ -235,16 +244,16 @@ export class SitesRepository {
     return rows[0] ?? null;
   }
 
-  async hasActiveManagerRole(userId: number): Promise<boolean> {
+  async hasActiveDirectSiteRole(userId: number): Promise<boolean> {
     const rows = await this.dataSource.query<Array<{ user_id: number }>>(
       `SELECT ur.user_id FROM dori_user_role ur JOIN dori_role r ON r.role_id = ur.role_id
-       WHERE ur.user_id = $1 AND r.role_name = 'manager' AND r.is_active = TRUE LIMIT 1`,
+       WHERE ur.user_id = $1 AND r.role_name IN ('admin', 'manager') AND r.is_active = TRUE LIMIT 1`,
       [userId],
     );
     return rows.length > 0;
   }
 
-  async assignManager(
+  async assignDirectSiteUser(
     siteId: number,
     userId: number,
     assignedBy: number,
@@ -257,7 +266,7 @@ export class SitesRepository {
     );
   }
 
-  async removeManager(siteId: number, userId: number) {
+  async removeDirectSiteUser(siteId: number, userId: number) {
     await this.dataSource.query(
       'DELETE FROM dori_user_site_assignment WHERE user_id = $1 AND site_id = $2',
       [userId, siteId],

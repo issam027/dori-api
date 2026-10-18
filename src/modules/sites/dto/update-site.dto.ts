@@ -1,6 +1,12 @@
 import { PartialType } from '@nestjs/swagger';
 import { CreateSiteDto } from './create-site.dto';
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional } from 'class-validator';
+import {
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { PaginationDto } from '../../../core/pagination/pagination.dto';
@@ -25,7 +31,17 @@ export class SiteFilterDto extends PaginationDto {
   isActive?: boolean;
 }
 
-export class AssignManagerDto {
+export class DirectSiteUserFilterDto extends PaginationDto {
+  @ApiPropertyOptional({
+    enum: ['admin', 'manager'],
+    description: 'Filtrer les utilisateurs directs par rôle',
+  })
+  @IsIn(['admin', 'manager'])
+  @IsOptional()
+  role?: 'admin' | 'manager';
+}
+
+export class AssignDirectSiteUserDto {
   @ApiProperty({
     description: "ID de l'utilisateur à affecter au site",
     example: 2,

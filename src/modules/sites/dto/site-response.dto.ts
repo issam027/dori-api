@@ -153,16 +153,22 @@ export class DeleteSiteResponseDto {
   deleted: boolean;
 }
 
-export class SiteManagerResponseDto {
-  @ApiProperty({ example: 2, description: 'ID utilisateur du manager' })
+export class SiteDirectUserResponseDto {
+  @ApiProperty({
+    example: 2,
+    description: "ID de l'utilisateur directement affecté",
+  })
   userId: number;
 
-  @ApiProperty({ example: 'manager1', description: 'Identifiant du manager' })
+  @ApiProperty({
+    example: 'manager1',
+    description: "Identifiant de l'utilisateur",
+  })
   username: string;
 
   @ApiProperty({
     example: 'manager1@dori.local',
-    description: 'Email du manager',
+    description: "Email de l'utilisateur",
   })
   email: string;
 
@@ -183,12 +189,12 @@ export class SiteManagerResponseDto {
   assignedAt?: string;
 }
 
-export class PaginatedSiteManagerResponseDto extends PaginatedResponseDto {
+export class PaginatedSiteDirectUserResponseDto extends PaginatedResponseDto {
   @ApiProperty({
-    type: [SiteManagerResponseDto],
-    description: 'Liste des managers du site',
+    type: [SiteDirectUserResponseDto],
+    description: 'Liste des admins et managers directement affectés au site',
   })
-  items: SiteManagerResponseDto[];
+  items: SiteDirectUserResponseDto[];
 
   @ApiProperty({ example: 1, description: 'Page actuelle' })
   page: number;
@@ -203,7 +209,7 @@ export class PaginatedSiteManagerResponseDto extends PaginatedResponseDto {
   totalPages: number;
 }
 
-export class AssignManagerResponseDto {
+export class AssignDirectSiteUserResponseDto {
   @ApiProperty({ example: true, description: 'Opération réussie' })
   assigned: boolean;
 
@@ -214,7 +220,7 @@ export class AssignManagerResponseDto {
   userId: number;
 }
 
-export class RemoveManagerResponseDto {
+export class RemoveDirectSiteUserResponseDto {
   @ApiProperty({ minimum: 1 }) siteId: number;
   @ApiProperty({ minimum: 1 }) userId: number;
   @ApiProperty({ example: true }) removed: boolean;

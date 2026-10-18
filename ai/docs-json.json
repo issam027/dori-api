@@ -1435,17 +1435,17 @@
         ]
       }
     },
-    "/api/v1/sites/{siteId}/managers": {
+    "/api/v1/sites/{siteId}/direct-users": {
       "get": {
-        "operationId": "SitesController_getManagers",
+        "operationId": "SitesController_getDirectUsers",
         "x-required-permissions": {
           "mode": "all",
           "permissions": [
             "site_view"
           ]
         },
-        "summary": "Lister les managers d'un site",
-        "description": "Retourne la liste paginée des utilisateurs affectés comme managers à ce site.",
+        "summary": "Lister les utilisateurs directement affectés à un site",
+        "description": "Retourne uniquement les admins et managers directement affectés à ce site.",
         "parameters": [
           {
             "name": "siteId",
@@ -1498,11 +1498,24 @@
                 "assignedAt:desc"
               ]
             }
+          },
+          {
+            "name": "role",
+            "required": false,
+            "in": "query",
+            "description": "Filtrer les utilisateurs directs par rôle",
+            "schema": {
+              "enum": [
+                "admin",
+                "manager"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Liste paginée des managers du site",
+            "description": "Liste paginée des utilisateurs directs du site",
             "content": {
               "application/json": {
                 "schema": {
@@ -1525,7 +1538,7 @@
                       "description": "Paramètres de traduction"
                     },
                     "data": {
-                      "$ref": "#/components/schemas/PaginatedSiteManagerResponseDto"
+                      "$ref": "#/components/schemas/PaginatedSiteDirectUserResponseDto"
                     }
                   },
                   "required": [
@@ -1629,15 +1642,15 @@
         ]
       },
       "post": {
-        "operationId": "SitesController_assignManager",
+        "operationId": "SitesController_assignDirectUser",
         "x-required-permissions": {
           "mode": "all",
           "permissions": [
             "user_site_assign"
           ]
         },
-        "summary": "Affecter un manager au site",
-        "description": "Associe un utilisateur au périmètre de gestion de ce site.",
+        "summary": "Affecter directement un utilisateur au site",
+        "description": "Associe au site un utilisateur actif ayant le rôle admin ou manager.",
         "parameters": [
           {
             "name": "siteId",
@@ -1655,14 +1668,14 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AssignManagerDto"
+                "$ref": "#/components/schemas/AssignDirectSiteUserDto"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Manager affecté avec succès",
+            "description": "Utilisateur directement affecté avec succès",
             "content": {
               "application/json": {
                 "schema": {
@@ -1685,7 +1698,7 @@
                       "description": "Paramètres de traduction"
                     },
                     "data": {
-                      "$ref": "#/components/schemas/AssignManagerResponseDto"
+                      "$ref": "#/components/schemas/AssignDirectSiteUserResponseDto"
                     }
                   },
                   "required": [
@@ -1789,16 +1802,16 @@
         ]
       }
     },
-    "/api/v1/sites/{siteId}/managers/{userId}": {
+    "/api/v1/sites/{siteId}/direct-users/{userId}": {
       "delete": {
-        "operationId": "SitesController_removeManager",
+        "operationId": "SitesController_removeDirectUser",
         "x-required-permissions": {
           "mode": "all",
           "permissions": [
             "user_site_assign"
           ]
         },
-        "summary": "Retirer un manager du site",
+        "summary": "Retirer un utilisateur directement affecté au site",
         "description": "Supprime l'association d'un utilisateur au site.",
         "parameters": [
           {
@@ -1824,7 +1837,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Manager retiré avec succès",
+            "description": "Utilisateur retiré du site avec succès",
             "content": {
               "application/json": {
                 "schema": {
@@ -1847,7 +1860,7 @@
                       "description": "Paramètres de traduction"
                     },
                     "data": {
-                      "$ref": "#/components/schemas/RemoveManagerResponseDto"
+                      "$ref": "#/components/schemas/RemoveDirectSiteUserResponseDto"
                     }
                   },
                   "required": [
@@ -15377,24 +15390,24 @@
           "deleted"
         ]
       },
-      "SiteManagerResponseDto": {
+      "SiteDirectUserResponseDto": {
         "type": "object",
         "properties": {
           "userId": {
             "type": "number",
             "example": 2,
-            "description": "ID utilisateur du manager",
+            "description": "ID de l'utilisateur directement affecté",
             "minimum": 1
           },
           "username": {
             "type": "string",
             "example": "manager1",
-            "description": "Identifiant du manager"
+            "description": "Identifiant de l'utilisateur"
           },
           "email": {
             "type": "string",
             "example": "manager1@dori.local",
-            "description": "Email du manager"
+            "description": "Email de l'utilisateur"
           },
           "isActive": {
             "type": "boolean",
@@ -15424,7 +15437,7 @@
           "isActive"
         ]
       },
-      "PaginatedSiteManagerResponseDto": {
+      "PaginatedSiteDirectUserResponseDto": {
         "type": "object",
         "properties": {
           "page": {
@@ -15448,10 +15461,10 @@
             "description": "Total de pages"
           },
           "items": {
-            "description": "Liste des managers du site",
+            "description": "Liste des admins et managers directement affectés au site",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/SiteManagerResponseDto"
+              "$ref": "#/components/schemas/SiteDirectUserResponseDto"
             }
           }
         },
@@ -15463,7 +15476,7 @@
           "items"
         ]
       },
-      "AssignManagerResponseDto": {
+      "AssignDirectSiteUserResponseDto": {
         "type": "object",
         "properties": {
           "assigned": {
@@ -15490,7 +15503,7 @@
           "userId"
         ]
       },
-      "AssignManagerDto": {
+      "AssignDirectSiteUserDto": {
         "type": "object",
         "properties": {
           "userId": {
@@ -15504,7 +15517,7 @@
           "userId"
         ]
       },
-      "RemoveManagerResponseDto": {
+      "RemoveDirectSiteUserResponseDto": {
         "type": "object",
         "properties": {
           "siteId": {

@@ -26,18 +26,18 @@ import { SitesService } from './sites.service';
 import { CreateSiteDto } from './dto/create-site.dto';
 import {
   UpdateSiteDto,
-  AssignManagerDto,
+  AssignDirectSiteUserDto,
+  DirectSiteUserFilterDto,
   SiteFilterDto,
 } from './dto/update-site.dto';
 import {
   SiteResponseDto,
   PaginatedSiteResponseDto,
   DeleteSiteResponseDto,
-  PaginatedSiteManagerResponseDto,
-  AssignManagerResponseDto,
-  RemoveManagerResponseDto,
+  PaginatedSiteDirectUserResponseDto,
+  AssignDirectSiteUserResponseDto,
+  RemoveDirectSiteUserResponseDto,
 } from './dto/site-response.dto';
-import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
@@ -128,50 +128,51 @@ export class SitesController {
     return this.sitesService.deleteSite(siteId, user);
   }
 
-  @Get(':siteId/managers')
+  @Get(':siteId/direct-users')
   @RequirePermission('site_view')
   @ApiOperation({
-    summary: "Lister les managers d'un site",
+    summary: 'Lister les utilisateurs directement affectés à un site',
     description:
-      'Retourne la liste paginée des utilisateurs affectés comme managers à ce site.',
+      'Retourne uniquement les admins et managers directement affectés à ce site.',
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
   @ApiDoriOkResponse(
-    PaginatedSiteManagerResponseDto,
-    'Liste paginée des managers du site',
+    PaginatedSiteDirectUserResponseDto,
+    'Liste paginée des utilisateurs directs du site',
   )
-  async getManagers(
+  async getDirectUsers(
     @Param('siteId', ParseIntPipe) siteId: number,
-    @Query() pagination: PaginationDto,
+    @Query() pagination: DirectSiteUserFilterDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.sitesService.findSiteManagers(siteId, pagination, user);
+    return this.sitesService.findDirectSiteUsers(siteId, pagination, user);
   }
 
-  @Post(':siteId/managers')
+  @Post(':siteId/direct-users')
   @RequirePermission('user_site_assign')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Affecter un manager au site',
-    description: 'Associe un utilisateur au périmètre de gestion de ce site.',
+    summary: 'Affecter directement un utilisateur au site',
+    description:
+      'Associe au site un utilisateur actif ayant le rôle admin ou manager.',
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
   @ApiDoriCreatedResponse(
-    AssignManagerResponseDto,
-    'Manager affecté avec succès',
+    AssignDirectSiteUserResponseDto,
+    'Utilisateur directement affecté avec succès',
   )
-  async assignManager(
+  async assignDirectUser(
     @Param('siteId', ParseIntPipe) siteId: number,
-    @Body() body: AssignManagerDto,
+    @Body() body: AssignDirectSiteUserDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.sitesService.assignManager(siteId, body.userId, user);
+    return this.sitesService.assignDirectSiteUser(siteId, body.userId, user);
   }
 
-  @Delete(':siteId/managers/:userId')
+  @Delete(':siteId/direct-users/:userId')
   @RequirePermission('user_site_assign')
   @ApiOperation({
-    summary: 'Retirer un manager du site',
+    summary: 'Retirer un utilisateur directement affecté au site',
     description: "Supprime l'association d'un utilisateur au site.",
   })
   @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
@@ -180,12 +181,15 @@ export class SitesController {
     type: Number,
     description: "ID de l'utilisateur à retirer",
   })
-  @ApiDoriOkResponse(RemoveManagerResponseDto, 'Manager retiré avec succès')
-  async removeManager(
+  @ApiDoriOkResponse(
+    RemoveDirectSiteUserResponseDto,
+    'Utilisateur retiré du site avec succès',
+  )
+  async removeDirectUser(
     @Param('siteId', ParseIntPipe) siteId: number,
     @Param('userId', ParseIntPipe) userId: number,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.sitesService.removeManager(siteId, userId, user);
+    return this.sitesService.removeDirectSiteUser(siteId, userId, user);
   }
 }

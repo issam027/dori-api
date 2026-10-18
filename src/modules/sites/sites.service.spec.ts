@@ -7,13 +7,14 @@ import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interf
 import { DoriException } from '../../core/errors/dori.exception';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
 
-describe('SitesService — SEC-04 assignSiteManager', () => {
+describe('SitesService — direct site users', () => {
   let service: SitesService;
   let sitesRepositoryMock: {
     findUserStatus: jest.Mock;
-    hasActiveManagerRole: jest.Mock;
-    assignManager: jest.Mock;
-    findManagers: jest.Mock;
+    hasActiveDirectSiteRole: jest.Mock;
+    assignDirectSiteUser: jest.Mock;
+    findDirectSiteUsers: jest.Mock;
+    removeDirectSiteUser: jest.Mock;
   };
   let scopeServiceMock: {
     checkSiteAccess: jest.Mock;
@@ -31,9 +32,10 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
   beforeEach(async () => {
     sitesRepositoryMock = {
       findUserStatus: jest.fn(),
-      hasActiveManagerRole: jest.fn(),
-      assignManager: jest.fn(),
-      findManagers: jest.fn(),
+      hasActiveDirectSiteRole: jest.fn(),
+      assignDirectSiteUser: jest.fn(),
+      findDirectSiteUsers: jest.fn(),
+      removeDirectSiteUser: jest.fn(),
     };
 
     scopeServiceMock = {
@@ -67,9 +69,9 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
   it('should throw USER_NOT_FOUND when target user does not exist in dori_user', async () => {
     sitesRepositoryMock.findUserStatus.mockResolvedValue(null);
 
-    await expect(service.assignSiteManager(10, 999, adminUser)).rejects.toThrow(
-      new DoriException('USER_NOT_FOUND', { userId: 999 }),
-    );
+    await expect(
+      service.assignDirectSiteUser(10, 999, adminUser),
+    ).rejects.toThrow(new DoriException('USER_NOT_FOUND', { userId: 999 }));
   });
 
   it('should throw ACCOUNT_LOCKED when target user is inactive', async () => {
@@ -78,39 +80,39 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
       is_active: false,
     });
 
-    await expect(service.assignSiteManager(10, 2, adminUser)).rejects.toThrow(
-      new DoriException('ACCOUNT_LOCKED', { userId: 2 }),
-    );
+    await expect(
+      service.assignDirectSiteUser(10, 2, adminUser),
+    ).rejects.toThrow(new DoriException('ACCOUNT_LOCKED', { userId: 2 }));
   });
 
-  it('should throw FORBIDDEN_ROLE_ESCALATION when target user does not have manager role', async () => {
+  it('rejects users without an admin or manager role', async () => {
     sitesRepositoryMock.findUserStatus.mockResolvedValue({
       user_id: 2,
       is_active: true,
     });
-    sitesRepositoryMock.hasActiveManagerRole.mockResolvedValue(false);
+    sitesRepositoryMock.hasActiveDirectSiteRole.mockResolvedValue(false);
 
-    await expect(service.assignSiteManager(10, 2, adminUser)).rejects.toThrow(
-      new DoriException('FORBIDDEN_ROLE_ESCALATION'),
-    );
+    await expect(
+      service.assignDirectSiteUser(10, 2, adminUser),
+    ).rejects.toThrow(new DoriException('FORBIDDEN_ROLE_ESCALATION'));
   });
 
-  it('should assign site manager successfully when user exists, is active and has manager role', async () => {
+  it('assigns an active admin or manager directly to the site', async () => {
     sitesRepositoryMock.findUserStatus.mockResolvedValue({
       user_id: 2,
       is_active: true,
     });
-    sitesRepositoryMock.hasActiveManagerRole.mockResolvedValue(true);
-    sitesRepositoryMock.assignManager.mockResolvedValue(undefined);
+    sitesRepositoryMock.hasActiveDirectSiteRole.mockResolvedValue(true);
+    sitesRepositoryMock.assignDirectSiteUser.mockResolvedValue(undefined);
 
-    const result = await service.assignSiteManager(10, 2, adminUser);
+    const result = await service.assignDirectSiteUser(10, 2, adminUser);
     expect(result).toEqual({ siteId: 10, userId: 2, assigned: true });
     expect(scopeServiceMock.invalidateUserScope).toHaveBeenCalledWith(2);
   });
 
-  describe('VAL-02 — findSiteManagers and getSiteManagers pagination', () => {
-    it('should return paginated managers with correctly mapped properties', async () => {
-      sitesRepositoryMock.findManagers.mockResolvedValue({
+  describe('VAL-02 — findDirectSiteUsers pagination', () => {
+    it('returns paginated admins and managers with mapped properties', async () => {
+      sitesRepositoryMock.findDirectSiteUsers.mockResolvedValue({
         total: 2,
         items: [
           {
@@ -136,7 +138,11 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
       pagination.page = 1;
       pagination.pageSize = 10;
 
-      const result = await service.findSiteManagers(1, pagination, adminUser);
+      const result = await service.findDirectSiteUsers(
+        1,
+        pagination,
+        adminUser,
+      );
 
       expect(result.page).toBe(1);
       expect(result.pageSize).toBe(10);
@@ -161,8 +167,8 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
       ]);
     });
 
-    it('getSiteManagers should delegate to findSiteManagers with pagination support', async () => {
-      sitesRepositoryMock.findManagers.mockResolvedValue({
+    it('returns paginated direct site users', async () => {
+      sitesRepositoryMock.findDirectSiteUsers.mockResolvedValue({
         total: 1,
         items: [
           {
@@ -180,7 +186,7 @@ describe('SitesService — SEC-04 assignSiteManager', () => {
       pagination.page = 2;
       pagination.pageSize = 5;
 
-      const res = await service.getSiteManagers(1, pagination, adminUser);
+      const res = await service.findDirectSiteUsers(1, pagination, adminUser);
       expect(res.page).toBe(2);
       expect(res.pageSize).toBe(5);
       expect(res.total).toBe(1);

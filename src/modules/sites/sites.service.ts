@@ -2,17 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ClockService } from '../../core/clock/clock.service';
 import { DoriException } from '../../core/errors/dori.exception';
-import {
-  PaginatedResult,
-  PaginationDto,
-} from '../../core/pagination/pagination.dto';
+import { PaginatedResult } from '../../core/pagination/pagination.dto';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { CreateSiteDto } from './dto/create-site.dto';
 import {
   SiteResponseDto,
-  SiteManagerResponseDto,
+  SiteDirectUserResponseDto,
 } from './dto/site-response.dto';
-import { SiteFilterDto, UpdateSiteDto } from './dto/update-site.dto';
+import {
+  DirectSiteUserFilterDto,
+  SiteFilterDto,
+  UpdateSiteDto,
+} from './dto/update-site.dto';
 import { SitesRepository } from './sites.repository';
 
 @Injectable()
@@ -90,41 +91,29 @@ export class SitesService {
     return { siteId, deleted: true };
   }
 
-  async findSiteManagers(
+  async findDirectSiteUsers(
     siteId: number,
-    pagination: PaginationDto,
+    pagination: DirectSiteUserFilterDto,
     user: AuthenticatedUser,
-  ): Promise<PaginatedResult<SiteManagerResponseDto>> {
+  ): Promise<PaginatedResult<SiteDirectUserResponseDto>> {
     await this.scopeService.checkSiteAccess(user, siteId);
     const { pageSize, offset, sortOrder } = pagination.getParams();
     const sortField = pagination.getSafeSortField(
       ['u.user_id', 'u.username', 'u.email', 'us.assigned_at'],
       'us.assigned_at',
     );
-    const { items, total } = await this.sitesRepository.findManagers(
+    const { items, total } = await this.sitesRepository.findDirectSiteUsers(
       siteId,
       sortField,
       sortOrder,
       pageSize,
       offset,
+      pagination.role,
     );
     return pagination.createResponse(items, total);
   }
 
-  getSiteManagers(
-    siteId: number,
-    paginationOrUser?: PaginationDto | AuthenticatedUser,
-    maybeUser?: AuthenticatedUser,
-  ): Promise<PaginatedResult<SiteManagerResponseDto>> {
-    const isUser = paginationOrUser && 'userId' in paginationOrUser;
-    return this.findSiteManagers(
-      siteId,
-      isUser ? new PaginationDto() : paginationOrUser || new PaginationDto(),
-      (isUser ? paginationOrUser : maybeUser) as AuthenticatedUser,
-    );
-  }
-
-  async assignSiteManager(
+  async assignDirectSiteUser(
     siteId: number,
     targetUserId: number,
     user: AuthenticatedUser,
@@ -137,10 +126,10 @@ export class SitesService {
     if (!target.is_active) {
       throw new DoriException('ACCOUNT_LOCKED', { userId: targetUserId });
     }
-    if (!(await this.sitesRepository.hasActiveManagerRole(targetUserId))) {
+    if (!(await this.sitesRepository.hasActiveDirectSiteRole(targetUserId))) {
       throw new DoriException('FORBIDDEN_ROLE_ESCALATION');
     }
-    await this.sitesRepository.assignManager(
+    await this.sitesRepository.assignDirectSiteUser(
       siteId,
       targetUserId,
       user.userId,
@@ -150,22 +139,14 @@ export class SitesService {
     return { siteId, userId: targetUserId, assigned: true };
   }
 
-  assignManager(siteId: number, targetUserId: number, user: AuthenticatedUser) {
-    return this.assignSiteManager(siteId, targetUserId, user);
-  }
-
-  async removeSiteManager(
+  async removeDirectSiteUser(
     siteId: number,
     targetUserId: number,
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkSiteAccess(user, siteId);
-    await this.sitesRepository.removeManager(siteId, targetUserId);
+    await this.sitesRepository.removeDirectSiteUser(siteId, targetUserId);
     this.scopeService.invalidateUserScope(targetUserId);
     return { siteId, userId: targetUserId, removed: true };
-  }
-
-  removeManager(siteId: number, targetUserId: number, user: AuthenticatedUser) {
-    return this.removeSiteManager(siteId, targetUserId, user);
   }
 }
