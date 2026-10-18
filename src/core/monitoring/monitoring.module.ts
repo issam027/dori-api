@@ -6,10 +6,11 @@ import { MonitoringRepository } from './monitoring.repository';
 import { MonitoringService } from './monitoring.service';
 import { RequestMetricsInterceptor } from './request-metrics.interceptor';
 import { ReportsModule } from '../../modules/reports/reports.module';
+import { RbacModule } from '../rbac/rbac.module';
 
 @Global()
 @Module({
-  imports: [DatabaseModule, ClockModule, ReportsModule],
+  imports: [DatabaseModule, ClockModule, ReportsModule, RbacModule],
   controllers: [MonitoringController],
   providers: [
     MonitoringRepository,

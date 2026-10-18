@@ -31,6 +31,16 @@ export interface DailyStatsRow {
   avg_service_minutes: string | null;
 }
 
+export interface MonitoringSeriesData {
+  totals: Record<string, unknown>;
+  series: Array<Record<string, unknown>>;
+  byQueue: Array<Record<string, unknown>>;
+  byUser: Array<Record<string, unknown>>;
+  byTier: Array<Record<string, unknown>>;
+  byEntryType: Array<Record<string, unknown>>;
+  byStatus: Array<Record<string, unknown>>;
+}
+
 @Injectable()
 export class ReportsRepository {
   constructor(private readonly dataSource: DataSource) {}
@@ -154,6 +164,140 @@ export class ReportsRepository {
        ORDER BY row_type, group_key NULLS FIRST, period_start NULLS FIRST`,
       [input.queueIds, input.dateFrom, input.dateTo],
     );
+  }
+
+  async getMonitoringSeries(input: {
+    queueIds: number[];
+    userIds?: number[];
+    tierIds?: number[];
+    statuses?: string[];
+    entryTypes?: string[];
+    from: string;
+    to: string;
+    bucket: 'hour' | 'day' | 'week' | 'month';
+    timezone: string;
+  }): Promise<MonitoringSeriesData> {
+    const scopedParams = [
+      input.queueIds,
+      input.from,
+      input.to,
+      input.userIds ?? null,
+      input.tierIds ?? null,
+      input.statuses ?? null,
+      input.entryTypes ?? null,
+    ];
+    const seriesParams = [...scopedParams, input.timezone];
+    const scoped = `WITH scoped AS (
+      SELECT r.* FROM dori_registration r
+      WHERE r.queue_id = ANY($1)
+        AND ($4::int[] IS NULL OR r.served_by_user_id = ANY($4))
+        AND ($5::int[] IS NULL OR r.tier_id = ANY($5))
+        AND ($6::text[] IS NULL OR r.status = ANY($6))
+        AND ($7::text[] IS NULL OR r.entry_type = ANY($7))
+        AND (r.created_at >= $2::timestamptz AND r.created_at < $3::timestamptz
+          OR r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz
+          OR r.closed_at >= $2::timestamptz AND r.closed_at < $3::timestamptz)
+    )`;
+    const metrics = `
+      COUNT(*) FILTER (WHERE r.created_at >= $2::timestamptz AND r.created_at < $3::timestamptz)::int AS registered,
+      COUNT(*) FILTER (WHERE r.status = 'served' AND r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz)::int AS served,
+      COUNT(*) FILTER (WHERE r.status = 'no_show' AND r.closed_at >= $2::timestamptz AND r.closed_at < $3::timestamptz)::int AS no_show,
+      COUNT(*) FILTER (WHERE r.status = 'cancelled' AND r.closed_at >= $2::timestamptz AND r.closed_at < $3::timestamptz)::int AS cancelled,
+      ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at - COALESCE(r.checked_in_at, r.priority_reference_time)))/60)
+        FILTER (WHERE r.called_at >= $2::timestamptz AND r.called_at < $3::timestamptz
+          AND COALESCE(r.checked_in_at, r.priority_reference_time) IS NOT NULL)::numeric, 2) AS average_wait_minutes,
+      ROUND(AVG(EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60)
+        FILTER (WHERE r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz
+          AND r.called_at IS NOT NULL)::numeric, 2) AS average_service_minutes`;
+    const bucketExpression = `date_trunc('${input.bucket}', event_at AT TIME ZONE $8)`;
+    const [totalsRows, series, byQueue, byUser, byTier, byEntryType, byStatus] =
+      await Promise.all([
+        this.dataSource.query(
+          `${scoped} SELECT ${metrics} FROM scoped r`,
+          scopedParams,
+        ),
+        this.dataSource.query(
+          `${scoped}, events AS (
+            SELECT created_at AS event_at, 'registered' AS event_type, registration_id FROM scoped
+            UNION ALL SELECT served_at, 'served', registration_id FROM scoped WHERE status='served' AND served_at IS NOT NULL
+            UNION ALL SELECT closed_at, 'no_show', registration_id FROM scoped WHERE status='no_show' AND closed_at IS NOT NULL
+            UNION ALL SELECT closed_at, 'cancelled', registration_id FROM scoped WHERE status='cancelled' AND closed_at IS NOT NULL
+          ), periods AS (
+            SELECT generate_series(date_trunc('${input.bucket}', $2::timestamptz AT TIME ZONE $8),
+              date_trunc('${input.bucket}', ($3::timestamptz - interval '1 microsecond') AT TIME ZONE $8),
+              interval '1 ${input.bucket}') AS period_start
+          )
+          SELECT p.period_start,
+            COUNT(e.registration_id) FILTER (WHERE e.event_type='registered')::int AS registered,
+            COUNT(e.registration_id) FILTER (WHERE e.event_type='served')::int AS served,
+            COUNT(e.registration_id) FILTER (WHERE e.event_type='no_show')::int AS no_show,
+            COUNT(e.registration_id) FILTER (WHERE e.event_type='cancelled')::int AS cancelled,
+            m.average_wait_minutes, m.average_service_minutes
+          FROM periods p LEFT JOIN events e ON ${bucketExpression}=p.period_start
+            AND e.event_at >= $2::timestamptz AND e.event_at < $3::timestamptz
+          LEFT JOIN LATERAL (
+            SELECT ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at-COALESCE(r.checked_in_at,r.priority_reference_time)))/60)::numeric,2) AS average_wait_minutes,
+              ROUND(AVG(EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60)::numeric,2) AS average_service_minutes
+            FROM scoped r WHERE date_trunc('${input.bucket}', COALESCE(r.served_at,r.called_at) AT TIME ZONE $8)=p.period_start
+              AND r.called_at IS NOT NULL
+          ) m ON TRUE GROUP BY p.period_start,m.average_wait_minutes,m.average_service_minutes ORDER BY p.period_start`,
+          seriesParams,
+        ),
+        this.dataSource.query(
+          `${scoped} SELECT q.queue_id, q.queue_name, ${metrics} FROM scoped r
+           JOIN dori_queue q ON q.queue_id=r.queue_id GROUP BY q.queue_id,q.queue_name ORDER BY q.queue_id`,
+          scopedParams,
+        ),
+        this.dataSource.query(
+          `${scoped} SELECT u.user_id, COALESCE(u.full_name,u.username) AS display_name,
+           COUNT(*) FILTER (WHERE r.created_at >= $2::timestamptz AND r.created_at < $3::timestamptz)::int AS registered,
+           COUNT(*) FILTER (WHERE r.status='served' AND r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz)::int AS served,
+           COUNT(*) FILTER (WHERE r.status='no_show' AND r.closed_at >= $2::timestamptz AND r.closed_at < $3::timestamptz)::int AS no_show,
+           ROUND(AVG(EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60) FILTER (WHERE r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz AND r.called_at IS NOT NULL)::numeric,2) AS average_service_minutes
+           FROM scoped r JOIN dori_user u ON u.user_id=r.served_by_user_id
+           GROUP BY u.user_id,u.full_name,u.username ORDER BY u.user_id`,
+          scopedParams,
+        ),
+        this.dataSource.query(
+          `${scoped} SELECT t.tier_id,t.tier_code,t.tier_name,
+           COUNT(*) FILTER (WHERE r.created_at >= $2::timestamptz AND r.created_at < $3::timestamptz)::int AS registered,
+           COUNT(*) FILTER (WHERE r.status='served' AND r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz)::int AS served,
+           COUNT(*) FILTER (WHERE r.status='no_show' AND r.closed_at >= $2::timestamptz AND r.closed_at < $3::timestamptz)::int AS no_show,
+           ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at-COALESCE(r.checked_in_at,r.priority_reference_time)))/60) FILTER (WHERE r.called_at >= $2::timestamptz AND r.called_at < $3::timestamptz)::numeric,2) AS average_wait_minutes
+           FROM scoped r JOIN dori_service_tier t ON t.tier_id=r.tier_id
+           GROUP BY t.tier_id,t.tier_code,t.tier_name ORDER BY t.tier_id`,
+          scopedParams,
+        ),
+        this.dataSource.query(
+          `${scoped} SELECT entry_type,COUNT(*)::int AS count FROM scoped
+           WHERE created_at >= $2::timestamptz AND created_at < $3::timestamptz GROUP BY entry_type ORDER BY entry_type`,
+          scopedParams,
+        ),
+        this.dataSource.query(
+          `${scoped} SELECT status,COUNT(*)::int AS count FROM scoped
+           WHERE CASE
+             WHEN status='served' THEN served_at
+             WHEN status IN ('no_show','cancelled','expired') THEN closed_at
+             ELSE created_at
+           END >= $2::timestamptz
+           AND CASE
+             WHEN status='served' THEN served_at
+             WHEN status IN ('no_show','cancelled','expired') THEN closed_at
+             ELSE created_at
+           END < $3::timestamptz
+           GROUP BY status ORDER BY status`,
+          scopedParams,
+        ),
+      ]);
+    return {
+      totals: totalsRows[0] ?? {},
+      series,
+      byQueue,
+      byUser,
+      byTier,
+      byEntryType,
+      byStatus,
+    };
   }
 
   async getDailyStats(queueId: number, date: string): Promise<DailyStatsRow> {

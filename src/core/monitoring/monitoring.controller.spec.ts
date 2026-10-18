@@ -44,11 +44,11 @@ describe('MonitoringController series & DTO Validation (VAL-03)', () => {
   });
 
   describe('ReportSeriesQueryDto validation', () => {
-    it('validates a date range and exactly one scope', async () => {
+    it('validates an explicit timestamp range and scope', async () => {
       const dto = plainToInstance(ReportSeriesQueryDto, {
         queueIds: '1',
-        dateFrom: '2026-09-01',
-        dateTo: '2026-09-29',
+        from: '2026-09-01T00:00:00Z',
+        to: '2026-09-29T00:00:00Z',
       });
       const errors = await validate(dto);
       expect(errors.length).toBe(0);
@@ -60,15 +60,15 @@ describe('MonitoringController series & DTO Validation (VAL-03)', () => {
       expect(errors.length).toBeGreaterThan(0);
     });
 
-    it('fails when multiple scopes are supplied', async () => {
+    it('accepts a site narrowed to selected queues', async () => {
       const dto = plainToInstance(ReportSeriesQueryDto, {
         queueIds: '1',
         siteId: 2,
-        dateFrom: '2026-09-01',
-        dateTo: '2026-09-02',
+        from: '2026-09-01T00:00:00Z',
+        to: '2026-09-02T00:00:00Z',
       });
       const errors = await validate(dto);
-      expect(errors.length).toBeGreaterThan(0);
+      expect(errors.length).toBe(0);
     });
   });
 
@@ -76,8 +76,8 @@ describe('MonitoringController series & DTO Validation (VAL-03)', () => {
     it('series forwards the complete query and user', async () => {
       const query = plainToInstance(ReportSeriesQueryDto, {
         queueIds: '42',
-        dateFrom: '2026-09-01',
-        dateTo: '2026-09-29',
+        from: '2026-09-01T00:00:00Z',
+        to: '2026-09-29T00:00:00Z',
       });
       const res = await controller.series(query, testUser);
       expect(serviceMock.getSeries).toHaveBeenCalledWith(query, testUser);

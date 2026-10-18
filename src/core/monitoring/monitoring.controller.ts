@@ -12,6 +12,7 @@ import {
   MonitoringActivityResponseDto,
   MonitoringHealthResponseDto,
   MonitoringMetricsResponseDto,
+  MonitoringLiveResponseDto,
 } from './dto/monitoring-response.dto';
 import { MonitoringService } from './monitoring.service';
 import { ReportsService } from '../../modules/reports/reports.service';
@@ -19,6 +20,7 @@ import { ReportSeriesQueryDto } from '../../modules/reports/dto/report-query.dto
 import { ReportSeriesResponseDto } from '../../modules/reports/dto/report-response.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
+import { MonitoringLiveQueryDto } from './dto/monitoring-live-query.dto';
 
 @ApiTags('Monitoring')
 @Controller('api/v1/monitoring')
@@ -63,10 +65,33 @@ export class MonitoringController {
   @Get('activity')
   @ApiBearerAuth('bearer')
   @RequirePermission('system_manage')
-  @ApiOperation({ summary: 'Instantané de l’activité opérationnelle' })
-  @ApiDoriOkResponse(MonitoringActivityResponseDto, 'Activité opérationnelle')
+  @ApiOperation({
+    summary: "Vue globale d'exploitation de la plateforme",
+    description:
+      'Réservée à l’exploitation système : notifications en attente ou en traitement, échecs des dernières 24 heures, sessions opérateur ouvertes et inscriptions non terminées. Ne remplace ni la supervision par site ni les rapports.',
+  })
+  @ApiDoriOkResponse(
+    MonitoringActivityResponseDto,
+    "État global d'exploitation",
+  )
   activity() {
     return this.monitoringService.activity();
+  }
+
+  @Get('live')
+  @ApiBearerAuth('bearer')
+  @RequirePermission('queue_view')
+  @ApiOperation({
+    summary: "État opérationnel actuel d'un site",
+    description:
+      'Retourne les files, volumes courants, guichets et opérateurs actifs sans historique ni données personnelles.',
+  })
+  @ApiDoriOkResponse(MonitoringLiveResponseDto, 'Supervision opérationnelle')
+  live(
+    @Query() query: MonitoringLiveQueryDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.monitoringService.live(query.siteId, user);
   }
 
   @Get('series')
@@ -75,7 +100,7 @@ export class MonitoringController {
   @ApiOperation({
     summary: 'Série d’activité sur une période',
     description:
-      'Agrège une file, plusieurs files ou un site par jour, semaine ou mois.',
+      'Agrège en un appel les volumes, durées et ventilations par file, utilisateur, forfait, statut et type d’entrée. registered est attribué à createdAt ; served à servedAt ; noShow et cancelled à closedAt. Les durées incomplètes sont exclues des moyennes.',
   })
   @ApiDoriOkResponse(ReportSeriesResponseDto, 'Série et synthèse d’activité')
   series(

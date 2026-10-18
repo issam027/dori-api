@@ -1,61 +1,90 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class ReportVolumeDto {
+export class MonitoringSeriesMetricsDto {
+  @ApiProperty({ example: 120 }) registered: number;
+  @ApiProperty({ example: 92 }) served: number;
+  @ApiProperty({ example: 5 }) noShow: number;
+  @ApiProperty({ example: 8 }) cancelled: number;
+  @ApiProperty({ example: 12.4, nullable: true })
+  averageWaitMinutes: number | null;
+  @ApiProperty({ example: 7.8, nullable: true })
+  averageServiceMinutes: number | null;
+}
+
+export class MonitoringSeriesBucketDto extends MonitoringSeriesMetricsDto {
+  @ApiProperty({ format: 'date-time' }) periodStart: string;
+}
+
+export class MonitoringQueueBreakdownDto extends MonitoringSeriesMetricsDto {
+  @ApiProperty() queueId: number;
+  @ApiProperty() queueName: string;
+}
+
+export class MonitoringUserBreakdownDto {
+  @ApiProperty() userId: number;
+  @ApiProperty() displayName: string;
   @ApiProperty() registered: number;
-  @ApiProperty() walkin: number;
-  @ApiProperty() appointments: number;
   @ApiProperty() served: number;
   @ApiProperty() noShow: number;
-  @ApiProperty() expired: number;
-  @ApiProperty() cancelled: number;
-}
-
-export class ReportTimingDto {
-  @ApiProperty({ nullable: true }) averageWaitMinutes: number | null;
-  @ApiProperty({ nullable: true }) medianWaitMinutes: number | null;
-  @ApiProperty({ nullable: true }) p90WaitMinutes: number | null;
   @ApiProperty({ nullable: true }) averageServiceMinutes: number | null;
-  @ApiProperty({ nullable: true }) medianServiceMinutes: number | null;
-  @ApiProperty({ nullable: true }) p90ServiceMinutes: number | null;
 }
 
-export class ReportRatesDto {
-  @ApiProperty({ nullable: true }) noShowRate: number | null;
-  @ApiProperty({ nullable: true }) cancellationRate: number | null;
-  @ApiProperty({ nullable: true }) expirationRate: number | null;
+export class MonitoringTierBreakdownDto {
+  @ApiProperty() tierId: number;
+  @ApiProperty() tierCode: string;
+  @ApiProperty() tierName: string;
+  @ApiProperty() registered: number;
+  @ApiProperty() served: number;
+  @ApiProperty() noShow: number;
+  @ApiProperty({ nullable: true }) averageWaitMinutes: number | null;
 }
 
-export class ReportMetricsDto {
-  @ApiProperty({ type: ReportVolumeDto }) volume: ReportVolumeDto;
-  @ApiProperty({ type: ReportTimingDto }) timing: ReportTimingDto;
-  @ApiProperty({ type: ReportRatesDto }) rates: ReportRatesDto;
+export class MonitoringCountBreakdownDto {
+  @ApiProperty() entryType: string;
+  @ApiProperty() count: number;
 }
 
-export class ReportBucketDto extends ReportMetricsDto {
-  @ApiProperty({ format: 'date' }) periodStart: string;
-  @ApiProperty({ format: 'date' }) periodEnd: string;
+export class MonitoringStatusBreakdownDto {
+  @ApiProperty() status: string;
+  @ApiProperty() count: number;
 }
 
-export class ReportPeriodDto {
-  @ApiProperty({ format: 'date' }) dateFrom: string;
-  @ApiProperty({ format: 'date' }) dateTo: string;
-  @ApiProperty({ enum: ['day', 'week', 'month'] }) granularity: string;
+export class MonitoringSeriesBreakdownsDto {
+  @ApiProperty({ type: [MonitoringQueueBreakdownDto] })
+  byQueue: MonitoringQueueBreakdownDto[];
+  @ApiProperty({ type: [MonitoringUserBreakdownDto] })
+  byUser: MonitoringUserBreakdownDto[];
+  @ApiProperty({ type: [MonitoringTierBreakdownDto] })
+  byTier: MonitoringTierBreakdownDto[];
+  @ApiProperty({ type: [MonitoringCountBreakdownDto] })
+  byEntryType: MonitoringCountBreakdownDto[];
+  @ApiProperty({ type: [MonitoringStatusBreakdownDto] })
+  byStatus: MonitoringStatusBreakdownDto[];
 }
 
-export class ReportGroupDto extends ReportMetricsDto {
-  @ApiProperty({ type: 'object' }) dimension: Record<string, unknown>;
-  @ApiProperty({ type: [ReportBucketDto] }) buckets: ReportBucketDto[];
-  @ApiProperty({ nullable: true }) timezone: string | null;
+export class MonitoringAppliedFiltersDto {
+  @ApiProperty({ format: 'date-time' }) from: string;
+  @ApiProperty({ format: 'date-time' }) to: string;
+  @ApiProperty({ enum: ['hour', 'day', 'week', 'month'] }) bucket: string;
+  @ApiProperty({ required: false }) siteId?: number;
+  @ApiProperty({ type: [Number], required: false }) queueIds?: number[];
+  @ApiProperty({ type: [Number], required: false }) userIds?: number[];
+  @ApiProperty({ type: [Number], required: false }) tierIds?: number[];
+  @ApiProperty({ type: [String], required: false }) statuses?: string[];
+  @ApiProperty({ type: [String], required: false }) entryTypes?: string[];
 }
 
 export class ReportSeriesResponseDto {
-  @ApiProperty({ type: 'object' }) scope: Record<string, unknown>;
-  @ApiProperty({ nullable: true }) timezone: string | null;
-  @ApiProperty({ type: ReportPeriodDto }) period: ReportPeriodDto;
-  @ApiProperty({ type: ReportMetricsDto }) summary: ReportMetricsDto;
-  @ApiProperty({ type: [ReportBucketDto] }) buckets: ReportBucketDto[];
-  @ApiProperty({ type: [ReportGroupDto], required: false })
-  groups?: ReportGroupDto[];
+  @ApiProperty({ format: 'date-time' }) generatedAt: string;
+  @ApiProperty({ example: 'Europe/Berlin' }) timezone: string;
+  @ApiProperty({ type: MonitoringAppliedFiltersDto })
+  appliedFilters: MonitoringAppliedFiltersDto;
+  @ApiProperty({ type: MonitoringSeriesMetricsDto })
+  totals: MonitoringSeriesMetricsDto;
+  @ApiProperty({ type: [MonitoringSeriesBucketDto] })
+  series: MonitoringSeriesBucketDto[];
+  @ApiProperty({ type: MonitoringSeriesBreakdownsDto })
+  breakdowns: MonitoringSeriesBreakdownsDto;
 }
 
 export class DailyQueueVolumeItemDto {

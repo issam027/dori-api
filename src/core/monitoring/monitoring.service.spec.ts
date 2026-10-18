@@ -13,13 +13,46 @@ describe('MonitoringService', () => {
         openOperatorSessions: 4,
         registrations: { waiting: 5 },
       }),
+      liveSnapshot: jest.fn().mockResolvedValue({
+        site: { site_id: 1, timezone: 'Europe/Paris' },
+        queues: [
+          {
+            queue_id: 10,
+            queue_name: 'Accueil',
+            waiting: 12,
+            in_progress: 2,
+            open_desks: 2,
+            active_operators: 2,
+            estimated_wait_minutes: 8,
+            longest_wait_minutes: 35,
+          },
+        ],
+        operators: [
+          {
+            user_id: 7,
+            display_name: 'Opérateur',
+            queue_id: 10,
+            session_id: 20,
+            connected_at: now,
+            registration_id: 30,
+            ticket_number: 'A-001',
+          },
+        ],
+      }),
     } as unknown as MonitoringRepository;
     const clock = {
       now: jest.fn().mockReturnValue(now),
     } as unknown as ClockService;
+    const scope = {
+      checkSiteAccess: jest.fn(),
+    };
     return {
-      service: new MonitoringService(repository, clock),
-      repository,
+      service: new MonitoringService(repository, clock, scope as never),
+      repository: repository as unknown as {
+        activitySnapshot: jest.Mock;
+        liveSnapshot: jest.Mock;
+      },
+      scope,
     };
   }
 
@@ -55,6 +88,27 @@ describe('MonitoringService', () => {
       openOperatorSessions: 4,
       registrations: { waiting: 5 },
       generatedAt: now.toISOString(),
+    });
+  });
+
+  it('returns live queues and hides ticket data without registration_view', async () => {
+    const { service, scope } = createService();
+    const result = await service.live(1, {
+      userId: 7,
+      permissions: ['queue_view'],
+    } as never);
+
+    expect(scope.checkSiteAccess).toHaveBeenCalled();
+    expect(result.totals).toMatchObject({
+      waiting: 12,
+      inProgress: 2,
+      activeOperators: 1,
+      longestWaitMinutes: 35,
+    });
+    expect(result.operators[0]).not.toHaveProperty('currentTicketNumber');
+    expect(result.alerts[0]).toMatchObject({
+      code: 'LONG_WAIT',
+      severity: 'critical',
     });
   });
 });
