@@ -22,8 +22,8 @@ export class UpdateSiteDto extends PartialType(CreateSiteDto) {
 export class SiteFilterDto extends PaginationDto {
   @ApiPropertyOptional({
     type: Boolean,
-    default: true,
-    description: 'Filtrer les sites actifs ou désactivés',
+    description:
+      'Filtrer les sites par statut. Sans ce paramètre, les sites actifs et inactifs sont retournés.',
   })
   @Transform(({ obj, key }) => strictBoolean(obj[key]))
   @IsBoolean()

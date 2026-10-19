@@ -688,9 +688,8 @@
             "name": "isActive",
             "required": false,
             "in": "query",
-            "description": "Filtrer les sites actifs ou désactivés",
+            "description": "Filtrer les sites par statut. Sans ce paramètre, les sites actifs et inactifs sont retournés.",
             "schema": {
-              "default": true,
               "type": "boolean"
             }
           }

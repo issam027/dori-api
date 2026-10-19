@@ -22,18 +22,24 @@ export class SitesRepository {
 
   async findPage(
     siteIds: number[] | null,
-    isActive: boolean,
+    isActive: boolean | undefined,
     sortField: string,
     sortOrder: 'ASC' | 'DESC',
     pageSize: number,
     offset: number,
   ): Promise<{ items: SiteResponseDto[]; total: number }> {
-    let filter = 'WHERE is_active = $1';
-    const params: unknown[] = [isActive];
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+    if (isActive !== undefined) {
+      params.push(isActive);
+      conditions.push(`is_active = $${params.length}`);
+    }
     if (siteIds) {
       params.push(siteIds);
-      filter += ` AND site_id = ANY($${params.length})`;
+      conditions.push(`site_id = ANY($${params.length})`);
     }
+    const filter =
+      conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     const [count] = await this.dataSource.query<CountRow[]>(
       `SELECT COUNT(*)::int AS total FROM dori_site ${filter}`,
       params,

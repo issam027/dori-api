@@ -39,7 +39,7 @@ export class SitesService {
     );
     const { items, total } = await this.sitesRepository.findPage(
       scope.isGlobal ? null : scope.siteIds,
-      pagination.isActive ?? true,
+      pagination.isActive,
       sortField,
       sortOrder,
       pageSize,

@@ -5,6 +5,16 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
+export type UserSessionRevocationReason =
+  | 'global_logout'
+  | 'logout'
+  | 'force_logout'
+  | 'rotation'
+  | 'account_disabled'
+  | 'account_deleted'
+  | 'password_changed'
+  | 'admin';
+
 @Entity('dori_user_session')
 export class DoriUserSession {
   @PrimaryGeneratedColumn()
@@ -26,13 +36,7 @@ export class DoriUserSession {
   revoked_at: Date | null;
 
   @Column({ type: 'varchar', length: 30, nullable: true })
-  revoked_reason:
-    | 'logout'
-    | 'rotation'
-    | 'account_disabled'
-    | 'password_changed'
-    | 'admin'
-    | null;
+  revoked_reason: UserSessionRevocationReason | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   user_agent: string | null;

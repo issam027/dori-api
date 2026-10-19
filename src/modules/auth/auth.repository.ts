@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { UserSessionRevocationReason } from './entities/user-session.entity';
 
 export interface AuthUserRow {
   user_id: number;
@@ -156,7 +157,11 @@ export class AuthRepository {
     });
   }
 
-  revokeAllSessions(userId: number, now: Date, reason: string) {
+  revokeAllSessions(
+    userId: number,
+    now: Date,
+    reason: UserSessionRevocationReason,
+  ) {
     return this.dataSource.query(
       `UPDATE dori_user_session
        SET revoked_at = $1, revoked_reason = $2
@@ -165,7 +170,11 @@ export class AuthRepository {
     );
   }
 
-  revokeSession(sessionId: string, now: Date, reason: string) {
+  revokeSession(
+    sessionId: string,
+    now: Date,
+    reason: UserSessionRevocationReason,
+  ) {
     return this.dataSource.query(
       `UPDATE dori_user_session
        SET revoked_at = $1, revoked_reason = $2
