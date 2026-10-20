@@ -41,4 +41,54 @@ describe('PersonsRepository active note count', () => {
     expect(query.mock.calls[0][0]).toContain('COUNT(*)::int');
     expect(result?.active_note_count).toBe(2);
   });
+
+  it('returns active and inactive persons when isActive is omitted', async () => {
+    const query = jest
+      .fn()
+      .mockResolvedValueOnce([{ total: 2 }])
+      .mockResolvedValueOnce([
+        { person_id: 5, is_active: true },
+        { person_id: 6, is_active: false },
+      ]);
+    const repository = new PersonsRepository({
+      query,
+    } as unknown as DataSource);
+
+    const result = await repository.findPersons({
+      siteId: 14,
+      search: '33233232311',
+      sortField: 'last_name',
+      sortOrder: 'ASC',
+      pageSize: 10,
+      offset: 0,
+    });
+
+    expect(result.total).toBe(2);
+    expect(query.mock.calls[0][0]).not.toContain('p.is_active =');
+    expect(query.mock.calls[0][1]).toEqual([14, '%33233232311%']);
+    expect(query.mock.calls[1][1]).toEqual([14, '%33233232311%', 10, 0]);
+  });
+
+  it('still filters persons when isActive is explicit', async () => {
+    const query = jest
+      .fn()
+      .mockResolvedValueOnce([{ total: 1 }])
+      .mockResolvedValueOnce([{ person_id: 6, is_active: false }]);
+    const repository = new PersonsRepository({
+      query,
+    } as unknown as DataSource);
+
+    await repository.findPersons({
+      siteId: 14,
+      isActive: false,
+      search: 'Test',
+      sortField: 'last_name',
+      sortOrder: 'ASC',
+      pageSize: 10,
+      offset: 0,
+    });
+
+    expect(query.mock.calls[0][0]).toContain('p.is_active = $2');
+    expect(query.mock.calls[0][1]).toEqual([14, false, '%Test%']);
+  });
 });

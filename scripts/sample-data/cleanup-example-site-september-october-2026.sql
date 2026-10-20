@@ -1,0 +1,24 @@
+-- Nettoyage cible : ne touche ni aux tiers/roles systeme, ni aux autres sites.
+BEGIN;
+CREATE TEMP TABLE demo_site ON COMMIT DROP AS SELECT site_id FROM dori_site WHERE site_name='DEMO - Centre Horizon';
+CREATE TEMP TABLE demo_queues ON COMMIT DROP AS SELECT queue_id FROM dori_queue WHERE site_id IN(SELECT site_id FROM demo_site);
+CREATE TEMP TABLE demo_regs ON COMMIT DROP AS SELECT registration_id FROM dori_registration WHERE queue_id IN(SELECT queue_id FROM demo_queues);
+CREATE TEMP TABLE demo_users ON COMMIT DROP AS SELECT user_id FROM dori_user WHERE username LIKE 'demo_horizon_%';
+DELETE FROM dori_notification WHERE registration_id IN(SELECT registration_id FROM demo_regs);
+DELETE FROM dori_registration WHERE registration_id IN(SELECT registration_id FROM demo_regs);
+DELETE FROM dori_queue_estimation_stats WHERE queue_id IN(SELECT queue_id FROM demo_queues);
+DELETE FROM dori_queue_daily_reset_execution WHERE queue_id IN(SELECT queue_id FROM demo_queues);
+DELETE FROM dori_queue_daily_ticket_counter WHERE queue_id IN(SELECT queue_id FROM demo_queues);
+DELETE FROM dori_operator_session WHERE queue_id IN(SELECT queue_id FROM demo_queues);
+DELETE FROM dori_queue_tier_notification_rule WHERE queue_id IN(SELECT queue_id FROM demo_queues);
+DELETE FROM dori_queue_service_tier WHERE queue_id IN(SELECT queue_id FROM demo_queues);
+DELETE FROM dori_user_queue_assignment WHERE queue_id IN(SELECT queue_id FROM demo_queues);
+DELETE FROM dori_person_note WHERE person_id IN(SELECT person_id FROM dori_person WHERE site_id IN(SELECT site_id FROM demo_site));
+DELETE FROM dori_person WHERE site_id IN(SELECT site_id FROM demo_site);
+DELETE FROM dori_queue WHERE queue_id IN(SELECT queue_id FROM demo_queues);
+DELETE FROM dori_user_site_assignment WHERE site_id IN(SELECT site_id FROM demo_site) OR user_id IN(SELECT user_id FROM demo_users);
+DELETE FROM dori_site WHERE site_id IN(SELECT site_id FROM demo_site);
+DELETE FROM dori_user_session WHERE user_id IN(SELECT user_id FROM demo_users);
+DELETE FROM dori_user_role WHERE user_id IN(SELECT user_id FROM demo_users);
+DELETE FROM dori_user WHERE user_id IN(SELECT user_id FROM demo_users);
+COMMIT;

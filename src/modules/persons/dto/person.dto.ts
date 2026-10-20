@@ -81,7 +81,11 @@ export class UpdatePersonDto extends PartialType(PersonIdentityDto) {
 }
 
 export class PersonFilterDto extends PaginationDto {
-  @ApiPropertyOptional({ type: Boolean, default: true })
+  @ApiPropertyOptional({
+    type: Boolean,
+    description:
+      'Filtre optionnel : true pour les personnes actives, false pour les personnes inactives. Sans valeur, retourne les deux.',
+  })
   @Transform(({ obj, key }) => strictBoolean(obj[key]))
   @IsBoolean()
   @IsOptional()

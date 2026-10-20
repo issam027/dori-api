@@ -576,3 +576,31 @@ La migration est livrée mais n'est pas appliquée automatiquement à une base p
 <!-- CHECKPOINT id="ckpt_mvgemqi1_lrqg6e" time="2026-10-20T08:11:36.746Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 <!-- CHECKPOINT id="ckpt_mvgezlh9_msktu1" time="2026-10-20T08:21:36.765Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvgfcgfs_cdiq9y" time="2026-10-20T08:31:36.760Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvgfpbf3_3xrwv4" time="2026-10-20T08:41:36.783Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvgg26du_0231hj" time="2026-10-20T08:51:36.786Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvggf1ct_ti9hfp" time="2026-10-20T09:01:36.797Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvggzf4j_lv2xzi" time="2026-10-20T09:17:27.763Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvgii08p_9r7uor" time="2026-10-20T09:59:54.553Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvgjffkz_4yoatp" time="2026-10-20T10:25:54.083Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvgk6bj1_ylhkh1" time="2026-10-20T10:46:48.541Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvgkj6hp_t8xikb" time="2026-10-20T10:56:48.541Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvgkw1gl_v9jep2" time="2026-10-20T11:06:48.549Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvgl8wfm_fdao0a" time="2026-10-20T11:16:48.562Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvgllrei_dmo4qc" time="2026-10-20T11:26:48.570Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvglymd5_5p2b41" time="2026-10-20T11:36:48.569Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvgmbhez_7feqh2" time="2026-10-20T11:46:48.683Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

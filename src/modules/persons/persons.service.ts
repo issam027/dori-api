@@ -66,7 +66,7 @@ export class PersonsService {
 
     const result = await this.personsRepository.findPersons({
       siteId: filter.siteId,
-      isActive: filter.isActive ?? true,
+      isActive: filter.isActive,
       search: filter.search,
       sortField: safeSortField,
       sortOrder,

@@ -2619,8 +2619,9 @@ paths:
           - registration_view
       summary: Lister les personnes / clients
       description: >-
-        Recherche paginée de personnes par nom, téléphone ou email. Sans isActive, seules les ressources actives sont
-        retournées ; isActive=false permet aux administrateurs de retrouver les ressources désactivées.
+        Recherche paginée de personnes par nom, téléphone ou email. Sans isActive, retourne les personnes actives et
+        inactives. Sans isActive, les personnes actives et inactives sont retournées. isActive=true ou isActive=false
+        filtre explicitement selon le statut.
       parameters:
         - name: page
           required: false
@@ -2663,10 +2664,11 @@ paths:
         - name: isActive
           required: false
           in: query
+          description: >-
+            Filtre optionnel : true pour les personnes actives, false pour les personnes inactives. Sans valeur,
+            retourne les deux.
           schema:
-            default: true
             type: boolean
-          description: true retourne les ressources actives, false les ressources désactivées.
         - name: siteId
           required: true
           in: query

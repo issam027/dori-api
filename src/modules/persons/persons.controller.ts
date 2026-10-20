@@ -53,7 +53,8 @@ export class PersonsController {
   @RequirePermission('registration_view')
   @ApiOperation({
     summary: 'Lister les personnes / clients',
-    description: 'Recherche paginée de personnes par nom, téléphone ou email.',
+    description:
+      'Recherche paginée de personnes par nom, téléphone ou email. Sans isActive, retourne les personnes actives et inactives.',
   })
   @ApiDoriOkResponse(PaginatedPersonResponseDto, 'Liste des personnes')
   async findPersons(

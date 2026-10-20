@@ -109,6 +109,8 @@ export function normalizeOpenApiDocument(
       ' Exactement un périmètre doit être fourni : queueIds ou siteId. La période est inclusive, ordonnée et limitée à 366 jours.',
     RegistrationsController_findRegistrations:
       ' dateFrom et dateTo doivent être fournies ensemble. Une recherche par période exige queueId ou siteId et couvre au maximum 366 jours.',
+    PersonsController_findPersons:
+      ' Sans isActive, les personnes actives et inactives sont retournées. isActive=true ou isActive=false filtre explicitement selon le statut.',
     NotificationsController_findNotifications:
       ' dateFrom et dateTo doivent être fournies ensemble et couvrent au maximum 366 jours.',
     RegistrationsController_getAvailability:
@@ -118,7 +120,6 @@ export function normalizeOpenApiDocument(
     'SitesController_findSites',
     'QueuesController_findAll',
     'RegistrationsController_findRegistrations',
-    'PersonsController_findPersons',
     'PersonsController_getNotes',
     'UsersController_findUsers',
     'TranslationsController_getBundle',

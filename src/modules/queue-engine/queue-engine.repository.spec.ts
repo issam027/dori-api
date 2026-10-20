@@ -155,6 +155,34 @@ describe('QueueEngineRepository', () => {
     expect(query.mock.calls[1][1][2]).toEqual([2]);
   });
 
+  it('does not restrict next preview to one candidate per queue', async () => {
+    const query = jest.fn().mockResolvedValue([
+      { registration_id: 1, queue_id: 2 },
+      { registration_id: 2, queue_id: 2 },
+      { registration_id: 3, queue_id: 3 },
+      { registration_id: 4, queue_id: 2 },
+      { registration_id: 5, queue_id: 3 },
+    ]);
+    const repository = new QueueEngineRepository({
+      query,
+    } as unknown as DataSource);
+
+    await expect(
+      repository.findPreviewCandidates(
+        [2, 3],
+        new Date('2026-10-20T09:30:00Z'),
+        5,
+      ),
+    ).resolves.toHaveLength(5);
+
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(query.mock.calls[0][0]).not.toContain('PARTITION BY c.queue_id');
+    expect(query.mock.calls[0][0]).toContain(
+      'ORDER BY score DESC, c.registration_id ASC LIMIT $3',
+    );
+    expect(query.mock.calls[0][1][2]).toBe(5);
+  });
+
   it('returns only queues with an active session owned by the user', async () => {
     const query = jest.fn().mockResolvedValue([{ queue_id: 3 }]);
     const repository = new QueueEngineRepository({

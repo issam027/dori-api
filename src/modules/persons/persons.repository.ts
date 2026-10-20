@@ -18,7 +18,7 @@ export type PersonNoteRow = Record<string, unknown> & {
 
 export interface PersonListQuery {
   siteId: number;
-  isActive: boolean;
+  isActive?: boolean;
   search?: string;
   sortField: string;
   sortOrder: 'ASC' | 'DESC';
@@ -56,11 +56,16 @@ export class PersonsRepository {
   async findPersons(
     query: PersonListQuery,
   ): Promise<{ items: PersonRow[]; total: number }> {
-    const params: unknown[] = [query.siteId, query.isActive];
-    let where = `p.site_id = $1 AND p.is_active = $2`;
+    const params: unknown[] = [query.siteId];
+    let where = `p.site_id = $1`;
+    if (query.isActive !== undefined) {
+      params.push(query.isActive);
+      where += ` AND p.is_active = $${params.length}`;
+    }
     if (query.search) {
       params.push(`%${query.search}%`);
-      where += ` AND (p.first_name ILIKE $3 OR p.last_name ILIKE $3 OR p.email ILIKE $3 OR p.phone_number ILIKE $3)`;
+      const searchParameter = `$${params.length}`;
+      where += ` AND (p.first_name ILIKE ${searchParameter} OR p.last_name ILIKE ${searchParameter} OR p.email ILIKE ${searchParameter} OR p.phone_number ILIKE ${searchParameter})`;
     }
     const countRows: Array<{ total: number }> = await this.dataSource.query(
       `SELECT COUNT(DISTINCT p.person_id)::int AS total FROM dori_person p WHERE ${where}`,
