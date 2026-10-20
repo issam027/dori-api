@@ -203,9 +203,9 @@ export class ReportsRepository {
       COUNT(*) FILTER (WHERE r.status = 'served' AND r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz)::int AS served,
       COUNT(*) FILTER (WHERE r.status = 'no_show' AND r.closed_at >= $2::timestamptz AND r.closed_at < $3::timestamptz)::int AS no_show,
       COUNT(*) FILTER (WHERE r.status = 'cancelled' AND r.closed_at >= $2::timestamptz AND r.closed_at < $3::timestamptz)::int AS cancelled,
-      ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at - COALESCE(r.checked_in_at, r.priority_reference_time)))/60)
+      ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at - r.checked_in_at))/60)
         FILTER (WHERE r.called_at >= $2::timestamptz AND r.called_at < $3::timestamptz
-          AND COALESCE(r.checked_in_at, r.priority_reference_time) IS NOT NULL)::numeric, 2) AS average_wait_minutes,
+          AND r.checked_in_at IS NOT NULL)::numeric, 2) AS average_wait_minutes,
       ROUND(AVG(EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60)
         FILTER (WHERE r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz
           AND r.called_at IS NOT NULL)::numeric, 2) AS average_service_minutes`;
@@ -236,7 +236,7 @@ export class ReportsRepository {
           FROM periods p LEFT JOIN events e ON ${bucketExpression}=p.period_start
             AND e.event_at >= $2::timestamptz AND e.event_at < $3::timestamptz
           LEFT JOIN LATERAL (
-            SELECT ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at-COALESCE(r.checked_in_at,r.priority_reference_time)))/60)::numeric,2) AS average_wait_minutes,
+            SELECT ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at-r.checked_in_at))/60)::numeric,2) AS average_wait_minutes,
               ROUND(AVG(EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60)::numeric,2) AS average_service_minutes
             FROM scoped r WHERE date_trunc('${input.bucket}', COALESCE(r.served_at,r.called_at) AT TIME ZONE $8)=p.period_start
               AND r.called_at IS NOT NULL
@@ -263,7 +263,7 @@ export class ReportsRepository {
            COUNT(*) FILTER (WHERE r.created_at >= $2::timestamptz AND r.created_at < $3::timestamptz)::int AS registered,
            COUNT(*) FILTER (WHERE r.status='served' AND r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz)::int AS served,
            COUNT(*) FILTER (WHERE r.status='no_show' AND r.closed_at >= $2::timestamptz AND r.closed_at < $3::timestamptz)::int AS no_show,
-           ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at-COALESCE(r.checked_in_at,r.priority_reference_time)))/60) FILTER (WHERE r.called_at >= $2::timestamptz AND r.called_at < $3::timestamptz)::numeric,2) AS average_wait_minutes
+           ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at-r.checked_in_at))/60) FILTER (WHERE r.called_at >= $2::timestamptz AND r.called_at < $3::timestamptz)::numeric,2) AS average_wait_minutes
            FROM scoped r JOIN dori_service_tier t ON t.tier_id=r.tier_id
            GROUP BY t.tier_id,t.tier_code,t.tier_name ORDER BY t.tier_id`,
           scopedParams,

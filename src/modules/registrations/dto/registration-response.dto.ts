@@ -124,6 +124,11 @@ export class CreateRegistrationResponseDto {
     description: 'Date et heure d’expiration du jeton public de suivi',
   })
   registrationTrackingTokenValidUntil: string;
+  @ApiPropertyOptional({ nullable: true, minimum: 0 })
+  estimatedWaitMinutes?: number | null;
+  @ApiPropertyOptional() estimationMethod?: string;
+  @ApiPropertyOptional() estimationReliable?: boolean;
+  @ApiPropertyOptional({ format: 'date-time' }) estimationCalculatedAt?: string;
 }
 
 export class RescheduleRegistrationResponseDto {
@@ -218,9 +223,26 @@ export class RegistrationPositionResponseDto {
 
   @ApiPropertyOptional({
     example: 25,
+    nullable: true,
     description: "Temps d'attente estimé en minutes",
   })
-  estimatedWaitMinutes?: number;
+  estimatedWaitMinutes?: number | null;
+
+  @ApiPropertyOptional({
+    enum: [
+      'queue_daily_p50',
+      'last_calculated',
+      'theoretical_queue',
+      'unavailable',
+    ],
+  })
+  estimationMethod?: string;
+
+  @ApiPropertyOptional({ example: true })
+  estimationReliable?: boolean;
+
+  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  estimationCalculatedAt?: string;
 
   @ApiProperty({ example: 'waiting', description: 'Statut du ticket' })
   status: string;

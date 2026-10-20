@@ -9,6 +9,7 @@ import { NotificationTemplateService } from '../../core/notifications/notificati
 
 export type RegistrationRow = Record<string, unknown> & {
   registration_id: number;
+  site_id: number;
   queue_id: number;
   business_date: string;
   priority_reference_time: Date | string;
@@ -117,10 +118,10 @@ export class RegistrationsTransaction {
   }): Promise<RegistrationRow> {
     const rows = await this.manager.query(
       `INSERT INTO dori_registration (person_id,queue_id,tier_id,business_date,ticket_number,
-       entry_type,scheduled_time,appointment_status,priority_reference_time,status,
+       entry_type,scheduled_time,checked_in_at,appointment_status,priority_reference_time,status,
        registration_tracking_token_valid_until,language_preference,created_by_user_id,
        updated_by_user_id,created_at,updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$13,$14,$14) RETURNING *`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$14,$15,$15) RETURNING *`,
       [
         input.personId,
         input.dto.queueId,
@@ -129,6 +130,7 @@ export class RegistrationsTransaction {
         input.ticketNumber,
         input.dto.entryType,
         input.scheduledTime,
+        input.dto.entryType === 'walkin' ? input.now : null,
         input.appointmentStatus,
         input.priorityReferenceTime,
         input.status,
@@ -412,7 +414,12 @@ export class RegistrationsRepository {
     sortOrder: 'ASC' | 'DESC',
     pageSize: number,
     offset: number,
-    scheduledBounds?: { fromInclusive: Date; toExclusive: Date },
+    dateBounds?: {
+      dateFrom: string;
+      dateTo: string;
+      fromInclusive: Date;
+      toExclusive: Date;
+    },
   ) {
     const params: unknown[] = [];
     const activeFilter = filter.isActive ?? true;
@@ -430,11 +437,23 @@ export class RegistrationsRepository {
       params.push(scopeQueueIds);
       where += ` AND r.queue_id=ANY($${params.length})`;
     }
-    if (scheduledBounds) {
-      params.push(scheduledBounds.fromInclusive);
-      where += ` AND r.scheduled_time >= $${params.length}`;
-      params.push(scheduledBounds.toExclusive);
-      where += ` AND r.scheduled_time < $${params.length}`;
+    if (dateBounds) {
+      params.push(dateBounds.dateFrom);
+      const businessDateFromParam = params.length;
+      params.push(dateBounds.dateTo);
+      const businessDateToParam = params.length;
+      params.push(dateBounds.fromInclusive);
+      const scheduledFromParam = params.length;
+      params.push(dateBounds.toExclusive);
+      const scheduledToParam = params.length;
+      where += ` AND (
+        (r.entry_type = 'walkin'
+          AND r.business_date BETWEEN $${businessDateFromParam}::date AND $${businessDateToParam}::date)
+        OR
+        (r.entry_type = 'appointment'
+          AND r.scheduled_time >= $${scheduledFromParam}
+          AND r.scheduled_time < $${scheduledToParam})
+      )`;
     }
     add(filter.status, 'r.status');
     add(filter.entryType, 'r.entry_type');
@@ -455,7 +474,7 @@ export class RegistrationsRepository {
     );
     const items = await this.dataSource.query(
       `SELECT r.*,p.first_name,p.last_name,p.phone_number,p.email,
-      q.queue_name,q.queue_code,t.tier_code,t.tier_name,
+      q.queue_name,q.queue_code,q.site_id,q.average_wait_time,t.tier_code,t.tier_name,
       (SELECT COUNT(*)::int FROM dori_person_note pn
        WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
       ${from} ORDER BY r.${sortField} ${sortOrder}
@@ -534,6 +553,7 @@ export class RegistrationsRepository {
   async findByTrackingToken(token: string) {
     const rows = await this.dataSource.query(
       `SELECT r.*, q.average_wait_time, q.queue_name,
+              q.site_id,
               os.thread_number, os.counter_name
        FROM dori_registration r
        JOIN dori_queue q ON q.queue_id = r.queue_id

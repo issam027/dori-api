@@ -7704,7 +7704,7 @@
           ]
         },
         "summary": "Lister les inscriptions",
-        "description": "Recherche paginée, avec dateFrom/dateTo appliqués à scheduledTime dans le fuseau du site ou de la file. dateFrom et dateTo doivent être fournies ensemble. Une recherche par période exige queueId ou siteId et couvre au maximum 366 jours. Sans isActive, seules les ressources actives sont retournées ; isActive=false permet aux administrateurs de retrouver les ressources désactivées.",
+        "description": "Recherche paginée, avec dateFrom/dateTo appliqués à businessDate pour les walk-ins et à scheduledTime dans le fuseau du site ou de la file pour les rendez-vous. dateFrom et dateTo doivent être fournies ensemble. Une recherche par période exige queueId ou siteId et couvre au maximum 366 jours. Sans isActive, seules les ressources actives sont retournées ; isActive=false permet aux administrateurs de retrouver les ressources désactivées.",
         "parameters": [
           {
             "name": "page",
@@ -7790,7 +7790,7 @@
             "name": "dateFrom",
             "required": false,
             "in": "query",
-            "description": "Première schedule date incluse. Doit être fournie avec dateTo et avec queueId ou siteId.",
+            "description": "Première date incluse : businessDate pour un walk-in, scheduledTime dans le fuseau du site pour un rendez-vous. Doit être fournie avec dateTo et avec queueId ou siteId.",
             "schema": {
               "format": "date",
               "example": "2026-10-01",
@@ -7802,7 +7802,7 @@
             "name": "dateTo",
             "required": false,
             "in": "query",
-            "description": "Dernière schedule date incluse. La période complète est limitée à 366 jours.",
+            "description": "Dernière date incluse : businessDate pour un walk-in, scheduledTime dans le fuseau du site pour un rendez-vous. La période complète est limitée à 366 jours.",
             "schema": {
               "format": "date",
               "example": "2026-10-31",
@@ -16335,8 +16335,9 @@
             "description": "Nombre de guichets actuellement actifs"
           },
           "estimatedWaitMinutes": {
-            "type": "number",
+            "type": "object",
             "example": 30,
+            "nullable": true,
             "description": "Temps d'attente estimé en minutes"
           },
           "nextAppointments": {
@@ -17864,6 +17865,25 @@
             "type": "string",
             "format": "date-time",
             "description": "Date et heure d’expiration du jeton public de suivi"
+          },
+          "estimatedWaitMinutes": {
+            "type": "object",
+            "nullable": true,
+            "minimum": 0,
+            "description": "Valeur du champ « estimated wait minutes »."
+          },
+          "estimationMethod": {
+            "type": "string",
+            "description": "Valeur du champ « estimation method »."
+          },
+          "estimationReliable": {
+            "type": "boolean",
+            "description": "Valeur du champ « estimation reliable »."
+          },
+          "estimationCalculatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Valeur du champ « estimation calculated at »."
           }
         },
         "required": [
@@ -18084,9 +18104,30 @@
             "description": "Position courante dans la file"
           },
           "estimatedWaitMinutes": {
-            "type": "number",
+            "type": "object",
             "example": 25,
+            "nullable": true,
             "description": "Temps d'attente estimé en minutes"
+          },
+          "estimationMethod": {
+            "type": "string",
+            "enum": [
+              "queue_daily_p50",
+              "last_calculated",
+              "theoretical_queue",
+              "unavailable"
+            ],
+            "description": "Valeur du champ « estimation method »."
+          },
+          "estimationReliable": {
+            "type": "boolean",
+            "example": true,
+            "description": "Valeur du champ « estimation reliable »."
+          },
+          "estimationCalculatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Valeur du champ « estimation calculated at »."
           },
           "status": {
             "type": "string",

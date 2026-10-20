@@ -7,6 +7,8 @@ import { DatabaseModule } from '../core/database/database.module';
 import { NotificationWorkerRepository } from './notification-worker/notification-worker.repository';
 import { AppointmentExpiryRepository } from './appointment-expiry/appointment-expiry.repository';
 import { DailyResetRepository } from './daily-reset/daily-reset.repository';
+import { QueueEstimationWorker } from './queue-estimation/queue-estimation.worker';
+import { QueueEstimationWorkerRepository } from './queue-estimation/queue-estimation.repository';
 
 @Module({
   imports: [DatabaseModule, ClockModule],
@@ -17,6 +19,8 @@ import { DailyResetRepository } from './daily-reset/daily-reset.repository';
     NotificationWorkerRepository,
     AppointmentExpiryRepository,
     DailyResetRepository,
+    QueueEstimationWorker,
+    QueueEstimationWorkerRepository,
   ],
 })
 export class WorkersModule {}

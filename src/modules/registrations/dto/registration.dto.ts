@@ -172,7 +172,7 @@ export class RegistrationFilterDto extends PaginationDto {
     example: '2026-10-01',
     format: 'date',
     description:
-      'Première schedule date incluse. Doit être fournie avec dateTo et avec queueId ou siteId.',
+      'Première date incluse : businessDate pour un walk-in, scheduledTime dans le fuseau du site pour un rendez-vous. Doit être fournie avec dateTo et avec queueId ou siteId.',
   })
   @IsCalendarDate()
   @IsOptional()
@@ -182,7 +182,7 @@ export class RegistrationFilterDto extends PaginationDto {
     example: '2026-10-31',
     format: 'date',
     description:
-      'Dernière schedule date incluse. La période complète est limitée à 366 jours.',
+      'Dernière date incluse : businessDate pour un walk-in, scheduledTime dans le fuseau du site pour un rendez-vous. La période complète est limitée à 366 jours.',
   })
   @IsCalendarDate()
   @IsOptional()

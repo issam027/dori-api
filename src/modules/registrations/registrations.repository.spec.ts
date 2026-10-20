@@ -167,6 +167,47 @@ describe('RegistrationsRepository appointment lookup', () => {
 });
 
 describe('RegistrationsRepository filters', () => {
+  it('filters walk-ins by business date and appointments by scheduled time', async () => {
+    const query = jest
+      .fn()
+      .mockResolvedValueOnce([{ total: 0 }])
+      .mockResolvedValueOnce([]);
+    const repository = new RegistrationsRepository({
+      query,
+    } as unknown as DataSource);
+    const fromInclusive = new Date('2026-10-01T00:00:00Z');
+    const toExclusive = new Date('2026-11-01T00:00:00Z');
+
+    await repository.findPage(
+      { isActive: true } as any,
+      undefined,
+      'registration_id',
+      'ASC',
+      25,
+      0,
+      {
+        dateFrom: '2026-10-01',
+        dateTo: '2026-10-31',
+        fromInclusive,
+        toExclusive,
+      },
+    );
+
+    const [sql, params] = query.mock.calls[0];
+    expect(sql).toContain("r.entry_type = 'walkin'");
+    expect(sql).toContain('r.business_date BETWEEN $2::date AND $3::date');
+    expect(sql).toContain("r.entry_type = 'appointment'");
+    expect(sql).toContain('r.scheduled_time >= $4');
+    expect(sql).toContain('r.scheduled_time < $5');
+    expect(params).toEqual([
+      true,
+      '2026-10-01',
+      '2026-10-31',
+      fromInclusive,
+      toExclusive,
+    ]);
+  });
+
   it('returns zero active notes when the registered person has none', async () => {
     const query = jest
       .fn()

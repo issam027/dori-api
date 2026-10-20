@@ -210,9 +210,10 @@ export class QueueStatusResponseDto {
 
   @ApiProperty({
     example: 30,
+    nullable: true,
     description: "Temps d'attente estimé en minutes",
   })
-  estimatedWaitMinutes: number;
+  estimatedWaitMinutes: number | null;
 
   @ApiProperty({
     type: [NextAppointmentItemDto],

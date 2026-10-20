@@ -234,6 +234,7 @@ export class QueuesRepository {
   }
 
   async findOperationalContext(queueId: number): Promise<{
+    site_id: number;
     average_wait_time: number;
     timezone: string;
     carry_over_waiting?: boolean | null;
@@ -242,6 +243,7 @@ export class QueuesRepository {
     default_daily_reset_mode?: 'close_all' | 'close_served_only';
   } | null> {
     const rows: Array<{
+      site_id: number;
       average_wait_time: number;
       timezone: string;
       carry_over_waiting: boolean | null;
@@ -249,7 +251,7 @@ export class QueuesRepository {
       default_carry_over_waiting: boolean;
       default_daily_reset_mode: 'close_all' | 'close_served_only';
     }> = await this.dataSource.query(
-      `SELECT q.average_wait_time, q.carry_over_waiting, q.daily_reset_mode,
+      `SELECT q.site_id, q.average_wait_time, q.carry_over_waiting, q.daily_reset_mode,
               s.timezone, s.default_carry_over_waiting, s.default_daily_reset_mode
        FROM dori_queue q JOIN dori_site s ON s.site_id = q.site_id
        WHERE q.queue_id = $1`,

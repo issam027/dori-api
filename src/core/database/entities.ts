@@ -19,6 +19,7 @@ import { DoriUserRole } from '../../modules/rbac/entities/user-role.entity';
 import { DoriUserSite } from '../../modules/rbac/entities/user-site.entity';
 import { DoriUserQueue } from '../../modules/rbac/entities/user-queue.entity';
 import { DoriUserSession } from '../../modules/auth/entities/user-session.entity';
+import { DoriQueueEstimationStat } from '../../modules/queue-estimation/entities/queue-estimation-stat.entity';
 
 export const ALL_ENTITIES = [
   DoriUser,
@@ -42,6 +43,7 @@ export const ALL_ENTITIES = [
   DoriUserSite,
   DoriUserQueue,
   DoriUserSession,
+  DoriQueueEstimationStat,
 ];
 
 export {
@@ -66,4 +68,5 @@ export {
   DoriUserSite,
   DoriUserQueue,
   DoriUserSession,
+  DoriQueueEstimationStat,
 };

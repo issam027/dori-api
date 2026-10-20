@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { CreateQueueDto } from './dto/create-queue.dto';
 import { UpdateQueueDto, QueueFilterDto } from './dto/update-queue.dto';
 import {
@@ -11,6 +11,7 @@ import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { DoriException } from '../../core/errors/dori.exception';
 import { QueueDetailRow, QueuesRepository } from './queues.repository';
+import { QueueWaitEstimationService } from '../queue-estimation/queue-wait-estimation.service';
 
 @Injectable()
 export class QueuesService {
@@ -18,6 +19,8 @@ export class QueuesService {
     private readonly queuesRepository: QueuesRepository,
     private readonly scopeService: ScopeService,
     private readonly clockService: ClockService,
+    @Optional()
+    private readonly waitEstimationService?: QueueWaitEstimationService,
   ) {}
 
   private mapQueueResponse(row: QueueDetailRow): QueueResponseDto {
@@ -233,23 +236,30 @@ export class QueuesService {
     if (!context) {
       throw new DoriException('QUEUE_NOT_FOUND', { queueId });
     }
-    const { average_wait_time, timezone } = context;
+    const { site_id, average_wait_time, timezone } = context;
     const businessDate = this.clockService.todayInTimezone(timezone);
     const snapshot = await this.queuesRepository.getStatusSnapshot(
       queueId,
       businessDate,
     );
 
-    const divisor = Math.max(1, snapshot.activeThreads);
-    const estimatedWaitMinutes = Math.round(
-      (snapshot.waitingCount * average_wait_time) / divisor,
-    );
+    const estimate = this.waitEstimationService
+      ? await this.waitEstimationService.estimateQueue({
+          siteId: site_id,
+          queueId,
+          activityDate: businessDate,
+          waitingCount: snapshot.waitingCount,
+          activeThreads: snapshot.activeThreads,
+          theoreticalMinutes: average_wait_time,
+          now: this.clockService.now(),
+        })
+      : { estimatedWaitMinutes: null };
 
     return {
       queueId,
       waitingCount: snapshot.waitingCount,
       activeThreads: snapshot.activeThreads,
-      estimatedWaitMinutes,
+      estimatedWaitMinutes: estimate.estimatedWaitMinutes,
       nextAppointments: snapshot.nextAppointments,
     };
   }

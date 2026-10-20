@@ -82,7 +82,7 @@ export class RegistrationsController {
   @ApiOperation({
     summary: 'Lister les inscriptions',
     description:
-      'Recherche paginée, avec dateFrom/dateTo appliqués à scheduledTime dans le fuseau du site ou de la file.',
+      'Recherche paginée, avec dateFrom/dateTo appliqués à businessDate pour les walk-ins et à scheduledTime dans le fuseau du site ou de la file pour les rendez-vous.',
   })
   @ApiDoriOkResponse(
     PaginatedRegistrationResponseDto,

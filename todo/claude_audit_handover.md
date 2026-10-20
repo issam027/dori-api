@@ -2,8 +2,8 @@
 
 - Date de l'audit : 2026-10-19
 - Périmètre analysé : 239 fichiers sur 239 fichiers du dépôt hors dépendances et artefacts (`node_modules/`, `dist/`, `.quality-dist/`, `coverage/`). Les 201 fichiers TypeScript de `src/`, `test/` et `scripts/` ont été inventoriés; recherches transverses sur tout `src/`; lecture ciblée des fichiers de sécurité, configuration, architecture et des fichiers les plus volumineux. Les artefacts OpenAPI ont été comptés mais non relus ligne à ligne car générés.
-- Stack détectée : Node.js, TypeScript, NestJS 10, TypeORM/PostgreSQL, BullMQ/Redis, Socket.IO, Passport/JWT, class-validator/class-transformer, Jest/Supertest, ESLint 8 et Prettier 3. Aucun framework UI ni gestionnaire d'état client dans ce dépôt.
-- Commandes exécutées et résultats bruts (lint, typecheck, build, tests) : `npm run format:check` : succès, tous les fichiers correspondent à Prettier; `npm run lint` : succès, 0 erreur/0 avertissement; `npm run typecheck` : succès, 0 erreur; `npm run build:check` : succès; `npm test -- --runInBand --coverage=false` : 51 suites/51 réussies, 264 tests/264 réussis, mais Jest signale un worker forcé à quitter; `npm audit --omit=dev --audit-level=none` : 17 vulnérabilités de production (1 faible, 11 modérées, 5 hautes); audit complet : 65 vulnérabilités (4 faibles, 20 modérées, 40 hautes, 1 critique).
+
+\- Stack détectée : Node.js, TypeScript, NestJS 10, TypeORM/PostgreSQL, BullMQ/Redis, Socket.IO, Passport/JWT, class-validator/class-transformer, Jest/Supertest, ESLint 8 et Prettier 3. Aucun framework UI ni gestionnaire d'état client dans ce dépôt. - Commandes exécutées et résultats bruts (lint, typecheck, build, tests) : \`npm run format:check\` : succès, tous les fichiers correspondent à Prettier; \`npm run lint\` : succès, 0 erreur/0 avertissement; \`npm run typecheck\` : succès, 0 erreur; \`npm run build:check\` : succès; \`npm test -- --runInBand --coverage=false\` : 51 suites/51 réussies, 264 tests/264 réussis, mais Jest signale un worker forcé à quitter; \`npm audit --omit=dev --audit-level=none\` : 17 vulnérabilités de production (1 faible, 11 modérées, 5 hautes); audit complet : 65 vulnérabilités (4 faibles, 20 modérées, 40 hautes, 1 critique).
 
 ## 1. Synthèse exécutive
 
@@ -13,36 +13,36 @@ L'API est structurée par domaines, possède des contrôles globaux solides et r
 
 Top 10 des actions prioritaires :
 
-1. Mettre à niveau les dépendances de production vulnérables avec tests de non-régression.
-2. Ajouter une CI imposant `quality:check`, audit de dépendances et e2e.
-3. Diagnostiquer le handle Jest non fermé.
-4. Ajouter des e2e d'authentification, RBAC, isolation de scope et parcours d'inscription.
-5. Découper `RegistrationsService`, `QueueEngineService` et les gros repositories.
-6. Remplacer les `any` de production par des types `unknown`/interfaces.
-7. Remplacer les `console.error` du guard JWT par le logger structuré sans détails exploitables.
-8. Ajouter une politique RGPD testée : export, anonymisation/suppression et rétention.
-9. Rendre les migrations réversibles ou documenter/tester une procédure de rollback.
+ 1. Mettre à niveau les dépendances de production vulnérables avec tests de non-régression.
+ 2. Ajouter une CI imposant `quality:check`, audit de dépendances et e2e.
+ 3. Diagnostiquer le handle Jest non fermé.
+ 4. Ajouter des e2e d'authentification, RBAC, isolation de scope et parcours d'inscription.
+ 5. Découper `RegistrationsService`, `QueueEngineService` et les gros repositories.
+ 6. Remplacer les `any` de production par des types `unknown`/interfaces.
+ 7. Remplacer les `console.error` du guard JWT par le logger structuré sans détails exploitables.
+ 8. Ajouter une politique RGPD testée : export, anonymisation/suppression et rétention.
+ 9. Rendre les migrations réversibles ou documenter/tester une procédure de rollback.
 10. Supprimer `package.json.backup` ou justifier et automatiser sa synchronisation.
 
 ## 2. Tableau de suivi des constats
 
 | ID | Domaine | Sévérité | Constat | Fichiers:lignes | Action recommandée | Effort (S/M/L) | Statut |
-|----|---------|----------|---------|-----------------|--------------------|----------------|--------|
-| SEC-01 | Sécurité | 🔴 Critique | L'arbre de production contient 17 vulnérabilités, dont 5 hautes (`js-yaml`, `lodash`, `multer`, `picomatch` et chaînes Nest). | `package.json:27-52`, `package-lock.json:1` | Planifier les montées de versions Nest et transitives, valider par tests puis bloquer les nouvelles alertes en CI. | L | [ ] À faire |
-| TST-01 | Tests | 🟠 Majeur | Le seul e2e ne vérifie que l'absence d'une route racine; aucun parcours métier/autorisation complet. | `test/app.e2e-spec.ts:6-24` | Ajouter une matrice e2e auth/RBAC/scope/inscription/file/notifications sur PostgreSQL isolé. | L | [ ] À faire |
-| OPS-01 | Outillage | 🟠 Majeur | Aucun workflow CI ni hook pre-commit n'est présent à la racine. | `package.json:7-23` | Ajouter CI et hook exécutant au minimum format, lint, typecheck, build et tests. | M | [ ] À faire |
-| ARC-01 | Architecture | 🟠 Majeur | Plusieurs classes cumulent orchestration métier et branches nombreuses : 716, 551 et 461 lignes. | `src/modules/registrations/registrations.service.ts:32-716`, `src/modules/queue-engine/queue-engine.service.ts:19-551`, `src/modules/service-tiers/service-tiers.service.ts:25-461` | Extraire des cas d'usage cohésifs et conserver les transactions dans les repositories. | L | [ ] À faire |
-| ARC-02 | Architecture | 🟡 Mineur | Plusieurs repositories SQL sont monolithiques : 564, 527, 493 et 485 lignes. | `src/modules/registrations/registrations.repository.ts:26-564`, `src/modules/users/users.repository.ts:41-527`, `src/modules/queue-engine/queue-engine.repository.ts:64-493`, `src/modules/queues/queues.repository.ts:21-485` | Scinder par agrégat/cas d'usage et mutualiser les fragments sûrs de pagination/tri. | L | [ ] À faire |
-| QUA-01 | Qualité | 🟡 Mineur | Des `any` subsistent dans le code de production et la règle ESLint correspondante est désactivée. | `.eslintrc.js:17`, `src/core/auth/guards/jwt-auth.guard.ts:24`, `src/core/serialization/serialization.interceptor.ts:27-38`, `src/modules/users/users.repository.ts:91-137` | Activer progressivement `no-explicit-any`, typer les lignes SQL et utiliser `unknown` dans les catch. | M | [ ] À faire |
-| SEC-02 | Sécurité | 🟡 Mineur | Le guard JWT écrit directement des détails d'erreur et de stratégie sur stderr. | `src/core/auth/guards/jwt-auth.guard.ts:24-41` | Employer `Logger`, corréler la requête, réduire les détails et tester l'absence de secrets/PII. | S | [ ] À faire |
-| TST-02 | Tests | 🟡 Mineur | Les tests passent mais Jest force la sortie d'un worker, signe d'un timer/handle non libéré. | `src/workers/appointment-expiry/appointment-expiry.worker.ts:7-36`, `src/workers/notification-worker/notification.worker.ts:9-69` | Exécuter avec `--detectOpenHandles`, corriger le teardown des workers/schedulers. | M | [ ] À faire |
-| DB-01 | Maintenabilité | 🟠 Majeur | Les migrations SQL sont uniquement ascendantes; aucune migration inverse/procédure de rollback n'est fournie. | `src/core/database/migration-runner.ts:19-55`, `src/core/database/sql/migrations/010_force_logout_revocation_reason.sql:1-6` | Introduire des migrations up/down ou un runbook de restauration testé avant production. | M | [ ] À faire |
-| PRI-01 | Données personnelles | 🟠 Majeur | Aucun mécanisme explicite d'export, anonymisation, consentement ou rétention des personnes n'a été trouvé. | `src/modules/persons/persons.controller.ts:48-220`, `src/modules/persons/persons.repository.ts:39-288` | Définir et implémenter les droits RGPD, la rétention et un journal d'audit. | L | [ ] À faire |
-| CFG-01 | Configuration | 🔵 Amélioration | Un manifeste de dépendances de sauvegarde est suivi, avec risque de dérive. | `package.json.backup:1`, `package.json:1` | Supprimer ce doublon ou documenter sa génération et vérifier sa synchronisation. | S | [ ] À faire |
-| DOC-01 | Documentation | 🟡 Mineur | Le README ne contient qu'un titre et n'explique ni installation, environnement, migrations ni validation. | `README.md:1` | Documenter bootstrap, variables, DB/Redis, migrations, scripts qualité et déploiement. | M | [ ] À faire |
-| PERF-01 | Performance | 🔵 Amélioration | Le cache de scope est local au processus et limité à 30 s; en multi-instance, invalidation non distribuée. | `src/core/rbac/services/scope.service.ts:14-18`, `src/core/rbac/services/scope.service.ts:91-97` | Utiliser Redis/versionnement d'autorisation ou documenter la fenêtre de cohérence acceptée. | M | [ ] À faire |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SEC-01 | Sécurité | 🔴 Critique | L'arbre de production contient 17 vulnérabilités, dont 5 hautes (`js-yaml`, `lodash`, `multer`, `picomatch` et chaînes Nest). | `package.json:27-52`, `package-lock.json:1` | Planifier les montées de versions Nest et transitives, valider par tests puis bloquer les nouvelles alertes en CI. | L | \[ \] À faire |
+| TST-01 | Tests | 🟠 Majeur | Le seul e2e ne vérifie que l'absence d'une route racine; aucun parcours métier/autorisation complet. | `test/app.e2e-spec.ts:6-24` | Ajouter une matrice e2e auth/RBAC/scope/inscription/file/notifications sur PostgreSQL isolé. | L | \[ \] À faire |
+| OPS-01 | Outillage | 🟠 Majeur | Aucun workflow CI ni hook pre-commit n'est présent à la racine. | `package.json:7-23` | Ajouter CI et hook exécutant au minimum format, lint, typecheck, build et tests. | M | \[ \] À faire |
+| ARC-01 | Architecture | 🟠 Majeur | Plusieurs classes cumulent orchestration métier et branches nombreuses : 716, 551 et 461 lignes. | `src/modules/registrations/registrations.service.ts:32-716`, `src/modules/queue-engine/queue-engine.service.ts:19-551`, `src/modules/service-tiers/service-tiers.service.ts:25-461` | Extraire des cas d'usage cohésifs et conserver les transactions dans les repositories. | L | \[ \] À faire |
+| ARC-02 | Architecture | 🟡 Mineur | Plusieurs repositories SQL sont monolithiques : 564, 527, 493 et 485 lignes. | `src/modules/registrations/registrations.repository.ts:26-564`, `src/modules/users/users.repository.ts:41-527`, `src/modules/queue-engine/queue-engine.repository.ts:64-493`, `src/modules/queues/queues.repository.ts:21-485` | Scinder par agrégat/cas d'usage et mutualiser les fragments sûrs de pagination/tri. | L | \[ \] À faire |
+| QUA-01 | Qualité | 🟡 Mineur | Des `any` subsistent dans le code de production et la règle ESLint correspondante est désactivée. | `.eslintrc.js:17`, `src/core/auth/guards/jwt-auth.guard.ts:24`, `src/core/serialization/serialization.interceptor.ts:27-38`, `src/modules/users/users.repository.ts:91-137` | Activer progressivement `no-explicit-any`, typer les lignes SQL et utiliser `unknown` dans les catch. | M | \[ \] À faire |
+| SEC-02 | Sécurité | 🟡 Mineur | Le guard JWT écrit directement des détails d'erreur et de stratégie sur stderr. | `src/core/auth/guards/jwt-auth.guard.ts:24-41` | Employer `Logger`, corréler la requête, réduire les détails et tester l'absence de secrets/PII. | S | \[ \] À faire |
+| TST-02 | Tests | 🟡 Mineur | Les tests passent mais Jest force la sortie d'un worker, signe d'un timer/handle non libéré. | `src/workers/appointment-expiry/appointment-expiry.worker.ts:7-36`, `src/workers/notification-worker/notification.worker.ts:9-69` | Exécuter avec `--detectOpenHandles`, corriger le teardown des workers/schedulers. | M | \[ \] À faire |
+| DB-01 | Maintenabilité | 🟠 Majeur | Les migrations SQL sont uniquement ascendantes; aucune migration inverse/procédure de rollback n'est fournie. | `src/core/database/migration-runner.ts:19-55`, `src/core/database/sql/migrations/010_force_logout_revocation_reason.sql:1-6` | Introduire des migrations up/down ou un runbook de restauration testé avant production. | M | \[ \] À faire |
+| PRI-01 | Données personnelles | 🟠 Majeur | Aucun mécanisme explicite d'export, anonymisation, consentement ou rétention des personnes n'a été trouvé. | `src/modules/persons/persons.controller.ts:48-220`, `src/modules/persons/persons.repository.ts:39-288` | Définir et implémenter les droits RGPD, la rétention et un journal d'audit. | L | \[ \] À faire |
+| CFG-01 | Configuration | 🔵 Amélioration | Un manifeste de dépendances de sauvegarde est suivi, avec risque de dérive. | `package.json.backup:1`, `package.json:1` | Supprimer ce doublon ou documenter sa génération et vérifier sa synchronisation. | S | \[ \] À faire |
+| DOC-01 | Documentation | 🟡 Mineur | Le README ne contient qu'un titre et n'explique ni installation, environnement, migrations ni validation. | `README.md:1` | Documenter bootstrap, variables, DB/Redis, migrations, scripts qualité et déploiement. | M | \[ \] À faire |
+| PERF-01 | Performance | 🔵 Amélioration | Le cache de scope est local au processus et limité à 30 s; en multi-instance, invalidation non distribuée. | `src/core/rbac/services/scope.service.ts:14-18`, `src/core/rbac/services/scope.service.ts:91-97` | Utiliser Redis/versionnement d'autorisation ou documenter la fenêtre de cohérence acceptée. | M | \[ \] À faire |
 
-Sévérités : 🔴 Critique / 🟠 Majeur / 🟡 Mineur / 🔵 Amélioration  
+Sévérités : 🔴 Critique / 🟠 Majeur / 🟡 Mineur / 🔵 Amélioration\
 Statut initial pour tous : `[ ] À faire`
 
 ## 3. Détail par domaine
@@ -145,5 +145,22 @@ Statut initial pour tous : `[ ] À faire`
 ## 8. Journal des mises à jour
 
 | Date | Auteur | Modification |
-|------|--------|--------------|
+| --- | --- | --- |
 | 2026-10-19 | Codex | Audit initial complet, résultats qualité, constats, preuves et plan de remédiation. |
+
+<!-- GATE
+  id="gate-mvfspy83-yo7xcx"
+  type="merge"
+  status="blocked"
+  blockedBy=""
+  canProceedIf=""
+  doneDefinition="All review annotations resolved"
+-->
+
+<!-- CHECKPOINT id="ckpt_mvfspy7e_kokv7h" time="2026-10-19T21:58:15.146Z" note="auto" fixes=0 questions=1 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvfsv3kg_terev7" time="2026-10-19T22:02:15.376Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvft7yj7_zy3f8x" time="2026-10-19T22:12:15.379Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvftkthy_6829bz" time="2026-10-19T22:22:15.382Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
