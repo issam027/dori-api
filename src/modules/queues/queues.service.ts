@@ -65,6 +65,9 @@ export class QueuesService {
         'late_tolerance_minutes',
         'default_late_tolerance_minutes',
       ),
+      workingDays: effective('working_days', 'default_working_days') ?? [
+        1, 2, 3, 4, 5,
+      ],
       baseWeightWalkin: Number(
         effective('base_weight_walkin', 'default_base_weight_walkin'),
       ),
@@ -100,6 +103,7 @@ export class QueuesService {
         breakStart: origin('break_start'),
         breakEnd: origin('break_end'),
         lateToleranceMinutes: origin('late_tolerance_minutes'),
+        workingDays: origin('working_days'),
         baseWeightWalkin: origin('base_weight_walkin'),
         baseWeightAppointment: origin('base_weight_appointment'),
         escalationRateWalkin: origin('escalation_rate_walkin'),

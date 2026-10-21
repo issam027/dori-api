@@ -78,6 +78,13 @@ export class SiteResponseDto {
   @ApiProperty({ example: 60, description: 'Tolérance retard RDV (minutes)' })
   defaultLateToleranceMinutes: number;
 
+  @ApiProperty({
+    type: [Number],
+    example: [1, 2, 3, 4, 5],
+    description: 'Jours ouvrés par défaut du site (1=Lundi ... 7=Dimanche)',
+  })
+  defaultWorkingDays: number[];
+
   @ApiProperty({ example: 0, description: 'Poids de base walk-in' })
   defaultBaseWeightWalkin: number;
 

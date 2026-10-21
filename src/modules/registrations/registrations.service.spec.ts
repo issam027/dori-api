@@ -616,5 +616,52 @@ describe('RegistrationsService — creation response', () => {
       expect(result.days[0].booked).toBe(1);
       expect(result.days[0].available).toBe(1);
     });
+
+    it('marks non-working days as closed with 0 capacity and empty slots', async () => {
+      const repository = {
+        findAvailabilityConfig: jest.fn().mockResolvedValue({
+          queue_id: 1,
+          site_id: 2,
+          timezone: 'Africa/Tunis',
+          appointments_enabled: true,
+          appointment_slot_duration: 30,
+          slot_capacity: 1,
+          working_hours_start: '08:00',
+          working_hours_end: '17:00',
+          working_days: [1, 2, 3, 4, 5],
+        }),
+        findBookedSlotsBetween: jest.fn().mockResolvedValue([]),
+      };
+
+      const clock = new ClockService();
+      const service = new RegistrationsService(
+        repository as unknown as RegistrationsRepository,
+        { checkQueueAccess: jest.fn() } as unknown as ScopeService,
+        clock,
+        {} as PersonsService,
+        { getOrThrow: jest.fn() } as unknown as ConfigService,
+        {} as NotificationTemplateService,
+      );
+
+      // 2026-09-06 is Sunday (isoDay 7)
+      const result = await service.getAvailability(
+        1,
+        {
+          dateFrom: '2026-09-06',
+          dateTo: '2026-09-06',
+          summaryOnly: false,
+        } as any,
+        user,
+      );
+
+      expect(result.days).toHaveLength(1);
+      const sunday = result.days[0];
+      expect(sunday.businessDate).toBe('2026-09-06');
+      expect(sunday.isOpen).toBe(false);
+      expect(sunday.capacity).toBe(0);
+      expect(sunday.booked).toBe(0);
+      expect(sunday.available).toBe(0);
+      expect(sunday.slots).toEqual([]);
+    });
   });
 });

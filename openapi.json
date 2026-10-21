@@ -15087,6 +15087,20 @@
             "example": 60,
             "description": "Tolérance retard RDV (minutes)"
           },
+          "defaultWorkingDays": {
+            "example": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "description": "Jours ouvrés par défaut du site (1=Lundi ... 7=Dimanche)",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
           "defaultBaseWeightWalkin": {
             "type": "number",
             "example": 0,
@@ -15158,6 +15172,7 @@
           "defaultWorkingHoursStart",
           "defaultWorkingHoursEnd",
           "defaultLateToleranceMinutes",
+          "defaultWorkingDays",
           "defaultBaseWeightWalkin",
           "defaultBaseWeightAppointment",
           "defaultEscalationRateWalkin",
@@ -15286,6 +15301,20 @@
             "example": 60,
             "description": "Tolérance retard RDV (minutes)"
           },
+          "defaultWorkingDays": {
+            "example": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "description": "Jours ouvrés par défaut du site (1=Lundi ... 7=Dimanche)",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
           "defaultBaseWeightWalkin": {
             "type": "number",
             "example": 0,
@@ -15412,6 +15441,20 @@
             "type": "number",
             "example": 60,
             "description": "Tolérance retard RDV (minutes)"
+          },
+          "defaultWorkingDays": {
+            "example": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "description": "Jours ouvrés par défaut du site (1=Lundi ... 7=Dimanche)",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
           },
           "defaultBaseWeightWalkin": {
             "type": "number",
@@ -15719,6 +15762,14 @@
             ],
             "description": "Valeur du champ « late tolerance minutes »."
           },
+          "workingDays": {
+            "type": "string",
+            "enum": [
+              "inherited",
+              "overridden"
+            ],
+            "description": "Valeur du champ « working days »."
+          },
           "baseWeightWalkin": {
             "type": "string",
             "enum": [
@@ -15788,6 +15839,7 @@
           "breakStart",
           "breakEnd",
           "lateToleranceMinutes",
+          "workingDays",
           "baseWeightWalkin",
           "baseWeightAppointment",
           "escalationRateWalkin",
@@ -15882,6 +15934,20 @@
             "example": 60,
             "description": "Tolérance retard RDV en minutes"
           },
+          "workingDays": {
+            "example": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "description": "Jours ouvrés effectifs de la file (1=Lundi ... 7=Dimanche)",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
           "baseWeightWalkin": {
             "type": "number",
             "example": 0,
@@ -15962,6 +16028,7 @@
           "workingHoursStart",
           "workingHoursEnd",
           "lateToleranceMinutes",
+          "workingDays",
           "baseWeightWalkin",
           "baseWeightAppointment",
           "escalationRateWalkin",
@@ -16083,6 +16150,21 @@
             "example": 60,
             "description": "Tolérance retard RDV (minutes)"
           },
+          "workingDays": {
+            "example": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "nullable": true,
+            "description": "Surcharge des jours ouvrés de la file (1=Lundi ... 7=Dimanche) ; null ou absence = héritage du site",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
           "baseWeightWalkin": {
             "type": "number",
             "example": 0,
@@ -16202,6 +16284,21 @@
             "type": "number",
             "example": 60,
             "description": "Tolérance retard RDV (minutes)"
+          },
+          "workingDays": {
+            "example": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "nullable": true,
+            "description": "Surcharge des jours ouvrés de la file (1=Lundi ... 7=Dimanche) ; null ou absence = héritage du site",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
           },
           "baseWeightWalkin": {
             "type": "number",

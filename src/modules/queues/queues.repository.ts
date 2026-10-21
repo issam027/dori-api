@@ -38,14 +38,14 @@ export class QueuesRepository {
           queue_code, site_id, queue_name, average_wait_time, thread_count, currency,
           appointments_enabled, appointment_slot_duration, slot_capacity,
           working_hours_start, working_hours_end, break_start, break_end,
-          late_tolerance_minutes, base_weight_walkin, base_weight_appointment,
+          late_tolerance_minutes, working_days, base_weight_walkin, base_weight_appointment,
           escalation_rate_walkin, escalation_rate_appointment, carry_over_waiting,
           daily_reset_mode, daily_reset_time, locale, created_by_user_id,
           updated_by_user_id, created_at, updated_at
         ) VALUES (
           $1, $2, $3, COALESCE($4, 10), COALESCE($5, 1), $6, $7, $8, $9,
-          $10::time, $11::time, $12::time, $13::time, $14, $15, $16, $17,
-          $18, $19, $20, $21::time, $22, $23, $23, $24, $24
+          $10::time, $11::time, $12::time, $13::time, $14, $15::int[], $16, $17,
+          $18, $19, $20, $21, $22::time, $23, $24, $24, $25, $25
         ) RETURNING queue_id`,
         [
           dto.queueCode,
@@ -62,6 +62,7 @@ export class QueuesRepository {
           dto.breakStart || null,
           dto.breakEnd || null,
           dto.lateToleranceMinutes ?? null,
+          dto.workingDays ?? null,
           dto.baseWeightWalkin ?? null,
           dto.baseWeightAppointment ?? null,
           dto.escalationRateWalkin ?? null,
@@ -133,7 +134,7 @@ export class QueuesRepository {
               s.default_appointments_enabled, s.default_appointment_slot_duration,
               s.default_slot_capacity, s.default_working_hours_start,
               s.default_working_hours_end, s.default_break_start, s.default_break_end,
-              s.default_late_tolerance_minutes, s.default_base_weight_walkin,
+              s.default_late_tolerance_minutes, s.default_working_days, s.default_base_weight_walkin,
               s.default_base_weight_appointment, s.default_escalation_rate_walkin,
               s.default_escalation_rate_appointment, s.default_carry_over_waiting,
               s.default_daily_reset_mode, s.default_daily_reset_time
@@ -151,7 +152,7 @@ export class QueuesRepository {
               s.default_appointments_enabled, s.default_appointment_slot_duration,
               s.default_slot_capacity, s.default_working_hours_start,
               s.default_working_hours_end, s.default_break_start, s.default_break_end,
-              s.default_late_tolerance_minutes, s.default_base_weight_walkin,
+              s.default_late_tolerance_minutes, s.default_working_days, s.default_base_weight_walkin,
               s.default_base_weight_appointment, s.default_escalation_rate_walkin,
               s.default_escalation_rate_appointment, s.default_carry_over_waiting,
               s.default_daily_reset_mode, s.default_daily_reset_time
@@ -189,6 +190,7 @@ export class QueuesRepository {
     add('break_start', dto.breakStart, '::time');
     add('break_end', dto.breakEnd, '::time');
     add('late_tolerance_minutes', dto.lateToleranceMinutes);
+    add('working_days', dto.workingDays);
     add('base_weight_walkin', dto.baseWeightWalkin);
     add('base_weight_appointment', dto.baseWeightAppointment);
     add('escalation_rate_walkin', dto.escalationRateWalkin);

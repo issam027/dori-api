@@ -122,6 +122,10 @@ export const ERROR_CATALOG: Record<
     status: 422,
     translationKey: 'errors.appointments_disabled',
   },
+  QUEUE_CLOSED: {
+    status: 409,
+    translationKey: 'errors.queue_closed',
+  },
   TRANSLATION_PARAM_MISMATCH: {
     status: 422,
     translationKey: 'errors.translation_param_mismatch',

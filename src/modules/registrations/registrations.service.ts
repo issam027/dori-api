@@ -29,6 +29,13 @@ import { QueueWaitEstimationService } from '../queue-estimation/queue-wait-estim
 const TRACKING_TOKEN_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+function getIsoDayOfWeek(businessDate: string): number {
+  const [year, month, day] = businessDate.split('-').map(Number);
+  const dateObj = new Date(Date.UTC(year, month - 1, day));
+  const jsDay = dateObj.getUTCDay();
+  return jsDay === 0 ? 7 : jsDay;
+}
+
 @Injectable()
 export class RegistrationsService {
   constructor(
@@ -118,6 +125,9 @@ export class RegistrationsService {
         let status: string = 'waiting';
         let priorityRefTime: Date;
 
+        const workingDays: number[] = q.working_days ??
+          q.default_working_days ?? [1, 2, 3, 4, 5];
+
         if (dto.entryType === 'appointment') {
           if (!appointmentsEnabled) {
             throw new DoriException('APPOINTMENTS_DISABLED');
@@ -138,6 +148,15 @@ export class RegistrationsService {
             scheduledTime,
             timezone,
           );
+
+          const isoDay = getIsoDayOfWeek(businessDate);
+          if (!workingDays.includes(isoDay)) {
+            throw new DoriException('QUEUE_CLOSED', {
+              businessDate,
+              dayOfWeek: isoDay,
+            });
+          }
+
           appointmentStatus = 'booked';
           status = 'booked';
           priorityRefTime = scheduledTime;
@@ -151,6 +170,13 @@ export class RegistrationsService {
           }
         } else {
           businessDate = this.clockService.todayInTimezone(timezone);
+          const isoDay = getIsoDayOfWeek(businessDate);
+          if (!workingDays.includes(isoDay)) {
+            throw new DoriException('QUEUE_CLOSED', {
+              businessDate,
+              dayOfWeek: isoDay,
+            });
+          }
           status = 'waiting';
           appointmentStatus = 'n/a';
           priorityRefTime = now;
@@ -328,11 +354,26 @@ export class RegistrationsService {
       }
     }
 
+    const workingDays: number[] = q.working_days ??
+      q.default_working_days ?? [1, 2, 3, 4, 5];
+
     const days = Array.from({ length: dayCount }, (_, index) => {
       const businessDate = this.clockService.addCalendarDays(
         queryDto.dateFrom,
         index,
       );
+      const isoDay = getIsoDayOfWeek(businessDate);
+      if (!workingDays.includes(isoDay)) {
+        return {
+          businessDate,
+          isOpen: false,
+          capacity: 0,
+          booked: 0,
+          available: 0,
+          ...(queryDto.summaryOnly ? {} : { slots: [] }),
+        };
+      }
+
       const slots: SlotAvailabilityItemDto[] = [];
       let currentMinutes = firstSlotMinutes;
       while (currentMinutes + slotDuration <= endMinutes) {

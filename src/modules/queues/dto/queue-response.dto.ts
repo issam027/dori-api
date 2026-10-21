@@ -24,6 +24,8 @@ export class QueueConfigOriginsResponseDto {
   @ApiProperty({ enum: ['inherited', 'overridden'] })
   lateToleranceMinutes: QueueConfigOrigin;
   @ApiProperty({ enum: ['inherited', 'overridden'] })
+  workingDays: QueueConfigOrigin;
+  @ApiProperty({ enum: ['inherited', 'overridden'] })
   baseWeightWalkin: QueueConfigOrigin;
   @ApiProperty({ enum: ['inherited', 'overridden'] })
   baseWeightAppointment: QueueConfigOrigin;
@@ -105,6 +107,13 @@ export class QueueResponseDto {
 
   @ApiProperty({ example: 60, description: 'Tolérance retard RDV en minutes' })
   lateToleranceMinutes: number;
+
+  @ApiProperty({
+    type: [Number],
+    example: [1, 2, 3, 4, 5],
+    description: 'Jours ouvrés effectifs de la file (1=Lundi ... 7=Dimanche)',
+  })
+  workingDays: number[];
 
   @ApiProperty({ example: 0, description: 'Poids de base walk-in' })
   baseWeightWalkin: number;

@@ -135,7 +135,13 @@ export default () => {
     },
 
     redis: {
-      host: process.env.REDIS_HOST ?? 'localhost',
+      enabled:
+        process.env.REDIS_ENABLED !== 'false' &&
+        process.env.REDIS_HOST !== 'disabled' &&
+        process.env.REDIS_HOST !== 'none',
+      host:
+        process.env.REDIS_HOST ??
+        (process.env.VERCEL ? undefined : 'localhost'),
       port: parseInteger('REDIS_PORT', process.env.REDIS_PORT, 6379),
       password: process.env.REDIS_PASSWORD,
     },

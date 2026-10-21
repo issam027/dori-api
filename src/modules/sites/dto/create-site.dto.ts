@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsBoolean,
   IsIn,
   IsInt,
@@ -7,6 +8,7 @@ import {
   IsOptional,
   IsString,
   Matches,
+  Max,
   Min,
   IsISO4217CurrencyCode,
   IsLocale,
@@ -126,6 +128,18 @@ export class CreateSiteDto {
   @Min(0)
   @IsOptional()
   defaultLateToleranceMinutes?: number;
+
+  @ApiPropertyOptional({
+    type: [Number],
+    example: [1, 2, 3, 4, 5],
+    description: 'Jours ouvrés par défaut du site (1=Lundi ... 7=Dimanche)',
+  })
+  @IsArray()
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  @Max(7, { each: true })
+  @IsOptional()
+  defaultWorkingDays?: number[];
 
   @ApiPropertyOptional({
     example: 0,

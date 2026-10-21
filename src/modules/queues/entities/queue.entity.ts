@@ -60,6 +60,9 @@ export class DoriQueue {
   @Column({ type: 'int', nullable: true })
   late_tolerance_minutes: number | null;
 
+  @Column({ type: 'int', array: true, nullable: true })
+  working_days: number[] | null;
+
   @Column({ type: 'numeric', precision: 10, scale: 2, nullable: true })
   base_weight_walkin: number | null;
 

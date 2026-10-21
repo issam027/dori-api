@@ -199,6 +199,8 @@ describe('QueuesService — SEC-04 assignOperator', () => {
     expect(result.configOrigins.currency).toBe('overridden');
     expect(result.configOrigins.locale).toBe('inherited');
     expect(result.configOrigins.appointmentsEnabled).toBe('inherited');
+    expect(result.workingDays).toEqual([1, 2, 3, 4, 5]);
+    expect(result.configOrigins.workingDays).toBe('inherited');
   });
 
   describe('deleteQueue (DAT-05)', () => {

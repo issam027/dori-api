@@ -68,7 +68,8 @@ describe('QueuesRepository', () => {
 
     expect(queueId).toBe(8);
     expect(query.mock.calls[1][0]).toContain('$10::time');
-    expect(query.mock.calls[1][0]).toContain('$21::time');
+    expect(query.mock.calls[1][0]).toContain('$15::int[]');
+    expect(query.mock.calls[1][0]).toContain('$22::time');
     expect(query.mock.calls[2][0]).toContain("tier_code = 'free'");
   });
 

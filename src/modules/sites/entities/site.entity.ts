@@ -60,6 +60,9 @@ export class DoriSite {
   @Column({ type: 'int', default: 60 })
   default_late_tolerance_minutes: number;
 
+  @Column({ type: 'int', array: true, default: '{1,2,3,4,5}' })
+  default_working_days: number[];
+
   // Priority score defaults
   @Column({ type: 'numeric', precision: 10, scale: 2, default: 0 })
   default_base_weight_walkin: number;

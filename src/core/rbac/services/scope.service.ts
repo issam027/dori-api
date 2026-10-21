@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
 import { AuthenticatedUser } from '../../auth/interfaces/jwt-payload.interface';
 import { DoriException } from '../../errors/dori.exception';
 import { ScopeRepository } from '../repositories/scope.repository';
@@ -18,10 +18,18 @@ const CACHE_TTL_SECONDS = 30;
 
 @Injectable()
 export class ScopeService {
+  private readonly logger = new Logger(ScopeService.name);
+
   constructor(
     private readonly scopeRepository: ScopeRepository,
-    @Inject(REDIS_CLIENT) private readonly redis: Redis,
+    @Optional() @Inject(REDIS_CLIENT) private readonly redis?: Redis | null,
   ) {}
+
+  private isRedisReady(): boolean {
+    return Boolean(
+      this.redis && (!this.redis.status || this.redis.status === 'ready'),
+    );
+  }
 
   private cacheKey(userId: number): string {
     return `${SCOPE_KEY_PREFIX}${userId}`;
@@ -32,10 +40,18 @@ export class ScopeService {
       return { isGlobal: true, siteIds: [], queueIds: [] };
     }
 
-    // Lecture depuis Redis (partagé entre toutes les instances)
-    const cached = await this.redis.get(this.cacheKey(user.userId));
-    if (cached) {
-      return JSON.parse(cached) as UserScope;
+    // Lecture depuis Redis si disponible
+    if (this.isRedisReady() && this.redis) {
+      try {
+        const cached = await this.redis.get(this.cacheKey(user.userId));
+        if (cached) {
+          return JSON.parse(cached) as UserScope;
+        }
+      } catch (err) {
+        this.logger.debug(
+          `Redis get scope error for user ${user.userId}: ${(err as Error).message}`,
+        );
+      }
     }
 
     let siteIds: number[] = [];
@@ -62,12 +78,20 @@ export class ScopeService {
       queueIds,
     };
 
-    // SETEX : écriture avec TTL, visible par toutes les instances (§7.5)
-    await this.redis.setex(
-      this.cacheKey(user.userId),
-      CACHE_TTL_SECONDS,
-      JSON.stringify(scope),
-    );
+    // SETEX : écriture avec TTL si Redis est disponible (§7.5)
+    if (this.isRedisReady() && this.redis) {
+      try {
+        await this.redis.setex(
+          this.cacheKey(user.userId),
+          CACHE_TTL_SECONDS,
+          JSON.stringify(scope),
+        );
+      } catch (err) {
+        this.logger.debug(
+          `Redis setex scope error for user ${user.userId}: ${(err as Error).message}`,
+        );
+      }
+    }
 
     return scope;
   }
@@ -100,26 +124,38 @@ export class ScopeService {
 
   /** Invalide le scope d'un utilisateur sur TOUTES les instances (DEL Redis) */
   invalidateUserScope(userId: number): void {
-    // Fire-and-forget : pas besoin d'awaiter, l'invalidation est quasi-instantanée
-    void this.redis.del(this.cacheKey(userId));
+    if (this.isRedisReady() && this.redis) {
+      void this.redis.del(this.cacheKey(userId)).catch((err: Error) => {
+        this.logger.debug(
+          `Redis del scope error for user ${userId}: ${err.message}`,
+        );
+      });
+    }
   }
 
   /** Invalide le cache de tous les utilisateurs (SCAN + DEL par batch) */
   async clearAllScopeCache(): Promise<void> {
-    let cursor = '0';
-    const pattern = `${SCOPE_KEY_PREFIX}*`;
-    do {
-      const [nextCursor, keys] = await this.redis.scan(
-        cursor,
-        'MATCH',
-        pattern,
-        'COUNT',
-        100,
+    if (!this.isRedisReady() || !this.redis) return;
+    try {
+      let cursor = '0';
+      const pattern = `${SCOPE_KEY_PREFIX}*`;
+      do {
+        const [nextCursor, keys] = await this.redis.scan(
+          cursor,
+          'MATCH',
+          pattern,
+          'COUNT',
+          100,
+        );
+        cursor = nextCursor;
+        if (keys.length > 0) {
+          await this.redis.del(...keys);
+        }
+      } while (cursor !== '0');
+    } catch (err) {
+      this.logger.debug(
+        `Redis clearAllScopeCache error: ${(err as Error).message}`,
       );
-      cursor = nextCursor;
-      if (keys.length > 0) {
-        await this.redis.del(...keys);
-      }
-    } while (cursor !== '0');
+    }
   }
 }

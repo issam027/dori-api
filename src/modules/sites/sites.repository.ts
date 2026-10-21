@@ -62,7 +62,7 @@ export class SitesRepository {
         site_name, site_location, site_logo_url, site_type, timezone, default_currency,
         default_appointments_enabled, default_appointment_slot_duration, default_slot_capacity,
         default_working_hours_start, default_working_hours_end, default_break_start, default_break_end,
-        default_late_tolerance_minutes, default_base_weight_walkin, default_base_weight_appointment,
+        default_late_tolerance_minutes, default_working_days, default_base_weight_walkin, default_base_weight_appointment,
         default_escalation_rate_walkin, default_escalation_rate_appointment, default_carry_over_waiting,
         default_daily_reset_mode, default_daily_reset_time, default_locale, created_by_user_id, updated_by_user_id,
         created_at, updated_at
@@ -71,9 +71,9 @@ export class SitesRepository {
         COALESCE($7, FALSE), COALESCE($8, 15), COALESCE($9, 1),
         COALESCE($10::time, TIME '08:00'), COALESCE($11::time, TIME '17:00'),
         COALESCE($12::time, TIME '12:00'), COALESCE($13::time, TIME '14:00'),
-        COALESCE($14, 60), COALESCE($15, 0), COALESCE($16, 60), COALESCE($17, 1), COALESCE($18, 1),
-        COALESCE($19, FALSE), COALESCE($20, 'close_all'), COALESCE($21::time, TIME '03:00'), COALESCE($22, 'fr'),
-        $23, $23, $24, $24
+        COALESCE($14, 60), COALESCE($15::int[], '{1,2,3,4,5}'::int[]), COALESCE($16, 0), COALESCE($17, 60), COALESCE($18, 1), COALESCE($19, 1),
+        COALESCE($20, FALSE), COALESCE($21, 'close_all'), COALESCE($22::time, TIME '03:00'), COALESCE($23, 'fr'),
+        $24, $24, $25, $25
       ) RETURNING *`,
       [
         dto.siteName,
@@ -90,6 +90,7 @@ export class SitesRepository {
         dto.defaultBreakStart || null,
         dto.defaultBreakEnd || null,
         dto.defaultLateToleranceMinutes ?? null,
+        dto.defaultWorkingDays ?? null,
         dto.defaultBaseWeightWalkin ?? null,
         dto.defaultBaseWeightAppointment ?? null,
         dto.defaultEscalationRateWalkin ?? null,
@@ -154,6 +155,7 @@ export class SitesRepository {
     add('default_break_start', dto.defaultBreakStart);
     add('default_break_end', dto.defaultBreakEnd);
     add('default_late_tolerance_minutes', dto.defaultLateToleranceMinutes);
+    add('default_working_days', dto.defaultWorkingDays);
     add('default_base_weight_walkin', dto.defaultBaseWeightWalkin);
     add('default_base_weight_appointment', dto.defaultBaseWeightAppointment);
     add('default_escalation_rate_walkin', dto.defaultEscalationRateWalkin);

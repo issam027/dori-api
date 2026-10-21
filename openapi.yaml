@@ -7026,6 +7026,17 @@ components:
           type: number
           example: 60
           description: Tolérance retard RDV (minutes)
+        defaultWorkingDays:
+          example:
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+          description: Jours ouvrés par défaut du site (1=Lundi ... 7=Dimanche)
+          type: array
+          items:
+            type: number
         defaultBaseWeightWalkin:
           type: number
           example: 0
@@ -7085,6 +7096,7 @@ components:
         - defaultWorkingHoursStart
         - defaultWorkingHoursEnd
         - defaultLateToleranceMinutes
+        - defaultWorkingDays
         - defaultBaseWeightWalkin
         - defaultBaseWeightAppointment
         - defaultEscalationRateWalkin
@@ -7187,6 +7199,17 @@ components:
           type: number
           example: 60
           description: Tolérance retard RDV (minutes)
+        defaultWorkingDays:
+          example: &ref_102
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+          description: Jours ouvrés par défaut du site (1=Lundi ... 7=Dimanche)
+          type: array
+          items:
+            type: number
         defaultBaseWeightWalkin:
           type: number
           example: 0
@@ -7209,7 +7232,7 @@ components:
           description: Reporter les clients en attente au lendemain
         defaultDailyResetMode:
           type: string
-          enum: &ref_102
+          enum: &ref_103
             - close_all
             - close_served_only
           example: close_all
@@ -7285,6 +7308,12 @@ components:
           type: number
           example: 60
           description: Tolérance retard RDV (minutes)
+        defaultWorkingDays:
+          example: *ref_102
+          description: Jours ouvrés par défaut du site (1=Lundi ... 7=Dimanche)
+          type: array
+          items:
+            type: number
         defaultBaseWeightWalkin:
           type: number
           example: 0
@@ -7307,7 +7336,7 @@ components:
           description: Reporter les clients en attente au lendemain
         defaultDailyResetMode:
           type: string
-          enum: *ref_102
+          enum: *ref_103
           example: close_all
           description: Valeur du champ « default daily reset mode ».
         defaultDailyResetTime:
@@ -7517,6 +7546,12 @@ components:
             - inherited
             - overridden
           description: Valeur du champ « late tolerance minutes ».
+        workingDays:
+          type: string
+          enum:
+            - inherited
+            - overridden
+          description: Valeur du champ « working days ».
         baseWeightWalkin:
           type: string
           enum:
@@ -7571,6 +7606,7 @@ components:
         - breakStart
         - breakEnd
         - lateToleranceMinutes
+        - workingDays
         - baseWeightWalkin
         - baseWeightAppointment
         - escalationRateWalkin
@@ -7647,6 +7683,17 @@ components:
           type: number
           example: 60
           description: Tolérance retard RDV en minutes
+        workingDays:
+          example:
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+          description: Jours ouvrés effectifs de la file (1=Lundi ... 7=Dimanche)
+          type: array
+          items:
+            type: number
         baseWeightWalkin:
           type: number
           example: 0
@@ -7711,6 +7758,7 @@ components:
         - workingHoursStart
         - workingHoursEnd
         - lateToleranceMinutes
+        - workingDays
         - baseWeightWalkin
         - baseWeightAppointment
         - escalationRateWalkin
@@ -7808,6 +7856,18 @@ components:
           type: number
           example: 60
           description: Tolérance retard RDV (minutes)
+        workingDays:
+          example: &ref_104
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+          nullable: true
+          description: Surcharge des jours ouvrés de la file (1=Lundi ... 7=Dimanche) ; null ou absence = héritage du site
+          type: array
+          items:
+            type: number
         baseWeightWalkin:
           type: number
           example: 0
@@ -7830,7 +7890,7 @@ components:
           description: Valeur du champ « carry over waiting ».
         dailyResetMode:
           type: string
-          enum: &ref_103
+          enum: &ref_105
             - close_all
             - close_served_only
           example: close_all
@@ -7903,6 +7963,13 @@ components:
           type: number
           example: 60
           description: Tolérance retard RDV (minutes)
+        workingDays:
+          example: *ref_104
+          nullable: true
+          description: Surcharge des jours ouvrés de la file (1=Lundi ... 7=Dimanche) ; null ou absence = héritage du site
+          type: array
+          items:
+            type: number
         baseWeightWalkin:
           type: number
           example: 0
@@ -7925,7 +7992,7 @@ components:
           description: Valeur du champ « carry over waiting ».
         dailyResetMode:
           type: string
-          enum: *ref_103
+          enum: *ref_105
           example: close_all
           description: Valeur du champ « daily reset mode ».
         dailyResetTime:

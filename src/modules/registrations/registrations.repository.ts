@@ -32,7 +32,7 @@ export class RegistrationsTransaction {
       `SELECT q.*, s.timezone, s.default_currency,
        s.default_appointments_enabled, s.default_appointment_slot_duration, s.default_slot_capacity,
        s.default_working_hours_start, s.default_working_hours_end, s.default_break_start,
-       s.default_break_end, s.default_late_tolerance_minutes
+       s.default_break_end, s.default_late_tolerance_minutes, s.default_working_days
        FROM dori_queue q JOIN dori_site s ON s.site_id = q.site_id
        WHERE q.queue_id = $1 AND q.is_active = TRUE`,
       [queueId],
@@ -299,7 +299,7 @@ export class RegistrationsRepository {
     const rows = await this.dataSource.query(
       `SELECT q.*, s.timezone, s.default_appointments_enabled, s.default_appointment_slot_duration,
        s.default_slot_capacity, s.default_working_hours_start, s.default_working_hours_end,
-       s.default_break_start, s.default_break_end FROM dori_queue q
+       s.default_break_start, s.default_break_end, s.default_working_days FROM dori_queue q
        JOIN dori_site s ON s.site_id=q.site_id WHERE q.queue_id=$1 AND q.is_active=TRUE`,
       [queueId],
     );

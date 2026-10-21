@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsBoolean,
   IsIn,
   IsInt,
@@ -9,6 +10,7 @@ import {
   IsISO4217CurrencyCode,
   IsLocale,
   Matches,
+  Max,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -109,6 +111,20 @@ export class CreateQueueDto {
   @Min(0)
   @IsOptional()
   lateToleranceMinutes?: number;
+
+  @ApiPropertyOptional({
+    type: [Number],
+    example: [1, 2, 3, 4, 5],
+    nullable: true,
+    description:
+      'Surcharge des jours ouvrés de la file (1=Lundi ... 7=Dimanche) ; null ou absence = héritage du site',
+  })
+  @IsArray()
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  @Max(7, { each: true })
+  @IsOptional()
+  workingDays?: number[] | null;
 
   @ApiPropertyOptional({ example: 0 })
   @IsNumber()
