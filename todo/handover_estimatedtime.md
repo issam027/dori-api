@@ -604,3 +604,27 @@ La migration est livrée mais n'est pas appliquée automatiquement à une base p
 <!-- CHECKPOINT id="ckpt_mvglymd5_5p2b41" time="2026-10-20T11:36:48.569Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 <!-- CHECKPOINT id="ckpt_mvgmbhez_7feqh2" time="2026-10-20T11:46:48.683Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvgt3u18_fe44ar" time="2026-10-20T14:56:49.100Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvgtgp29_fuk3t2" time="2026-10-20T15:06:49.185Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvgttk2b_qhgsqo" time="2026-10-20T15:16:49.235Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvgu6f2h_p33yli" time="2026-10-20T15:26:49.289Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvguu9jm_mjvn5t" time="2026-10-20T15:45:21.874Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvh22jni_2263kq" time="2026-10-20T19:07:45.534Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvh458eu_jp16h5" time="2026-10-20T20:05:50.166Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvh73qhw_4hx5d0" time="2026-10-20T21:28:39.140Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvh7glgk_q0rthd" time="2026-10-20T21:38:39.140Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvh7tgfd_ajenrf" time="2026-10-20T21:48:39.145Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvh86be1_qg3ao9" time="2026-10-20T21:58:39.145Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvh8j6co_92vhar" time="2026-10-20T22:08:39.144Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

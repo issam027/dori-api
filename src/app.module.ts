@@ -12,6 +12,7 @@ import { ClockModule } from './core/clock/clock.module';
 import { RbacModule } from './core/rbac/rbac.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { RealtimeModule } from './core/realtime/realtime.module';
+import { RedisModule } from './core/redis/redis.module';
 
 import { SitesModule } from './modules/sites/sites.module';
 import { QueuesModule } from './modules/queues/queues.module';
@@ -40,6 +41,7 @@ import { GlobalExceptionFilter } from './core/errors/global-exception.filter';
       validate: validateEnvironment,
     }),
     ScheduleModule.forRoot(),
+    RedisModule,
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

@@ -1,22 +1,37 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
 import { ClockService } from '../clock/clock.service';
 import { MonitoringRepository } from './monitoring.repository';
 import { ScopeService } from '../rbac/services/scope.service';
 import { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
 import { DoriException } from '../errors/dori.exception';
+import { REDIS_CLIENT } from '../redis/redis.module';
+import type Redis from 'ioredis';
+
+const METRICS_HASH_KEY = 'dori:metrics:counters';
 
 @Injectable()
 export class MonitoringService {
+  private readonly logger = new Logger(MonitoringService.name);
   private readonly counters = new Map<string, number>();
 
   constructor(
     private readonly repository: MonitoringRepository,
     private readonly clockService: ClockService,
     private readonly scopeService: ScopeService,
+    @Optional() @Inject(REDIS_CLIENT) private readonly redis?: Redis,
   ) {}
 
   increment(name: string, value = 1): void {
     this.counters.set(name, (this.counters.get(name) ?? 0) + value);
+    if (this.redis) {
+      this.redis
+        .hincrbyfloat(METRICS_HASH_KEY, name, value)
+        .catch((err: Error) => {
+          this.logger.warn(
+            `Failed to increment Redis metric ${name}: ${err.message}`,
+          );
+        });
+    }
   }
 
   async health() {
@@ -31,8 +46,29 @@ export class MonitoringService {
     };
   }
 
-  metrics() {
-    const counters = Object.fromEntries(this.counters);
+  async metrics() {
+    let counters: Record<string, number> = {};
+
+    if (this.redis) {
+      try {
+        const raw = await this.redis.hgetall(METRICS_HASH_KEY);
+        if (raw && Object.keys(raw).length > 0) {
+          for (const [key, val] of Object.entries(raw)) {
+            counters[key] = Number(val);
+          }
+        } else {
+          counters = Object.fromEntries(this.counters);
+        }
+      } catch (err) {
+        this.logger.warn(
+          `Failed to fetch metrics from Redis: ${(err as Error).message}`,
+        );
+        counters = Object.fromEntries(this.counters);
+      }
+    } else {
+      counters = Object.fromEntries(this.counters);
+    }
+
     const requests = counters.http_requests_total ?? 0;
     const totalDuration = counters.http_request_duration_ms_total ?? 0;
     return {

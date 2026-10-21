@@ -5,7 +5,7 @@ import { MonitoringService } from './monitoring.service';
 describe('MonitoringService', () => {
   const now = new Date('2026-10-15T12:00:00.000Z');
 
-  function createService(databaseAvailable = true) {
+  function createService(databaseAvailable = true, redisMock?: unknown) {
     const repository = {
       isDatabaseAvailable: jest.fn().mockResolvedValue(databaseAvailable),
       activitySnapshot: jest.fn().mockResolvedValue({
@@ -47,7 +47,12 @@ describe('MonitoringService', () => {
       checkSiteAccess: jest.fn(),
     };
     return {
-      service: new MonitoringService(repository, clock, scope as never),
+      service: new MonitoringService(
+        repository,
+        clock,
+        scope as never,
+        redisMock as never,
+      ),
       repository: repository as unknown as {
         activitySnapshot: jest.Mock;
         liveSnapshot: jest.Mock;
@@ -66,17 +71,44 @@ describe('MonitoringService', () => {
     expect(repository.activitySnapshot).not.toHaveBeenCalled();
   });
 
-  it('keeps metrics limited to technical counters', () => {
+  it('keeps metrics limited to technical counters with in-memory fallback', async () => {
     const { service } = createService();
     service.increment('http_requests_total', 2);
     service.increment('http_request_duration_ms_total', 30);
 
-    expect(service.metrics()).toEqual({
+    expect(await service.metrics()).toEqual({
       counters: {
         http_requests_total: 2,
         http_request_duration_ms_total: 30,
       },
       derived: { averageHttpRequestDurationMs: 15 },
+      generatedAt: now.toISOString(),
+    });
+  });
+
+  it('persists and reads metrics from Redis when available', async () => {
+    const redisMock = {
+      hincrbyfloat: jest.fn().mockResolvedValue('1'),
+      hgetall: jest.fn().mockResolvedValue({
+        http_requests_total: '10',
+        http_request_duration_ms_total: '200',
+      }),
+    };
+    const { service } = createService(true, redisMock);
+    service.increment('http_requests_total', 1);
+    expect(redisMock.hincrbyfloat).toHaveBeenCalledWith(
+      'dori:metrics:counters',
+      'http_requests_total',
+      1,
+    );
+
+    const metrics = await service.metrics();
+    expect(metrics).toEqual({
+      counters: {
+        http_requests_total: 10,
+        http_request_duration_ms_total: 200,
+      },
+      derived: { averageHttpRequestDurationMs: 20 },
       generatedAt: now.toISOString(),
     });
   });

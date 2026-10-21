@@ -58,8 +58,8 @@ export class MonitoringController {
   @RequirePermission('system_manage')
   @ApiOperation({ summary: 'Métriques techniques du processus et des workers' })
   @ApiDoriOkResponse(MonitoringMetricsResponseDto, 'Métriques techniques')
-  metrics() {
-    return this.monitoringService.metrics();
+  async metrics() {
+    return await this.monitoringService.metrics();
   }
 
   @Get('activity')

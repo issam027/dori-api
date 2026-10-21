@@ -224,7 +224,7 @@ export class QueuesService {
 
     // 3. Fermeture des sessions guichet actives de la file
 
-    this.scopeService.clearAllScopeCache();
+    await this.scopeService.clearAllScopeCache();
 
     return { queueId, deleted: true };
   }

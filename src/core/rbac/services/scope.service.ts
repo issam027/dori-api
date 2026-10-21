@@ -1,7 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { AuthenticatedUser } from '../../auth/interfaces/jwt-payload.interface';
 import { DoriException } from '../../errors/dori.exception';
 import { ScopeRepository } from '../repositories/scope.repository';
+import { REDIS_CLIENT } from '../../redis/redis.module';
+import type Redis from 'ioredis';
 
 export interface UserScope {
   isGlobal: boolean;
@@ -9,25 +11,31 @@ export interface UserScope {
   queueIds: number[];
 }
 
+/** Préfixe de toutes les clés Redis du cache de scope RBAC */
+const SCOPE_KEY_PREFIX = 'scope:user:';
+/** TTL du cache : 30 secondes (§7.5) */
+const CACHE_TTL_SECONDS = 30;
+
 @Injectable()
 export class ScopeService {
-  // In-memory cache with TTL 30s as per §7.5
-  private scopeCache = new Map<
-    number,
-    { scope: UserScope; expiresAt: number }
-  >();
-  private readonly CACHE_TTL_MS = 30 * 1000;
+  constructor(
+    private readonly scopeRepository: ScopeRepository,
+    @Inject(REDIS_CLIENT) private readonly redis: Redis,
+  ) {}
 
-  constructor(private readonly scopeRepository: ScopeRepository) {}
+  private cacheKey(userId: number): string {
+    return `${SCOPE_KEY_PREFIX}${userId}`;
+  }
 
   async getUserScope(user: AuthenticatedUser): Promise<UserScope> {
     if (user.roles?.includes('root') || user.roles?.includes('admin')) {
       return { isGlobal: true, siteIds: [], queueIds: [] };
     }
 
-    const cached = this.scopeCache.get(user.userId);
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.scope;
+    // Lecture depuis Redis (partagé entre toutes les instances)
+    const cached = await this.redis.get(this.cacheKey(user.userId));
+    if (cached) {
+      return JSON.parse(cached) as UserScope;
     }
 
     let siteIds: number[] = [];
@@ -54,10 +62,12 @@ export class ScopeService {
       queueIds,
     };
 
-    this.scopeCache.set(user.userId, {
-      scope,
-      expiresAt: Date.now() + this.CACHE_TTL_MS,
-    });
+    // SETEX : écriture avec TTL, visible par toutes les instances (§7.5)
+    await this.redis.setex(
+      this.cacheKey(user.userId),
+      CACHE_TTL_SECONDS,
+      JSON.stringify(scope),
+    );
 
     return scope;
   }
@@ -88,11 +98,28 @@ export class ScopeService {
     }
   }
 
+  /** Invalide le scope d'un utilisateur sur TOUTES les instances (DEL Redis) */
   invalidateUserScope(userId: number): void {
-    this.scopeCache.delete(userId);
+    // Fire-and-forget : pas besoin d'awaiter, l'invalidation est quasi-instantanée
+    void this.redis.del(this.cacheKey(userId));
   }
 
-  clearAllScopeCache(): void {
-    this.scopeCache.clear();
+  /** Invalide le cache de tous les utilisateurs (SCAN + DEL par batch) */
+  async clearAllScopeCache(): Promise<void> {
+    let cursor = '0';
+    const pattern = `${SCOPE_KEY_PREFIX}*`;
+    do {
+      const [nextCursor, keys] = await this.redis.scan(
+        cursor,
+        'MATCH',
+        pattern,
+        'COUNT',
+        100,
+      );
+      cursor = nextCursor;
+      if (keys.length > 0) {
+        await this.redis.del(...keys);
+      }
+    } while (cursor !== '0');
   }
 }

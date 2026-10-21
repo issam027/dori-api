@@ -350,7 +350,7 @@ export class UsersService {
       now,
     );
 
-    this.scopeService.clearAllScopeCache();
+    await this.scopeService.clearAllScopeCache();
     return { roleId, permissionsUpdated: true };
   }
 
