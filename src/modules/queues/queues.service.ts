@@ -310,14 +310,13 @@ export class QueuesService {
     const resetMode =
       daily_reset_mode || default_daily_reset_mode || 'close_all';
     const businessDate = this.clockService.todayInTimezone(timezone);
-    const tomorrow = this.clockService.tomorrowInTimezone(timezone);
 
     await this.queuesRepository.reset({
       queueId,
       userId: user.userId,
       now,
       businessDate,
-      tomorrow,
+      targetBusinessDate: businessDate,
       trackingValidUntil: this.clockService.addDays(now, 1),
       carryOver: shouldCarryOver ?? false,
       resetMode,

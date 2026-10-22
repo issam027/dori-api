@@ -3118,7 +3118,7 @@
           ]
         },
         "summary": "Réinitialiser manuellement la file",
-        "description": "Clôture les inscriptions en attente du jour selon le mode configuré.",
+        "description": "Clôture ou reporte sur la date métier courante toutes les inscriptions ouvertes jusqu'à aujourd'hui, selon le mode configuré.",
         "parameters": [
           {
             "name": "queueId",

@@ -325,7 +325,7 @@ export class QueuesRepository {
     userId: number;
     now: Date;
     businessDate: string;
-    tomorrow: string;
+    targetBusinessDate: string;
     trackingValidUntil: Date;
     carryOver: boolean;
     resetMode: 'close_all' | 'carry_over_open';
@@ -368,7 +368,7 @@ export class QueuesRepository {
            AND status IN ('booked', 'waiting', 'in_progress')
            AND is_active = TRUE AND ticket_number NOT LIKE '!%'`,
           [
-            input.tomorrow,
+            input.targetBusinessDate,
             input.businessDate,
             input.trackingValidUntil,
             input.now,

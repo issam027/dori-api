@@ -165,7 +165,7 @@ describe('QueuesRepository', () => {
       userId: 2,
       now: new Date('2026-10-06T03:00:00Z'),
       businessDate: '2026-10-05',
-      tomorrow: '2026-10-06',
+      targetBusinessDate: '2026-10-05',
       trackingValidUntil: new Date('2026-10-07T03:00:00Z'),
       carryOver: true,
       resetMode: 'carry_over_open',
@@ -182,5 +182,6 @@ describe('QueuesRepository', () => {
     expect(query.mock.calls[3][0]).toContain('served_by_session_id = NULL');
     expect(query.mock.calls[3][0]).toContain('business_date <= $2::date');
     expect(query.mock.calls[3][0]).toContain("ticket_number NOT LIKE '!%'");
+    expect(query.mock.calls[3][1][0]).toBe('2026-10-05');
   });
 });

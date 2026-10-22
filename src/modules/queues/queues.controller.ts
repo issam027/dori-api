@@ -180,7 +180,7 @@ export class QueuesController {
   @ApiOperation({
     summary: 'Réinitialiser manuellement la file',
     description:
-      'Clôture les inscriptions en attente du jour selon le mode configuré.',
+      "Clôture ou reporte sur la date métier courante toutes les inscriptions ouvertes jusqu'à aujourd'hui, selon le mode configuré.",
   })
   @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
   @ApiDoriOkResponse(ResetQueueResponseDto, 'File réinitialisée avec succès')
