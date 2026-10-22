@@ -136,8 +136,8 @@ export class QueueResponseDto {
   })
   carryOverWaiting: boolean;
 
-  @ApiProperty({ enum: ['close_all', 'close_served_only'] })
-  dailyResetMode: 'close_all' | 'close_served_only';
+  @ApiProperty({ enum: ['close_all', 'carry_over_open'] })
+  dailyResetMode: 'close_all' | 'carry_over_open';
 
   @ApiProperty({ example: '03:00:00' })
   dailyResetTime: string;

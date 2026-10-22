@@ -7062,7 +7062,7 @@ components:
           example: close_all
           enum:
             - close_all
-            - close_served_only
+            - carry_over_open
           description: Mode de réinitialisation
         defaultDailyResetTime:
           type: string
@@ -7234,7 +7234,7 @@ components:
           type: string
           enum: &ref_103
             - close_all
-            - close_served_only
+            - carry_over_open
           example: close_all
           description: Valeur du champ « default daily reset mode ».
         defaultDailyResetTime:
@@ -7718,7 +7718,7 @@ components:
           type: string
           enum:
             - close_all
-            - close_served_only
+            - carry_over_open
           description: Valeur du champ « daily reset mode ».
         dailyResetTime:
           type: string
@@ -7892,7 +7892,7 @@ components:
           type: string
           enum: &ref_105
             - close_all
-            - close_served_only
+            - carry_over_open
           example: close_all
           description: Valeur du champ « daily reset mode ».
         dailyResetTime:

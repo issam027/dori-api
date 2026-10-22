@@ -179,12 +179,12 @@ export class CreateSiteDto {
   defaultCarryOverWaiting?: boolean;
 
   @ApiPropertyOptional({
-    enum: ['close_all', 'close_served_only'],
+    enum: ['close_all', 'carry_over_open'],
     example: 'close_all',
   })
-  @IsIn(['close_all', 'close_served_only'])
+  @IsIn(['close_all', 'carry_over_open'])
   @IsOptional()
-  defaultDailyResetMode?: 'close_all' | 'close_served_only';
+  defaultDailyResetMode?: 'close_all' | 'carry_over_open';
 
   @ApiPropertyOptional({
     example: '03:00',

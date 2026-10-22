@@ -105,7 +105,7 @@ export class SiteResponseDto {
 
   @ApiProperty({
     example: 'close_all',
-    enum: ['close_all', 'close_served_only'],
+    enum: ['close_all', 'carry_over_open'],
     description: 'Mode de réinitialisation',
   })
   defaultDailyResetMode: string;

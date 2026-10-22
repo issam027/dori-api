@@ -15131,7 +15131,7 @@
             "example": "close_all",
             "enum": [
               "close_all",
-              "close_served_only"
+              "carry_over_open"
             ],
             "description": "Mode de réinitialisation"
           },
@@ -15344,7 +15344,7 @@
             "type": "string",
             "enum": [
               "close_all",
-              "close_served_only"
+              "carry_over_open"
             ],
             "example": "close_all",
             "description": "Valeur du champ « default daily reset mode »."
@@ -15485,7 +15485,7 @@
             "type": "string",
             "enum": [
               "close_all",
-              "close_served_only"
+              "carry_over_open"
             ],
             "example": "close_all",
             "description": "Valeur du champ « default daily reset mode »."
@@ -15977,7 +15977,7 @@
             "type": "string",
             "enum": [
               "close_all",
-              "close_served_only"
+              "carry_over_open"
             ],
             "description": "Valeur du champ « daily reset mode »."
           },
@@ -16194,7 +16194,7 @@
             "type": "string",
             "enum": [
               "close_all",
-              "close_served_only"
+              "carry_over_open"
             ],
             "example": "close_all",
             "description": "Valeur du champ « daily reset mode »."
@@ -16329,7 +16329,7 @@
             "type": "string",
             "enum": [
               "close_all",
-              "close_served_only"
+              "carry_over_open"
             ],
             "example": "close_all",
             "description": "Valeur du champ « daily reset mode »."

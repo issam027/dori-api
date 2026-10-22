@@ -154,7 +154,7 @@ describe('QueuesRepository', () => {
     );
   });
 
-  it('uses reset mode and ! prefix during a manual carry-over', async () => {
+  it('locks the queue and carries every open registration through today', async () => {
     const query = jest.fn().mockResolvedValue([]);
     const dataSource = {
       transaction: jest.fn((callback) => callback({ query })),
@@ -168,14 +168,19 @@ describe('QueuesRepository', () => {
       tomorrow: '2026-10-06',
       trackingValidUntil: new Date('2026-10-07T03:00:00Z'),
       carryOver: true,
-      resetMode: 'close_served_only',
+      resetMode: 'carry_over_open',
     });
 
-    expect(query).toHaveBeenCalledTimes(3);
-    expect(query.mock.calls[1][0]).toContain("ticket_number LIKE '!%'");
-    expect(query.mock.calls[2][0]).toContain(
+    expect(query).toHaveBeenCalledTimes(4);
+    expect(query.mock.calls[0][0]).toContain('pg_advisory_xact_lock');
+    expect(query.mock.calls[2][0]).toContain('business_date <= $3::date');
+    expect(query.mock.calls[2][0]).toContain("ticket_number LIKE '!%'");
+    expect(query.mock.calls[3][0]).toContain(
       "ticket_number = '!' || ticket_number",
     );
-    expect(query.mock.calls[2][0]).toContain("ticket_number NOT LIKE '!%'");
+    expect(query.mock.calls[3][0]).toContain("status = 'in_progress'");
+    expect(query.mock.calls[3][0]).toContain('served_by_session_id = NULL');
+    expect(query.mock.calls[3][0]).toContain('business_date <= $2::date');
+    expect(query.mock.calls[3][0]).toContain("ticket_number NOT LIKE '!%'");
   });
 });

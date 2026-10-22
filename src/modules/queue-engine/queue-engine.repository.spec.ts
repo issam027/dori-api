@@ -95,6 +95,8 @@ describe('QueueEngineRepository', () => {
   it('selects and transitions the next candidate in one transaction', async () => {
     const query = jest
       .fn()
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ session_id: 4 }])
       .mockResolvedValueOnce([{ registration_id: 9, score: '42.5' }])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([
@@ -124,11 +126,13 @@ describe('QueueEngineRepository', () => {
 
     expect(result?.registration_id).toBe(9);
     expect(result?.score).toBe(42.5);
-    expect(query.mock.calls[0][0]).toContain('FOR UPDATE SKIP LOCKED');
-    expect(query.mock.calls[0][0]).toContain('$6::date');
-    expect(query.mock.calls[1][0]).toContain('served_by_session_id = $1');
-    expect(query.mock.calls[1][0]).toContain('served_by_user_id = $2');
-    expect(query.mock.calls[1][1]).toEqual([
+    expect(query.mock.calls[0][0]).toContain('pg_advisory_xact_lock');
+    expect(query.mock.calls[1][0]).toContain('disconnected_at IS NULL');
+    expect(query.mock.calls[2][0]).toContain('FOR UPDATE SKIP LOCKED');
+    expect(query.mock.calls[2][0]).toContain('$6::date');
+    expect(query.mock.calls[3][0]).toContain('served_by_session_id = $1');
+    expect(query.mock.calls[3][0]).toContain('served_by_user_id = $2');
+    expect(query.mock.calls[3][1]).toEqual([
       4,
       12,
       new Date('2026-10-06T12:00:00Z'),

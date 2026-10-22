@@ -81,7 +81,7 @@ export class DoriSite {
   default_carry_over_waiting: boolean;
 
   @Column({ type: 'varchar', length: 20, default: 'close_all' })
-  default_daily_reset_mode: 'close_all' | 'close_served_only';
+  default_daily_reset_mode: 'close_all' | 'carry_over_open';
 
   @Column({ type: 'time', default: '03:00' })
   default_daily_reset_time: string;

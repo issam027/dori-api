@@ -5,12 +5,12 @@ import { returningRows } from '../../core/database/returning-rows';
 export interface DailyResetQueueRow {
   queue_id: number;
   carry_over_waiting: boolean | null;
-  daily_reset_mode: 'close_all' | 'close_served_only' | null;
+  daily_reset_mode: 'close_all' | 'carry_over_open' | null;
   daily_reset_time: string | null;
   site_id: number;
   timezone: string;
   default_carry_over_waiting: boolean;
-  default_daily_reset_mode: 'close_all' | 'close_served_only';
+  default_daily_reset_mode: 'close_all' | 'carry_over_open';
   default_daily_reset_time: string;
 }
 
@@ -21,7 +21,7 @@ export interface ExecuteDailyResetInput {
   trackingValidUntil: Date;
   now: Date;
   carryOverWaiting: boolean;
-  resetMode: 'close_all' | 'close_served_only';
+  resetMode: 'close_all' | 'carry_over_open';
 }
 
 @Injectable()
@@ -72,16 +72,19 @@ export class DailyResetRepository {
         await manager.query(
           `UPDATE dori_registration SET status = 'expired', closed_at = $1, updated_at = $1
            WHERE queue_id = $2 AND business_date = $3::date AND is_active = TRUE
-             AND (status = 'in_progress'
-               OR (status IN ('booked', 'waiting') AND ticket_number LIKE '!%'))`,
+             AND status IN ('booked', 'waiting', 'in_progress')
+             AND ticket_number LIKE '!%'`,
           [input.now, input.queueId, input.businessDate],
         );
         await manager.query(
           `UPDATE dori_registration
-           SET business_date = $1::date, carried_over_from_date = $2::date,
+           SET business_date = $1::date, carried_over_from_date = business_date,
                ticket_number = '!' || ticket_number,
+               status = CASE WHEN status = 'in_progress' THEN 'waiting' ELSE status END,
+               served_by_session_id = NULL, served_by_user_id = NULL, called_at = NULL,
                registration_tracking_token_valid_until = $3, updated_at = $4
-           WHERE queue_id = $5 AND business_date = $2::date AND status IN ('booked', 'waiting')
+           WHERE queue_id = $5 AND business_date = $2::date
+             AND status IN ('booked', 'waiting', 'in_progress')
              AND is_active = TRUE AND ticket_number NOT LIKE '!%'`,
           [
             input.nextBusinessDate,

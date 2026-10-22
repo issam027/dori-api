@@ -1,5 +1,13 @@
 -- Seed Data according to §3.6, §3.13, §4.9
 
+-- Keep legacy seeded configurations aligned with migration 013.
+UPDATE dori_queue
+SET daily_reset_mode = 'carry_over_open'
+WHERE daily_reset_mode = 'close_served_only';
+UPDATE dori_site
+SET default_daily_reset_mode = 'carry_over_open'
+WHERE default_daily_reset_mode = 'close_served_only';
+
 -- Rename the former rank-2 role without losing user assignments or its id.
 DO $$
 DECLARE old_role_id INT; new_role_id INT;

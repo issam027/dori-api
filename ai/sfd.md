@@ -274,7 +274,7 @@ erDiagram
 | `default_escalation_rate_walkin` | NUMERIC(10,2) | Non | `1` | Taux de montée en priorité par minute d'attente (walkin) |
 | `default_escalation_rate_appointment` | NUMERIC(10,2) | Non | `1` | Taux de montée en priorité par minute d'attente (RDV) |
 | `default_carry_over_waiting` | BOOLEAN | Non | `FALSE` | Reporter les tickets non traités au lendemain lors du reset |
-| `default_daily_reset_mode` | VARCHAR(20) | Non | `'close_all'` | Mode de reset (`'close_all'`, `'close_served_only'`) |
+| `default_daily_reset_mode` | VARCHAR(20) | Non | `'close_all'` | Mode de reset (`'close_all'`, `'carry_over_open'`) |
 | `default_daily_reset_time` | TIME | Non | `'03:00'` | Heure locale d'exécution du reset nocturne |
 | `default_locale` | VARCHAR(10) | Non | `'fr'` | Langue IHM par défaut du site |
 
@@ -676,7 +676,7 @@ Pour autoriser le déploiement multi-instances sans risque de doubler l'envoi de
   - **Fermeture des sessions d'opérateurs** : toutes les sessions actives sur la file sont clôturées avec `closure_reason = 'daily_reset'`.
   - **Gestion des tickets restants** :
     - En mode `'close_all'` : tous les tickets restants en statut `'waiting'` ou `'in_progress'` passent à `'expired'` et `is_active = FALSE`.
-    - En mode `'close_served_only'` avec `carry_over_waiting = true` : les usagers encore en attente sont reportés à la date métier suivante (`business_date = nextDate`, `carried_over_from_date = businessDate`), leur token de suivi est prolongé de 24h, et ils conservent leur antériorité d'attente.
+    - En mode `'carry_over_open'` avec `carry_over_waiting = true` : les inscriptions ouvertes (`booked`, `waiting`, `in_progress`) sont reportées à la date métier suivante (`business_date = nextDate`, `carried_over_from_date = businessDate`), leur token de suivi est prolongé de 24h, et les inscriptions `in_progress` sont remises en attente sans affectation opérateur.
   - **Enregistrement de confirmation** : insertion dans `dori_queue_daily_reset_execution`.
 
 ### 8.2 Expiration des Rendez-vous Dépassés (`AppointmentExpiryWorker`)

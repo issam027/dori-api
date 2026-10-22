@@ -79,7 +79,7 @@ export class DoriQueue {
   carry_over_waiting: boolean | null;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
-  daily_reset_mode: 'close_all' | 'close_served_only' | null;
+  daily_reset_mode: 'close_all' | 'carry_over_open' | null;
 
   @Column({ type: 'time', nullable: true })
   daily_reset_time: string | null;

@@ -152,12 +152,12 @@ export class CreateQueueDto {
   carryOverWaiting?: boolean;
 
   @ApiPropertyOptional({
-    enum: ['close_all', 'close_served_only'],
+    enum: ['close_all', 'carry_over_open'],
     example: 'close_all',
   })
-  @IsIn(['close_all', 'close_served_only'])
+  @IsIn(['close_all', 'carry_over_open'])
   @IsOptional()
-  dailyResetMode?: 'close_all' | 'close_served_only';
+  dailyResetMode?: 'close_all' | 'carry_over_open';
 
   @ApiPropertyOptional({ example: '03:00' })
   @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)

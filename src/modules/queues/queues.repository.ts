@@ -240,18 +240,18 @@ export class QueuesRepository {
     average_wait_time: number;
     timezone: string;
     carry_over_waiting?: boolean | null;
-    daily_reset_mode?: 'close_all' | 'close_served_only' | null;
+    daily_reset_mode?: 'close_all' | 'carry_over_open' | null;
     default_carry_over_waiting?: boolean;
-    default_daily_reset_mode?: 'close_all' | 'close_served_only';
+    default_daily_reset_mode?: 'close_all' | 'carry_over_open';
   } | null> {
     const rows: Array<{
       site_id: number;
       average_wait_time: number;
       timezone: string;
       carry_over_waiting: boolean | null;
-      daily_reset_mode: 'close_all' | 'close_served_only' | null;
+      daily_reset_mode: 'close_all' | 'carry_over_open' | null;
       default_carry_over_waiting: boolean;
-      default_daily_reset_mode: 'close_all' | 'close_served_only';
+      default_daily_reset_mode: 'close_all' | 'carry_over_open';
     }> = await this.dataSource.query(
       `SELECT q.site_id, q.average_wait_time, q.carry_over_waiting, q.daily_reset_mode,
               s.timezone, s.default_carry_over_waiting, s.default_daily_reset_mode
@@ -328,9 +328,13 @@ export class QueuesRepository {
     tomorrow: string;
     trackingValidUntil: Date;
     carryOver: boolean;
-    resetMode: 'close_all' | 'close_served_only';
+    resetMode: 'close_all' | 'carry_over_open';
   }): Promise<void> {
     return this.dataSource.transaction(async (manager) => {
+      await manager.query('SELECT pg_advisory_xact_lock(hashtext($1), $2)', [
+        'daily-reset',
+        input.queueId,
+      ]);
       await manager.query(
         `UPDATE dori_operator_session SET disconnected_at = $1,
          closure_reason = 'daily_reset', closed_by_user_id = $2
@@ -341,7 +345,7 @@ export class QueuesRepository {
         await manager.query(
           `UPDATE dori_registration SET status = 'expired', closed_at = $1,
            updated_at = $1 WHERE queue_id = $2
-           AND business_date = $3::date
+           AND business_date <= $3::date
            AND status IN ('booked', 'waiting', 'in_progress') AND is_active = TRUE`,
           [input.now, input.queueId, input.businessDate],
         );
@@ -349,17 +353,19 @@ export class QueuesRepository {
         await manager.query(
           `UPDATE dori_registration SET status = 'expired', closed_at = $1,
            updated_at = $1 WHERE queue_id = $2
-           AND business_date = $3::date AND is_active = TRUE
-           AND (status = 'in_progress'
-             OR (status IN ('booked', 'waiting') AND ticket_number LIKE '!%'))`,
+           AND business_date <= $3::date AND is_active = TRUE
+           AND status IN ('booked', 'waiting', 'in_progress')
+           AND ticket_number LIKE '!%'`,
           [input.now, input.queueId, input.businessDate],
         );
         await manager.query(
           `UPDATE dori_registration SET business_date = $1::date,
-           carried_over_from_date = $2::date, ticket_number = '!' || ticket_number,
+           carried_over_from_date = business_date, ticket_number = '!' || ticket_number,
+           status = CASE WHEN status = 'in_progress' THEN 'waiting' ELSE status END,
+           served_by_session_id = NULL, served_by_user_id = NULL, called_at = NULL,
            registration_tracking_token_valid_until = $3, updated_at = $4
-           WHERE queue_id = $5 AND business_date = $2::date
-           AND status IN ('booked', 'waiting')
+           WHERE queue_id = $5 AND business_date <= $2::date
+           AND status IN ('booked', 'waiting', 'in_progress')
            AND is_active = TRUE AND ticket_number NOT LIKE '!%'`,
           [
             input.tomorrow,

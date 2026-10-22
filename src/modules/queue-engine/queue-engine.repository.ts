@@ -349,6 +349,18 @@ export class QueueEngineRepository {
     rateAppointment: number;
   }): Promise<NextCandidateRow | null> {
     return this.dataSource.transaction(async (manager) => {
+      await manager.query('SELECT pg_advisory_xact_lock(hashtext($1), $2)', [
+        'daily-reset',
+        input.queueId,
+      ]);
+      const activeSession: Array<{ session_id: number }> = await manager.query(
+        `SELECT session_id FROM dori_operator_session
+         WHERE session_id = $1 AND queue_id = $2 AND user_id = $3
+           AND disconnected_at IS NULL AND mode = 'active' FOR UPDATE`,
+        [input.sessionId, input.queueId, input.userId],
+      );
+      if (!activeSession.length) return null;
+
       let selected: Array<{ registration_id: number; score: number }> =
         await manager.query(
           `WITH eligible AS (

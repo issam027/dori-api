@@ -76,7 +76,7 @@ describe('DailyResetRepository', () => {
     expect(query.mock.calls[3][0]).not.toContain("ticket_number = '!' ||");
   });
 
-  it('carries waiting tickets once with ! in close_served_only mode', async () => {
+  it('carries open tickets once with ! in carry_over_open mode', async () => {
     const query = jest
       .fn()
       .mockResolvedValueOnce([{ acquired: true }])
@@ -93,7 +93,7 @@ describe('DailyResetRepository', () => {
       trackingValidUntil: new Date('2026-10-07T03:00:00Z'),
       now: new Date('2026-10-06T03:00:00Z'),
       carryOverWaiting: true,
-      resetMode: 'close_served_only',
+      resetMode: 'carry_over_open',
     });
 
     expect(query).toHaveBeenCalledTimes(5);
@@ -101,6 +101,8 @@ describe('DailyResetRepository', () => {
     expect(query.mock.calls[4][0]).toContain(
       "ticket_number = '!' || ticket_number",
     );
+    expect(query.mock.calls[4][0]).toContain("status = 'in_progress'");
+    expect(query.mock.calls[4][0]).toContain('served_by_session_id = NULL');
     expect(query.mock.calls[4][0]).toContain("ticket_number NOT LIKE '!%'");
   });
 });
