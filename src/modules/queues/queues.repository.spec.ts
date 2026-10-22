@@ -95,7 +95,7 @@ describe('QueuesRepository', () => {
 
     query.mockClear();
     await repository.deactivate(8, 1, now);
-    expect(query).toHaveBeenCalledTimes(3);
+    expect(query).toHaveBeenCalledTimes(6);
   });
 
   it('assigns a user to the parent site and queue in one transaction', async () => {

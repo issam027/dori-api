@@ -1,4 +1,4 @@
-import { ClockService } from '../clock/clock.service';
+import { ClockService } from '../../core/clock/clock.service';
 import { MonitoringRepository } from './monitoring.repository';
 import { MonitoringService } from './monitoring.service';
 

@@ -221,12 +221,8 @@ export class QueuesService {
 
     const now = this.clockService.now();
 
-    // 1. Soft delete de la file d'attente
+    // Soft delete et désactivation en cascade de toutes les sous-ressources (tiers, sessions, tickets, assignations)
     await this.queuesRepository.deactivate(queueId, user.userId, now);
-
-    // 2. Cascade de désactivation sur les forfaits associés à cette file
-
-    // 3. Fermeture des sessions guichet actives de la file
 
     await this.scopeService.clearAllScopeCache();
 

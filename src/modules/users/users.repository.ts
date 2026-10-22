@@ -335,6 +335,13 @@ export class UsersRepository {
            WHERE user_id = $2 AND revoked_at IS NULL`,
           [now, userId],
         );
+
+        await manager.query(
+          `UPDATE dori_operator_session
+           SET disconnected_at = $1, closure_reason = 'forced', closed_by_user_id = $2
+           WHERE user_id = $3 AND disconnected_at IS NULL`,
+          [now, updaterUserId, userId],
+        );
       }
     });
   }
@@ -521,6 +528,23 @@ export class UsersRepository {
          SET revoked_at = $1, revoked_reason = 'account_deleted'
          WHERE user_id = $2 AND revoked_at IS NULL`,
         [now, userId],
+      );
+
+      await manager.query(
+        `UPDATE dori_operator_session
+         SET disconnected_at = $1, closure_reason = 'forced', closed_by_user_id = $2
+         WHERE user_id = $3 AND disconnected_at IS NULL`,
+        [now, deleterUserId, userId],
+      );
+
+      await manager.query(
+        `DELETE FROM dori_user_site_assignment WHERE user_id = $1`,
+        [userId],
+      );
+
+      await manager.query(
+        `DELETE FROM dori_user_queue_assignment WHERE user_id = $1`,
+        [userId],
       );
     });
   }

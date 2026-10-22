@@ -1,13 +1,13 @@
 import { Controller, Get, HttpStatus, Query, Res } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
-import { Public } from '../auth/decorators/public.decorator';
-import { RequirePermission } from '../rbac/decorators/require-permission.decorator';
+import { Public } from '../../core/auth/decorators/public.decorator';
+import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
 import {
   ApiDoriOkResponse,
   ApiDoriPublicErrorResponses,
   ApiDoriRawResponse,
-} from '../swagger/api-dori-response.decorator';
+} from '../../core/swagger/api-dori-response.decorator';
 import {
   MonitoringActivityResponseDto,
   MonitoringHealthResponseDto,
@@ -15,11 +15,11 @@ import {
   MonitoringLiveResponseDto,
 } from './dto/monitoring-response.dto';
 import { MonitoringService } from './monitoring.service';
-import { ReportsService } from '../../modules/reports/reports.service';
-import { ReportSeriesQueryDto } from '../../modules/reports/dto/report-query.dto';
-import { ReportSeriesResponseDto } from '../../modules/reports/dto/report-response.dto';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
+import { ReportsService } from './reports.service';
+import { ReportSeriesQueryDto } from './dto/report-query.dto';
+import { ReportSeriesResponseDto } from './dto/report-response.dto';
+import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
+import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { MonitoringLiveQueryDto } from './dto/monitoring-live-query.dto';
 
 @ApiTags('Monitoring')

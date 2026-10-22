@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { ReportsService } from '../../modules/reports/reports.service';
-import { ReportSeriesQueryDto } from '../../modules/reports/dto/report-query.dto';
-import { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
+import { ReportsService } from './reports.service';
+import { ReportSeriesQueryDto } from './dto/report-query.dto';
+import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { MonitoringController } from './monitoring.controller';
 import { MonitoringService } from './monitoring.service';
 

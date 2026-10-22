@@ -200,16 +200,62 @@ export class SitesRepository {
 
   deactivate(siteId: number, userId: number, now: Date): Promise<void> {
     return this.dataSource.transaction(async (manager) => {
+      // 1. Désactiver le site
       await manager.query(
         `UPDATE dori_site SET is_active = FALSE, deleted_at = $1,
          updated_by_user_id = $2, updated_at = $1 WHERE site_id = $3`,
         [now, userId, siteId],
       );
+      // 2. Désactiver les files d'attente du site
       await manager.query(
         `UPDATE dori_queue SET is_active = FALSE, deleted_at = $1,
          updated_by_user_id = $2, updated_at = $1
          WHERE site_id = $3 AND is_active = TRUE`,
         [now, userId, siteId],
+      );
+      // 3. Désactiver les forfaits des files du site
+      await manager.query(
+        `UPDATE dori_queue_service_tier SET is_active = FALSE, deleted_at = $1,
+         updated_by_user_id = $2, updated_at = $1
+         WHERE queue_id IN (SELECT queue_id FROM dori_queue WHERE site_id = $3) AND is_active = TRUE`,
+        [now, userId, siteId],
+      );
+      // 4. Désactiver les règles de notification des files du site
+      await manager.query(
+        `UPDATE dori_queue_tier_notification_rule SET is_active = FALSE, deleted_at = $1,
+         updated_by_user_id = $2, updated_at = $1
+         WHERE queue_id IN (SELECT queue_id FROM dori_queue WHERE site_id = $3) AND is_active = TRUE`,
+        [now, userId, siteId],
+      );
+      // 5. Clôturer immédiatement les sessions guichets ouvertes sur les files du site
+      await manager.query(
+        `UPDATE dori_operator_session SET disconnected_at = $1,
+         closure_reason = 'forced', closed_by_user_id = $2
+         WHERE queue_id IN (SELECT queue_id FROM dori_queue WHERE site_id = $3) AND disconnected_at IS NULL`,
+        [now, userId, siteId],
+      );
+      // 6. Annuler toutes les inscriptions / rendez-vous actifs sur les files du site
+      await manager.query(
+        `UPDATE dori_registration
+         SET status = 'cancelled',
+             appointment_status = CASE WHEN entry_type = 'appointment' THEN 'cancelled' ELSE appointment_status END,
+             is_active = FALSE,
+             closed_at = $1,
+             updated_by_user_id = $2,
+             updated_at = $1
+         WHERE queue_id IN (SELECT queue_id FROM dori_queue WHERE site_id = $3)
+           AND status IN ('booked', 'waiting', 'in_progress') AND is_active = TRUE`,
+        [now, userId, siteId],
+      );
+      // 7. Supprimer les assignations d'utilisateurs aux files du site
+      await manager.query(
+        `DELETE FROM dori_user_queue_assignment WHERE queue_id IN (SELECT queue_id FROM dori_queue WHERE site_id = $1)`,
+        [siteId],
+      );
+      // 8. Supprimer les assignations directes d'utilisateurs au site
+      await manager.query(
+        `DELETE FROM dori_user_site_assignment WHERE site_id = $1`,
+        [siteId],
       );
     });
   }

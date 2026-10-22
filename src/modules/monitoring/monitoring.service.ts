@@ -1,10 +1,10 @@
 import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
-import { ClockService } from '../clock/clock.service';
+import { ClockService } from '../../core/clock/clock.service';
 import { MonitoringRepository } from './monitoring.repository';
-import { ScopeService } from '../rbac/services/scope.service';
-import { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
-import { DoriException } from '../errors/dori.exception';
-import { REDIS_CLIENT } from '../redis/redis.module';
+import { ScopeService } from '../../core/rbac/services/scope.service';
+import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
+import { DoriException } from '../../core/errors/dori.exception';
+import { REDIS_CLIENT } from '../../core/redis/redis.module';
 import type Redis from 'ioredis';
 
 const METRICS_HASH_KEY = 'dori:metrics:counters';

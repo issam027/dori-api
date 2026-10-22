@@ -245,6 +245,8 @@ export class UsersService {
       now,
     );
 
+    this.scopeService.invalidateUserScope(userId);
+
     return { userId, isActive: dto.isActive };
   }
 

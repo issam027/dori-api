@@ -215,22 +215,49 @@ export class QueuesRepository {
 
   deactivate(queueId: number, userId: number, now: Date): Promise<void> {
     return this.dataSource.transaction(async (manager) => {
+      // 1. Désactiver la file d'attente
       await manager.query(
         `UPDATE dori_queue SET is_active = FALSE, deleted_at = $1,
          updated_by_user_id = $2, updated_at = $1 WHERE queue_id = $3`,
         [now, userId, queueId],
       );
+      // 2. Désactiver les forfaits associés
       await manager.query(
         `UPDATE dori_queue_service_tier SET is_active = FALSE, deleted_at = $1,
          updated_by_user_id = $2, updated_at = $1
          WHERE queue_id = $3 AND is_active = TRUE`,
         [now, userId, queueId],
       );
+      // 3. Désactiver les règles de notification associées
+      await manager.query(
+        `UPDATE dori_queue_tier_notification_rule SET is_active = FALSE, deleted_at = $1,
+         updated_by_user_id = $2, updated_at = $1
+         WHERE queue_id = $3 AND is_active = TRUE`,
+        [now, userId, queueId],
+      );
+      // 4. Clôturer immédiatement les sessions guichet actives
       await manager.query(
         `UPDATE dori_operator_session SET disconnected_at = $1,
          closure_reason = 'forced', closed_by_user_id = $2
          WHERE queue_id = $3 AND disconnected_at IS NULL`,
         [now, userId, queueId],
+      );
+      // 5. Annuler toutes les inscriptions / rendez-vous en cours ou en attente
+      await manager.query(
+        `UPDATE dori_registration
+         SET status = 'cancelled',
+             appointment_status = CASE WHEN entry_type = 'appointment' THEN 'cancelled' ELSE appointment_status END,
+             is_active = FALSE,
+             closed_at = $1,
+             updated_by_user_id = $2,
+             updated_at = $1
+         WHERE queue_id = $3 AND status IN ('booked', 'waiting', 'in_progress') AND is_active = TRUE`,
+        [now, userId, queueId],
+      );
+      // 6. Supprimer les affectations utilisateurs de cette file
+      await manager.query(
+        `DELETE FROM dori_user_queue_assignment WHERE queue_id = $1`,
+        [queueId],
       );
     });
   }

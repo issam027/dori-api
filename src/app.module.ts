@@ -24,8 +24,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { TranslationsModule } from './modules/translations/translations.module';
 import { UsersModule } from './modules/users/users.module';
 import { WorkersModule } from './workers/workers.module';
-import { MonitoringModule } from './core/monitoring/monitoring.module';
-import { RequestMetricsInterceptor } from './core/monitoring/request-metrics.interceptor';
+import { MonitoringModule } from './modules/monitoring/monitoring.module';
+import { RequestMetricsInterceptor } from './modules/monitoring/request-metrics.interceptor';
 
 import { JwtAuthGuard } from './core/auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from './core/rbac/guards/permissions.guard';

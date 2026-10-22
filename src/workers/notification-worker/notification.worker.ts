@@ -3,7 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { randomUUID } from 'crypto';
 import { ClockService } from '../../core/clock/clock.service';
 import { NotificationWorkerRepository } from './notification-worker.repository';
-import { MonitoringService } from '../../core/monitoring/monitoring.service';
+import { MonitoringService } from '../../modules/monitoring/monitoring.service';
 
 @Injectable()
 export class NotificationWorker {

@@ -88,6 +88,7 @@ export class SitesService {
       user.userId,
       this.clockService.now(),
     );
+    await this.scopeService.clearAllScopeCache();
     return { siteId, deleted: true };
   }
 

@@ -102,84 +102,77 @@ export class DailyQueueVolumeItemDto {
 
   @ApiProperty({
     example: 25,
-    description: "Total d'inscriptions avec rendez-vous (appointment)",
+    description: 'Total de rendez-vous honorés ou prévus',
   })
   totalAppointment: number;
 
-  @ApiProperty({ example: 70, description: 'Total de clients servis' })
+  @ApiProperty({ example: 75, description: 'Total de clients servis' })
   totalServed: number;
 
-  @ApiProperty({
-    example: 5,
-    description: 'Total de clients absents (no-show)',
-  })
+  @ApiProperty({ example: 5, description: 'Total de clients absents (no-show)' })
   totalNoShow: number;
 
-  @ApiProperty({ example: 3, description: 'Total de rendez-vous expirés' })
+  @ApiProperty({
+    example: 3,
+    description: "Total d'inscriptions expirées en fin de journée",
+  })
   totalExpired: number;
 
-  @ApiProperty({ example: 7, description: "Total d'annulations" })
+  @ApiProperty({ example: 2, description: "Total d'inscriptions annulées" })
   totalCancelled: number;
 
   @ApiProperty({
-    example: 2,
-    description:
-      'Total non clôturées : en attente, en cours au guichet ou reportées.',
+    example: 12.5,
+    nullable: true,
+    description: "Temps d'attente moyen de la journée en minutes",
   })
-  totalOpen: number;
+  avgWaitMinutes: number | null;
+
+  @ApiProperty({
+    example: 7.2,
+    nullable: true,
+    description: 'Temps de service moyen de la journée en minutes',
+  })
+  avgServiceMinutes: number | null;
 }
 
-export class DailyQueueKpisItemDto {
+export class QueuePeriodVolumesResponseDto {
   @ApiProperty({
-    example: 0.067,
-    description: 'Taux de no-show (no_show / (served + no_show))',
+    example: '2026-10-01',
+    description: 'Date de début de période (YYYY-MM-DD)',
   })
-  noShowRate: number;
+  startDate: string;
 
   @ApiProperty({
-    example: 14.5,
-    description: "Temps d'attente moyen en minutes",
+    example: '2026-10-07',
+    description: 'Date de fin de période (YYYY-MM-DD)',
   })
-  averageWaitMinutes: number;
+  endDate: string;
 
   @ApiProperty({
-    example: 8.2,
-    description: 'Durée moyenne de prise en charge au guichet en minutes',
+    example: 10,
+    description: "ID de la file d'attente supervisée",
   })
-  averageServiceMinutes: number;
-}
-
-export class DailyQueueReportResponseDto {
-  @ApiProperty({ example: 1, description: "ID de la file d'attente" })
   queueId: number;
 
-  @ApiProperty({ example: 'A00', description: 'Code de la file' })
-  queueCode: string;
-
   @ApiProperty({
-    example: 'Consultation Générale',
-    description: 'Nom de la file',
+    type: Object,
+    additionalProperties: { $ref: '#/components/schemas/DailyQueueVolumeItemDto' },
+    description:
+      'Dictionnaire indexé par date (YYYY-MM-DD) contenant les métriques quotidiennes de volume',
+    example: {
+      '2026-10-01': {
+        totalRegistered: 85,
+        totalWalkin: 60,
+        totalAppointment: 25,
+        totalServed: 75,
+        totalNoShow: 5,
+        totalExpired: 3,
+        totalCancelled: 2,
+        avgWaitMinutes: 12.5,
+        avgServiceMinutes: 7.2,
+      },
+    },
   })
-  queueName: string;
-
-  @ApiProperty({ example: 'Hôpital Aziza Othmana', description: 'Nom du site' })
-  siteName: string;
-
-  @ApiProperty({
-    example: '2026-09-27',
-    description: 'Date du rapport journalier (YYYY-MM-DD)',
-  })
-  businessDate: string;
-
-  @ApiProperty({
-    type: DailyQueueVolumeItemDto,
-    description: 'Volumes journaliers',
-  })
-  volume: DailyQueueVolumeItemDto;
-
-  @ApiProperty({
-    type: DailyQueueKpisItemDto,
-    description: 'Indicateurs clés de performance',
-  })
-  kpis: DailyQueueKpisItemDto;
+  dailyVolumes: Record<string, DailyQueueVolumeItemDto>;
 }
