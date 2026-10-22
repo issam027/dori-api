@@ -12,12 +12,7 @@ import { RedisModule } from '../../core/redis/redis.module';
 
 @Global()
 @Module({
-  imports: [
-    DatabaseModule,
-    ClockModule,
-    RbacModule,
-    RedisModule,
-  ],
+  imports: [DatabaseModule, ClockModule, RbacModule, RedisModule],
   controllers: [MonitoringController],
   providers: [
     MonitoringRepository,

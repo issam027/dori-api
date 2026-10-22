@@ -109,7 +109,10 @@ export class DailyQueueVolumeItemDto {
   @ApiProperty({ example: 75, description: 'Total de clients servis' })
   totalServed: number;
 
-  @ApiProperty({ example: 5, description: 'Total de clients absents (no-show)' })
+  @ApiProperty({
+    example: 5,
+    description: 'Total de clients absents (no-show)',
+  })
   totalNoShow: number;
 
   @ApiProperty({
@@ -157,7 +160,9 @@ export class QueuePeriodVolumesResponseDto {
 
   @ApiProperty({
     type: Object,
-    additionalProperties: { $ref: '#/components/schemas/DailyQueueVolumeItemDto' },
+    additionalProperties: {
+      $ref: '#/components/schemas/DailyQueueVolumeItemDto',
+    },
     description:
       'Dictionnaire indexé par date (YYYY-MM-DD) contenant les métriques quotidiennes de volume',
     example: {
