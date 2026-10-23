@@ -154,7 +154,8 @@ export class AuditRepository {
              WHEN $3 = 'queue' AND $4 ~ '^[0-9]+$' THEN
                (SELECT site_id FROM dori_queue WHERE queue_id = $4::varchar::int)
              WHEN $3 = 'person' AND $4 ~ '^[0-9]+$' THEN
-               (SELECT site_id FROM dori_person WHERE person_id = $4::varchar::int)             WHEN $3 = 'registration' AND $4 ~ '^[0-9]+$' THEN
+               (SELECT site_id FROM dori_person WHERE person_id = $4::varchar::int)
+             WHEN $3 = 'registration' AND $4 ~ '^[0-9]+$' THEN
                (SELECT q.site_id FROM dori_registration r
                 JOIN dori_queue q ON q.queue_id = r.queue_id
                 WHERE r.registration_id = $4::varchar::int)

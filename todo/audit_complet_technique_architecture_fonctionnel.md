@@ -538,3 +538,17 @@ Ce rapport décrit l'état observé du dépôt à la date indiquée. Les constat
 <!-- CHECKPOINT id="ckpt_mvktt070_ez5l07" time="2026-10-23T10:27:28.188Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 <!-- CHECKPOINT id="ckpt_mvkwihb9_5cgpap" time="2026-10-23T11:43:16.005Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvky5j61_yevfkj" time="2026-10-23T12:29:11.113Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvkyie4u_dvit1s" time="2026-10-23T12:39:11.118Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvkyv93v_1y31u2" time="2026-10-23T12:49:11.131Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvkz842u_ibibbz" time="2026-10-23T12:59:11.142Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvkzkz1p_1lm766" time="2026-10-23T13:09:11.149Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvkzzapt_ifrx04" time="2026-10-23T13:20:19.457Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvl0c5ox_h825fw" time="2026-10-23T13:30:19.473Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
