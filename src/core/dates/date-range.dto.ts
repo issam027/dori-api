@@ -12,6 +12,7 @@ export const DATE_RANGE_LIMITS = {
   synchronousReportingDays: 366,
   registrationFilterDays: 366,
   notificationFilterDays: 366,
+  auditFilterDays: 366,
 } as const;
 
 const CALENDAR_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;

@@ -1,5 +1,6 @@
 import { Client, ClientConfig } from 'pg';
 import * as dotenv from 'dotenv';
+import { AUDIT_EVENT_READ_MODEL } from '../src/core/audit/audit.repository';
 
 dotenv.config();
 
@@ -70,9 +71,15 @@ async function main(): Promise<void> {
         'ck_operator_session_counter_name'
       ) ORDER BY conname
     `);
+    await client.query(`
+      SELECT actor_display_name, target_display_name,
+             secondary_target_display_name
+      FROM ${AUDIT_EVENT_READ_MODEL}
+      LIMIT 1
+    `);
     process.stdout.write(
       `${JSON.stringify({
-        state: state.rows[0],
+        state: { ...state.rows[0], audit_read_model_queryable: true },
         constraints: constraints.rows.map((row) => row.conname),
       })}\n`,
     );

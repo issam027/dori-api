@@ -66,7 +66,11 @@ export class SitesController {
   }
 
   @Post()
-  @AuditEvent({ action: 'site.create', targetType: 'site' })
+  @AuditEvent({
+    action: 'site.create',
+    targetType: 'site',
+    targetResponseField: 'siteId',
+  })
   @RequirePermission('site_create')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({

@@ -56,6 +56,7 @@ describe('AuditInterceptor', () => {
       requestMethod: 'DELETE',
       requestPath: 'users/:userId/roles/:roleId',
       failureType: null,
+      siteScopeId: null,
     });
     expect(JSON.stringify(append.mock.calls)).not.toContain('never-audited');
     expect(JSON.stringify(append.mock.calls)).not.toContain('private@example');
@@ -73,6 +74,30 @@ describe('AuditInterceptor', () => {
       expect.objectContaining({ outcome: 'failure', failureType: 'TypeError' }),
     );
     expect(JSON.stringify(append.mock.calls)).not.toContain('token=secret');
+  });
+
+  it('extracts an allowlisted target identifier from a create response', async () => {
+    (
+      reflector.getAllAndOverride as jest.MockedFunction<
+        typeof reflector.getAllAndOverride
+      >
+    ).mockReturnValueOnce({
+      action: 'site.create',
+      targetType: 'site',
+      targetResponseField: 'siteId',
+    });
+    const interceptor = new AuditInterceptor(reflector, repository);
+
+    await lastValueFrom(
+      interceptor.intercept(context, {
+        handle: () => of({ data: { siteId: 81, siteName: 'Accueil' } }),
+      }),
+    );
+
+    expect(append).toHaveBeenCalledWith(
+      expect.objectContaining({ targetId: '81' }),
+    );
+    expect(JSON.stringify(append.mock.calls)).not.toContain('Accueil');
   });
 
   it('extracts only an explicitly allowlisted scalar identifier from the body', async () => {

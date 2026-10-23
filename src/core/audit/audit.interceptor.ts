@@ -34,13 +34,19 @@ export class AuditInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest<AuditedRequest>();
     return next.handle().pipe(
       concatMap((value) =>
-        from(this.record(request, definition, 'success', null)).pipe(
+        from(this.record(request, definition, 'success', null, value)).pipe(
           concatMap(() => of(value)),
         ),
       ),
       catchError((error: unknown) =>
         from(
-          this.record(request, definition, 'failure', safeErrorName(error)),
+          this.record(
+            request,
+            definition,
+            'failure',
+            safeErrorName(error),
+            null,
+          ),
         ).pipe(concatMap(() => throwError(() => error))),
       ),
     );
@@ -51,13 +57,19 @@ export class AuditInterceptor implements NestInterceptor {
     definition: AuditEventDefinition,
     outcome: AuditOutcome,
     failureType: string | null,
+    responseValue: unknown,
   ): Promise<void> {
     try {
       await this.repository.append({
         actorUserId: request.user?.userId ?? null,
         action: definition.action,
         targetType: definition.targetType,
-        targetId: this.param(request, definition.targetParam),
+        targetId:
+          this.param(request, definition.targetParam) ??
+          this.responseIdentifier(
+            responseValue,
+            definition.targetResponseField,
+          ),
         secondaryTargetId:
           this.param(request, definition.secondaryTargetParam) ??
           this.bodyIdentifier(request, definition.secondaryTargetBodyField),
@@ -66,6 +78,10 @@ export class AuditInterceptor implements NestInterceptor {
         requestMethod: request.method,
         requestPath: request.route?.path ?? request.path,
         failureType,
+        siteScopeId: this.queryPositiveInteger(
+          request,
+          definition.siteScopeQueryField,
+        ),
       });
     } catch (error: unknown) {
       // Audit is fail-open so a temporary audit storage problem does not turn an
@@ -99,5 +115,36 @@ export class AuditInterceptor implements NestInterceptor {
     if (typeof value !== 'string' && typeof value !== 'number') return null;
     const normalized = String(value);
     return /^[A-Za-z0-9_-]{1,128}$/.test(normalized) ? normalized : null;
+  }
+
+  private responseIdentifier(value: unknown, field?: string): string | null {
+    if (!field || typeof value !== 'object' || value === null) return null;
+    const record = value as Record<string, unknown>;
+    const direct = record[field];
+    if (typeof direct === 'string' || typeof direct === 'number') {
+      return this.safeIdentifier(direct);
+    }
+    const data = record.data;
+    if (typeof data !== 'object' || data === null) return null;
+    const nested = (data as Record<string, unknown>)[field];
+    return typeof nested === 'string' || typeof nested === 'number'
+      ? this.safeIdentifier(nested)
+      : null;
+  }
+
+  private safeIdentifier(value: string | number): string | null {
+    const normalized = String(value);
+    return /^[A-Za-z0-9_-]{1,128}$/.test(normalized) ? normalized : null;
+  }
+
+  private queryPositiveInteger(
+    request: AuditedRequest,
+    field?: string,
+  ): number | null {
+    if (!field) return null;
+    const value = request.query?.[field];
+    const normalized = Array.isArray(value) ? value[0] : value;
+    const parsed = Number(normalized);
+    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
   }
 }

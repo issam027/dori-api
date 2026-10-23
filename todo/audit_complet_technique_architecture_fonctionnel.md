@@ -504,3 +504,15 @@ Ce rapport décrit l'état observé du dépôt à la date indiquée. Les constat
 <!-- CHECKPOINT id="ckpt_mvknk1j4_ck9go4" time="2026-10-23T07:32:32.320Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 <!-- CHECKPOINT id="ckpt_mvknwwgg_7w1npf" time="2026-10-23T07:42:32.272Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvko9rdm_1e3a3q" time="2026-10-23T07:52:32.218Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvkommbd_zex3qj" time="2026-10-23T08:02:32.185Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvkozh9c_o19ho1" time="2026-10-23T08:12:32.160Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvkpcc76_aonop6" time="2026-10-23T08:22:32.130Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvkpp76h_55w9tk" time="2026-10-23T08:32:32.153Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvkq8egi_pn5lub" time="2026-10-23T08:47:28.050Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
