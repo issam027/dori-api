@@ -1,6 +1,7 @@
 import { Module, Global, Logger } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
+import { safeErrorName } from '../logging/safe-error';
 
 /**
  * Token d'injection pour le client Redis partagé.
@@ -63,11 +64,11 @@ export const REDIS_CLIENT = 'REDIS_CLIENT';
 
         client.on('error', (err: Error) => {
           // Journalisation en debug pour éviter de polluer les logs si Redis n'est pas lancé en local
-          logger.debug(`Redis connection error: ${err.message}`);
+          logger.debug(`Redis connection error type=${safeErrorName(err)}`);
         });
 
         client.on('connect', () => {
-          logger.log(`Connected to Redis at ${host}:${port}`);
+          logger.log('Connected to Redis');
         });
 
         return client;

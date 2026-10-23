@@ -52,7 +52,14 @@ async function main(): Promise<void> {
          WHERE us.user_id IS NULL) AS queue_assignments_without_site,
         (SELECT COUNT(*)::int FROM dori_operator_session
          WHERE counter_name IS NOT NULL
-           AND LENGTH(BTRIM(counter_name)) NOT BETWEEN 1 AND 100) AS invalid_counter_names
+           AND LENGTH(BTRIM(counter_name)) NOT BETWEEN 1 AND 100) AS invalid_counter_names,
+        (to_regclass('public.dori_audit_event') IS NOT NULL) AS audit_table_exists,
+        EXISTS (
+          SELECT 1 FROM pg_trigger
+          WHERE tgname = 'trg_audit_event_append_only'
+            AND tgrelid = 'dori_audit_event'::regclass
+            AND NOT tgisinternal
+        ) AS audit_append_only_trigger_exists
     `);
     const constraints = await client.query<{ conname: string }>(`
       SELECT conname FROM pg_constraint

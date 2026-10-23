@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ClockService } from '../../core/clock/clock.service';
 import { AppointmentExpiryRepository } from './appointment-expiry.repository';
+import { safeErrorName } from '../../core/logging/safe-error';
 
 @Injectable()
 export class AppointmentExpiryWorker {
@@ -25,14 +26,11 @@ export class AppointmentExpiryWorker {
       const now = this.clockService.now();
       const rows = await this.repository.expireLateAppointments(now);
       if (rows && rows.length > 0) {
-        this.logger.log(
-          `Expired ${rows.length} late appointment(s): ${rows.map((row) => row.ticket_number).join(', ')}`,
-        );
+        this.logger.log(`Expired ${rows.length} late appointment(s)`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       this.logger.error(
-        `Error in appointment expiry worker: ${err.message}`,
-        err.stack,
+        `Appointment expiry worker failed type=${safeErrorName(err)}`,
       );
     } finally {
       this.isRunning = false;

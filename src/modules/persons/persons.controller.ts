@@ -41,6 +41,7 @@ import {
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
+import { AuditEvent } from '../../core/audit/audit-event.decorator';
 
 @ApiTags('Persons')
 @ApiBearerAuth('bearer')
@@ -80,6 +81,11 @@ export class PersonsController {
   }
 
   @Get(':personId')
+  @AuditEvent({
+    action: 'person.read',
+    targetType: 'person',
+    targetParam: 'personId',
+  })
   @RequirePermission('registration_view')
   @ApiOperation({
     summary: "Détails d'une personne",
@@ -120,6 +126,11 @@ export class PersonsController {
   }
 
   @Get(':personId/notes')
+  @AuditEvent({
+    action: 'person.notes.read',
+    targetType: 'person',
+    targetParam: 'personId',
+  })
   @RequirePermission('person_note_view')
   @ApiOperation({
     summary: 'Lister les notes attachées à une personne',
@@ -144,6 +155,11 @@ export class PersonsController {
   }
 
   @Post(':personId/notes')
+  @AuditEvent({
+    action: 'person.note.create',
+    targetType: 'person',
+    targetParam: 'personId',
+  })
   @RequirePermission('person_note_manage')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
@@ -166,6 +182,12 @@ export class PersonsController {
   }
 
   @Patch(':personId/notes/:noteId')
+  @AuditEvent({
+    action: 'person.note.update',
+    targetType: 'person',
+    targetParam: 'personId',
+    secondaryTargetParam: 'noteId',
+  })
   @RequirePermission('person_note_manage')
   @ApiOperation({
     summary: 'Modifier une note',
@@ -188,6 +210,12 @@ export class PersonsController {
   }
 
   @Delete(':personId/notes/:noteId')
+  @AuditEvent({
+    action: 'person.note.delete',
+    targetType: 'person',
+    targetParam: 'personId',
+    secondaryTargetParam: 'noteId',
+  })
   @RequirePermission('person_note_manage')
   @ApiOperation({
     summary: 'Supprimer une note',
@@ -209,6 +237,11 @@ export class PersonsController {
   }
 
   @Delete(':personId')
+  @AuditEvent({
+    action: 'person.delete',
+    targetType: 'person',
+    targetParam: 'personId',
+  })
   @RequirePermission('registration_delete')
   @ApiOperation({
     summary: 'Supprimer une personne',

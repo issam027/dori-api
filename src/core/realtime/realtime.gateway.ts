@@ -21,6 +21,7 @@ import {
 } from '../auth/interfaces/jwt-payload.interface';
 import { JwtStrategy } from '../auth/strategies/jwt.strategy';
 import { RealtimeRepository } from './realtime.repository';
+import { safeErrorName } from '../logging/safe-error';
 
 interface AuthenticatedSocket extends Socket {
   user?: AuthenticatedUser;
@@ -69,7 +70,7 @@ export class RealtimeGateway
         const payload: JwtPayload = this.jwtService.verify(token, { secret });
         client.user = await this.jwtStrategy.validate(payload);
         this.logger.debug(
-          `User ${client.user.username} (id: ${client.user.userId}) connected via WS`,
+          `Authenticated user connected via WS userId=${client.user.userId}`,
         );
         return;
       }
@@ -101,8 +102,8 @@ export class RealtimeGateway
       // Anonymous connection is strictly refused (§7.9)
       this.logger.warn(`Unauthorized WS connection attempt from ${client.id}`);
       client.disconnect(true);
-    } catch (err: any) {
-      this.logger.warn(`WS connection auth error: ${err.message}`);
+    } catch (err: unknown) {
+      this.logger.warn(`WS connection rejected type=${safeErrorName(err)}`);
       client.disconnect(true);
     }
   }
@@ -198,8 +199,10 @@ export class RealtimeGateway
         acknowledged: true,
         timestamp: this.clockService.now().toISOString(),
       };
-    } catch (err: any) {
-      this.logger.error(`Error updating session last_seen_at: ${err.message}`);
+    } catch (err: unknown) {
+      this.logger.error(
+        `WS session heartbeat failed type=${safeErrorName(err)}`,
+      );
       return { acknowledged: false };
     }
   }

@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { DoriException } from './dori.exception';
+import { safeErrorName } from '../logging/safe-error';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -71,8 +72,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
 
     this.logger.error(
-      `Unhandled exception [${correlationId}]: ${String(exception)}`,
-      exception instanceof Error ? exception.stack : undefined,
+      `Unhandled exception correlationId=${correlationId || 'none'} type=${safeErrorName(exception)}`,
     );
 
     response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({

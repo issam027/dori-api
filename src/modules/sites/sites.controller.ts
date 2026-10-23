@@ -41,6 +41,7 @@ import {
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
+import { AuditEvent } from '../../core/audit/audit-event.decorator';
 
 @ApiTags('Sites')
 @ApiBearerAuth('bearer')
@@ -65,6 +66,7 @@ export class SitesController {
   }
 
   @Post()
+  @AuditEvent({ action: 'site.create', targetType: 'site' })
   @RequirePermission('site_create')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
@@ -96,6 +98,11 @@ export class SitesController {
   }
 
   @Patch(':siteId')
+  @AuditEvent({
+    action: 'site.update',
+    targetType: 'site',
+    targetParam: 'siteId',
+  })
   @RequirePermission('site_edit')
   @ApiOperation({
     summary: 'Modifier un site',
@@ -113,6 +120,11 @@ export class SitesController {
   }
 
   @Delete(':siteId')
+  @AuditEvent({
+    action: 'site.delete',
+    targetType: 'site',
+    targetParam: 'siteId',
+  })
   @RequirePermission('site_delete')
   @ApiOperation({
     summary: 'Désactiver (supprimer) un site',
@@ -149,6 +161,12 @@ export class SitesController {
   }
 
   @Post(':siteId/direct-users')
+  @AuditEvent({
+    action: 'site.user.assign',
+    targetType: 'site',
+    targetParam: 'siteId',
+    secondaryTargetBodyField: 'userId',
+  })
   @RequirePermission('user_site_assign')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
@@ -170,6 +188,12 @@ export class SitesController {
   }
 
   @Delete(':siteId/direct-users/:userId')
+  @AuditEvent({
+    action: 'site.user.remove',
+    targetType: 'site',
+    targetParam: 'siteId',
+    secondaryTargetParam: 'userId',
+  })
   @RequirePermission('user_site_assign')
   @ApiOperation({
     summary: 'Retirer un utilisateur directement affecté au site',

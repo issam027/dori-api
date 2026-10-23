@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { ClockService } from '../../core/clock/clock.service';
 import { NotificationWorkerRepository } from './notification-worker.repository';
 import { MonitoringService } from '../../modules/monitoring/monitoring.service';
+import { safeErrorName } from '../../core/logging/safe-error';
 
 @Injectable()
 export class NotificationWorker {
@@ -47,24 +48,23 @@ export class NotificationWorker {
           this.metricsService.increment('notifications_delivered_total');
 
           this.logger.log(
-            `Notification ${notif.notification_id} [${notif.channel}] sent to ${notif.recipient} (msgId: ${providerMessageId})`,
+            `Notification ${notif.notification_id} channel=${notif.channel} delivered`,
           );
-        } catch (err: any) {
+        } catch (err: unknown) {
           const isFinal = notif.attempt_count >= 3;
           await this.repository.markAttemptFailed(
             notif.notification_id,
             isFinal,
-            err.message,
+            safeErrorName(err),
             now,
           );
           this.metricsService.increment('notification_delivery_failures_total');
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       this.metricsService.increment('notification_worker_errors_total');
       this.logger.error(
-        `Error processing notifications: ${err.message}`,
-        err.stack,
+        `Notification worker failed type=${safeErrorName(err)}`,
       );
     } finally {
       this.isProcessing = false;

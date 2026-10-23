@@ -44,6 +44,7 @@ import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
+import { AuditEvent } from '../../core/audit/audit-event.decorator';
 
 @ApiTags('Queues')
 @ApiBearerAuth('bearer')
@@ -122,6 +123,11 @@ export class QueuesController {
   }
 
   @Delete('queues/:queueId')
+  @AuditEvent({
+    action: 'queue.delete',
+    targetType: 'queue',
+    targetParam: 'queueId',
+  })
   @RequirePermission('queue_delete')
   @ApiOperation({
     summary: "Désactiver (supprimer) une file d'attente",
@@ -175,6 +181,11 @@ export class QueuesController {
   }
 
   @Post('queues/:queueId/reset')
+  @AuditEvent({
+    action: 'queue.reset',
+    targetType: 'queue',
+    targetParam: 'queueId',
+  })
   @RequirePermission('queue_reset')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -212,6 +223,12 @@ export class QueuesController {
   }
 
   @Post('queues/:queueId/operators')
+  @AuditEvent({
+    action: 'queue.operator.assign',
+    targetType: 'queue',
+    targetParam: 'queueId',
+    secondaryTargetBodyField: 'userId',
+  })
   @RequirePermission('user_queue_assign')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
@@ -233,6 +250,12 @@ export class QueuesController {
   }
 
   @Delete('queues/:queueId/operators/:userId')
+  @AuditEvent({
+    action: 'queue.operator.remove',
+    targetType: 'queue',
+    targetParam: 'queueId',
+    secondaryTargetParam: 'userId',
+  })
   @RequirePermission('user_queue_assign')
   @ApiOperation({
     summary: 'Retirer un opérateur ou une borne de la file',

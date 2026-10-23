@@ -33,6 +33,8 @@ import { CorrelationIdInterceptor } from './core/http/correlation-id.interceptor
 import { ResponseInterceptor } from './core/response/response.interceptor';
 import { SerializationInterceptor } from './core/serialization/serialization.interceptor';
 import { GlobalExceptionFilter } from './core/errors/global-exception.filter';
+import { AuditModule } from './core/audit/audit.module';
+import { AuditInterceptor } from './core/audit/audit.interceptor';
 
 @Module({
   imports: [
@@ -42,6 +44,7 @@ import { GlobalExceptionFilter } from './core/errors/global-exception.filter';
     }),
     ScheduleModule.forRoot(),
     RedisModule,
+    AuditModule,
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -96,6 +99,10 @@ import { GlobalExceptionFilter } from './core/errors/global-exception.filter';
     {
       provide: APP_INTERCEPTOR,
       useClass: CorrelationIdInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
     },
     {
       provide: APP_INTERCEPTOR,

@@ -52,6 +52,7 @@ import {
   RequirePermission,
   RequireAnyPermission,
 } from '../../core/rbac/decorators/require-permission.decorator';
+import { AuditEvent } from '../../core/audit/audit-event.decorator';
 
 @ApiTags('Users')
 @ApiBearerAuth('bearer')
@@ -162,6 +163,11 @@ export class UsersController {
   }
 
   @Patch('users/:userId/status')
+  @AuditEvent({
+    action: 'user.status.update',
+    targetType: 'user',
+    targetParam: 'userId',
+  })
   @RequireAnyPermission(
     'user_manage_kiosk',
     'user_manage_operator',
@@ -191,6 +197,11 @@ export class UsersController {
   }
 
   @Delete('users/:userId')
+  @AuditEvent({
+    action: 'user.delete',
+    targetType: 'user',
+    targetParam: 'userId',
+  })
   @RequireAnyPermission(
     'user_manage_kiosk',
     'user_manage_operator',
@@ -216,6 +227,11 @@ export class UsersController {
   }
 
   @Patch('users/:userId/password')
+  @AuditEvent({
+    action: 'user.password.reset',
+    targetType: 'user',
+    targetParam: 'userId',
+  })
   @RequireAnyPermission(
     'user_manage_kiosk',
     'user_manage_operator',
@@ -245,6 +261,12 @@ export class UsersController {
   }
 
   @Post('users/:userId/roles')
+  @AuditEvent({
+    action: 'user.role.assign',
+    targetType: 'user',
+    targetParam: 'userId',
+    secondaryTargetBodyField: 'roleId',
+  })
   @RequireAnyPermission(
     'user_manage_kiosk',
     'user_manage_operator',
@@ -272,6 +294,12 @@ export class UsersController {
   }
 
   @Delete('users/:userId/roles/:roleId')
+  @AuditEvent({
+    action: 'user.role.remove',
+    targetType: 'user',
+    targetParam: 'userId',
+    secondaryTargetParam: 'roleId',
+  })
   @RequireAnyPermission(
     'user_manage_kiosk',
     'user_manage_operator',
@@ -321,6 +349,11 @@ export class UsersController {
   }
 
   @Patch('roles/:roleId/permissions')
+  @AuditEvent({
+    action: 'role.permissions.update',
+    targetType: 'role',
+    targetParam: 'roleId',
+  })
   @RequirePermission('system_manage')
   @ApiOperation({
     summary: 'Mettre à jour les permissions d’un rôle',

@@ -194,9 +194,9 @@ La dépendance BullMQ est annoncée comme file de traitement, mais aucun `BullMo
 | --- | --- | --- | --- |
 | SEC-01 | P0 | 17 vulnérabilités de production, dont 5 hautes. | Monter la chaîne Nest/Express et verrouiller l'audit en CI. |
 | SEC-02 | P0 | Les contrôles critiques HTTP/WS ne sont pas validés E2E. | Matrice auth, permissions, scope, cookies, webhook et salons. |
-| SEC-03 | P1 | `JwtAuthGuard` utilise `console.error` et peut journaliser des détails internes. | Logger structuré, niveau adapté, redaction et test de non-fuite. |
-| SEC-04 | P1 | Les `catch (err: any)` WebSocket journalisent directement `err.message`. | Passer à `unknown`, normaliser et ne pas exposer de secret/token. |
-| SEC-05 | P1 | Pas de journal d'audit métier immuable. | Tracer changements de rôles, affectations, suppressions, resets et accès sensibles. |
+| SEC-03 | Résolu | Le guard JWT utilise désormais le logger structuré avec messages constants. | Couvert par SEC-03 et les tests de non-fuite. |
+| SEC-04 | Résolu | Les erreurs WebSocket et workers sont normalisées depuis `unknown`. | Seul le type d'erreur est journalisé. |
+| SEC-05 | Résolu | Un journal append-only applicatif trace rôles, affectations, suppressions, resets et accès sensibles. | Migration `015`, intercepteur global, 19 actions testées et runbook d'exploitation. |
 | SEC-06 | P1 | Pas de politique RGPD implémentée. | Rétention, export, rectification, anonymisation et preuve de purge. |
 | SEC-07 | P1 | Rate limiting dépend du processus applicatif. | Vérifier le stockage utilisé ; adopter une stratégie distribuée derrière plusieurs instances. |
 | SEC-08 | P2 | Pas de scan de secrets/SAST/DAST dans le dépôt. | Ajouter contrôles CI et politique de traitement. |
@@ -355,13 +355,15 @@ Les cases ci-dessous sont les checkpoints de réalisation. Une action n'est term
 - [ ] Tester deux instances concurrentes.
 - [ ] **Checkpoint :** aucun envoi, reset ou traitement métier dupliqué sous concurrence.
 
-#### SEC-03 — Journalisation et audit métier
+#### SEC-03 — Journalisation et audit métier ✅ Terminé le 23/10/2026
 
-- [ ] Remplacer les `console.*` de production par le logger structuré.
-- [ ] Normaliser les erreurs `unknown` et masquer tokens, secrets et PII.
-- [ ] Définir les événements métier auditables.
-- [ ] Ajouter identité, action, cible, date, corrélation et résultat dans un journal protégé.
-- [ ] **Checkpoint :** tests prouvant la présence des événements et l'absence de secrets/PII interdits.
+- [x] Remplacer les `console.*` de production par le logger structuré.
+- [x] Normaliser les erreurs `unknown` et masquer tokens, secrets et PII.
+- [x] Définir les événements métier auditables.
+- [x] Ajouter identité, action, cible, date, corrélation et résultat dans un journal protégé.
+- [x] **Checkpoint :** tests prouvant la présence des événements et l'absence de secrets/PII interdits.
+
+Précisions d'exploitation : la table est append-only du point de vue applicatif. Les privilèges PostgreSQL et l'alerte obligatoire sur le mode fail-open sont décrits dans `todo/audit_log_runbook.md`. La durée de rétention reste volontairement rattachée à PRI-01 afin de ne pas inventer une règle juridique.
 
 #### PRI-01 — Conformité données personnelles
 
@@ -442,7 +444,7 @@ Les cases ci-dessous sont les checkpoints de réalisation. Une action n'est term
 
 - [ ] Socle TST-01 : auth, RBAC, scope et inscription.
 - [ ] DB-01 : base vierge, base héritée et restauration.
-- [ ] SEC-03 : logs sans fuite.
+- [x] SEC-03 : logs sans fuite.
 
 ### Sprint 2 — Rendre l'exploitation fiable
 
@@ -490,3 +492,15 @@ Le backend peut être considéré prêt pour production lorsque toutes les condi
 ---
 
 Ce rapport décrit l'état observé du dépôt à la date indiquée. Les constats de production, performance, fournisseurs externes et conformité doivent être confirmés dans un environnement représentatif.
+
+<!-- CHECKPOINT id="ckpt_mvjwoqex_luyssl" time="2026-10-22T19:00:21.561Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvjx1ldv_oom61h" time="2026-10-22T19:10:21.571Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvkmubot_yijden" time="2026-10-23T07:12:32.436Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvkn76km_gxai00" time="2026-10-23T07:22:32.326Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvknk1j4_ck9go4" time="2026-10-23T07:32:32.320Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvknwwgg_7w1npf" time="2026-10-23T07:42:32.272Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ClockService } from '../../core/clock/clock.service';
 import { QueueEstimationWorkerRepository } from './queue-estimation.repository';
+import { safeErrorName } from '../../core/logging/safe-error';
 
 @Injectable()
 export class QueueEstimationWorker {
@@ -30,18 +31,14 @@ export class QueueEstimationWorker {
             now,
           });
         } catch (error: unknown) {
-          const err = error instanceof Error ? error : new Error(String(error));
           this.logger.error(
-            `Queue estimation failed for queue ${queue.queue_id}: ${err.message}`,
-            err.stack,
+            `Queue estimation failed queueId=${queue.queue_id} type=${safeErrorName(error)}`,
           );
         }
       }
     } catch (error: unknown) {
-      const err = error instanceof Error ? error : new Error(String(error));
       this.logger.error(
-        `Queue estimation worker failed: ${err.message}`,
-        err.stack,
+        `Queue estimation worker failed type=${safeErrorName(error)}`,
       );
     } finally {
       this.isRunning = false;

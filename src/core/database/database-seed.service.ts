@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import { runMigrations } from './migration-runner';
+import { safeErrorName } from '../logging/safe-error';
 
 @Injectable()
 export class DatabaseSeedService implements OnApplicationBootstrap {
@@ -52,8 +53,8 @@ export class DatabaseSeedService implements OnApplicationBootstrap {
         await this.dataSource.query(seedSql);
         this.logger.log('Database seed executed successfully.');
       }
-    } catch (err: any) {
-      this.logger.error(`Error running schema/seed: ${err.message}`, err.stack);
+    } catch (err: unknown) {
+      this.logger.error(`Schema/seed failed type=${safeErrorName(err)}`);
       throw err;
     }
   }
