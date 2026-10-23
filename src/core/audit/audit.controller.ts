@@ -12,7 +12,6 @@ import {
   ApiDoriErrorResponses,
   ApiDoriOkResponse,
 } from '../swagger/api-dori-response.decorator';
-import { AuditEvent } from './audit-event.decorator';
 import { AuditService } from './audit.service';
 import { AuditEventQueryDto } from './dto/audit-query.dto';
 import {
@@ -29,11 +28,6 @@ export class AuditController {
 
   @Get()
   @RequirePermission('audit_view')
-  @AuditEvent({
-    action: 'audit.search',
-    targetType: 'audit_event',
-    siteScopeQueryField: 'siteId',
-  })
   @ApiOperation({
     summary: "Rechercher le journal d'audit",
     description:
@@ -52,11 +46,6 @@ export class AuditController {
 
   @Get(':eventId')
   @RequirePermission('audit_view')
-  @AuditEvent({
-    action: 'audit.read',
-    targetType: 'audit_event',
-    targetParam: 'eventId',
-  })
   @ApiOperation({ summary: "Consulter un événement d'audit" })
   @ApiParam({ name: 'eventId', format: 'uuid' })
   @ApiDoriOkResponse(

@@ -108,8 +108,7 @@
             "in": "query",
             "schema": {
               "example": "corr-01JXYZ",
-              "type": "integer",
-              "minimum": 1
+              "type": "string"
             },
             "description": "Valeur du paramètre « correlation id »."
           },
@@ -296,8 +295,7 @@
             "in": "path",
             "schema": {
               "format": "uuid",
-              "type": "integer",
-              "minimum": 1
+              "type": "string"
             },
             "description": "Valeur du paramètre « event id »."
           }
@@ -15178,7 +15176,7 @@
             "description": "Valeur du champ « outcome »."
           },
           "correlationId": {
-            "type": "object",
+            "type": "string",
             "nullable": true,
             "description": "Valeur du champ « correlation id »."
           },
@@ -15327,7 +15325,7 @@
             "description": "Valeur du champ « outcome »."
           },
           "correlationId": {
-            "type": "object",
+            "type": "string",
             "nullable": true,
             "description": "Valeur du champ « correlation id »."
           },

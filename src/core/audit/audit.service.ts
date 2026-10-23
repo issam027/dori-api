@@ -27,8 +27,6 @@ const ACTION_LABELS: Record<string, string> = {
   'person.note.update': 'Modification d’une note',
   'person.note.delete': 'Suppression d’une note',
   'person.delete': 'Suppression d’une personne',
-  'audit.search': 'Recherche dans le journal d’audit',
-  'audit.read': 'Consultation d’un événement d’audit',
 };
 
 @Injectable()

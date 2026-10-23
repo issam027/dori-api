@@ -9,7 +9,11 @@ import {
 @Injectable()
 export class PositiveIdParamPipe implements PipeTransform {
   transform(value: unknown, metadata: ArgumentMetadata) {
-    if (metadata.type !== 'param' || !metadata.data?.endsWith('Id'))
+    if (
+      metadata.type !== 'param' ||
+      !metadata.data?.endsWith('Id') ||
+      metadata.data === 'eventId'
+    )
       return value;
     const parsed = Number(value);
     if (!Number.isInteger(parsed) || parsed < 1) {

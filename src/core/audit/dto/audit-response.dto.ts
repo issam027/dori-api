@@ -38,7 +38,7 @@ export class AuditEventResponseDto {
   @ApiProperty({ enum: ['success', 'failure'] })
   outcome: 'success' | 'failure';
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ nullable: true, type: String })
   correlationId: string | null;
 
   @ApiProperty({ example: 'POST' })

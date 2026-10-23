@@ -290,7 +290,10 @@ export function normalizeOpenApiDocument(
           parameter.description ??=
             parameterDescriptions[parameter.name] ??
             `Valeur du paramètre « ${humanize(parameter.name)} ».`;
-          if (/Id$/.test(parameter.name))
+          const isOpaqueStringId = ['eventId', 'correlationId'].includes(
+            parameter.name,
+          );
+          if (/Id$/.test(parameter.name) && !isOpaqueStringId)
             parameter.schema = {
               ...parameter.schema,
               type: 'integer',

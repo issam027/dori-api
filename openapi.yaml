@@ -81,8 +81,7 @@ paths:
           in: query
           schema:
             example: corr-01JXYZ
-            type: integer
-            minimum: 1
+            type: string
           description: Valeur du paramètre « correlation id ».
         - name: search
           required: false
@@ -205,8 +204,7 @@ paths:
           in: path
           schema:
             format: uuid
-            type: integer
-            minimum: 1
+            type: string
           description: Valeur du paramètre « event id ».
       responses:
         '200':
@@ -7029,7 +7027,7 @@ components:
             - failure
           description: Valeur du champ « outcome ».
         correlationId:
-          type: object
+          type: string
           nullable: true
           description: Valeur du champ « correlation id ».
         requestMethod:
@@ -7146,7 +7144,7 @@ components:
           enum: *ref_108
           description: Valeur du champ « outcome ».
         correlationId:
-          type: object
+          type: string
           nullable: true
           description: Valeur du champ « correlation id ».
         requestMethod:

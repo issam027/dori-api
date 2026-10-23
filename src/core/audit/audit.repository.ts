@@ -145,18 +145,18 @@ export class AuditRepository {
         (actor_user_id, action, target_type, target_id, secondary_target_id,
          outcome, correlation_id, request_method, request_path, failure_type,
          site_scope_id)
-       SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+       SELECT $1::int, $2::varchar, $3::varchar, $4::varchar, $5::varchar, $6::varchar, $7::varchar, $8::varchar, $9::varchar, $10::varchar,
          COALESCE(
-           $11,
+           $11::int,
            CASE
              WHEN $3 = 'site' AND $4 ~ '^[0-9]+$' THEN
-               (SELECT site_id FROM dori_site WHERE site_id = $4::int)
+               (SELECT site_id FROM dori_site WHERE site_id = $4::varchar::int)
              WHEN $3 = 'queue' AND $4 ~ '^[0-9]+$' THEN
-               (SELECT site_id FROM dori_queue WHERE queue_id = $4::int)
+               (SELECT site_id FROM dori_queue WHERE queue_id = $4::varchar::int)
              WHEN $3 = 'person' AND $4 ~ '^[0-9]+$' THEN
-               (SELECT site_id FROM dori_person WHERE person_id = $4::int)
+               (SELECT site_id FROM dori_person WHERE person_id = $4::varchar::int)
              WHEN $3 = 'audit_event' AND $4 ~ '^[0-9a-fA-F-]{36}$' THEN
-               (SELECT site_scope_id FROM dori_audit_event WHERE event_id = $4::uuid)
+               (SELECT site_scope_id FROM dori_audit_event WHERE event_id = $4::varchar::uuid)
              ELSE NULL
            END
          )`,
