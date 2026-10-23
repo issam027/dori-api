@@ -21,8 +21,6 @@ const ACTION_LABELS: Record<string, string> = {
   'user.role.assign': 'Attribution d’un rôle',
   'user.role.remove': 'Retrait d’un rôle',
   'role.permissions.update': 'Modification des permissions du rôle',
-  'person.read': 'Consultation d’une personne',
-  'person.notes.read': 'Consultation des notes d’une personne',
   'person.note.create': 'Création d’une note',
   'person.note.update': 'Modification d’une note',
   'person.note.delete': 'Suppression d’une note',

@@ -154,7 +154,19 @@ export class AuditRepository {
              WHEN $3 = 'queue' AND $4 ~ '^[0-9]+$' THEN
                (SELECT site_id FROM dori_queue WHERE queue_id = $4::varchar::int)
              WHEN $3 = 'person' AND $4 ~ '^[0-9]+$' THEN
-               (SELECT site_id FROM dori_person WHERE person_id = $4::varchar::int)
+               (SELECT site_id FROM dori_person WHERE person_id = $4::varchar::int)             WHEN $3 = 'registration' AND $4 ~ '^[0-9]+$' THEN
+               (SELECT q.site_id FROM dori_registration r
+                JOIN dori_queue q ON q.queue_id = r.queue_id
+                WHERE r.registration_id = $4::varchar::int)
+             WHEN $3 = 'notification' AND $4 ~ '^[0-9]+$' THEN
+               (SELECT q.site_id FROM dori_notification n
+                JOIN dori_registration r ON r.registration_id = n.registration_id
+                JOIN dori_queue q ON q.queue_id = r.queue_id
+                WHERE n.notification_id = $4::varchar::int)
+             WHEN $3 = 'session' AND $4 ~ '^[0-9]+$' THEN
+               (SELECT q.site_id FROM dori_operator_session s
+                JOIN dori_queue q ON q.queue_id = s.queue_id
+                WHERE s.session_id = $4::varchar::int)
              WHEN $3 = 'audit_event' AND $4 ~ '^[0-9a-fA-F-]{36}$' THEN
                (SELECT site_scope_id FROM dori_audit_event WHERE event_id = $4::varchar::uuid)
              ELSE NULL

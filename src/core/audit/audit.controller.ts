@@ -31,7 +31,7 @@ export class AuditController {
   @ApiOperation({
     summary: "Rechercher le journal d'audit",
     description:
-      'Liste paginée réservée aux administrateurs système. Les filtres sont combinables et la période est limitée à 366 jours.',
+      'Liste paginée réservée aux managers, administrateurs et root, filtrée selon leur périmètre. Les filtres sont combinables et la période est limitée à 366 jours.',
   })
   @ApiDoriOkResponse(
     PaginatedAuditEventResponseDto,

@@ -152,7 +152,7 @@ FROM dori_permission WHERE permission_name IN (
   'site_view','site_edit',
   'queue_create','queue_edit','queue_reset','queue_delete','queue_tier_manage',
   'user_manage_kiosk','user_manage_operator','user_queue_assign',
-  'notification_send','report_view'
+  'notification_send','report_view','audit_view'
 )
 ON CONFLICT (role_id, permission_id) DO NOTHING;
 
@@ -168,7 +168,7 @@ FROM dori_permission WHERE permission_name IN (
   'site_view','site_edit',
   'queue_create','queue_edit','queue_reset','queue_delete','queue_tier_manage',
   'user_manage_kiosk','user_manage_operator','user_queue_assign',
-  'notification_send','report_view',
+  'notification_send','report_view','audit_view',
   'site_create','site_delete','user_manage_manager','user_site_assign',
   'tier_catalog_manage','translation_manage'
 )

@@ -26,8 +26,6 @@ describe('sensitive business audit coverage', () => {
     [QueuesController.prototype, 'reset', 'queue.reset'],
     [QueuesController.prototype, 'assignOperator', 'queue.operator.assign'],
     [QueuesController.prototype, 'removeOperator', 'queue.operator.remove'],
-    [PersonsController.prototype, 'findOne', 'person.read'],
-    [PersonsController.prototype, 'getNotes', 'person.notes.read'],
     [PersonsController.prototype, 'createNote', 'person.note.create'],
     [PersonsController.prototype, 'updateNote', 'person.note.update'],
     [PersonsController.prototype, 'deleteNote', 'person.note.delete'],

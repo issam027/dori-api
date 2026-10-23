@@ -81,11 +81,6 @@ export class PersonsController {
   }
 
   @Get(':personId')
-  @AuditEvent({
-    action: 'person.read',
-    targetType: 'person',
-    targetParam: 'personId',
-  })
   @RequirePermission('registration_view')
   @ApiOperation({
     summary: "Détails d'une personne",
@@ -126,11 +121,6 @@ export class PersonsController {
   }
 
   @Get(':personId/notes')
-  @AuditEvent({
-    action: 'person.notes.read',
-    targetType: 'person',
-    targetParam: 'personId',
-  })
   @RequirePermission('person_note_view')
   @ApiOperation({
     summary: 'Lister les notes attachées à une personne',

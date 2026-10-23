@@ -25,13 +25,17 @@ export class AuditInterceptor implements NestInterceptor {
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const definition = this.reflector.getAllAndOverride<AuditEventDefinition>(
-      AUDIT_EVENT_KEY,
-      [context.getHandler(), context.getClass()],
-    );
-    if (!definition || context.getType() !== 'http') return next.handle();
+    if (context.getType() !== 'http') return next.handle();
 
     const request = context.switchToHttp().getRequest<AuditedRequest>();
+    const method = request.method.toUpperCase();
+    if (!['POST', 'PATCH', 'DELETE'].includes(method)) return next.handle();
+
+    const definition =
+      this.reflector.getAllAndOverride<AuditEventDefinition>(AUDIT_EVENT_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) ?? this.defaultDefinition(context, request);
     return next.handle().pipe(
       concatMap((value) =>
         from(this.record(request, definition, 'success', null, value)).pipe(
@@ -92,6 +96,70 @@ export class AuditInterceptor implements NestInterceptor {
     }
   }
 
+  private defaultDefinition(
+    context: ExecutionContext,
+    request: AuditedRequest,
+  ): AuditEventDefinition {
+    const controller =
+      context.getClass()?.name?.replace(/Controller$/, '') ?? 'http';
+    const handler = context.getHandler()?.name ?? request.method.toLowerCase();
+    const target = this.inferTarget(request, context.getClass()?.name);
+    return {
+      action:
+        controller.charAt(0).toLowerCase() +
+        controller.slice(1) +
+        '.' +
+        handler,
+      targetType: target.type,
+      targetParam: target.param,
+      targetResponseField: target.responseField,
+    };
+  }
+
+  private inferTarget(
+    request: AuditedRequest,
+    controllerName?: string,
+  ): {
+    type: string;
+    param?: string;
+    responseField?: string;
+  } {
+    const candidates: Array<[string, string]> = [
+      ['queueId', 'queue'],
+      ['registrationId', 'registration'],
+      ['notificationId', 'notification'],
+      ['sessionId', 'session'],
+      ['ruleId', 'notification_rule'],
+      ['noteId', 'note'],
+      ['translationId', 'translation'],
+      ['tierId', 'service_tier'],
+      ['personId', 'person'],
+      ['siteId', 'site'],
+      ['userId', 'user'],
+      ['roleId', 'role'],
+    ];
+    for (const [param, type] of candidates) {
+      if (request.params?.[param] != null) return { type, param };
+    }
+
+    const controllerResource: Record<string, [string, string]> = {
+      AuthController: ['user', 'user.userId'],
+      NotificationsController: ['notification', 'notificationId'],
+      PersonsController: ['person', 'personId'],
+      QueuesController: ['queue', 'queueId'],
+      RegistrationsController: ['registration', 'registrationId'],
+      ServiceTiersController: ['service_tier', 'tierId'],
+      SitesController: ['site', 'siteId'],
+      TranslationsController: ['translation', 'translationId'],
+      UsersController: ['user', 'userId'],
+    };
+    const resource = controllerName
+      ? controllerResource[controllerName]
+      : undefined;
+    return resource
+      ? { type: resource[0], responseField: resource[1] }
+      : { type: 'http_operation' };
+  }
   private param(request: AuditedRequest, name?: string): string | null {
     if (!name) return null;
     const value = request.params?.[name];
@@ -119,19 +187,21 @@ export class AuditInterceptor implements NestInterceptor {
 
   private responseIdentifier(value: unknown, field?: string): string | null {
     if (!field || typeof value !== 'object' || value === null) return null;
-    const record = value as Record<string, unknown>;
-    const direct = record[field];
+    const readPath = (root: unknown, path: string): unknown =>
+      path.split('.').reduce<unknown>((current, segment) => {
+        if (typeof current !== 'object' || current === null) return undefined;
+        return (current as Record<string, unknown>)[segment];
+      }, root);
+    const direct = readPath(value, field);
     if (typeof direct === 'string' || typeof direct === 'number') {
       return this.safeIdentifier(direct);
     }
-    const data = record.data;
-    if (typeof data !== 'object' || data === null) return null;
-    const nested = (data as Record<string, unknown>)[field];
+    const data = (value as Record<string, unknown>).data;
+    const nested = readPath(data, field);
     return typeof nested === 'string' || typeof nested === 'number'
       ? this.safeIdentifier(nested)
       : null;
   }
-
   private safeIdentifier(value: string | number): string | null {
     const normalized = String(value);
     return /^[A-Za-z0-9_-]{1,128}$/.test(normalized) ? normalized : null;

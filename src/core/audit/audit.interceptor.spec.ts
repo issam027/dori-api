@@ -36,7 +36,10 @@ describe('AuditInterceptor', () => {
     switchToHttp: () => ({ getRequest: () => request }),
   } as unknown as ExecutionContext;
 
-  beforeEach(() => append.mockClear());
+  beforeEach(() => {
+    append.mockClear();
+    (reflector.getAllAndOverride as jest.Mock).mockReturnValue(definition);
+  });
 
   it('records a successful sensitive action without body or PII', async () => {
     const interceptor = new AuditInterceptor(reflector, repository);
@@ -163,6 +166,57 @@ describe('AuditInterceptor', () => {
     expect(JSON.stringify(append.mock.calls)).not.toContain('never-audited');
   });
 
+  it('automatically records an undecorated POST operation', async () => {
+    (reflector.getAllAndOverride as jest.Mock).mockReturnValueOnce(undefined);
+    const automaticContext = {
+      ...context,
+      getClass: () => class AuthController {},
+      getHandler: () => function login() {},
+      switchToHttp: () => ({
+        getRequest: () => ({
+          ...request,
+          user: undefined,
+          method: 'POST',
+          params: {},
+          route: { path: 'api/v1/auth/login' },
+        }),
+      }),
+    } as unknown as ExecutionContext;
+    const interceptor = new AuditInterceptor(reflector, repository);
+
+    await lastValueFrom(
+      interceptor.intercept(automaticContext, {
+        handle: () => of({ user: { userId: 12 }, accessToken: 'secret' }),
+      }),
+    );
+
+    expect(append).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'auth.login',
+        targetType: 'user',
+        targetId: '12',
+        requestMethod: 'POST',
+      }),
+    );
+    expect(JSON.stringify(append.mock.calls)).not.toContain('secret');
+  });
+
+  it('never records GET operations even when decorated', async () => {
+    const getContext = {
+      ...context,
+      switchToHttp: () => ({
+        getRequest: () => ({ ...request, method: 'GET' }),
+      }),
+    } as unknown as ExecutionContext;
+    const interceptor = new AuditInterceptor(reflector, repository);
+
+    await expect(
+      lastValueFrom(
+        interceptor.intercept(getContext, { handle: () => of('ok') }),
+      ),
+    ).resolves.toBe('ok');
+    expect(append).not.toHaveBeenCalled();
+  });
   it('does not fail the business request when audit storage is unavailable', async () => {
     const logger = jest.spyOn(Logger.prototype, 'error').mockImplementation();
     append.mockRejectedValueOnce(new Error('database secret'));
