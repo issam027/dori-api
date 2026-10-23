@@ -3,7 +3,7 @@ import { DataSource } from 'typeorm';
 import { UserSessionRevocationReason } from './entities/user-session.entity';
 
 export interface AuthUserRow {
-  user_id: number;
+  user_id: string;
   username: string;
   full_name?: string | null;
   email?: string | null;
@@ -18,7 +18,7 @@ export interface AuthUserRow {
 
 export interface UserSessionRow {
   session_id: string;
-  user_id: number;
+  user_id: string;
   expires_at: Date | string;
   revoked_at?: Date | string | null;
 }
@@ -34,7 +34,7 @@ export class AuthRepository {
 
   async findActiveUserByUsername(usernameOrEmail: string) {
     const rows = await this.dataSource.query<AuthUserRow[]>(
-      `SELECT * FROM dori_user
+      `SELECT * FROM dorify.dori_user
        WHERE (username = $1 OR LOWER(email) = LOWER($1))
          AND is_active = TRUE AND deleted_at IS NULL
        ORDER BY CASE WHEN username = $1 THEN 0 ELSE 1 END LIMIT 1`,
@@ -43,40 +43,40 @@ export class AuthRepository {
     return rows[0] ?? null;
   }
 
-  async findActiveUserById(userId: number) {
+  async findActiveUserById(userId: string) {
     const rows = await this.dataSource.query<AuthUserRow[]>(
-      `SELECT * FROM dori_user WHERE user_id = $1 AND is_active = TRUE`,
+      `SELECT * FROM dorify.dori_user WHERE user_id = $1 AND is_active = TRUE`,
       [userId],
     );
     return rows[0] ?? null;
   }
 
-  async findUserProfile(userId: number) {
+  async findUserProfile(userId: string) {
     const rows = await this.dataSource.query<AuthUserRow[]>(
       `SELECT user_id, username, full_name, email, user_type, language_preference, last_login, must_change_password
-       FROM dori_user WHERE user_id = $1`,
+       FROM dorify.dori_user WHERE user_id = $1`,
       [userId],
     );
     return rows[0] ?? null;
   }
 
   recordFailedLogin(
-    userId: number,
+    userId: string,
     failedAttempts: number,
     lockedUntil: Date | null,
     now: Date,
   ) {
     return this.dataSource.query(
-      `UPDATE dori_user
+      `UPDATE dorify.dori_user
        SET failed_attempts = $1, locked_until = $2, updated_at = $3
        WHERE user_id = $4`,
       [failedAttempts, lockedUntil, now, userId],
     );
   }
 
-  recordSuccessfulLogin(userId: number, now: Date) {
+  recordSuccessfulLogin(userId: string, now: Date) {
     return this.dataSource.query(
-      `UPDATE dori_user
+      `UPDATE dorify.dori_user
        SET failed_attempts = 0, locked_until = NULL, last_login = $1, updated_at = $1
        WHERE user_id = $2`,
       [now, userId],
@@ -94,7 +94,7 @@ export class AuthRepository {
     return this.dataSource.transaction(async (manager) => {
       const sessions = await manager.query<UserSessionRow[]>(
         `SELECT session_id, user_id, expires_at, revoked_at
-         FROM dori_user_session
+         FROM dorify.dori_user_session
          WHERE refresh_token_hash = $1
          FOR UPDATE`,
         [input.currentTokenHash],
@@ -104,7 +104,7 @@ export class AuthRepository {
 
       if (session.revoked_at) {
         await manager.query(
-          `UPDATE dori_user_session
+          `UPDATE dorify.dori_user_session
            SET revoked_at = $1, revoked_reason = 'rotation'
            WHERE user_id = $2 AND revoked_at IS NULL`,
           [input.now, session.user_id],
@@ -117,7 +117,7 @@ export class AuthRepository {
       }
 
       const users = await manager.query<AuthUserRow[]>(
-        `SELECT * FROM dori_user
+        `SELECT * FROM dorify.dori_user
          WHERE user_id = $1 AND is_active = TRUE AND deleted_at IS NULL
          FOR SHARE`,
         [session.user_id],
@@ -126,7 +126,7 @@ export class AuthRepository {
       if (!user) return { status: 'invalid' };
 
       const revoked = await manager.query<Array<{ session_id: string }>>(
-        `UPDATE dori_user_session
+        `UPDATE dorify.dori_user_session
          SET revoked_at = $1, revoked_reason = 'rotation'
          WHERE session_id = $2 AND revoked_at IS NULL
          RETURNING session_id`,
@@ -135,7 +135,7 @@ export class AuthRepository {
       if (revoked.length === 0) return { status: 'reused' };
 
       const inserted = await manager.query<Array<{ session_id: string }>>(
-        `INSERT INTO dori_user_session
+        `INSERT INTO dorify.dori_user_session
          (user_id, refresh_token_hash, issued_at, expires_at, user_agent, ip_address)
          VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING session_id`,
@@ -158,12 +158,12 @@ export class AuthRepository {
   }
 
   revokeAllSessions(
-    userId: number,
+    userId: string,
     now: Date,
     reason: UserSessionRevocationReason,
   ) {
     return this.dataSource.query(
-      `UPDATE dori_user_session
+      `UPDATE dorify.dori_user_session
        SET revoked_at = $1, revoked_reason = $2
        WHERE user_id = $3 AND revoked_at IS NULL`,
       [now, reason, userId],
@@ -176,40 +176,40 @@ export class AuthRepository {
     reason: UserSessionRevocationReason,
   ) {
     return this.dataSource.query(
-      `UPDATE dori_user_session
+      `UPDATE dorify.dori_user_session
        SET revoked_at = $1, revoked_reason = $2
        WHERE session_id = $3 AND revoked_at IS NULL`,
       [now, reason, sessionId],
     );
   }
 
-  async getMaxRoleRank(userId: number) {
+  async getMaxRoleRank(userId: string) {
     const rows = await this.dataSource.query<
       Array<{ max_rank: number | null }>
     >(
       `SELECT MAX(r.rank) as max_rank
-       FROM dori_user_role ur
-       JOIN dori_role r ON r.role_id = ur.role_id
+       FROM dorify.dori_user_role ur
+       JOIN dorify.dori_role r ON r.role_id = ur.role_id
        WHERE ur.user_id = $1`,
       [userId],
     );
     return Number(rows[0]?.max_rank ?? 0);
   }
 
-  async activeUserExists(userId: number) {
-    const rows = await this.dataSource.query<Array<{ user_id: number }>>(
-      `SELECT user_id FROM dori_user
+  async activeUserExists(userId: string) {
+    const rows = await this.dataSource.query<Array<{ user_id: string }>>(
+      `SELECT user_id FROM dorify.dori_user
        WHERE user_id = $1 AND is_active = TRUE AND deleted_at IS NULL`,
       [userId],
     );
     return rows.length > 0;
   }
 
-  async getRolesAndPermissions(userId: number) {
+  async getRolesAndPermissions(userId: string) {
     const roleRows = await this.dataSource.query<Array<{ role_name: string }>>(
       `SELECT r.role_name, r.rank
-       FROM dori_user_role ur
-       JOIN dori_role r ON r.role_id = ur.role_id
+       FROM dorify.dori_user_role ur
+       JOIN dorify.dori_role r ON r.role_id = ur.role_id
        WHERE ur.user_id = $1 AND r.is_active = TRUE`,
       [userId],
     );
@@ -217,13 +217,13 @@ export class AuthRepository {
 
     const permissionRows = roles.includes('root')
       ? await this.dataSource.query<Array<{ permission_name: string }>>(
-          `SELECT permission_name FROM dori_permission WHERE is_active = TRUE`,
+          `SELECT permission_name FROM dorify.dori_permission WHERE is_active = TRUE`,
         )
       : await this.dataSource.query<Array<{ permission_name: string }>>(
           `SELECT DISTINCT p.permission_name
-           FROM dori_user_role ur
-           JOIN dori_role_permission rp ON rp.role_id = ur.role_id
-           JOIN dori_permission p ON p.permission_id = rp.permission_id
+           FROM dorify.dori_user_role ur
+           JOIN dorify.dori_role_permission rp ON rp.role_id = ur.role_id
+           JOIN dorify.dori_permission p ON p.permission_id = rp.permission_id
            WHERE ur.user_id = $1 AND p.is_active = TRUE`,
           [userId],
         );
@@ -235,7 +235,7 @@ export class AuthRepository {
   }
 
   async createSession(
-    userId: number,
+    userId: string,
     refreshTokenHash: string,
     issuedAt: Date,
     expiresAt: Date,
@@ -243,7 +243,7 @@ export class AuthRepository {
     ipAddress?: string,
   ) {
     const rows = await this.dataSource.query<Array<{ session_id: string }>>(
-      `INSERT INTO dori_user_session
+      `INSERT INTO dorify.dori_user_session
        (user_id, refresh_token_hash, issued_at, expires_at, user_agent, ip_address)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING session_id`,
@@ -260,20 +260,20 @@ export class AuthRepository {
   }
 
   changePasswordAndRevokeSessions(
-    userId: number,
+    userId: string,
     passwordHash: string,
     now: Date,
   ) {
     return this.dataSource.transaction(async (manager) => {
       await manager.query(
-        `UPDATE dori_user
+        `UPDATE dorify.dori_user
          SET password_hash = $1, password_changed_at = $2,
              must_change_password = FALSE, updated_at = $2
          WHERE user_id = $3`,
         [passwordHash, now, userId],
       );
       await manager.query(
-        `UPDATE dori_user_session
+        `UPDATE dorify.dori_user_session
          SET revoked_at = $1, revoked_reason = 'password_changed'
          WHERE user_id = $2 AND revoked_at IS NULL`,
         [now, userId],

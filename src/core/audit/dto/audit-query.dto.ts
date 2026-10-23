@@ -1,12 +1,10 @@
-import { Type } from 'class-transformer';
 import {
+  IsUUID,
   IsIn,
-  IsInt,
   IsOptional,
   IsString,
   Length,
   MaxLength,
-  Min,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../pagination/pagination.dto';
@@ -20,18 +18,14 @@ import { AuditOutcome } from '../audit.repository';
 @ValidDateRange(DATE_RANGE_LIMITS.auditFilterDays)
 export class AuditEventQueryDto extends PaginationDto {
   @ApiPropertyOptional({ example: 3, description: 'Scope du site historisé' })
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
+  @IsUUID()
   @IsOptional()
-  siteId?: number;
+  siteId?: string;
 
   @ApiPropertyOptional({ example: 7, description: "ID de l'acteur" })
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
+  @IsUUID()
   @IsOptional()
-  actorUserId?: number;
+  actorUserId?: string;
 
   @ApiPropertyOptional({ example: 'site.create' })
   @IsString()
@@ -49,6 +43,7 @@ export class AuditEventQueryDto extends PaginationDto {
   @IsString()
   @MaxLength(128)
   @IsOptional()
+  @IsUUID()
   targetId?: string;
 
   @ApiPropertyOptional({ enum: ['success', 'failure'] })
@@ -60,6 +55,7 @@ export class AuditEventQueryDto extends PaginationDto {
   @IsString()
   @MaxLength(128)
   @IsOptional()
+  @IsUUID()
   correlationId?: string;
 
   @ApiPropertyOptional({

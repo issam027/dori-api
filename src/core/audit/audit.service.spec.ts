@@ -18,7 +18,7 @@ describe('AuditService', () => {
   } as unknown as ScopeService;
   const service = new AuditService(repository, scopeService);
   const user = {
-    userId: 1,
+    userId: '00000000-0000-4000-8000-000000000001',
     username: 'root',
     roles: ['root'],
     permissions: ['system_manage'],
@@ -63,9 +63,9 @@ describe('AuditService', () => {
       action: 'site.create',
     });
     await expect(service.findById('id-1', user)).resolves.toEqual({
-      event_id: 'id-1',
       action: 'site.create',
-      action_display_name: 'Création d’un site',
+      event_id: 'id-1',
+      action_display_name: 'Cr\u00e9ation d\u2019un site',
     });
   });
 

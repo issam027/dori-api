@@ -6,7 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -92,10 +92,15 @@ export class SitesController {
     summary: "Détails d'un site",
     description: "Retourne la configuration complète d'un site spécifique.",
   })
-  @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
+  @ApiParam({
+    name: '',
+    type: String,
+    format: 'uuid',
+    description: 'ID du site',
+  })
   @ApiDoriOkResponse(SiteResponseDto, 'Détails du site')
   async findSite(
-    @Param('siteId', ParseIntPipe) siteId: number,
+    @Param('siteId', ParseUUIDPipe) siteId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.sitesService.findSiteById(siteId, user);
@@ -113,10 +118,15 @@ export class SitesController {
     description:
       'Met à jour la configuration générale, les horaires ou les poids de priorité du site. isActive=false désactive aussi toutes ses files. isActive=true réactive uniquement le site ; chaque file doit être réactivée explicitement afin de ne pas remettre en service une file précédemment arrêtée.',
   })
-  @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
+  @ApiParam({
+    name: '',
+    type: String,
+    format: 'uuid',
+    description: 'ID du site',
+  })
   @ApiDoriOkResponse(SiteResponseDto, 'Site mis à jour avec succès')
   async updateSite(
-    @Param('siteId', ParseIntPipe) siteId: number,
+    @Param('siteId', ParseUUIDPipe) siteId: string,
     @Body() updateSiteDto: UpdateSiteDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -135,10 +145,15 @@ export class SitesController {
     description:
       'Désactive logiquement le site et toutes ses files associées dans une transaction unique. Une réactivation ultérieure du site ne réactive pas automatiquement les files.',
   })
-  @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
+  @ApiParam({
+    name: '',
+    type: String,
+    format: 'uuid',
+    description: 'ID du site',
+  })
   @ApiDoriOkResponse(DeleteSiteResponseDto, 'Site désactivé avec succès')
   async deleteSite(
-    @Param('siteId', ParseIntPipe) siteId: number,
+    @Param('siteId', ParseUUIDPipe) siteId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.sitesService.deleteSite(siteId, user);
@@ -151,13 +166,18 @@ export class SitesController {
     description:
       'Retourne uniquement les admins et managers directement affectés à ce site.',
   })
-  @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
+  @ApiParam({
+    name: '',
+    type: String,
+    format: 'uuid',
+    description: 'ID du site',
+  })
   @ApiDoriOkResponse(
     PaginatedSiteDirectUserResponseDto,
     'Liste paginée des utilisateurs directs du site',
   )
   async getDirectUsers(
-    @Param('siteId', ParseIntPipe) siteId: number,
+    @Param('siteId', ParseUUIDPipe) siteId: string,
     @Query() pagination: DirectSiteUserFilterDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -178,13 +198,18 @@ export class SitesController {
     description:
       'Associe au site un utilisateur actif ayant le rôle admin ou manager.',
   })
-  @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
+  @ApiParam({
+    name: '',
+    type: String,
+    format: 'uuid',
+    description: 'ID du site',
+  })
   @ApiDoriCreatedResponse(
     AssignDirectSiteUserResponseDto,
     'Utilisateur directement affecté avec succès',
   )
   async assignDirectUser(
-    @Param('siteId', ParseIntPipe) siteId: number,
+    @Param('siteId', ParseUUIDPipe) siteId: string,
     @Body() body: AssignDirectSiteUserDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -203,7 +228,12 @@ export class SitesController {
     summary: 'Retirer un utilisateur directement affecté au site',
     description: "Supprime l'association d'un utilisateur au site.",
   })
-  @ApiParam({ name: 'siteId', type: Number, description: 'ID du site' })
+  @ApiParam({
+    name: '',
+    type: String,
+    format: 'uuid',
+    description: 'ID du site',
+  })
   @ApiParam({
     name: 'userId',
     type: Number,
@@ -214,8 +244,8 @@ export class SitesController {
     'Utilisateur retiré du site avec succès',
   )
   async removeDirectUser(
-    @Param('siteId', ParseIntPipe) siteId: number,
-    @Param('userId', ParseIntPipe) userId: number,
+    @Param('siteId', ParseUUIDPipe) siteId: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.sitesService.removeDirectSiteUser(siteId, userId, user);

@@ -5,7 +5,7 @@ import { AuditEventQueryDto } from './dto/audit-query.dto';
 export type AuditOutcome = 'success' | 'failure';
 
 export interface AuditRecord {
-  actorUserId: number | null;
+  actorUserId: string | null;
   action: string;
   targetType: string;
   targetId: string | null;
@@ -15,12 +15,12 @@ export interface AuditRecord {
   requestMethod: string;
   requestPath: string;
   failureType: string | null;
-  siteScopeId: number | null;
+  siteScopeId: string | null;
 }
 
 export type AuditEventRow = Record<string, unknown> & {
   event_id: string;
-  actor_user_id: number | null;
+  actor_user_id: string | null;
   actor_display_name: string | null;
   actor_username: string | null;
   actor_full_name: string | null;
@@ -34,7 +34,7 @@ export type AuditEventRow = Record<string, unknown> & {
   secondary_target_display_name: string | null;
   target_is_active: boolean | null;
   secondary_target_is_active: boolean | null;
-  site_scope_id: number | null;
+  site_scope_id: string | null;
   site_scope_display_name: string | null;
   site_scope_location: string | null;
   site_scope_timezone: string | null;
@@ -68,15 +68,15 @@ export const AUDIT_EVENT_READ_MODEL = `(
       WHEN 'site' THEN COALESCE(target_site.site_name, 'Site #' || ae.target_id)
       WHEN 'queue' THEN COALESCE(NULLIF(BTRIM(target_queue.queue_name), ''), target_queue.queue_code, 'File #' || ae.target_id)
       WHEN 'person' THEN COALESCE(NULLIF(BTRIM(CONCAT_WS(' ', target_person.first_name, target_person.last_name)), ''), 'Personne #' || ae.target_id)
-      WHEN 'role' THEN COALESCE(target_role.role_name, 'Rôle #' || ae.target_id)
-      WHEN 'audit_event' THEN COALESCE('Événement ' || ae.target_id, 'Journal d’audit')
+      WHEN 'role' THEN COALESCE(target_role.role_name, 'RÃ´le #' || ae.target_id)
+      WHEN 'audit_event' THEN COALESCE('Ã‰vÃ©nement ' || ae.target_id, 'Journal dâ€™audit')
       ELSE CASE WHEN ae.target_id IS NULL THEN ae.target_type ELSE ae.target_type || ' #' || ae.target_id END
     END AS target_display_name,
     ae.secondary_target_id,
     CASE
       WHEN ae.secondary_target_id IS NULL THEN NULL
       WHEN ae.action IN ('user.role.assign', 'user.role.remove')
-        THEN COALESCE(secondary_role.role_name, 'Rôle #' || ae.secondary_target_id)
+        THEN COALESCE(secondary_role.role_name, 'RÃ´le #' || ae.secondary_target_id)
       WHEN ae.action IN ('site.user.assign', 'site.user.remove', 'queue.operator.assign', 'queue.operator.remove')
         THEN CASE
           WHEN secondary_user.user_id IS NULL THEN 'Utilisateur #' || ae.secondary_target_id
@@ -106,24 +106,24 @@ export const AUDIT_EVENT_READ_MODEL = `(
     scope_site.is_active AS site_scope_is_active,
     ae.outcome, ae.correlation_id, ae.request_method, ae.request_path,
     ae.failure_type, ae.occurred_at
-  FROM dori_audit_event ae
-  LEFT JOIN dori_user actor ON actor.user_id = ae.actor_user_id
-  LEFT JOIN dori_site scope_site ON scope_site.site_id = ae.site_scope_id
-  LEFT JOIN dori_user target_user ON ae.target_type = 'user'
-    AND target_user.user_id = CASE WHEN ae.target_id ~ '^[0-9]+$' THEN ae.target_id::int END
-  LEFT JOIN dori_site target_site ON ae.target_type = 'site'
-    AND target_site.site_id = CASE WHEN ae.target_id ~ '^[0-9]+$' THEN ae.target_id::int END
-  LEFT JOIN dori_queue target_queue ON ae.target_type = 'queue'
-    AND target_queue.queue_id = CASE WHEN ae.target_id ~ '^[0-9]+$' THEN ae.target_id::int END
-  LEFT JOIN dori_person target_person ON ae.target_type = 'person'
-    AND target_person.person_id = CASE WHEN ae.target_id ~ '^[0-9]+$' THEN ae.target_id::int END
-  LEFT JOIN dori_role target_role ON ae.target_type = 'role'
-    AND target_role.role_id = CASE WHEN ae.target_id ~ '^[0-9]+$' THEN ae.target_id::int END
-  LEFT JOIN dori_role secondary_role ON ae.action IN ('user.role.assign', 'user.role.remove')
-    AND secondary_role.role_id = CASE WHEN ae.secondary_target_id ~ '^[0-9]+$' THEN ae.secondary_target_id::int END
-  LEFT JOIN dori_user secondary_user
+  FROM dorify.dori_audit_event ae
+  LEFT JOIN dorify.dori_user actor ON actor.user_id = ae.actor_user_id
+  LEFT JOIN dorify.dori_site scope_site ON scope_site.site_id = ae.site_scope_id
+  LEFT JOIN dorify.dori_user target_user ON ae.target_type = 'user'
+    AND target_user.user_id = CASE WHEN ae.target_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN ae.target_id::uuid END
+  LEFT JOIN dorify.dori_site target_site ON ae.target_type = 'site'
+    AND target_site.site_id = CASE WHEN ae.target_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN ae.target_id::uuid END
+  LEFT JOIN dorify.dori_queue target_queue ON ae.target_type = 'queue'
+    AND target_queue.queue_id = CASE WHEN ae.target_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN ae.target_id::uuid END
+  LEFT JOIN dorify.dori_person target_person ON ae.target_type = 'person'
+    AND target_person.person_id = CASE WHEN ae.target_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN ae.target_id::uuid END
+  LEFT JOIN dorify.dori_role target_role ON ae.target_type = 'role'
+    AND target_role.role_id = CASE WHEN ae.target_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN ae.target_id::uuid END
+  LEFT JOIN dorify.dori_role secondary_role ON ae.action IN ('user.role.assign', 'user.role.remove')
+    AND secondary_role.role_id = CASE WHEN ae.secondary_target_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN ae.secondary_target_id::uuid END
+  LEFT JOIN dorify.dori_user secondary_user
     ON ae.action IN ('site.user.assign', 'site.user.remove', 'queue.operator.assign', 'queue.operator.remove')
-    AND secondary_user.user_id = CASE WHEN ae.secondary_target_id ~ '^[0-9]+$' THEN ae.secondary_target_id::int END
+    AND secondary_user.user_id = CASE WHEN ae.secondary_target_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN ae.secondary_target_id::uuid END
 ) audit_view`;
 
 export interface AuditSearchQuery {
@@ -132,7 +132,7 @@ export interface AuditSearchQuery {
   sortOrder: 'ASC' | 'DESC';
   pageSize: number;
   offset: number;
-  allowedSiteIds?: number[];
+  allowedSiteIds?: string[];
 }
 
 @Injectable()
@@ -141,35 +141,35 @@ export class AuditRepository {
 
   async append(record: AuditRecord): Promise<void> {
     await this.dataSource.query(
-      `INSERT INTO dori_audit_event
+      `INSERT INTO dorify.dori_audit_event
         (actor_user_id, action, target_type, target_id, secondary_target_id,
          outcome, correlation_id, request_method, request_path, failure_type,
          site_scope_id)
-       SELECT $1::int, $2::varchar, $3::varchar, $4::varchar, $5::varchar, $6::varchar, $7::varchar, $8::varchar, $9::varchar, $10::varchar,
+       SELECT $1::uuid, $2::varchar, $3::varchar, $4::varchar, $5::varchar, $6::varchar, $7::varchar, $8::varchar, $9::varchar, $10::varchar,
          COALESCE(
-           $11::int,
+           $11::uuid,
            CASE
-             WHEN $3 = 'site' AND $4 ~ '^[0-9]+$' THEN
-               (SELECT site_id FROM dori_site WHERE site_id = $4::varchar::int)
-             WHEN $3 = 'queue' AND $4 ~ '^[0-9]+$' THEN
-               (SELECT site_id FROM dori_queue WHERE queue_id = $4::varchar::int)
-             WHEN $3 = 'person' AND $4 ~ '^[0-9]+$' THEN
-               (SELECT site_id FROM dori_person WHERE person_id = $4::varchar::int)
-             WHEN $3 = 'registration' AND $4 ~ '^[0-9]+$' THEN
-               (SELECT q.site_id FROM dori_registration r
-                JOIN dori_queue q ON q.queue_id = r.queue_id
-                WHERE r.registration_id = $4::varchar::int)
-             WHEN $3 = 'notification' AND $4 ~ '^[0-9]+$' THEN
-               (SELECT q.site_id FROM dori_notification n
-                JOIN dori_registration r ON r.registration_id = n.registration_id
-                JOIN dori_queue q ON q.queue_id = r.queue_id
-                WHERE n.notification_id = $4::varchar::int)
-             WHEN $3 = 'session' AND $4 ~ '^[0-9]+$' THEN
-               (SELECT q.site_id FROM dori_operator_session s
-                JOIN dori_queue q ON q.queue_id = s.queue_id
-                WHERE s.session_id = $4::varchar::int)
+             WHEN $3 = 'site' AND $4 ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN
+               (SELECT site_id FROM dorify.dori_site WHERE site_id = $4::varchar::uuid)
+             WHEN $3 = 'queue' AND $4 ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN
+               (SELECT site_id FROM dorify.dori_queue WHERE queue_id = $4::varchar::uuid)
+             WHEN $3 = 'person' AND $4 ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN
+               (SELECT site_id FROM dorify.dori_person WHERE person_id = $4::varchar::uuid)
+             WHEN $3 = 'registration' AND $4 ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN
+               (SELECT q.site_id FROM dorify.dori_registration r
+                JOIN dorify.dori_queue q ON q.queue_id = r.queue_id
+                WHERE r.registration_id = $4::varchar::uuid)
+             WHEN $3 = 'notification' AND $4 ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN
+               (SELECT q.site_id FROM dorify.dori_notification n
+                JOIN dorify.dori_registration r ON r.registration_id = n.registration_id
+                JOIN dorify.dori_queue q ON q.queue_id = r.queue_id
+                WHERE n.notification_id = $4::varchar::uuid)
+             WHEN $3 = 'session' AND $4 ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN
+               (SELECT q.site_id FROM dorify.dori_operator_session s
+                JOIN dorify.dori_queue q ON q.queue_id = s.queue_id
+                WHERE s.session_id = $4::varchar::uuid)
              WHEN $3 = 'audit_event' AND $4 ~ '^[0-9a-fA-F-]{36}$' THEN
-               (SELECT site_scope_id FROM dori_audit_event WHERE event_id = $4::varchar::uuid)
+               (SELECT site_scope_id FROM dorify.dori_audit_event WHERE event_id = $4::varchar::uuid)
              ELSE NULL
            END
          )`,
@@ -258,7 +258,7 @@ export class AuditRepository {
 
   async findById(
     eventId: string,
-    allowedSiteIds?: number[],
+    allowedSiteIds?: string[],
   ): Promise<AuditEventRow | null> {
     const params: unknown[] = [eventId];
     const scopeClause = allowedSiteIds ? `AND site_scope_id = ANY($2)` : '';

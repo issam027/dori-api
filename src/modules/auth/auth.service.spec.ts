@@ -9,7 +9,7 @@ import { ScopeService } from '../../core/rbac/services/scope.service';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { AuthRepository } from './auth.repository';
 
-describe('AuthService — SEC-03 Logout Specific Session', () => {
+describe('AuthService Ã¢â‚¬â€ SEC-03 Logout Specific Session', () => {
   let service: AuthService;
   let dataSourceMock: { query: jest.Mock };
 
@@ -67,9 +67,9 @@ describe('AuthService — SEC-03 Logout Specific Session', () => {
     service = module.get<AuthService>(AuthService);
   });
 
-  it('CAS 1 — should revoke only the caller current session when no userId provided', async () => {
+  it('CAS 1 Ã¢â‚¬â€ should revoke only the caller current session when no userId provided', async () => {
     const caller: AuthenticatedUser = {
-      userId: 5,
+      userId: '00000000-0000-4000-8000-000000000005',
       username: 'agent1',
       roles: ['operator'],
       permissions: [],
@@ -91,9 +91,9 @@ describe('AuthService — SEC-03 Logout Specific Session', () => {
     );
   });
 
-  it('CAS 2 — should revoke all caller sessions (global_logout) when userId == caller.userId', async () => {
+  it('CAS 2 Ã¢â‚¬â€ should revoke all caller sessions (global_logout) when userId == caller.userId', async () => {
     const caller: AuthenticatedUser = {
-      userId: 5,
+      userId: '00000000-0000-4000-8000-000000000005',
       username: 'agent1',
       roles: ['operator'],
       permissions: [],
@@ -101,18 +101,24 @@ describe('AuthService — SEC-03 Logout Specific Session', () => {
       sessionId: 'session-uuid-device-1',
     };
 
-    const result = await service.logout(caller, { userId: 5 });
+    const result = await service.logout(caller, {
+      userId: '00000000-0000-4000-8000-000000000005',
+    });
     expect(result).toEqual({ success: true });
 
     expect(dataSourceMock.query).toHaveBeenCalledWith(
       expect.stringContaining('revoked_reason = $2'),
-      [expect.any(Date), 'global_logout', 5],
+      [
+        expect.any(Date),
+        'global_logout',
+        '00000000-0000-4000-8000-000000000005',
+      ],
     );
   });
 
-  it('CAS 3 — should throw FORBIDDEN_PERMISSION when a operator tries to force-disconnect another user', async () => {
+  it('CAS 3 Ã¢â‚¬â€ should throw FORBIDDEN_PERMISSION when a operator tries to force-disconnect another user', async () => {
     const caller: AuthenticatedUser = {
-      userId: 5,
+      userId: '00000000-0000-4000-8000-000000000005',
       username: 'agent1',
       roles: ['operator'],
       permissions: [],
@@ -120,14 +126,18 @@ describe('AuthService — SEC-03 Logout Specific Session', () => {
       sessionId: 'session-uuid-1',
     };
 
-    await expect(service.logout(caller, { userId: 99 })).rejects.toMatchObject({
+    await expect(
+      service.logout(caller, {
+        userId: '00000000-0000-4000-8000-000000000099',
+      }),
+    ).rejects.toMatchObject({
       code: 'FORBIDDEN_PERMISSION',
     });
   });
 
-  it('CAS 3 — should force-disconnect a lower-ranked user when caller is a manager', async () => {
+  it('CAS 3 Ã¢â‚¬â€ should force-disconnect a lower-ranked user when caller is a manager', async () => {
     const caller: AuthenticatedUser = {
-      userId: 10,
+      userId: '00000000-0000-4000-8000-000000000010',
       username: 'manager1',
       roles: ['manager'],
       permissions: [],
@@ -139,14 +149,22 @@ describe('AuthService — SEC-03 Logout Specific Session', () => {
     dataSourceMock.query
       .mockResolvedValueOnce([{ max_rank: 3 }]) // callerRankRes
       .mockResolvedValueOnce([{ max_rank: 2 }]) // targetRankRes
-      .mockResolvedValueOnce([{ user_id: 20 }]); // targetUsers exists
+      .mockResolvedValueOnce([
+        { user_id: '00000000-0000-4000-8000-000000000020' },
+      ]); // targetUsers exists
 
-    const result = await service.logout(caller, { userId: 20 });
+    const result = await service.logout(caller, {
+      userId: '00000000-0000-4000-8000-000000000020',
+    });
     expect(result).toEqual({ success: true });
 
     expect(dataSourceMock.query).toHaveBeenCalledWith(
       expect.stringContaining('revoked_reason = $2'),
-      [expect.any(Date), 'force_logout', 20],
+      [
+        expect.any(Date),
+        'force_logout',
+        '00000000-0000-4000-8000-000000000020',
+      ],
     );
   });
 });

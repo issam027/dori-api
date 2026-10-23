@@ -18,7 +18,7 @@ describe('inactive resource filters', () => {
     [SiteFilterDto, {}],
     [QueueFilterDto, {}],
     [RegistrationFilterDto, {}],
-    [PersonFilterDto, { siteId: 1 }],
+    [PersonFilterDto, { siteId: '00000000-0000-4000-8000-000000000001' }],
     [PersonNoteFilterDto, {}],
     [UserFilterDto, {}],
     [TranslationFilterDto, {}],

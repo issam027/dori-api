@@ -8,7 +8,7 @@ import {
 import { UserSummaryItemDto, RoleResponseDto } from './dto/user-response.dto';
 
 export interface UserDetailsResult {
-  user_id: number;
+  user_id: string;
   username: string;
   full_name: string | null;
   email: string | null;
@@ -19,21 +19,21 @@ export interface UserDetailsResult {
   created_at: Date;
   updated_at: Date;
   roles: Array<{
-    role_id: number;
+    role_id: string;
     role_name: string;
     rank: number;
     description: string;
   }>;
   sites: Array<{
-    site_id: number;
+    site_id: string;
     site_name: string;
     site_type: string;
   }>;
   queues: Array<{
-    queue_id: number;
+    queue_id: string;
     queue_code: string;
     queue_name: string;
-    site_id: number;
+    site_id: string;
   }>;
 }
 
@@ -41,11 +41,11 @@ export interface UserDetailsResult {
 export class UsersRepository {
   constructor(private readonly dataSource: DataSource) {}
 
-  async getCallerMaxRank(userId: number): Promise<number> {
+  async getCallerMaxRank(userId: string): Promise<number> {
     const rolesRes = await this.dataSource.query(
       `SELECT MAX(r.rank) as max_rank
-       FROM dori_user_role ur
-       JOIN dori_role r ON r.role_id = ur.role_id
+       FROM dorify.dori_user_role ur
+       JOIN dorify.dori_role r ON r.role_id = ur.role_id
        WHERE ur.user_id = $1`,
       [userId],
     );
@@ -53,10 +53,10 @@ export class UsersRepository {
   }
 
   async getUserMaxRank(
-    userId: number,
+    userId: string,
   ): Promise<{ exists: boolean; maxRank: number; userType?: string }> {
     const userRes = await this.dataSource.query(
-      `SELECT user_id, user_type FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL`,
+      `SELECT user_id, user_type FROM dorify.dori_user WHERE user_id = $1 AND deleted_at IS NULL`,
       [userId],
     );
     if (!userRes || userRes.length === 0) {
@@ -65,8 +65,8 @@ export class UsersRepository {
 
     const rolesRes = await this.dataSource.query(
       `SELECT MAX(r.rank) as max_rank
-       FROM dori_user_role ur
-       JOIN dori_role r ON r.role_id = ur.role_id
+       FROM dorify.dori_user_role ur
+       JOIN dorify.dori_role r ON r.role_id = ur.role_id
        WHERE ur.user_id = $1`,
       [userId],
     );
@@ -79,21 +79,21 @@ export class UsersRepository {
     };
   }
 
-  async getUserPermissionNames(userId: number): Promise<string[]> {
+  async getUserPermissionNames(userId: string): Promise<string[]> {
     const permsRes = await this.dataSource.query(
       `SELECT DISTINCT p.permission_name
-       FROM dori_user_role ur
-       JOIN dori_role_permission rp ON rp.role_id = ur.role_id
-       JOIN dori_permission p ON p.permission_id = rp.permission_id
+       FROM dorify.dori_user_role ur
+       JOIN dorify.dori_role_permission rp ON rp.role_id = ur.role_id
+       JOIN dorify.dori_permission p ON p.permission_id = rp.permission_id
        WHERE ur.user_id = $1 AND p.is_active = TRUE`,
       [userId],
     );
     return permsRes.map((r: any) => r.permission_name);
   }
 
-  async getRoleRank(roleId: number): Promise<number | null> {
+  async getRoleRank(roleId: string): Promise<number | null> {
     const roleRes = await this.dataSource.query(
-      `SELECT rank FROM dori_role WHERE role_id = $1 AND is_active = TRUE`,
+      `SELECT rank FROM dorify.dori_role WHERE role_id = $1 AND is_active = TRUE`,
       [roleId],
     );
     if (!roleRes || roleRes.length === 0) {
@@ -104,8 +104,8 @@ export class UsersRepository {
 
   async findUsers(
     filter: UserFilterDto,
-    scope: { isGlobal: boolean; siteIds: number[] },
-    siteIds?: number[],
+    scope: { isGlobal: boolean; siteIds: string[] },
+    siteIds?: string[],
   ): Promise<PaginatedResult<UserSummaryItemDto>> {
     const { pageSize, offset, sortOrder } = filter.getParams();
     const sortField = filter.getSafeSortField(
@@ -126,12 +126,12 @@ export class UsersRepository {
     let query = `
       SELECT DISTINCT u.user_id, u.username, u.full_name, u.email, u.user_type, u.is_active,
              u.language_preference, u.last_login, u.created_at, u.updated_at
-      FROM dori_user u
-      LEFT JOIN dori_user_site_assignment us ON us.user_id = u.user_id
-      LEFT JOIN dori_user_queue_assignment uq ON uq.user_id = u.user_id
-      LEFT JOIN dori_queue sqt ON sqt.queue_id = uq.queue_id
-      LEFT JOIN dori_user_role ur ON ur.user_id = u.user_id
-      LEFT JOIN dori_role r ON r.role_id = ur.role_id
+      FROM dorify.dori_user u
+      LEFT JOIN dorify.dori_user_site_assignment us ON us.user_id = u.user_id
+      LEFT JOIN dorify.dori_user_queue_assignment uq ON uq.user_id = u.user_id
+      LEFT JOIN dorify.dori_queue sqt ON sqt.queue_id = uq.queue_id
+      LEFT JOIN dorify.dori_user_role ur ON ur.user_id = u.user_id
+      LEFT JOIN dorify.dori_role r ON r.role_id = ur.role_id
       WHERE u.is_active = $1
     `;
     const params: any[] = [filter.isActive ?? true];
@@ -175,10 +175,10 @@ export class UsersRepository {
     return filter.createResponse(items, total);
   }
 
-  async findUserById(userId: number): Promise<UserDetailsResult | null> {
+  async findUserById(userId: string): Promise<UserDetailsResult | null> {
     const users = await this.dataSource.query(
       `SELECT user_id, username, email, full_name, user_type, is_active, language_preference, last_login, created_at, updated_at
-       FROM dori_user WHERE user_id = $1`,
+       FROM dorify.dori_user WHERE user_id = $1`,
       [userId],
     );
 
@@ -190,24 +190,24 @@ export class UsersRepository {
 
     const roles = await this.dataSource.query(
       `SELECT r.role_id, r.role_name, r.rank, r.description
-       FROM dori_user_role ur
-       JOIN dori_role r ON r.role_id = ur.role_id
+       FROM dorify.dori_user_role ur
+       JOIN dorify.dori_role r ON r.role_id = ur.role_id
        WHERE ur.user_id = $1`,
       [userId],
     );
 
     const sites = await this.dataSource.query(
       `SELECT s.site_id, s.site_name, s.site_type
-       FROM dori_user_site_assignment us
-       JOIN dori_site s ON s.site_id = us.site_id
+       FROM dorify.dori_user_site_assignment us
+       JOIN dorify.dori_site s ON s.site_id = us.site_id
        WHERE us.user_id = $1`,
       [userId],
     );
 
     const queues = await this.dataSource.query(
       `SELECT q.queue_id, q.queue_code, q.queue_name, q.site_id
-       FROM dori_user_queue_assignment uq
-       JOIN dori_queue q ON q.queue_id = uq.queue_id
+       FROM dorify.dori_user_queue_assignment uq
+       JOIN dorify.dori_queue q ON q.queue_id = uq.queue_id
        WHERE uq.user_id = $1`,
       [userId],
     );
@@ -227,21 +227,21 @@ export class UsersRepository {
     passwordHash: string;
     userType?: string;
     languagePreference?: string;
-    roleId?: number;
-    creatorUserId: number;
+    roleId?: string;
+    creatorUserId: string;
     now: Date;
   }): Promise<any | null> {
     return this.dataSource.transaction(async (manager) => {
       if (params.roleId) {
         const roles = await manager.query(
-          `SELECT role_id FROM dori_role WHERE role_id = $1 AND is_active = TRUE FOR SHARE`,
+          `SELECT role_id FROM dorify.dori_role WHERE role_id = $1 AND is_active = TRUE FOR SHARE`,
           [params.roleId],
         );
         if (roles.length === 0) return null;
       }
 
       const res = await manager.query(
-        `INSERT INTO dori_user (
+        `INSERT INTO dorify.dori_user (
           username, full_name, email, password_hash, user_type, language_preference,
           created_by_user_id, updated_by_user_id, created_at, updated_at
         ) VALUES ($1, $2, $3, $4, COALESCE($5, 'human'), COALESCE($6, 'fr'), $7, $7, $8, $8)
@@ -262,7 +262,7 @@ export class UsersRepository {
 
       if (params.roleId) {
         await manager.query(
-          `INSERT INTO dori_user_role (user_id, role_id, assigned_at, assigned_by_user_id)
+          `INSERT INTO dorify.dori_user_role (user_id, role_id, assigned_at, assigned_by_user_id)
            VALUES ($1, $2, $3, $4)
            ON CONFLICT DO NOTHING`,
           [newUser.user_id, params.roleId, params.now, params.creatorUserId],
@@ -274,9 +274,9 @@ export class UsersRepository {
   }
 
   async updateUser(
-    userId: number,
+    userId: string,
     dto: UpdateUserDto,
-    updaterUserId: number,
+    updaterUserId: string,
     now: Date,
   ): Promise<any> {
     const fields: string[] = [];
@@ -305,7 +305,7 @@ export class UsersRepository {
     values.push(userId);
 
     const res = await this.dataSource.query(
-      `UPDATE dori_user SET ${fields.join(', ')} WHERE user_id = $${idx}
+      `UPDATE dorify.dori_user SET ${fields.join(', ')} WHERE user_id = $${idx}
        RETURNING user_id, username, full_name, email, user_type, is_active, language_preference, updated_at`,
       values,
     );
@@ -314,14 +314,14 @@ export class UsersRepository {
   }
 
   async updateUserStatus(
-    userId: number,
+    userId: string,
     isActive: boolean,
-    updaterUserId: number,
+    updaterUserId: string,
     now: Date,
   ): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
       await manager.query(
-        `UPDATE dori_user
+        `UPDATE dorify.dori_user
          SET is_active = $1, deleted_at = CASE WHEN $1 THEN NULL ELSE $3 END,
              updated_by_user_id = $2, updated_at = $3
          WHERE user_id = $4`,
@@ -330,14 +330,14 @@ export class UsersRepository {
 
       if (!isActive) {
         await manager.query(
-          `UPDATE dori_user_session
+          `UPDATE dorify.dori_user_session
            SET revoked_at = $1, revoked_reason = 'account_disabled'
            WHERE user_id = $2 AND revoked_at IS NULL`,
           [now, userId],
         );
 
         await manager.query(
-          `UPDATE dori_operator_session
+          `UPDATE dorify.dori_operator_session
            SET disconnected_at = $1, closure_reason = 'forced', closed_by_user_id = $2
            WHERE user_id = $3 AND disconnected_at IS NULL`,
           [now, updaterUserId, userId],
@@ -347,14 +347,14 @@ export class UsersRepository {
   }
 
   async setUserPassword(
-    userId: number,
+    userId: string,
     passwordHash: string,
-    updaterUserId: number,
+    updaterUserId: string,
     now: Date,
   ): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
       await manager.query(
-        `UPDATE dori_user
+        `UPDATE dorify.dori_user
          SET password_hash = $1, must_change_password = TRUE, password_changed_at = $2,
              updated_by_user_id = $3, updated_at = $2
          WHERE user_id = $4`,
@@ -362,7 +362,7 @@ export class UsersRepository {
       );
 
       await manager.query(
-        `UPDATE dori_user_session
+        `UPDATE dorify.dori_user_session
          SET revoked_at = $1, revoked_reason = 'password_changed'
          WHERE user_id = $2 AND revoked_at IS NULL`,
         [now, userId],
@@ -371,16 +371,16 @@ export class UsersRepository {
   }
 
   async assignUserRole(
-    userId: number,
-    roleId: number,
-    assignedByUserId: number,
+    userId: string,
+    roleId: string,
+    assignedByUserId: string,
     now: Date,
   ): Promise<{ userExists: boolean; roleExists: boolean; assigned: boolean }> {
     return this.dataSource.transaction(async (manager) => {
       const resources = await manager.query(
         `SELECT
-           EXISTS(SELECT 1 FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL) AS user_exists,
-           EXISTS(SELECT 1 FROM dori_role WHERE role_id = $2 AND is_active = TRUE) AS role_exists`,
+           EXISTS(SELECT 1 FROM dorify.dori_user WHERE user_id = $1 AND deleted_at IS NULL) AS user_exists,
+           EXISTS(SELECT 1 FROM dorify.dori_role WHERE role_id = $2 AND is_active = TRUE) AS role_exists`,
         [userId, roleId],
       );
       const userExists = !!resources[0]?.user_exists;
@@ -390,7 +390,7 @@ export class UsersRepository {
       }
 
       const rows = await manager.query(
-        `INSERT INTO dori_user_role (user_id, role_id, assigned_at, assigned_by_user_id)
+        `INSERT INTO dorify.dori_user_role (user_id, role_id, assigned_at, assigned_by_user_id)
          VALUES ($1, $2, $3, $4)
          ON CONFLICT (user_id, role_id) DO NOTHING
          RETURNING role_id`,
@@ -399,7 +399,7 @@ export class UsersRepository {
 
       if (rows.length > 0) {
         await manager.query(
-          `UPDATE dori_user_session SET revoked_at = $1, revoked_reason = 'admin'
+          `UPDATE dorify.dori_user_session SET revoked_at = $1, revoked_reason = 'admin'
            WHERE user_id = $2 AND revoked_at IS NULL`,
           [now, userId],
         );
@@ -410,18 +410,18 @@ export class UsersRepository {
   }
 
   async removeUserRole(
-    userId: number,
-    roleId: number,
+    userId: string,
+    roleId: string,
     now: Date,
   ): Promise<boolean> {
     return this.dataSource.transaction(async (manager) => {
       const rows = await manager.query(
-        `DELETE FROM dori_user_role WHERE user_id = $1 AND role_id = $2 RETURNING role_id`,
+        `DELETE FROM dorify.dori_user_role WHERE user_id = $1 AND role_id = $2 RETURNING role_id`,
         [userId, roleId],
       );
       if (rows.length > 0) {
         await manager.query(
-          `UPDATE dori_user_session SET revoked_at = $1, revoked_reason = 'admin'
+          `UPDATE dorify.dori_user_session SET revoked_at = $1, revoked_reason = 'admin'
            WHERE user_id = $2 AND revoked_at IS NULL`,
           [now, userId],
         );
@@ -436,12 +436,12 @@ export class UsersRepository {
     const { pageSize, offset } = pagination.getParams();
 
     const countRes = await this.dataSource.query(
-      `SELECT COUNT(*)::int as total FROM dori_role WHERE is_active = TRUE`,
+      `SELECT COUNT(*)::int as total FROM dorify.dori_role WHERE is_active = TRUE`,
     );
     const total = countRes[0]?.total || 0;
 
     const roles = await this.dataSource.query(
-      `SELECT * FROM dori_role
+      `SELECT * FROM dorify.dori_role
        WHERE is_active = TRUE
        ORDER BY rank ASC
        LIMIT ${pageSize} OFFSET ${offset}`,
@@ -450,8 +450,8 @@ export class UsersRepository {
     for (const r of roles) {
       const perms = await this.dataSource.query(
         `SELECT p.permission_name, p.description
-         FROM dori_role_permission rp
-         JOIN dori_permission p ON p.permission_id = rp.permission_id
+         FROM dorify.dori_role_permission rp
+         JOIN dorify.dori_permission p ON p.permission_id = rp.permission_id
          WHERE rp.role_id = $1 AND p.is_active = TRUE`,
         [r.role_id],
       );
@@ -461,9 +461,9 @@ export class UsersRepository {
     return pagination.createResponse(roles, total);
   }
 
-  async roleExists(roleId: number): Promise<boolean> {
+  async roleExists(roleId: string): Promise<boolean> {
     const res = await this.dataSource.query(
-      `SELECT 1 FROM dori_role WHERE role_id = $1 AND is_active = TRUE`,
+      `SELECT 1 FROM dorify.dori_role WHERE role_id = $1 AND is_active = TRUE`,
       [roleId],
     );
     return res.length > 0;
@@ -471,7 +471,7 @@ export class UsersRepository {
 
   async findActivePermissionNames(names: string[]): Promise<string[]> {
     const res = await this.dataSource.query(
-      `SELECT permission_name FROM dori_permission
+      `SELECT permission_name FROM dorify.dori_permission
        WHERE permission_name = ANY($1) AND is_active = TRUE`,
       [names],
     );
@@ -479,31 +479,31 @@ export class UsersRepository {
   }
 
   async updateRolePermissions(
-    roleId: number,
+    roleId: string,
     permissionNames: string[],
-    updaterUserId: number,
+    updaterUserId: string,
     now: Date,
   ): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
       await manager.query(
-        `DELETE FROM dori_role_permission WHERE role_id = $1`,
+        `DELETE FROM dorify.dori_role_permission WHERE role_id = $1`,
         [roleId],
       );
 
       if (permissionNames.length > 0) {
         await manager.query(
-          `INSERT INTO dori_role_permission (role_id, permission_id, assigned_at, assigned_by_user_id)
+          `INSERT INTO dorify.dori_role_permission (role_id, permission_id, assigned_at, assigned_by_user_id)
            SELECT $1, permission_id, $2, $3
-           FROM dori_permission
+           FROM dorify.dori_permission
            WHERE permission_name = ANY($4)`,
           [roleId, now, updaterUserId, permissionNames],
         );
       }
 
       await manager.query(
-        `UPDATE dori_user_session s
+        `UPDATE dorify.dori_user_session s
          SET revoked_at = $1, revoked_reason = 'admin'
-         WHERE s.user_id IN (SELECT user_id FROM dori_user_role WHERE role_id = $2)
+         WHERE s.user_id IN (SELECT user_id FROM dorify.dori_user_role WHERE role_id = $2)
            AND s.revoked_at IS NULL`,
         [now, roleId],
       );
@@ -511,39 +511,39 @@ export class UsersRepository {
   }
 
   async deleteUser(
-    userId: number,
-    deleterUserId: number,
+    userId: string,
+    deleterUserId: string,
     now: Date,
   ): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
       await manager.query(
-        `UPDATE dori_user
+        `UPDATE dorify.dori_user
          SET is_active = FALSE, deleted_at = $1, updated_by_user_id = $2, updated_at = $1
          WHERE user_id = $3`,
         [now, deleterUserId, userId],
       );
 
       await manager.query(
-        `UPDATE dori_user_session
+        `UPDATE dorify.dori_user_session
          SET revoked_at = $1, revoked_reason = 'account_deleted'
          WHERE user_id = $2 AND revoked_at IS NULL`,
         [now, userId],
       );
 
       await manager.query(
-        `UPDATE dori_operator_session
+        `UPDATE dorify.dori_operator_session
          SET disconnected_at = $1, closure_reason = 'forced', closed_by_user_id = $2
          WHERE user_id = $3 AND disconnected_at IS NULL`,
         [now, deleterUserId, userId],
       );
 
       await manager.query(
-        `DELETE FROM dori_user_site_assignment WHERE user_id = $1`,
+        `DELETE FROM dorify.dori_user_site_assignment WHERE user_id = $1`,
         [userId],
       );
 
       await manager.query(
-        `DELETE FROM dori_user_queue_assignment WHERE user_id = $1`,
+        `DELETE FROM dorify.dori_user_queue_assignment WHERE user_id = $1`,
         [userId],
       );
     });

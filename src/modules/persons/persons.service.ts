@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import {
   PersonIdentityDto,
@@ -30,7 +30,7 @@ export class PersonsService {
     private readonly clockService: ClockService,
   ) {}
 
-  private async checkPersonScope(personId: number, user: AuthenticatedUser) {
+  private async checkPersonScope(personId: string, user: AuthenticatedUser) {
     const scope = await this.scopeService.getUserScope(user);
     if (scope.isGlobal) return;
 
@@ -79,7 +79,7 @@ export class PersonsService {
     );
   }
 
-  async findPersonById(personId: number, user: AuthenticatedUser) {
+  async findPersonById(personId: string, user: AuthenticatedUser) {
     await this.checkPersonScope(personId, user);
 
     const person = await this.personsRepository.findById(personId);
@@ -92,7 +92,7 @@ export class PersonsService {
 
   async createPerson(
     dto: PersonIdentityDto,
-    siteId: number,
+    siteId: string,
     user: AuthenticatedUser,
     manager?: EntityManager,
   ) {
@@ -133,7 +133,7 @@ export class PersonsService {
   }
 
   async updatePerson(
-    personId: number,
+    personId: string,
     dto: UpdatePersonDto,
     user: AuthenticatedUser,
   ) {
@@ -147,7 +147,7 @@ export class PersonsService {
 
   // Notes (§3.5, §4.16, §5.6)
   async findPersonNotes(
-    personId: number,
+    personId: string,
     pagination: PersonNoteFilterDto,
     user: AuthenticatedUser,
   ): Promise<PaginatedResult<PersonNoteResponseDto>> {
@@ -173,7 +173,7 @@ export class PersonsService {
   }
 
   async createPersonNote(
-    personId: number,
+    personId: string,
     dto: CreatePersonNoteDto,
     user: AuthenticatedUser,
   ) {
@@ -189,8 +189,8 @@ export class PersonsService {
   }
 
   async updatePersonNote(
-    personId: number,
-    noteId: number,
+    personId: string,
+    noteId: string,
     dto: UpdatePersonNoteDto,
     user: AuthenticatedUser,
   ) {
@@ -212,8 +212,8 @@ export class PersonsService {
   }
 
   async deletePersonNote(
-    personId: number,
-    noteId: number,
+    personId: string,
+    noteId: string,
     user: AuthenticatedUser,
   ) {
     await this.checkPersonScope(personId, user);
@@ -233,7 +233,7 @@ export class PersonsService {
   }
 
   async getNotes(
-    personId: number,
+    personId: string,
     paginationOrUser?: PaginationDto | AuthenticatedUser,
     maybeUser?: AuthenticatedUser,
   ): Promise<PaginatedResult<PersonNoteResponseDto>> {
@@ -252,7 +252,7 @@ export class PersonsService {
   }
 
   async createNote(
-    personId: number,
+    personId: string,
     dto: CreatePersonNoteDto,
     user: AuthenticatedUser,
   ) {
@@ -260,20 +260,20 @@ export class PersonsService {
   }
 
   async updateNote(
-    personId: number,
-    noteId: number,
+    personId: string,
+    noteId: string,
     dto: UpdatePersonNoteDto,
     user: AuthenticatedUser,
   ) {
     return this.updatePersonNote(personId, noteId, dto, user);
   }
 
-  async deleteNote(personId: number, noteId: number, user: AuthenticatedUser) {
+  async deleteNote(personId: string, noteId: string, user: AuthenticatedUser) {
     const res = await this.deletePersonNote(personId, noteId, user);
     return { id: res.noteId, deleted: res.deleted };
   }
 
-  async deletePerson(personId: number, user: AuthenticatedUser) {
+  async deletePerson(personId: string, user: AuthenticatedUser) {
     await this.checkPersonScope(personId, user);
     await this.findPersonById(personId, user);
 

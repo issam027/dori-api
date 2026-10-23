@@ -5,14 +5,19 @@ describe('MonitoringRepository live snapshot', () => {
   it('loads a site, all queue aggregates and operators with three fixed queries', async () => {
     const query = jest
       .fn()
-      .mockResolvedValueOnce([{ site_id: 1, timezone: 'Europe/Paris' }])
+      .mockResolvedValueOnce([
+        {
+          site_id: '00000000-0000-4000-8000-000000000001',
+          timezone: 'Europe/Paris',
+        },
+      ])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
     const repository = new MonitoringRepository({
       query,
     } as unknown as DataSource);
 
-    await repository.liveSnapshot(1);
+    await repository.liveSnapshot('00000000-0000-4000-8000-000000000001');
 
     expect(query).toHaveBeenCalledTimes(3);
     expect(query.mock.calls[1][0]).toContain(

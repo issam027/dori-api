@@ -6,12 +6,19 @@ describe('QueueEngineRepository', () => {
     const query = jest
       .fn()
       .mockResolvedValueOnce([{ thread_count: 3 }])
-      .mockResolvedValueOnce([{ session_id: 7, thread_number: 2 }]);
+      .mockResolvedValueOnce([
+        {
+          session_id: '00000000-0000-4000-8000-000000000007',
+          thread_number: 2,
+        },
+      ]);
     const repository = new QueueEngineRepository({
       query,
     } as unknown as DataSource);
 
-    const state = await repository.findThreadState(4);
+    const state = await repository.findThreadState(
+      '00000000-0000-4000-8000-000000000004',
+    );
 
     expect(state?.threadCount).toBe(3);
     expect(state?.sessions).toHaveLength(1);
@@ -24,8 +31,16 @@ describe('QueueEngineRepository', () => {
     } as unknown as DataSource);
     const now = new Date('2026-10-06T12:00:00Z');
 
-    await repository.closeRegistration(3, 'served', now);
-    await repository.closeRegistration(4, 'no_show', now);
+    await repository.closeRegistration(
+      '00000000-0000-4000-8000-000000000003',
+      'served',
+      now,
+    );
+    await repository.closeRegistration(
+      '00000000-0000-4000-8000-000000000004',
+      'no_show',
+      now,
+    );
 
     expect(query.mock.calls[0][0]).toContain("status = 'served'");
     expect(query.mock.calls[1][0]).toContain("status = 'no_show'");
@@ -42,7 +57,7 @@ describe('QueueEngineRepository', () => {
     } as unknown as DataSource);
 
     await repository.findSessionPage({
-      queueId: 5,
+      queueId: '00000000-0000-4000-8000-000000000005',
       sortField: 'qs.connected_at',
       sortOrder: 'DESC',
       pageSize: 10,
@@ -52,16 +67,16 @@ describe('QueueEngineRepository', () => {
     expect(query).toHaveBeenNthCalledWith(
       2,
       expect.stringContaining('LIMIT $2 OFFSET $3'),
-      [5, 10, 20],
+      ['00000000-0000-4000-8000-000000000005', 10, 20],
     );
   });
 
   it('persists the complete counter name when opening a session', async () => {
     const query = jest.fn().mockResolvedValueOnce([
       {
-        session_id: 8,
-        queue_id: 5,
-        user_id: 2,
+        session_id: '00000000-0000-4000-8000-000000000008',
+        queue_id: '00000000-0000-4000-8000-000000000005',
+        user_id: '00000000-0000-4000-8000-000000000002',
         thread_number: 1,
         counter_name: 'Bureau A',
       },
@@ -72,8 +87,8 @@ describe('QueueEngineRepository', () => {
     const now = new Date('2026-10-15T09:00:00Z');
 
     const session = await repository.createSession({
-      queueId: 5,
-      userId: 2,
+      queueId: '00000000-0000-4000-8000-000000000005',
+      userId: '00000000-0000-4000-8000-000000000002',
       threadNumber: 1,
       counterName: 'Bureau A',
       mode: 'active',
@@ -82,8 +97,8 @@ describe('QueueEngineRepository', () => {
 
     expect(query.mock.calls[0][0]).toContain('counter_name');
     expect(query.mock.calls[0][1]).toEqual([
-      5,
-      2,
+      '00000000-0000-4000-8000-000000000005',
+      '00000000-0000-4000-8000-000000000002',
       1,
       'Bureau A',
       'active',
@@ -96,12 +111,19 @@ describe('QueueEngineRepository', () => {
     const query = jest
       .fn()
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([{ session_id: 4 }])
-      .mockResolvedValueOnce([{ registration_id: 9, score: '42.5' }])
+      .mockResolvedValueOnce([
+        { session_id: '00000000-0000-4000-8000-000000000004' },
+      ])
+      .mockResolvedValueOnce([
+        {
+          registration_id: '00000000-0000-4000-8000-000000000009',
+          score: '42.5',
+        },
+      ])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([
         {
-          registration_id: 9,
+          registration_id: '00000000-0000-4000-8000-000000000009',
           ticket_number: 'A-009',
           status: 'in_progress',
           notes_count: 0,
@@ -113,9 +135,9 @@ describe('QueueEngineRepository', () => {
     const repository = new QueueEngineRepository(dataSource);
 
     const result = await repository.callNext({
-      queueId: 2,
-      sessionId: 4,
-      userId: 12,
+      queueId: '00000000-0000-4000-8000-000000000002',
+      sessionId: '00000000-0000-4000-8000-000000000004',
+      userId: '00000000-0000-4000-8000-000000000012',
       businessDate: '2026-10-06',
       now: new Date('2026-10-06T12:00:00Z'),
       baseWalkin: 0,
@@ -124,7 +146,9 @@ describe('QueueEngineRepository', () => {
       rateAppointment: 1,
     });
 
-    expect(result?.registration_id).toBe(9);
+    expect(result?.registration_id).toBe(
+      '00000000-0000-4000-8000-000000000009',
+    );
     expect(result?.score).toBe(42.5);
     expect(query.mock.calls[0][0]).toContain('pg_advisory_xact_lock');
     expect(query.mock.calls[1][0]).toContain('disconnected_at IS NULL');
@@ -133,39 +157,64 @@ describe('QueueEngineRepository', () => {
     expect(query.mock.calls[3][0]).toContain('served_by_session_id = $1');
     expect(query.mock.calls[3][0]).toContain('served_by_user_id = $2');
     expect(query.mock.calls[3][1]).toEqual([
-      4,
-      12,
+      '00000000-0000-4000-8000-000000000004',
+      '00000000-0000-4000-8000-000000000012',
       new Date('2026-10-06T12:00:00Z'),
-      9,
+      '00000000-0000-4000-8000-000000000009',
     ]);
   });
 
   it('binds preview exclusions as an integer array', async () => {
     const query = jest
       .fn()
-      .mockResolvedValueOnce([{ registration_id: 1, queue_id: 2 }])
+      .mockResolvedValueOnce([
+        {
+          registration_id: '00000000-0000-4000-8000-000000000001',
+          queue_id: '00000000-0000-4000-8000-000000000002',
+        },
+      ])
       .mockResolvedValueOnce([]);
     const repository = new QueueEngineRepository({
       query,
     } as unknown as DataSource);
 
     await repository.findPreviewCandidates(
-      [2, 3],
+      [
+        '00000000-0000-4000-8000-000000000002',
+        '00000000-0000-4000-8000-000000000003',
+      ],
       new Date('2026-10-06T12:00:00Z'),
       3,
     );
 
-    expect(query.mock.calls[1][0]).toContain('<> ALL($3::int[])');
-    expect(query.mock.calls[1][1][2]).toEqual([2]);
+    expect(query.mock.calls[1][0]).toContain('<> ALL($3::uuid[])');
+    expect(query.mock.calls[1][1][2]).toEqual([
+      '00000000-0000-4000-8000-000000000002',
+    ]);
   });
 
   it('does not restrict next preview to one candidate per queue', async () => {
     const query = jest.fn().mockResolvedValue([
-      { registration_id: 1, queue_id: 2 },
-      { registration_id: 2, queue_id: 2 },
-      { registration_id: 3, queue_id: 3 },
-      { registration_id: 4, queue_id: 2 },
-      { registration_id: 5, queue_id: 3 },
+      {
+        registration_id: '00000000-0000-4000-8000-000000000001',
+        queue_id: '00000000-0000-4000-8000-000000000002',
+      },
+      {
+        registration_id: '00000000-0000-4000-8000-000000000002',
+        queue_id: '00000000-0000-4000-8000-000000000002',
+      },
+      {
+        registration_id: '00000000-0000-4000-8000-000000000003',
+        queue_id: '00000000-0000-4000-8000-000000000003',
+      },
+      {
+        registration_id: '00000000-0000-4000-8000-000000000004',
+        queue_id: '00000000-0000-4000-8000-000000000002',
+      },
+      {
+        registration_id: '00000000-0000-4000-8000-000000000005',
+        queue_id: '00000000-0000-4000-8000-000000000003',
+      },
     ]);
     const repository = new QueueEngineRepository({
       query,
@@ -173,7 +222,10 @@ describe('QueueEngineRepository', () => {
 
     await expect(
       repository.findPreviewCandidates(
-        [2, 3],
+        [
+          '00000000-0000-4000-8000-000000000002',
+          '00000000-0000-4000-8000-000000000003',
+        ],
         new Date('2026-10-20T09:30:00Z'),
         5,
       ),
@@ -188,30 +240,51 @@ describe('QueueEngineRepository', () => {
   });
 
   it('returns only queues with an active session owned by the user', async () => {
-    const query = jest.fn().mockResolvedValue([{ queue_id: 3 }]);
+    const query = jest
+      .fn()
+      .mockResolvedValue([
+        { queue_id: '00000000-0000-4000-8000-000000000003' },
+      ]);
     const repository = new QueueEngineRepository({
       query,
     } as unknown as DataSource);
 
     await expect(
-      repository.findActiveQueueIdsForUser([2, 3], 8),
-    ).resolves.toEqual([3]);
+      repository.findActiveQueueIdsForUser(
+        [
+          '00000000-0000-4000-8000-000000000002',
+          '00000000-0000-4000-8000-000000000003',
+        ],
+        '00000000-0000-4000-8000-000000000008',
+      ),
+    ).resolves.toEqual(['00000000-0000-4000-8000-000000000003']);
     expect(query.mock.calls[0][0]).toContain("mode = 'active'");
     expect(query.mock.calls[0][0]).toContain('disconnected_at IS NULL');
-    expect(query.mock.calls[0][1]).toEqual([[2, 3], 8]);
+    expect(query.mock.calls[0][1]).toEqual([
+      [
+        '00000000-0000-4000-8000-000000000002',
+        '00000000-0000-4000-8000-000000000003',
+      ],
+      '00000000-0000-4000-8000-000000000008',
+    ]);
   });
 
   it('restricts regular and early preview candidates to each site business day', async () => {
     const query = jest
       .fn()
-      .mockResolvedValueOnce([{ registration_id: 1 }])
+      .mockResolvedValueOnce([
+        { registration_id: '00000000-0000-4000-8000-000000000001' },
+      ])
       .mockResolvedValueOnce([]);
     const repository = new QueueEngineRepository({
       query,
     } as unknown as DataSource);
 
     await repository.findPreviewCandidates(
-      [2, 3],
+      [
+        '00000000-0000-4000-8000-000000000002',
+        '00000000-0000-4000-8000-000000000003',
+      ],
       new Date('2026-10-17T23:30:00Z'),
       3,
     );

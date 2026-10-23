@@ -206,7 +206,7 @@ export class RegistrationsService {
           Math.min(endOfBusinessDay.getTime(), configuredExpiry.getTime()),
         );
 
-        // 7. Insert dori_registration
+        // 7. Insert dorify.dori_registration
         const created = await tx.create({
           dto,
           personId,
@@ -269,7 +269,7 @@ export class RegistrationsService {
   }
 
   async getAvailability(
-    queueId: number,
+    queueId: string,
     queryDto: RegistrationAvailabilityQueryDto,
     user: AuthenticatedUser,
   ) {
@@ -426,7 +426,7 @@ export class RegistrationsService {
     };
   }
 
-  async checkIn(registrationId: number, user: AuthenticatedUser) {
+  async checkIn(registrationId: string, user: AuthenticatedUser) {
     const reg =
       await this.registrationsRepository.findForCheckIn(registrationId);
     if (!reg) {
@@ -466,7 +466,7 @@ export class RegistrationsService {
   }
 
   async reschedule(
-    registrationId: number,
+    registrationId: string,
     dto: RescheduleRegistrationDto,
     user: AuthenticatedUser,
   ) {
@@ -661,7 +661,7 @@ export class RegistrationsService {
     );
   }
 
-  async findRegistrationById(registrationId: number, user: AuthenticatedUser) {
+  async findRegistrationById(registrationId: string, user: AuthenticatedUser) {
     const reg = await this.registrationsRepository.findById(registrationId);
     if (!reg) {
       throw new DoriException('REGISTRATION_NOT_FOUND', { registrationId });
@@ -683,7 +683,7 @@ export class RegistrationsService {
   }
 
   async updateRegistration(
-    registrationId: number,
+    registrationId: string,
     dto: UpdateRegistrationDto,
     user: AuthenticatedUser,
   ) {
@@ -719,7 +719,7 @@ export class RegistrationsService {
     return this.registrationsRepository.findById(registrationId);
   }
 
-  async cancelRegistration(registrationId: number, user: AuthenticatedUser) {
+  async cancelRegistration(registrationId: string, user: AuthenticatedUser) {
     await this.findRegistrationById(registrationId, user);
     const now = this.clockService.now();
 

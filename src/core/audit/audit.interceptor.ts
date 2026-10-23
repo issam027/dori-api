@@ -82,10 +82,7 @@ export class AuditInterceptor implements NestInterceptor {
         requestMethod: request.method,
         requestPath: request.route?.path ?? request.path,
         failureType,
-        siteScopeId: this.queryPositiveInteger(
-          request,
-          definition.siteScopeQueryField,
-        ),
+        siteScopeId: this.queryUuid(request, definition.siteScopeQueryField),
       });
     } catch (error: unknown) {
       // Audit is fail-open so a temporary audit storage problem does not turn an
@@ -193,28 +190,27 @@ export class AuditInterceptor implements NestInterceptor {
         return (current as Record<string, unknown>)[segment];
       }, root);
     const direct = readPath(value, field);
-    if (typeof direct === 'string' || typeof direct === 'number') {
+    if (typeof direct === 'string') {
       return this.safeIdentifier(direct);
     }
     const data = (value as Record<string, unknown>).data;
     const nested = readPath(data, field);
-    return typeof nested === 'string' || typeof nested === 'number'
-      ? this.safeIdentifier(nested)
-      : null;
+    return typeof nested === 'string' ? this.safeIdentifier(nested) : null;
   }
-  private safeIdentifier(value: string | number): string | null {
+  private safeIdentifier(value: string): string | null {
     const normalized = String(value);
     return /^[A-Za-z0-9_-]{1,128}$/.test(normalized) ? normalized : null;
   }
 
-  private queryPositiveInteger(
-    request: AuditedRequest,
-    field?: string,
-  ): number | null {
+  private queryUuid(request: AuditedRequest, field?: string): string | null {
     if (!field) return null;
     const value = request.query?.[field];
     const normalized = Array.isArray(value) ? value[0] : value;
-    const parsed = Number(normalized);
-    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+    const parsed = String(normalized ?? '');
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      parsed,
+    )
+      ? parsed
+      : null;
   }
 }

@@ -3,17 +3,23 @@ import { QueuesRepository } from './queues.repository';
 
 describe('QueuesRepository', () => {
   it('loads an active queue together with inherited site configuration', async () => {
-    const row = { queue_id: 5, queue_code: 'A', site_id: 2 };
+    const row = {
+      queue_id: '00000000-0000-4000-8000-000000000005',
+      queue_code: 'A',
+      site_id: '00000000-0000-4000-8000-000000000002',
+    };
     const dataSource = {
       query: jest.fn().mockResolvedValue([row]),
     } as unknown as DataSource;
 
-    const result = await new QueuesRepository(dataSource).findById(5);
+    const result = await new QueuesRepository(dataSource).findById(
+      '00000000-0000-4000-8000-000000000005',
+    );
 
     expect(result).toBe(row);
     expect(dataSource.query).toHaveBeenCalledWith(
       expect.stringContaining('s.default_daily_reset_time'),
-      [5],
+      ['00000000-0000-4000-8000-000000000005'],
     );
   });
 
@@ -22,11 +28,16 @@ describe('QueuesRepository', () => {
       query: jest
         .fn()
         .mockResolvedValueOnce([{ total: 1 }])
-        .mockResolvedValueOnce([{ queue_id: 5 }]),
+        .mockResolvedValueOnce([
+          { queue_id: '00000000-0000-4000-8000-000000000005' },
+        ]),
     } as unknown as DataSource;
 
     const result = await new QueuesRepository(dataSource).findPage({
-      siteIds: [2, 3],
+      siteIds: [
+        '00000000-0000-4000-8000-000000000002',
+        '00000000-0000-4000-8000-000000000003',
+      ],
       search: 'accueil',
       sortField: 'q.created_at',
       sortOrder: 'DESC',
@@ -38,15 +49,27 @@ describe('QueuesRepository', () => {
     expect(dataSource.query).toHaveBeenNthCalledWith(
       2,
       expect.stringContaining('LIMIT $3 OFFSET $4'),
-      [[2, 3], '%accueil%', 20, 40],
+      [
+        [
+          '00000000-0000-4000-8000-000000000002',
+          '00000000-0000-4000-8000-000000000003',
+        ],
+        '%accueil%',
+        20,
+        40,
+      ],
     );
   });
 
   it('creates a queue and its free tier atomically with typed time parameters', async () => {
     const query = jest
       .fn()
-      .mockResolvedValueOnce([{ site_id: 2 }])
-      .mockResolvedValueOnce([{ queue_id: 8 }])
+      .mockResolvedValueOnce([
+        { site_id: '00000000-0000-4000-8000-000000000002' },
+      ])
+      .mockResolvedValueOnce([
+        { queue_id: '00000000-0000-4000-8000-000000000008' },
+      ])
       .mockResolvedValueOnce([]);
     const dataSource = {
       transaction: jest.fn((callback) => callback({ query })),
@@ -55,18 +78,18 @@ describe('QueuesRepository', () => {
     const queueId = await new QueuesRepository(
       dataSource,
     ).createWithDefaultTier(
-      2,
+      '00000000-0000-4000-8000-000000000002',
       {
         queueCode: 'ACC',
         workingHoursStart: '08:00',
         workingHoursEnd: '17:00',
         dailyResetTime: '03:00',
       },
-      1,
+      '00000000-0000-4000-8000-000000000001',
       new Date('2026-10-06T12:00:00Z'),
     );
 
-    expect(queueId).toBe(8);
+    expect(queueId).toBe('00000000-0000-4000-8000-000000000008');
     expect(query.mock.calls[1][0]).toContain('$10::time');
     expect(query.mock.calls[1][0]).toContain('$15::int[]');
     expect(query.mock.calls[1][0]).toContain('$22::time');
@@ -74,7 +97,11 @@ describe('QueuesRepository', () => {
   });
 
   it('casts time fields during updates and deactivates dependencies atomically', async () => {
-    const query = jest.fn().mockResolvedValue([{ queue_id: 8 }]);
+    const query = jest
+      .fn()
+      .mockResolvedValue([
+        { queue_id: '00000000-0000-4000-8000-000000000008' },
+      ]);
     const dataSource = {
       query,
       transaction: jest.fn((callback) => callback({ query })),
@@ -84,9 +111,9 @@ describe('QueuesRepository', () => {
 
     expect(
       await repository.update(
-        8,
+        '00000000-0000-4000-8000-000000000008',
         { workingHoursStart: '09:00', dailyResetTime: '02:00' },
-        1,
+        '00000000-0000-4000-8000-000000000001',
         now,
       ),
     ).toBe(true);
@@ -94,7 +121,11 @@ describe('QueuesRepository', () => {
     expect(query.mock.calls[0][0]).toContain('daily_reset_time = $2::time');
 
     query.mockClear();
-    await repository.deactivate(8, 1, now);
+    await repository.deactivate(
+      '00000000-0000-4000-8000-000000000008',
+      '00000000-0000-4000-8000-000000000001',
+      now,
+    );
     expect(query).toHaveBeenCalledTimes(6);
   });
 
@@ -105,28 +136,32 @@ describe('QueuesRepository', () => {
     } as unknown as DataSource;
 
     await new QueuesRepository(dataSource).assignOperator(
-      8,
-      2,
-      4,
-      1,
+      '00000000-0000-4000-8000-000000000008',
+      '00000000-0000-4000-8000-000000000002',
+      '00000000-0000-4000-8000-000000000004',
+      '00000000-0000-4000-8000-000000000001',
       new Date('2026-10-15T12:00:00Z'),
     );
 
     expect(query).toHaveBeenCalledTimes(3);
     expect(query.mock.calls[0][0]).toContain(
-      'INSERT INTO dori_user_site_assignment',
+      'INSERT INTO dorify.dori_user_site_assignment',
     );
     expect(query.mock.calls[2][0]).toContain(
-      'INSERT INTO dori_user_queue_assignment',
+      'INSERT INTO dorify.dori_user_queue_assignment',
     );
   });
 
   it('accepts active operator and kiosk roles for queue assignment', async () => {
-    const query = jest.fn().mockResolvedValue([{ user_id: 4 }]);
+    const query = jest
+      .fn()
+      .mockResolvedValue([{ user_id: '00000000-0000-4000-8000-000000000004' }]);
     const dataSource = { query } as unknown as DataSource;
 
     await expect(
-      new QueuesRepository(dataSource).hasQueueAssignableRole(4),
+      new QueuesRepository(dataSource).hasQueueAssignableRole(
+        '00000000-0000-4000-8000-000000000004',
+      ),
     ).resolves.toBe(true);
     expect(query.mock.calls[0][0]).toContain(
       "r.role_name IN ('operator', 'kiosk')",
@@ -136,21 +171,28 @@ describe('QueuesRepository', () => {
   it('removes the site assignment only when no queue assignment remains', async () => {
     const query = jest
       .fn()
-      .mockResolvedValueOnce([{ site_id: 2 }])
+      .mockResolvedValueOnce([
+        { site_id: '00000000-0000-4000-8000-000000000002' },
+      ])
       .mockResolvedValueOnce([{ '?column?': 1 }])
-      .mockResolvedValueOnce([{ user_id: 4 }])
+      .mockResolvedValueOnce([
+        { user_id: '00000000-0000-4000-8000-000000000004' },
+      ])
       .mockResolvedValueOnce([]);
     const dataSource = {
       transaction: jest.fn((callback) => callback({ query })),
     } as unknown as DataSource;
 
     await expect(
-      new QueuesRepository(dataSource).removeOperator(8, 4),
+      new QueuesRepository(dataSource).removeOperator(
+        '00000000-0000-4000-8000-000000000008',
+        '00000000-0000-4000-8000-000000000004',
+      ),
     ).resolves.toBe(true);
 
     expect(query.mock.calls[3][0]).toContain('NOT EXISTS');
     expect(query.mock.calls[3][0]).toContain(
-      'DELETE FROM dori_user_site_assignment',
+      'DELETE FROM dorify.dori_user_site_assignment',
     );
   });
 
@@ -161,8 +203,8 @@ describe('QueuesRepository', () => {
     } as unknown as DataSource;
 
     await new QueuesRepository(dataSource).reset({
-      queueId: 4,
-      userId: 2,
+      queueId: '00000000-0000-4000-8000-000000000004',
+      userId: '00000000-0000-4000-8000-000000000002',
       now: new Date('2026-10-06T03:00:00Z'),
       businessDate: '2026-10-05',
       targetBusinessDate: '2026-10-05',

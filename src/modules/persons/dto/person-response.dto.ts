@@ -1,12 +1,15 @@
+import { IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
 export class PersonResponseDto {
   @ApiProperty({ example: 45, description: 'ID de la personne' })
-  personId: number;
+  @IsUUID()
+  personId: string;
 
   @ApiProperty({ example: 1, description: 'Site propriétaire de la personne' })
-  siteId: number;
+  @IsUUID()
+  siteId: string;
 
   @ApiProperty({ example: 'Ben Ali', description: 'Nom de famille' })
   lastName: string;
@@ -74,10 +77,12 @@ export class PaginatedPersonResponseDto extends PaginatedResponseDto {
 
 export class PersonNoteResponseDto {
   @ApiProperty({ example: 5, description: 'ID de la note' })
-  noteId: number;
+  @IsUUID()
+  noteId: string;
 
   @ApiProperty({ example: 45, description: 'ID de la personne' })
-  personId: number;
+  @IsUUID()
+  personId: string;
 
   @ApiProperty({
     example: 'Patient nécessitant un accompagnateur pour les déplacements',
@@ -86,7 +91,8 @@ export class PersonNoteResponseDto {
   content: string;
 
   @ApiProperty({ example: 1, description: "ID de l'auteur de la note" })
-  createdByUserId: number;
+  @IsUUID()
+  createdByUserId: string;
 
   @ApiPropertyOptional({
     example: 'jdupont',

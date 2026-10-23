@@ -12,7 +12,7 @@ describe('TranslationsService', () => {
   let realtimeMock: Partial<jest.Mocked<RealtimeService>>;
 
   const mockUser: AuthenticatedUser = {
-    userId: 1,
+    userId: '00000000-0000-4000-8000-000000000001',
     username: 'admin',
     roles: ['admin'],
     permissions: ['system_manage'],
@@ -72,7 +72,7 @@ describe('TranslationsService', () => {
 
   it('validates template params in service and throws TRANSLATION_PARAM_MISMATCH if mismatched', async () => {
     repositoryMock.findById = jest.fn().mockResolvedValue({
-      translation_id: 1,
+      translation_id: '00000000-0000-4000-8000-000000000001',
       translation_key: 'welcome_msg',
       category: 'ihm',
       locale: 'fr',
@@ -85,7 +85,7 @@ describe('TranslationsService', () => {
 
     await expect(
       service.updateTranslation(
-        1,
+        '00000000-0000-4000-8000-000000000001',
         {
           content: 'Bienvenue {name}',
           expectedParams: ['username'],
@@ -99,7 +99,7 @@ describe('TranslationsService', () => {
 
   it('updates translation when params match and emits cache invalidation', async () => {
     repositoryMock.findById = jest.fn().mockResolvedValue({
-      translation_id: 1,
+      translation_id: '00000000-0000-4000-8000-000000000001',
       translation_key: 'welcome_msg',
       category: 'ihm',
       locale: 'fr',
@@ -112,7 +112,7 @@ describe('TranslationsService', () => {
 
     repositoryMock.update = jest.fn().mockResolvedValue({
       item: {
-        translation_id: 1,
+        translation_id: '00000000-0000-4000-8000-000000000001',
         translation_key: 'welcome_msg',
         category: 'ihm',
         locale: 'fr',
@@ -127,7 +127,7 @@ describe('TranslationsService', () => {
     });
 
     const result = await service.updateTranslation(
-      1,
+      '00000000-0000-4000-8000-000000000001',
       {
         content: 'Bonjour {username}',
       },
@@ -136,7 +136,7 @@ describe('TranslationsService', () => {
 
     expect(result.content).toBe('Bonjour {username}');
     expect(repositoryMock.update).toHaveBeenCalledWith(
-      1,
+      '00000000-0000-4000-8000-000000000001',
       { content: 'Bonjour {username}' },
       mockUser.userId,
       fixedDate,
@@ -151,7 +151,11 @@ describe('TranslationsService', () => {
     repositoryMock.findById = jest.fn().mockResolvedValue(null);
 
     await expect(
-      service.updateTranslation(999, { content: 'test' }, mockUser),
+      service.updateTranslation(
+        '00000000-0000-4000-8000-000000000999',
+        { content: 'test' },
+        mockUser,
+      ),
     ).rejects.toThrow(DoriException);
 
     expect(repositoryMock.update).not.toHaveBeenCalled();

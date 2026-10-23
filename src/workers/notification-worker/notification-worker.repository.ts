@@ -3,7 +3,7 @@ import { DataSource } from 'typeorm';
 import { returningRows } from '../../core/database/returning-rows';
 
 export interface ClaimedNotificationRow {
-  notification_id: number;
+  notification_id: string;
   channel: 'sms' | 'email';
   notification_type: 'welcome' | 'threshold';
   recipient: string;
@@ -20,7 +20,7 @@ export class NotificationWorkerRepository {
       manager.query(
         `WITH candidates AS (
            SELECT notification_id
-           FROM dori_notification
+           FROM dorify.dori_notification
            WHERE attempt_count < 3
              AND (
                notification_status = 'pending'
@@ -33,7 +33,7 @@ export class NotificationWorkerRepository {
            FOR UPDATE SKIP LOCKED
            LIMIT 50
          )
-         UPDATE dori_notification n
+         UPDATE dorify.dori_notification n
          SET notification_status = 'processing',
              processing_started_at = $1,
              attempt_count = n.attempt_count + 1,
@@ -52,12 +52,12 @@ export class NotificationWorkerRepository {
   }
 
   async markDelivered(
-    notificationId: number,
+    notificationId: string,
     providerMessageId: string,
     now: Date,
   ): Promise<void> {
     await this.dataSource.query(
-      `UPDATE dori_notification
+      `UPDATE dorify.dori_notification
        SET notification_status = 'delivered', provider = 'simulation',
            provider_message_id = $1, sent_at = $2, delivered_at = $2,
            processing_started_at = NULL, updated_at = $2
@@ -67,13 +67,13 @@ export class NotificationWorkerRepository {
   }
 
   async markAttemptFailed(
-    notificationId: number,
+    notificationId: string,
     finalAttempt: boolean,
     reason: string,
     now: Date,
   ): Promise<void> {
     await this.dataSource.query(
-      `UPDATE dori_notification
+      `UPDATE dorify.dori_notification
        SET notification_status = $1, failure_reason = $2,
            processing_started_at = NULL, updated_at = $3
        WHERE notification_id = $4`,

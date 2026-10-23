@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ClockService } from '../../core/clock/clock.service';
 import { DoriException } from '../../core/errors/dori.exception';
@@ -56,7 +56,7 @@ export class SitesService {
     );
   }
 
-  async findSiteById(siteId: number, user: AuthenticatedUser) {
+  async findSiteById(siteId: string, user: AuthenticatedUser) {
     await this.scopeService.checkSiteAccess(user, siteId);
     const site = await this.sitesRepository.findById(siteId);
     if (!site) throw new DoriException('SITE_NOT_FOUND', { siteId });
@@ -64,7 +64,7 @@ export class SitesService {
   }
 
   async updateSite(
-    siteId: number,
+    siteId: string,
     dto: UpdateSiteDto,
     user: AuthenticatedUser,
   ) {
@@ -79,7 +79,7 @@ export class SitesService {
     );
   }
 
-  async deleteSite(siteId: number, user: AuthenticatedUser) {
+  async deleteSite(siteId: string, user: AuthenticatedUser) {
     await this.scopeService.checkSiteAccess(user, siteId);
     const site = await this.sitesRepository.findById(siteId);
     if (!site) throw new DoriException('SITE_NOT_FOUND', { siteId });
@@ -93,7 +93,7 @@ export class SitesService {
   }
 
   async findDirectSiteUsers(
-    siteId: number,
+    siteId: string,
     pagination: DirectSiteUserFilterDto,
     user: AuthenticatedUser,
   ): Promise<PaginatedResult<SiteDirectUserResponseDto>> {
@@ -115,8 +115,8 @@ export class SitesService {
   }
 
   async assignDirectSiteUser(
-    siteId: number,
-    targetUserId: number,
+    siteId: string,
+    targetUserId: string,
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkSiteAccess(user, siteId);
@@ -141,8 +141,8 @@ export class SitesService {
   }
 
   async removeDirectSiteUser(
-    siteId: number,
-    targetUserId: number,
+    siteId: string,
+    targetUserId: string,
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkSiteAccess(user, siteId);

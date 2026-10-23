@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ClockService } from '../../core/clock/clock.service';
 import { DoriException } from '../../core/errors/dori.exception';
@@ -74,7 +74,7 @@ export class TranslationsService {
   }
 
   async updateTranslation(
-    translationId: number,
+    translationId: string,
     dto: UpdateTranslationDto,
     user: AuthenticatedUser,
   ) {
@@ -102,7 +102,7 @@ export class TranslationsService {
     return result.item;
   }
 
-  async deleteTranslation(translationId: number, user: AuthenticatedUser) {
+  async deleteTranslation(translationId: string, user: AuthenticatedUser) {
     const result = await this.translationsRepository.delete(
       translationId,
       user.userId,

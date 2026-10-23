@@ -1,9 +1,9 @@
 import { PartialType } from '@nestjs/swagger';
 import { CreateSiteDto } from './create-site.dto';
 import {
+  IsUUID,
   IsBoolean,
   IsIn,
-  IsInt,
   IsNotEmpty,
   IsOptional,
 } from 'class-validator';
@@ -46,7 +46,7 @@ export class AssignDirectSiteUserDto {
     description: "ID de l'utilisateur à affecter au site",
     example: 2,
   })
-  @IsInt()
+  @IsUUID()
   @IsNotEmpty()
-  userId: number;
+  userId: string;
 }

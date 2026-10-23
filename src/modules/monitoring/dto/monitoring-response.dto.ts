@@ -80,7 +80,7 @@ export class MonitoringLiveTotalsDto {
 }
 
 export class MonitoringLiveQueueDto {
-  @ApiProperty() queueId: number;
+  @ApiProperty() queueId: string;
   @ApiProperty() queueName: string;
   @ApiProperty() waiting: number;
   @ApiProperty() inProgress: number;
@@ -91,21 +91,21 @@ export class MonitoringLiveQueueDto {
 }
 
 export class MonitoringLiveOperatorDto {
-  @ApiProperty() userId: number;
+  @ApiProperty() userId: string;
   @ApiProperty() displayName: string;
-  @ApiProperty({ type: [Number] }) queueIds: number[];
-  @ApiProperty() sessionId: number;
+  @ApiProperty({ type: [Number] }) queueIds: string[];
+  @ApiProperty() sessionId: string;
   @ApiProperty({ required: false }) counterName?: string;
   @ApiProperty({ required: false }) threadNumber?: number;
   @ApiProperty({ format: 'date-time' }) startedAt: string;
-  @ApiProperty({ required: false }) currentRegistrationId?: number;
+  @ApiProperty({ required: false }) currentRegistrationId?: string;
   @ApiProperty({ required: false }) currentTicketNumber?: string;
 }
 
 export class MonitoringLiveAlertDto {
   @ApiProperty() code: string;
   @ApiProperty({ enum: ['info', 'warning', 'critical'] }) severity: string;
-  @ApiProperty({ required: false }) queueId?: number;
+  @ApiProperty({ required: false }) queueId?: string;
   @ApiProperty() messageKey: string;
   @ApiProperty({ type: Object, required: false })
   translationParams?: Record<string, string | number>;
@@ -113,7 +113,7 @@ export class MonitoringLiveAlertDto {
 
 export class MonitoringLiveResponseDto {
   @ApiProperty({ format: 'date-time' }) generatedAt: string;
-  @ApiProperty() siteId: number;
+  @ApiProperty() siteId: string;
   @ApiProperty() timezone: string;
   @ApiProperty({ type: MonitoringLiveTotalsDto })
   totals: MonitoringLiveTotalsDto;

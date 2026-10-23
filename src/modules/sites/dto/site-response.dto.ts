@@ -1,9 +1,11 @@
+import { IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
 export class SiteResponseDto {
   @ApiProperty({ example: 1, description: 'ID unique du site' })
-  siteId: number;
+  @IsUUID()
+  siteId: string;
 
   @ApiProperty({ example: 'Hôpital Aziza Othmana', description: 'Nom du site' })
   siteName: string;
@@ -154,7 +156,8 @@ export class PaginatedSiteResponseDto extends PaginatedResponseDto {
 
 export class DeleteSiteResponseDto {
   @ApiProperty({ example: 1, description: 'ID du site supprimé' })
-  siteId: number;
+  @IsUUID()
+  siteId: string;
 
   @ApiProperty({ example: true, description: 'Confirmation de suppression' })
   deleted: boolean;
@@ -165,7 +168,8 @@ export class SiteDirectUserResponseDto {
     example: 2,
     description: "ID de l'utilisateur directement affecté",
   })
-  userId: number;
+  @IsUUID()
+  userId: string;
 
   @ApiProperty({
     example: 'manager1',
@@ -221,14 +225,16 @@ export class AssignDirectSiteUserResponseDto {
   assigned: boolean;
 
   @ApiProperty({ example: 1, description: 'ID du site' })
-  siteId: number;
+  @IsUUID()
+  siteId: string;
 
   @ApiProperty({ example: 2, description: "ID de l'utilisateur" })
-  userId: number;
+  @IsUUID()
+  userId: string;
 }
 
 export class RemoveDirectSiteUserResponseDto {
-  @ApiProperty({ minimum: 1 }) siteId: number;
-  @ApiProperty({ minimum: 1 }) userId: number;
+  @ApiProperty({ minimum: 1 }) siteId: string;
+  @ApiProperty({ minimum: 1 }) userId: string;
   @ApiProperty({ example: true }) removed: boolean;
 }

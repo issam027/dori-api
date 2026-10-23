@@ -1,15 +1,15 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+﻿import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('dori_operator_session')
 export class DoriQueueSession {
-  @PrimaryGeneratedColumn()
-  session_id: number;
+  @PrimaryGeneratedColumn('uuid')
+  session_id: string;
 
-  @Column({ type: 'int' })
-  queue_id: number;
+  @Column({ type: 'uuid' })
+  queue_id: string;
 
-  @Column({ type: 'int' })
-  user_id: number;
+  @Column({ type: 'uuid' })
+  user_id: string;
 
   @Column({ type: 'int', nullable: true })
   thread_number: number | null;
@@ -32,6 +32,6 @@ export class DoriQueueSession {
   @Column({ type: 'varchar', length: 20, nullable: true })
   closure_reason: 'logout' | 'taken_over' | 'daily_reset' | 'forced' | null;
 
-  @Column({ type: 'int', nullable: true })
-  closed_by_user_id: number | null;
+  @Column({ type: 'uuid', nullable: true })
+  closed_by_user_id: string | null;
 }

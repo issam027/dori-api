@@ -4,9 +4,9 @@ import { CreateQueueDto } from './dto/create-queue.dto';
 import { UpdateQueueDto } from './dto/update-queue.dto';
 
 export type QueueDetailRow = Record<string, any> & {
-  queue_id: number;
+  queue_id: string;
   queue_code: string;
-  site_id: number;
+  site_id: string;
   queue_name: string;
   average_wait_time: number;
   thread_count: number;
@@ -22,19 +22,19 @@ export class QueuesRepository {
   constructor(private readonly dataSource: DataSource) {}
 
   async createWithDefaultTier(
-    siteId: number,
+    siteId: string,
     dto: CreateQueueDto,
-    userId: number,
+    userId: string,
     now: Date,
-  ): Promise<number | null> {
+  ): Promise<string | null> {
     return this.dataSource.transaction(async (manager) => {
-      const sites: Array<{ site_id: number }> = await manager.query(
-        'SELECT site_id FROM dori_site WHERE site_id = $1 AND is_active = TRUE',
+      const sites: Array<{ site_id: string }> = await manager.query(
+        'SELECT site_id FROM dorify.dori_site WHERE site_id = $1 AND is_active = TRUE',
         [siteId],
       );
       if (!sites.length) return null;
-      const rows: Array<{ queue_id: number }> = await manager.query(
-        `INSERT INTO dori_queue (
+      const rows: Array<{ queue_id: string }> = await manager.query(
+        `INSERT INTO dorify.dori_queue (
           queue_code, site_id, queue_name, average_wait_time, thread_count, currency,
           appointments_enabled, appointment_slot_duration, slot_capacity,
           working_hours_start, working_hours_end, break_start, break_end,
@@ -77,11 +77,11 @@ export class QueuesRepository {
       );
       const queueId = rows[0].queue_id;
       await manager.query(
-        `INSERT INTO dori_queue_service_tier
+        `INSERT INTO dorify.dori_queue_service_tier
           (queue_id, tier_id, price, currency, display_order, is_default,
            created_by_user_id, updated_by_user_id, created_at, updated_at)
          SELECT $1, tier_id, 0, NULL, 0, TRUE, $2, $2, $3, $3
-         FROM dori_service_tier WHERE tier_code = 'free' LIMIT 1
+         FROM dorify.dori_service_tier WHERE tier_code = 'free' LIMIT 1
          ON CONFLICT (queue_id, tier_id) DO NOTHING`,
         [queueId, userId, now],
       );
@@ -91,9 +91,9 @@ export class QueuesRepository {
 
   async findPage(input: {
     isActive?: boolean;
-    siteId?: number;
-    siteIds?: number[];
-    queueIds?: number[];
+    siteId?: string;
+    siteIds?: string[];
+    queueIds?: string[];
     search?: string;
     sortField: string;
     sortOrder: 'ASC' | 'DESC';
@@ -113,17 +113,17 @@ export class QueuesRepository {
       where += ` AND q.site_id = $${params.length}`;
     } else if (input.siteIds) {
       params.push(input.siteIds);
-      where += ` AND q.site_id = ANY($${params.length}::int[])`;
+      where += ` AND q.site_id = ANY($${params.length}::uuid[])`;
     } else if (input.queueIds) {
       params.push(input.queueIds);
-      where += ` AND q.queue_id = ANY($${params.length}::int[])`;
+      where += ` AND q.queue_id = ANY($${params.length}::uuid[])`;
     }
     if (input.search) {
       params.push(`%${input.search}%`);
       where += ` AND (q.queue_name ILIKE $${params.length} OR q.queue_code ILIKE $${params.length})`;
     }
-    const from = `FROM dori_queue q
-      JOIN dori_site s ON s.site_id = q.site_id ${where}`;
+    const from = `FROM dorify.dori_queue q
+      JOIN dorify.dori_site s ON s.site_id = q.site_id ${where}`;
     const counts: Array<{ total: number }> = await this.dataSource.query(
       `SELECT COUNT(*)::int AS total ${from}`,
       params,
@@ -145,7 +145,7 @@ export class QueuesRepository {
     return { items, total: counts[0]?.total ?? 0 };
   }
 
-  async findById(queueId: number): Promise<QueueDetailRow | null> {
+  async findById(queueId: string): Promise<QueueDetailRow | null> {
     const rows: QueueDetailRow[] = await this.dataSource.query(
       `SELECT q.*, s.site_name, s.timezone AS site_timezone,
               s.default_currency, s.default_locale,
@@ -156,8 +156,8 @@ export class QueuesRepository {
               s.default_base_weight_appointment, s.default_escalation_rate_walkin,
               s.default_escalation_rate_appointment, s.default_carry_over_waiting,
               s.default_daily_reset_mode, s.default_daily_reset_time
-       FROM dori_queue q
-       JOIN dori_site s ON s.site_id = q.site_id
+       FROM dorify.dori_queue q
+       JOIN dorify.dori_site s ON s.site_id = q.site_id
        WHERE q.queue_id = $1`,
       [queueId],
     );
@@ -165,9 +165,9 @@ export class QueuesRepository {
   }
 
   async update(
-    queueId: number,
+    queueId: string,
     dto: UpdateQueueDto,
-    userId: number,
+    userId: string,
     now: Date,
   ): Promise<boolean> {
     const fields: string[] = [];
@@ -205,46 +205,46 @@ export class QueuesRepository {
     add('updated_by_user_id', userId);
     add('updated_at', now);
     values.push(queueId);
-    const rows: Array<{ queue_id: number }> = await this.dataSource.query(
-      `UPDATE dori_queue SET ${fields.join(', ')}
+    const rows: Array<{ queue_id: string }> = await this.dataSource.query(
+      `UPDATE dorify.dori_queue SET ${fields.join(', ')}
        WHERE queue_id = $${values.length} RETURNING queue_id`,
       values,
     );
     return rows.length > 0;
   }
 
-  deactivate(queueId: number, userId: number, now: Date): Promise<void> {
+  deactivate(queueId: string, userId: string, now: Date): Promise<void> {
     return this.dataSource.transaction(async (manager) => {
-      // 1. Désactiver la file d'attente
+      // 1. DÃ©sactiver la file d'attente
       await manager.query(
-        `UPDATE dori_queue SET is_active = FALSE, deleted_at = $1,
+        `UPDATE dorify.dori_queue SET is_active = FALSE, deleted_at = $1,
          updated_by_user_id = $2, updated_at = $1 WHERE queue_id = $3`,
         [now, userId, queueId],
       );
-      // 2. Désactiver les forfaits associés
+      // 2. DÃ©sactiver les forfaits associÃ©s
       await manager.query(
-        `UPDATE dori_queue_service_tier SET is_active = FALSE, deleted_at = $1,
+        `UPDATE dorify.dori_queue_service_tier SET is_active = FALSE, deleted_at = $1,
          updated_by_user_id = $2, updated_at = $1
          WHERE queue_id = $3 AND is_active = TRUE`,
         [now, userId, queueId],
       );
-      // 3. Désactiver les règles de notification associées
+      // 3. DÃ©sactiver les rÃ¨gles de notification associÃ©es
       await manager.query(
-        `UPDATE dori_queue_tier_notification_rule SET is_active = FALSE, deleted_at = $1,
+        `UPDATE dorify.dori_queue_tier_notification_rule SET is_active = FALSE, deleted_at = $1,
          updated_by_user_id = $2, updated_at = $1
          WHERE queue_id = $3 AND is_active = TRUE`,
         [now, userId, queueId],
       );
-      // 4. Clôturer immédiatement les sessions guichet actives
+      // 4. ClÃ´turer immÃ©diatement les sessions guichet actives
       await manager.query(
-        `UPDATE dori_operator_session SET disconnected_at = $1,
+        `UPDATE dorify.dori_operator_session SET disconnected_at = $1,
          closure_reason = 'forced', closed_by_user_id = $2
          WHERE queue_id = $3 AND disconnected_at IS NULL`,
         [now, userId, queueId],
       );
       // 5. Annuler toutes les inscriptions / rendez-vous en cours ou en attente
       await manager.query(
-        `UPDATE dori_registration
+        `UPDATE dorify.dori_registration
          SET status = 'cancelled',
              appointment_status = CASE WHEN entry_type = 'appointment' THEN 'cancelled' ELSE appointment_status END,
              is_active = FALSE,
@@ -256,14 +256,14 @@ export class QueuesRepository {
       );
       // 6. Supprimer les affectations utilisateurs de cette file
       await manager.query(
-        `DELETE FROM dori_user_queue_assignment WHERE queue_id = $1`,
+        `DELETE FROM dorify.dori_user_queue_assignment WHERE queue_id = $1`,
         [queueId],
       );
     });
   }
 
-  async findOperationalContext(queueId: number): Promise<{
-    site_id: number;
+  async findOperationalContext(queueId: string): Promise<{
+    site_id: string;
     average_wait_time: number;
     timezone: string;
     carry_over_waiting?: boolean | null;
@@ -272,7 +272,7 @@ export class QueuesRepository {
     default_daily_reset_mode?: 'close_all' | 'carry_over_open';
   } | null> {
     const rows: Array<{
-      site_id: number;
+      site_id: string;
       average_wait_time: number;
       timezone: string;
       carry_over_waiting: boolean | null;
@@ -282,29 +282,29 @@ export class QueuesRepository {
     }> = await this.dataSource.query(
       `SELECT q.site_id, q.average_wait_time, q.carry_over_waiting, q.daily_reset_mode,
               s.timezone, s.default_carry_over_waiting, s.default_daily_reset_mode
-       FROM dori_queue q JOIN dori_site s ON s.site_id = q.site_id
+       FROM dorify.dori_queue q JOIN dorify.dori_site s ON s.site_id = q.site_id
        WHERE q.queue_id = $1`,
       [queueId],
     );
     return rows[0] ?? null;
   }
 
-  async getStatusSnapshot(queueId: number, businessDate: string) {
+  async getStatusSnapshot(queueId: string, businessDate: string) {
     const [waiting, active, appointments] = await Promise.all([
       this.dataSource.query<Array<{ count: number }>>(
-        `SELECT COUNT(*)::int AS count FROM dori_registration
+        `SELECT COUNT(*)::int AS count FROM dorify.dori_registration
          WHERE queue_id = $1 AND business_date = $2::date
            AND status = 'waiting' AND is_active = TRUE`,
         [queueId, businessDate],
       ),
       this.dataSource.query<Array<{ count: number }>>(
-        `SELECT COUNT(*)::int AS count FROM dori_operator_session
+        `SELECT COUNT(*)::int AS count FROM dorify.dori_operator_session
          WHERE queue_id = $1 AND disconnected_at IS NULL AND mode = 'active'`,
         [queueId],
       ),
       this.dataSource.query(
         `SELECT registration_id, ticket_number, scheduled_time, appointment_status, status
-         FROM dori_registration WHERE queue_id = $1 AND business_date = $2::date
+         FROM dorify.dori_registration WHERE queue_id = $1 AND business_date = $2::date
            AND entry_type = 'appointment' AND is_active = TRUE
            AND status IN ('booked', 'waiting') ORDER BY scheduled_time ASC LIMIT 5`,
         [queueId, businessDate],
@@ -317,21 +317,21 @@ export class QueuesRepository {
     };
   }
 
-  async getDisplaySnapshot(queueId: number, businessDate: string) {
+  async getDisplaySnapshot(queueId: string, businessDate: string) {
     const [sessions, tickets] = await Promise.all([
       this.dataSource.query<
         Array<{ thread_number: number; ticket_number: string | null }>
       >(
         `SELECT qs.thread_number, c.ticket_number
-         FROM dori_operator_session qs
-         LEFT JOIN dori_registration c ON c.served_by_session_id = qs.session_id
+         FROM dorify.dori_operator_session qs
+         LEFT JOIN dorify.dori_registration c ON c.served_by_session_id = qs.session_id
            AND c.status = 'in_progress' AND c.is_active = TRUE
          WHERE qs.queue_id = $1 AND qs.disconnected_at IS NULL AND qs.mode = 'active'
          ORDER BY qs.thread_number ASC`,
         [queueId],
       ),
       this.dataSource.query<Array<{ ticket_number: string }>>(
-        `SELECT ticket_number FROM dori_registration
+        `SELECT ticket_number FROM dorify.dori_registration
          WHERE queue_id = $1 AND business_date = $2::date
            AND status = 'waiting' AND is_active = TRUE
          ORDER BY priority_reference_time ASC LIMIT 10`,
@@ -348,8 +348,8 @@ export class QueuesRepository {
   }
 
   reset(input: {
-    queueId: number;
-    userId: number;
+    queueId: string;
+    userId: string;
     now: Date;
     businessDate: string;
     targetBusinessDate: string;
@@ -363,14 +363,14 @@ export class QueuesRepository {
         input.queueId,
       ]);
       await manager.query(
-        `UPDATE dori_operator_session SET disconnected_at = $1,
+        `UPDATE dorify.dori_operator_session SET disconnected_at = $1,
          closure_reason = 'daily_reset', closed_by_user_id = $2
          WHERE queue_id = $3 AND disconnected_at IS NULL`,
         [input.now, input.userId, input.queueId],
       );
       if (input.resetMode === 'close_all' || !input.carryOver) {
         await manager.query(
-          `UPDATE dori_registration SET status = 'expired', closed_at = $1,
+          `UPDATE dorify.dori_registration SET status = 'expired', closed_at = $1,
            updated_at = $1 WHERE queue_id = $2
            AND business_date <= $3::date
            AND status IN ('booked', 'waiting', 'in_progress') AND is_active = TRUE`,
@@ -378,7 +378,7 @@ export class QueuesRepository {
         );
       } else {
         await manager.query(
-          `UPDATE dori_registration SET status = 'expired', closed_at = $1,
+          `UPDATE dorify.dori_registration SET status = 'expired', closed_at = $1,
            updated_at = $1 WHERE queue_id = $2
            AND business_date <= $3::date AND is_active = TRUE
            AND status IN ('booked', 'waiting', 'in_progress')
@@ -386,7 +386,7 @@ export class QueuesRepository {
           [input.now, input.queueId, input.businessDate],
         );
         await manager.query(
-          `UPDATE dori_registration SET business_date = $1::date,
+          `UPDATE dorify.dori_registration SET business_date = $1::date,
            carried_over_from_date = business_date, ticket_number = '!' || ticket_number,
            status = CASE WHEN status = 'in_progress' THEN 'waiting' ELSE status END,
            served_by_session_id = NULL, served_by_user_id = NULL, called_at = NULL,
@@ -407,13 +407,13 @@ export class QueuesRepository {
   }
 
   async findOperatorPage(input: {
-    queueId: number;
+    queueId: string;
     sortField: string;
     sortOrder: 'ASC' | 'DESC';
     pageSize: number;
     offset: number;
   }) {
-    const from = `FROM dori_user_queue_assignment uq JOIN dori_user u ON u.user_id = uq.user_id
+    const from = `FROM dorify.dori_user_queue_assignment uq JOIN dorify.dori_user u ON u.user_id = uq.user_id
       WHERE uq.queue_id = $1 AND u.is_active = TRUE`;
     const count: Array<{ total: number }> = await this.dataSource.query(
       `SELECT COUNT(*)::int AS total ${from}`,
@@ -427,27 +427,27 @@ export class QueuesRepository {
     return { items, total: count[0]?.total ?? 0 };
   }
 
-  async findQueueSiteId(queueId: number): Promise<number | null> {
+  async findQueueSiteId(queueId: string): Promise<string | null> {
     const rows = await this.dataSource.query(
-      'SELECT site_id FROM dori_queue WHERE queue_id = $1',
+      'SELECT site_id FROM dorify.dori_queue WHERE queue_id = $1',
       [queueId],
     );
     return rows[0]?.site_id ?? null;
   }
 
   async findUserStatus(
-    userId: number,
-  ): Promise<{ user_id: number; is_active: boolean } | null> {
+    userId: string,
+  ): Promise<{ user_id: string; is_active: boolean } | null> {
     const rows = await this.dataSource.query(
-      'SELECT user_id, is_active FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL',
+      'SELECT user_id, is_active FROM dorify.dori_user WHERE user_id = $1 AND deleted_at IS NULL',
       [userId],
     );
     return rows[0] ?? null;
   }
 
-  async hasQueueAssignableRole(userId: number): Promise<boolean> {
+  async hasQueueAssignableRole(userId: string): Promise<boolean> {
     const rows = await this.dataSource.query(
-      `SELECT ur.user_id FROM dori_user_role ur JOIN dori_role r ON r.role_id = ur.role_id
+      `SELECT ur.user_id FROM dorify.dori_user_role ur JOIN dorify.dori_role r ON r.role_id = ur.role_id
        WHERE ur.user_id = $1 AND r.role_name IN ('operator', 'kiosk')
          AND r.is_active = TRUE LIMIT 1`,
       [userId],
@@ -456,27 +456,27 @@ export class QueuesRepository {
   }
 
   async assignOperator(
-    queueId: number,
-    siteId: number,
-    userId: number,
-    assignedBy: number,
+    queueId: string,
+    siteId: string,
+    userId: string,
+    assignedBy: string,
     now: Date,
   ) {
     await this.dataSource.transaction(async (manager) => {
       await manager.query(
-        `INSERT INTO dori_user_site_assignment
+        `INSERT INTO dorify.dori_user_site_assignment
            (user_id, site_id, assigned_at, assigned_by_user_id)
          VALUES ($1, $2, $3, $4)
          ON CONFLICT (user_id, site_id) DO NOTHING`,
         [userId, siteId, now, assignedBy],
       );
       await manager.query(
-        `SELECT 1 FROM dori_user_site_assignment
+        `SELECT 1 FROM dorify.dori_user_site_assignment
          WHERE user_id = $1 AND site_id = $2 FOR UPDATE`,
         [userId, siteId],
       );
       await manager.query(
-        `INSERT INTO dori_user_queue_assignment
+        `INSERT INTO dorify.dori_user_queue_assignment
            (user_id, queue_id, assigned_at, assigned_by_user_id)
          VALUES ($1, $2, $3, $4)
          ON CONFLICT (user_id, queue_id) DO NOTHING`,
@@ -485,33 +485,33 @@ export class QueuesRepository {
     });
   }
 
-  async removeOperator(queueId: number, userId: number) {
+  async removeOperator(queueId: string, userId: string) {
     return this.dataSource.transaction(async (manager) => {
-      const queues: Array<{ site_id: number }> = await manager.query(
-        'SELECT site_id FROM dori_queue WHERE queue_id = $1',
+      const queues: Array<{ site_id: string }> = await manager.query(
+        'SELECT site_id FROM dorify.dori_queue WHERE queue_id = $1',
         [queueId],
       );
       const siteId = queues[0]?.site_id;
       if (siteId == null) return false;
 
       await manager.query(
-        `SELECT 1 FROM dori_user_site_assignment
+        `SELECT 1 FROM dorify.dori_user_site_assignment
          WHERE user_id = $1 AND site_id = $2 FOR UPDATE`,
         [userId, siteId],
       );
-      const removed: Array<{ user_id: number }> = await manager.query(
-        `DELETE FROM dori_user_queue_assignment
+      const removed: Array<{ user_id: string }> = await manager.query(
+        `DELETE FROM dorify.dori_user_queue_assignment
          WHERE user_id = $1 AND queue_id = $2 RETURNING user_id`,
         [userId, queueId],
       );
       if (!removed.length) return false;
 
       await manager.query(
-        `DELETE FROM dori_user_site_assignment us
+        `DELETE FROM dorify.dori_user_site_assignment us
          WHERE us.user_id = $1 AND us.site_id = $2
            AND NOT EXISTS (
-             SELECT 1 FROM dori_user_queue_assignment uq
-             JOIN dori_queue q ON q.queue_id = uq.queue_id
+             SELECT 1 FROM dorify.dori_user_queue_assignment uq
+             JOIN dorify.dori_queue q ON q.queue_id = uq.queue_id
              WHERE uq.user_id = $1 AND q.site_id = $2
            )`,
         [userId, siteId],

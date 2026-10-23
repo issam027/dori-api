@@ -1,4 +1,4 @@
-import {
+﻿import {
   Column,
   CreateDateColumn,
   Entity,
@@ -8,8 +8,8 @@ import {
 
 @Entity('dori_site')
 export class DoriSite {
-  @PrimaryGeneratedColumn()
-  site_id: number;
+  @PrimaryGeneratedColumn('uuid')
+  site_id: string;
 
   @Column({ type: 'varchar', length: 255 })
   site_name: string;
@@ -89,11 +89,11 @@ export class DoriSite {
   @Column({ type: 'varchar', length: 10, default: 'fr' })
   default_locale: string;
 
-  @Column({ type: 'int', nullable: true })
-  created_by_user_id: number | null;
+  @Column({ type: 'uuid', nullable: true })
+  created_by_user_id: string | null;
 
-  @Column({ type: 'int', nullable: true })
-  updated_by_user_id: number | null;
+  @Column({ type: 'uuid', nullable: true })
+  updated_by_user_id: string | null;
 
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;

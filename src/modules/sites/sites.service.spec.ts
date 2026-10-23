@@ -7,7 +7,7 @@ import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interf
 import { DoriException } from '../../core/errors/dori.exception';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
 
-describe('SitesService — direct site users', () => {
+describe('SitesService ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â direct site users', () => {
   let service: SitesService;
   let sitesRepositoryMock: {
     findUserStatus: jest.Mock;
@@ -22,7 +22,7 @@ describe('SitesService — direct site users', () => {
   };
 
   const adminUser: AuthenticatedUser = {
-    userId: 1,
+    userId: '00000000-0000-4000-8000-000000000001',
     username: 'admin_user',
     roles: ['admin'],
     permissions: ['user_site_assign'],
@@ -66,57 +66,87 @@ describe('SitesService — direct site users', () => {
     service = module.get<SitesService>(SitesService);
   });
 
-  it('should throw USER_NOT_FOUND when target user does not exist in dori_user', async () => {
+  it('should throw USER_NOT_FOUND when target user does not exist in dorify.dori_user', async () => {
     sitesRepositoryMock.findUserStatus.mockResolvedValue(null);
 
     await expect(
-      service.assignDirectSiteUser(10, 999, adminUser),
-    ).rejects.toThrow(new DoriException('USER_NOT_FOUND', { userId: 999 }));
+      service.assignDirectSiteUser(
+        '00000000-0000-4000-8000-000000000010',
+        '00000000-0000-4000-8000-000000000999',
+        adminUser,
+      ),
+    ).rejects.toThrow(
+      new DoriException('USER_NOT_FOUND', {
+        userId: '00000000-0000-4000-8000-000000000999',
+      }),
+    );
   });
 
   it('should throw ACCOUNT_LOCKED when target user is inactive', async () => {
     sitesRepositoryMock.findUserStatus.mockResolvedValue({
-      user_id: 2,
+      user_id: '00000000-0000-4000-8000-000000000002',
       is_active: false,
     });
 
     await expect(
-      service.assignDirectSiteUser(10, 2, adminUser),
-    ).rejects.toThrow(new DoriException('ACCOUNT_LOCKED', { userId: 2 }));
+      service.assignDirectSiteUser(
+        '00000000-0000-4000-8000-000000000010',
+        '00000000-0000-4000-8000-000000000002',
+        adminUser,
+      ),
+    ).rejects.toThrow(
+      new DoriException('ACCOUNT_LOCKED', {
+        userId: '00000000-0000-4000-8000-000000000002',
+      }),
+    );
   });
 
   it('rejects users without an admin or manager role', async () => {
     sitesRepositoryMock.findUserStatus.mockResolvedValue({
-      user_id: 2,
+      user_id: '00000000-0000-4000-8000-000000000002',
       is_active: true,
     });
     sitesRepositoryMock.hasActiveDirectSiteRole.mockResolvedValue(false);
 
     await expect(
-      service.assignDirectSiteUser(10, 2, adminUser),
+      service.assignDirectSiteUser(
+        '00000000-0000-4000-8000-000000000010',
+        '00000000-0000-4000-8000-000000000002',
+        adminUser,
+      ),
     ).rejects.toThrow(new DoriException('FORBIDDEN_ROLE_ESCALATION'));
   });
 
   it('assigns an active admin or manager directly to the site', async () => {
     sitesRepositoryMock.findUserStatus.mockResolvedValue({
-      user_id: 2,
+      user_id: '00000000-0000-4000-8000-000000000002',
       is_active: true,
     });
     sitesRepositoryMock.hasActiveDirectSiteRole.mockResolvedValue(true);
     sitesRepositoryMock.assignDirectSiteUser.mockResolvedValue(undefined);
 
-    const result = await service.assignDirectSiteUser(10, 2, adminUser);
-    expect(result).toEqual({ siteId: 10, userId: 2, assigned: true });
-    expect(scopeServiceMock.invalidateUserScope).toHaveBeenCalledWith(2);
+    const result = await service.assignDirectSiteUser(
+      '00000000-0000-4000-8000-000000000010',
+      '00000000-0000-4000-8000-000000000002',
+      adminUser,
+    );
+    expect(result).toEqual({
+      siteId: '00000000-0000-4000-8000-000000000010',
+      userId: '00000000-0000-4000-8000-000000000002',
+      assigned: true,
+    });
+    expect(scopeServiceMock.invalidateUserScope).toHaveBeenCalledWith(
+      '00000000-0000-4000-8000-000000000002',
+    );
   });
 
-  describe('VAL-02 — findDirectSiteUsers pagination', () => {
+  describe('VAL-02 ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â findDirectSiteUsers pagination', () => {
     it('returns paginated admins and managers with mapped properties', async () => {
       sitesRepositoryMock.findDirectSiteUsers.mockResolvedValue({
         total: 2,
         items: [
           {
-            user_id: 2,
+            user_id: '00000000-0000-4000-8000-000000000002',
             username: 'mgr1',
             email: 'mgr1@example.com',
             user_type: 'human',
@@ -124,7 +154,7 @@ describe('SitesService — direct site users', () => {
             assigned_at: '2026-09-29T10:00:00Z',
           },
           {
-            user_id: 3,
+            user_id: '00000000-0000-4000-8000-000000000003',
             username: 'mgr2',
             email: 'mgr2@example.com',
             user_type: 'human',
@@ -139,7 +169,7 @@ describe('SitesService — direct site users', () => {
       pagination.pageSize = 10;
 
       const result = await service.findDirectSiteUsers(
-        1,
+        '00000000-0000-4000-8000-000000000001',
         pagination,
         adminUser,
       );
@@ -149,7 +179,7 @@ describe('SitesService — direct site users', () => {
       expect(result.total).toBe(2);
       expect(result.items).toEqual([
         {
-          user_id: 2,
+          user_id: '00000000-0000-4000-8000-000000000002',
           username: 'mgr1',
           email: 'mgr1@example.com',
           is_active: true,
@@ -157,7 +187,7 @@ describe('SitesService — direct site users', () => {
           assigned_at: '2026-09-29T10:00:00Z',
         },
         {
-          user_id: 3,
+          user_id: '00000000-0000-4000-8000-000000000003',
           username: 'mgr2',
           email: 'mgr2@example.com',
           is_active: true,
@@ -172,7 +202,7 @@ describe('SitesService — direct site users', () => {
         total: 1,
         items: [
           {
-            user_id: 2,
+            user_id: '00000000-0000-4000-8000-000000000002',
             username: 'mgr1',
             email: 'mgr1@example.com',
             user_type: 'human',
@@ -186,11 +216,17 @@ describe('SitesService — direct site users', () => {
       pagination.page = 2;
       pagination.pageSize = 5;
 
-      const res = await service.findDirectSiteUsers(1, pagination, adminUser);
+      const res = await service.findDirectSiteUsers(
+        '00000000-0000-4000-8000-000000000001',
+        pagination,
+        adminUser,
+      );
       expect(res.page).toBe(2);
       expect(res.pageSize).toBe(5);
       expect(res.total).toBe(1);
-      expect((res.items[0] as any).user_id).toBe(2);
+      expect((res.items[0] as any).user_id).toBe(
+        '00000000-0000-4000-8000-000000000002',
+      );
     });
   });
 });

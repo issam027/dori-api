@@ -10,7 +10,7 @@ describe('User DTOs Password Validation', () => {
       password: 'Root@123456',
       userType: 'human',
       languagePreference: 'fr',
-      roleId: 2,
+      roleId: '00000000-0000-4000-8000-000000000002',
     });
 
     const errors = await validate(dto);
@@ -24,7 +24,7 @@ describe('User DTOs Password Validation', () => {
       password: 'Short123', // 8 characters
       userType: 'human',
       languagePreference: 'fr',
-      roleId: 2,
+      roleId: '00000000-0000-4000-8000-000000000002',
     });
 
     const errors = await validate(dto);
@@ -40,7 +40,7 @@ describe('User DTOs Password Validation', () => {
       password: 'ThisPasswordIsWayTooLongAndExceedsTwentyChars!', // > 20 characters
       userType: 'human',
       languagePreference: 'fr',
-      roleId: 2,
+      roleId: '00000000-0000-4000-8000-000000000002',
     });
 
     const errors = await validate(dto);
@@ -65,10 +65,15 @@ describe('User DTOs Password Validation', () => {
 
 describe('UserFilterDto', () => {
   it('accepts siteIds as a CSV string', async () => {
-    const dto = plainToInstance(UserFilterDto, { siteIds: '7,8' });
+    const dto = plainToInstance(UserFilterDto, {
+      siteIds:
+        '00000000-0000-4000-8000-000000000007,00000000-0000-4000-8000-000000000008',
+    });
 
     expect(await validate(dto)).toHaveLength(0);
-    expect(dto.siteIds).toBe('7,8');
+    expect(dto.siteIds).toBe(
+      '00000000-0000-4000-8000-000000000007,00000000-0000-4000-8000-000000000008',
+    );
   });
 
   it.each(['', '7,nope', '0,7', '-1,7', ['7', '8']])(

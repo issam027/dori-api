@@ -1,4 +1,4 @@
-import {
+﻿import {
   WebSocketGateway,
   WebSocketServer,
   OnGatewayConnection,
@@ -26,7 +26,7 @@ import { safeErrorName } from '../logging/safe-error';
 interface AuthenticatedSocket extends Socket {
   user?: AuthenticatedUser;
   trackingToken?: string;
-  registrationId?: number;
+  registrationId?: string;
 }
 
 @WebSocketGateway()
@@ -88,7 +88,7 @@ export class RealtimeGateway
           );
           if (validUntil > this.clockService.now() && reg.is_active) {
             client.trackingToken = String(trackingToken);
-            client.registrationId = Number(reg.registration_id);
+            client.registrationId = String(reg.registration_id);
             // Automatically join own registration room
             client.join(`registration:${trackingToken}`);
             this.logger.debug(
@@ -144,7 +144,7 @@ export class RealtimeGateway
 
     if (opsMatch) {
       if (!client.user) return { error: 'Authentication required' };
-      const queueId = parseInt(opsMatch[1], 10);
+      const queueId = opsMatch[1];
 
       // Check permission and scope (§7.9)
       const hasPermission =
@@ -164,7 +164,7 @@ export class RealtimeGateway
 
     if (displayMatch) {
       if (!client.user) return { error: 'Authentication required' };
-      const queueId = parseInt(displayMatch[1], 10);
+      const queueId = displayMatch[1];
 
       try {
         await this.scopeService.checkQueueAccess(client.user, queueId);
@@ -182,7 +182,7 @@ export class RealtimeGateway
   @SubscribeMessage('ping_session')
   async handlePingSession(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { queueId: number; sessionId: number },
+    @MessageBody() data: { queueId: string; sessionId: string },
   ) {
     if (!client.user || !data?.queueId || !data?.sessionId) {
       return { acknowledged: false };

@@ -6,7 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -127,7 +127,7 @@ export class UsersController {
   })
   @ApiDoriOkResponse(UserResponseDto, "Détails de l'utilisateur")
   async findUserById(
-    @Param('userId', ParseIntPipe) userId: number,
+    @Param('userId', ParseUUIDPipe) userId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.usersService.findUserById(userId, user);
@@ -155,7 +155,7 @@ export class UsersController {
     'Utilisateur mis à jour avec succès',
   )
   async updateUser(
-    @Param('userId', ParseIntPipe) userId: number,
+    @Param('userId', ParseUUIDPipe) userId: string,
     @Body() dto: UpdateUserDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -189,7 +189,7 @@ export class UsersController {
     'Statut de l’utilisateur mis à jour',
   )
   async updateUserStatus(
-    @Param('userId', ParseIntPipe) userId: number,
+    @Param('userId', ParseUUIDPipe) userId: string,
     @Body() dto: UpdateUserStatusDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -220,7 +220,7 @@ export class UsersController {
   })
   @ApiDoriOkResponse(DeleteUserResponseDto, 'Utilisateur supprimé avec succès')
   async deleteUser(
-    @Param('userId', ParseIntPipe) userId: number,
+    @Param('userId', ParseUUIDPipe) userId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.usersService.deleteUser(userId, user);
@@ -253,7 +253,7 @@ export class UsersController {
     'Mot de passe mis à jour avec succès',
   )
   async setUserPassword(
-    @Param('userId', ParseIntPipe) userId: number,
+    @Param('userId', ParseUUIDPipe) userId: string,
     @Body() dto: SetUserPasswordDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -286,7 +286,7 @@ export class UsersController {
   })
   @ApiDoriCreatedResponse(AssignUserRoleResponseDto, 'Rôle assigné avec succès')
   async assignUserRole(
-    @Param('userId', ParseIntPipe) userId: number,
+    @Param('userId', ParseUUIDPipe) userId: string,
     @Body() body: AssignUserRoleDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -322,8 +322,8 @@ export class UsersController {
   })
   @ApiDoriOkResponse(RemoveUserRoleResponseDto, 'Rôle retiré avec succès')
   async removeUserRole(
-    @Param('userId', ParseIntPipe) userId: number,
-    @Param('roleId', ParseIntPipe) roleId: number,
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Param('roleId', ParseUUIDPipe) roleId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.usersService.removeUserRole(userId, roleId, user);
@@ -370,7 +370,7 @@ export class UsersController {
     'Permissions du rôle mises à jour',
   )
   async updateRolePermissions(
-    @Param('roleId', ParseIntPipe) roleId: number,
+    @Param('roleId', ParseUUIDPipe) roleId: string,
     @Body() dto: UpdateRolePermissionsDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {

@@ -2,20 +2,20 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 export interface ActiveThreadSessionRow {
-  session_id: number;
-  user_id: number;
+  session_id: string;
+  user_id: string;
   thread_number: number;
   counter_name: string | null;
   username: string;
   connected_at: Date | string;
   last_seen_at: Date | string;
-  current_registration_id: number | null;
+  current_registration_id: string | null;
 }
 
 export interface QueueSessionRow extends Record<string, unknown> {
-  session_id: number;
-  queue_id: number;
-  user_id: number;
+  session_id: string;
+  queue_id: string;
+  user_id: string;
   thread_number: number | null;
   counter_name: string | null;
   mode: 'active' | 'consultation_only';
@@ -25,17 +25,17 @@ export interface QueueSessionRow extends Record<string, unknown> {
 }
 
 export interface NextCandidateRow extends Record<string, unknown> {
-  registration_id: number;
+  registration_id: string;
   ticket_number: string;
   entry_type: 'walkin' | 'appointment';
   scheduled_time: string | null;
   status: string;
   called_at: string;
   registration_tracking_token: string;
-  tier_id: number;
+  tier_id: string;
   tier_code: string;
   tier_name: string;
-  person_id: number;
+  person_id: string;
   first_name: string;
   last_name: string;
   phone_number: string;
@@ -45,15 +45,15 @@ export interface NextCandidateRow extends Record<string, unknown> {
 }
 
 export interface PreviewCandidateRow extends Record<string, unknown> {
-  registration_id: number;
+  registration_id: string;
   ticket_number: string;
   entry_type: 'walkin' | 'appointment';
   scheduled_time: string | null;
-  queue_id: number;
+  queue_id: string;
   queue_code: string;
   queue_name: string;
   site_name: string;
-  person_id: number;
+  person_id: string;
   first_name: string;
   last_name: string;
   score?: number;
@@ -64,19 +64,19 @@ export interface PreviewCandidateRow extends Record<string, unknown> {
 export class QueueEngineRepository {
   constructor(private readonly dataSource: DataSource) {}
 
-  async findThreadState(queueId: number): Promise<{
+  async findThreadState(queueId: string): Promise<{
     threadCount: number;
     sessions: ActiveThreadSessionRow[];
   } | null> {
     const queues: Array<{ thread_count: number }> = await this.dataSource.query(
-      'SELECT thread_count FROM dori_queue WHERE queue_id = $1 AND is_active = TRUE',
+      'SELECT thread_count FROM dorify.dori_queue WHERE queue_id = $1 AND is_active = TRUE',
       [queueId],
     );
     if (!queues.length) return null;
     const sessions: ActiveThreadSessionRow[] = await this.dataSource.query(
       `SELECT qs.*, u.username, c.registration_id AS current_registration_id
-       FROM dori_operator_session qs JOIN dori_user u ON u.user_id = qs.user_id
-       LEFT JOIN dori_registration c ON c.served_by_session_id = qs.session_id
+       FROM dorify.dori_operator_session qs JOIN dorify.dori_user u ON u.user_id = qs.user_id
+       LEFT JOIN dorify.dori_registration c ON c.served_by_session_id = qs.session_id
          AND c.status = 'in_progress' AND c.is_active = TRUE
        WHERE qs.queue_id = $1 AND qs.disconnected_at IS NULL AND qs.mode = 'active'`,
       [queueId],
@@ -85,37 +85,37 @@ export class QueueEngineRepository {
   }
 
   async closeSession(
-    queueId: number,
-    sessionId: number,
-    closedBy: number,
+    queueId: string,
+    sessionId: string,
+    closedBy: string,
     now: Date,
   ): Promise<void> {
     await this.dataSource.query(
-      `UPDATE dori_operator_session SET disconnected_at = $1,
+      `UPDATE dorify.dori_operator_session SET disconnected_at = $1,
        closure_reason = 'logout', closed_by_user_id = $2
        WHERE session_id = $3 AND queue_id = $4 AND disconnected_at IS NULL`,
       [now, closedBy, sessionId, queueId],
     );
   }
 
-  async findThreadCount(queueId: number): Promise<number | null> {
+  async findThreadCount(queueId: string): Promise<number | null> {
     const rows: Array<{ thread_count: number }> = await this.dataSource.query(
-      'SELECT thread_count FROM dori_queue WHERE queue_id = $1 AND is_active = TRUE',
+      'SELECT thread_count FROM dorify.dori_queue WHERE queue_id = $1 AND is_active = TRUE',
       [queueId],
     );
     return rows[0]?.thread_count ?? null;
   }
 
   async createSession(input: {
-    queueId: number;
-    userId: number;
+    queueId: string;
+    userId: string;
     threadNumber: number | null;
     counterName: string | null;
     mode: 'active' | 'consultation_only';
     now: Date;
   }): Promise<QueueSessionRow> {
     const rows: QueueSessionRow[] = await this.dataSource.query(
-      `INSERT INTO dori_operator_session
+      `INSERT INTO dorify.dori_operator_session
          (queue_id, user_id, thread_number, counter_name, mode, connected_at, last_seen_at)
        VALUES ($1, $2, $3, $4, $5, $6, $6) RETURNING *`,
       [
@@ -131,15 +131,15 @@ export class QueueEngineRepository {
   }
 
   async findActiveUserSession(
-    queueId: number,
-    userId: number,
+    queueId: string,
+    userId: string,
   ): Promise<Pick<
     QueueSessionRow,
     'session_id' | 'thread_number' | 'counter_name' | 'connected_at'
   > | null> {
     const rows = await this.dataSource.query(
       `SELECT session_id, thread_number, counter_name, connected_at
-       FROM dori_operator_session
+       FROM dorify.dori_operator_session
        WHERE queue_id = $1 AND user_id = $2
          AND disconnected_at IS NULL AND mode = 'active'`,
       [queueId, userId],
@@ -148,12 +148,12 @@ export class QueueEngineRepository {
   }
 
   async findOccupiedThread(
-    queueId: number,
+    queueId: string,
     threadNumber: number,
   ): Promise<QueueSessionRow | null> {
     const rows: QueueSessionRow[] = await this.dataSource.query(
-      `SELECT qs.*, u.username FROM dori_operator_session qs
-       JOIN dori_user u ON u.user_id = qs.user_id
+      `SELECT qs.*, u.username FROM dorify.dori_operator_session qs
+       JOIN dorify.dori_user u ON u.user_id = qs.user_id
        WHERE qs.queue_id = $1 AND qs.thread_number = $2
          AND qs.disconnected_at IS NULL`,
       [queueId, threadNumber],
@@ -162,20 +162,20 @@ export class QueueEngineRepository {
   }
 
   takeOverThread(input: {
-    queueId: number;
+    queueId: string;
     threadNumber: number;
     counterName: string | null;
-    userId: number;
+    userId: string;
     now: Date;
   }): Promise<{
     session: QueueSessionRow;
-    previousSessionId: number;
-    reassignedRegistrationId: number | null;
+    previousSessionId: string;
+    reassignedRegistrationId: string | null;
   } | null> {
     return this.dataSource.transaction(async (manager) => {
       const locked: QueueSessionRow[] = await manager.query(
-        `SELECT qs.*, u.username FROM dori_operator_session qs
-         JOIN dori_user u ON u.user_id = qs.user_id
+        `SELECT qs.*, u.username FROM dorify.dori_operator_session qs
+         JOIN dorify.dori_user u ON u.user_id = qs.user_id
          WHERE qs.queue_id = $1 AND qs.thread_number = $2
            AND qs.disconnected_at IS NULL FOR UPDATE OF qs`,
         [input.queueId, input.threadNumber],
@@ -183,12 +183,12 @@ export class QueueEngineRepository {
       if (!locked.length) return null;
       const previous = locked[0];
       await manager.query(
-        `UPDATE dori_operator_session SET disconnected_at = $1,
+        `UPDATE dorify.dori_operator_session SET disconnected_at = $1,
          closure_reason = 'taken_over', closed_by_user_id = $2 WHERE session_id = $3`,
         [input.now, input.userId, previous.session_id],
       );
       const created: QueueSessionRow[] = await manager.query(
-        `INSERT INTO dori_operator_session
+        `INSERT INTO dorify.dori_operator_session
            (queue_id, user_id, thread_number, counter_name, mode, connected_at, last_seen_at)
          VALUES ($1, $2, $3, $4, 'active', $5, $5) RETURNING *`,
         [
@@ -199,15 +199,15 @@ export class QueueEngineRepository {
           input.now,
         ],
       );
-      const clients: Array<{ registration_id: number }> = await manager.query(
-        `SELECT registration_id FROM dori_registration
+      const clients: Array<{ registration_id: string }> = await manager.query(
+        `SELECT registration_id FROM dorify.dori_registration
          WHERE served_by_session_id = $1 AND status = 'in_progress' AND is_active = TRUE`,
         [previous.session_id],
       );
       const reassignedRegistrationId = clients[0]?.registration_id ?? null;
       if (reassignedRegistrationId != null) {
         await manager.query(
-          `UPDATE dori_registration SET served_by_session_id = $1,
+          `UPDATE dorify.dori_registration SET served_by_session_id = $1,
            served_by_user_id = $2, updated_at = $3
            WHERE registration_id = $4`,
           [
@@ -226,13 +226,13 @@ export class QueueEngineRepository {
     });
   }
 
-  async findInProgressRegistration(registrationId: number): Promise<{
-    served_by_session_id: number;
-    session_user_id: number;
+  async findInProgressRegistration(registrationId: string): Promise<{
+    served_by_session_id: string;
+    session_user_id: string;
   } | null> {
     const rows = await this.dataSource.query(
       `SELECT c.served_by_session_id, qs.user_id AS session_user_id
-       FROM dori_registration c JOIN dori_operator_session qs ON qs.session_id = c.served_by_session_id
+       FROM dorify.dori_registration c JOIN dorify.dori_operator_session qs ON qs.session_id = c.served_by_session_id
        WHERE c.registration_id = $1 AND c.status = 'in_progress' AND c.is_active = TRUE`,
       [registrationId],
     );
@@ -240,33 +240,33 @@ export class QueueEngineRepository {
   }
 
   async closeRegistration(
-    registrationId: number,
+    registrationId: string,
     status: 'served' | 'no_show',
     now: Date,
   ): Promise<void> {
     if (status === 'served') {
       await this.dataSource.query(
-        `UPDATE dori_registration SET status = 'served', served_at = $1,
+        `UPDATE dorify.dori_registration SET status = 'served', served_at = $1,
          closed_at = $1, updated_at = $1 WHERE registration_id = $2`,
         [now, registrationId],
       );
       return;
     }
     await this.dataSource.query(
-      `UPDATE dori_registration SET status = 'no_show', closed_at = $1,
+      `UPDATE dorify.dori_registration SET status = 'no_show', closed_at = $1,
        updated_at = $1 WHERE registration_id = $2`,
       [now, registrationId],
     );
   }
 
   async findSessionPage(input: {
-    queueId: number;
+    queueId: string;
     sortField: string;
     sortOrder: 'ASC' | 'DESC';
     pageSize: number;
     offset: number;
   }): Promise<{ items: QueueSessionRow[]; total: number }> {
-    const from = `FROM dori_operator_session qs JOIN dori_user u ON u.user_id = qs.user_id
+    const from = `FROM dorify.dori_operator_session qs JOIN dorify.dori_user u ON u.user_id = qs.user_id
       WHERE qs.queue_id = $1 AND qs.disconnected_at IS NULL`;
     const counts: Array<{ total: number }> = await this.dataSource.query(
       `SELECT COUNT(*)::int as total ${from}`,
@@ -282,8 +282,8 @@ export class QueueEngineRepository {
   }
 
   async findCallContext(
-    queueId: number,
-    userId: number,
+    queueId: string,
+    userId: string,
   ): Promise<{
     session: QueueSessionRow | null;
     config: {
@@ -295,7 +295,7 @@ export class QueueEngineRepository {
     } | null;
   }> {
     const sessions: QueueSessionRow[] = await this.dataSource.query(
-      `SELECT * FROM dori_operator_session WHERE queue_id = $1 AND user_id = $2
+      `SELECT * FROM dorify.dori_operator_session WHERE queue_id = $1 AND user_id = $2
        AND disconnected_at IS NULL AND mode = 'active'`,
       [queueId, userId],
     );
@@ -304,8 +304,8 @@ export class QueueEngineRepository {
               q.escalation_rate_walkin, q.escalation_rate_appointment,
               s.default_base_weight_walkin, s.default_base_weight_appointment,
               s.default_escalation_rate_walkin, s.default_escalation_rate_appointment,
-              s.timezone FROM dori_queue q
-       JOIN dori_site s ON s.site_id = q.site_id WHERE q.queue_id = $1`,
+              s.timezone FROM dorify.dori_queue q
+       JOIN dorify.dori_site s ON s.site_id = q.site_id WHERE q.queue_id = $1`,
       [queueId],
     );
     const cfg = configs[0];
@@ -338,9 +338,9 @@ export class QueueEngineRepository {
   }
 
   callNext(input: {
-    queueId: number;
-    sessionId: number;
-    userId: number;
+    queueId: string;
+    sessionId: string;
+    userId: string;
     businessDate: string;
     now: Date;
     baseWalkin: number;
@@ -353,15 +353,15 @@ export class QueueEngineRepository {
         'daily-reset',
         input.queueId,
       ]);
-      const activeSession: Array<{ session_id: number }> = await manager.query(
-        `SELECT session_id FROM dori_operator_session
+      const activeSession: Array<{ session_id: string }> = await manager.query(
+        `SELECT session_id FROM dorify.dori_operator_session
          WHERE session_id = $1 AND queue_id = $2 AND user_id = $3
            AND disconnected_at IS NULL AND mode = 'active' FOR UPDATE`,
         [input.sessionId, input.queueId, input.userId],
       );
       if (!activeSession.length) return null;
 
-      let selected: Array<{ registration_id: number; score: number }> =
+      let selected: Array<{ registration_id: string; score: number }> =
         await manager.query(
           `WITH eligible AS (
              SELECT c.registration_id,
@@ -369,7 +369,7 @@ export class QueueEngineRepository {
                  THEN $1 + EXTRACT(EPOCH FROM ($7 - c.priority_reference_time))/60 * $2
                  ELSE $3 + EXTRACT(EPOCH FROM ($7 - c.priority_reference_time))/60 * $4
                END)::numeric, 2) AS score
-             FROM dori_registration c WHERE c.queue_id = $5
+             FROM dorify.dori_registration c WHERE c.queue_id = $5
                AND c.business_date = $6::date AND c.status = 'waiting' AND c.is_active = TRUE
                AND (c.entry_type = 'walkin' OR
                  (c.appointment_status = 'checked_in' AND c.scheduled_time <= $7))
@@ -388,7 +388,7 @@ export class QueueEngineRepository {
       let calledEarly = false;
       if (!selected.length) {
         selected = await manager.query(
-          `SELECT registration_id, 0 AS score FROM dori_registration
+          `SELECT registration_id, 0 AS score FROM dorify.dori_registration
            WHERE queue_id = $1 AND business_date = $2::date AND status = 'waiting'
              AND is_active = TRUE AND appointment_status = 'checked_in'
              AND scheduled_time > $3 ORDER BY scheduled_time ASC
@@ -400,7 +400,7 @@ export class QueueEngineRepository {
       if (!selected.length) return null;
       const candidate = selected[0];
       await manager.query(
-        `UPDATE dori_registration SET status = 'in_progress', served_by_session_id = $1,
+        `UPDATE dorify.dori_registration SET status = 'in_progress', served_by_session_id = $1,
          served_by_user_id = $2, called_at = $3, updated_at = $3
          WHERE registration_id = $4`,
         [input.sessionId, input.userId, input.now, candidate.registration_id],
@@ -410,10 +410,10 @@ export class QueueEngineRepository {
                 c.status, c.called_at, c.registration_tracking_token,
                 t.tier_id, t.tier_code, t.tier_name,
                 p.person_id, p.first_name, p.last_name, p.phone_number,
-                (SELECT COUNT(*)::int FROM dori_person_note n
+                (SELECT COUNT(*)::int FROM dorify.dori_person_note n
                  WHERE n.person_id = p.person_id AND n.is_active = TRUE) AS notes_count
-         FROM dori_registration c JOIN dori_service_tier t ON t.tier_id = c.tier_id
-         JOIN dori_person p ON p.person_id = c.person_id WHERE c.registration_id = $1`,
+         FROM dorify.dori_registration c JOIN dorify.dori_service_tier t ON t.tier_id = c.tier_id
+         JOIN dorify.dori_person p ON p.person_id = c.person_id WHERE c.registration_id = $1`,
         [candidate.registration_id],
       );
       return Object.assign(details[0], {
@@ -423,31 +423,31 @@ export class QueueEngineRepository {
     });
   }
 
-  async findQueueIds(siteId?: number): Promise<number[]> {
-    const rows: Array<{ queue_id: number }> = await this.dataSource.query(
+  async findQueueIds(siteId?: string): Promise<string[]> {
+    const rows: Array<{ queue_id: string }> = await this.dataSource.query(
       siteId === undefined
-        ? 'SELECT queue_id FROM dori_queue WHERE is_active = TRUE'
-        : 'SELECT queue_id FROM dori_queue WHERE site_id = $1 AND is_active = TRUE',
+        ? 'SELECT queue_id FROM dorify.dori_queue WHERE is_active = TRUE'
+        : 'SELECT queue_id FROM dorify.dori_queue WHERE site_id = $1 AND is_active = TRUE',
       siteId === undefined ? [] : [siteId],
     );
-    return rows.map((row) => Number(row.queue_id));
+    return rows.map((row) => String(row.queue_id));
   }
 
   async findActiveQueueIdsForUser(
-    queueIds: number[],
-    userId: number,
-  ): Promise<number[]> {
-    const rows: Array<{ queue_id: number }> = await this.dataSource.query(
-      `SELECT DISTINCT queue_id FROM dori_operator_session
-       WHERE queue_id = ANY($1::int[]) AND user_id = $2
+    queueIds: string[],
+    userId: string,
+  ): Promise<string[]> {
+    const rows: Array<{ queue_id: string }> = await this.dataSource.query(
+      `SELECT DISTINCT queue_id FROM dorify.dori_operator_session
+       WHERE queue_id = ANY($1::uuid[]) AND user_id = $2
          AND disconnected_at IS NULL AND mode = 'active'`,
       [queueIds, userId],
     );
-    return rows.map((row) => Number(row.queue_id));
+    return rows.map((row) => String(row.queue_id));
   }
 
   async findPreviewCandidates(
-    queueIds: number[],
+    queueIds: string[],
     now: Date,
     limit: number,
   ): Promise<PreviewCandidateRow[]> {
@@ -463,9 +463,9 @@ export class QueueEngineRepository {
                   + EXTRACT(EPOCH FROM ($2 - c.priority_reference_time))/60
                     * COALESCE(q.escalation_rate_walkin, s.default_escalation_rate_walkin, 1)
               END)::numeric, 2) AS score, FALSE AS called_early
-       FROM dori_registration c JOIN dori_queue q ON q.queue_id = c.queue_id
-       JOIN dori_site s ON s.site_id = q.site_id JOIN dori_person p ON p.person_id = c.person_id
-       WHERE c.queue_id = ANY($1::int[]) AND c.status = 'waiting' AND c.is_active = TRUE
+       FROM dorify.dori_registration c JOIN dorify.dori_queue q ON q.queue_id = c.queue_id
+       JOIN dorify.dori_site s ON s.site_id = q.site_id JOIN dorify.dori_person p ON p.person_id = c.person_id
+       WHERE c.queue_id = ANY($1::uuid[]) AND c.status = 'waiting' AND c.is_active = TRUE
          AND c.business_date = ($2::timestamptz AT TIME ZONE s.timezone)::date
          AND (c.entry_type = 'walkin' OR
            (c.appointment_status = 'checked_in' AND c.scheduled_time <= $2))
@@ -478,12 +478,12 @@ export class QueueEngineRepository {
       `SELECT c.registration_id, c.ticket_number, c.entry_type, c.scheduled_time,
               c.queue_id, q.queue_code, q.queue_name, s.site_name,
               p.person_id, p.first_name, p.last_name, 0 AS score, TRUE AS called_early
-       FROM dori_registration c JOIN dori_queue q ON q.queue_id = c.queue_id
-       JOIN dori_site s ON s.site_id = q.site_id JOIN dori_person p ON p.person_id = c.person_id
-       WHERE c.queue_id = ANY($1::int[]) AND c.status = 'waiting' AND c.is_active = TRUE
+       FROM dorify.dori_registration c JOIN dorify.dori_queue q ON q.queue_id = c.queue_id
+       JOIN dorify.dori_site s ON s.site_id = q.site_id JOIN dorify.dori_person p ON p.person_id = c.person_id
+       WHERE c.queue_id = ANY($1::uuid[]) AND c.status = 'waiting' AND c.is_active = TRUE
          AND c.business_date = ($2::timestamptz AT TIME ZONE s.timezone)::date
          AND c.entry_type = 'appointment' AND c.appointment_status = 'checked_in'
-         AND c.scheduled_time > $2 AND c.queue_id <> ALL($3::int[])
+         AND c.scheduled_time > $2 AND c.queue_id <> ALL($3::uuid[])
        ORDER BY c.scheduled_time ASC, c.registration_id ASC LIMIT $4`,
       [queueIds, now, queueIdsWithEligibleCandidate, limit - eligible.length],
     );

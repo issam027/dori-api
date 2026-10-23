@@ -1,3 +1,4 @@
+import { IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
@@ -43,13 +44,15 @@ export class QueueConfigOriginsResponseDto {
 
 export class QueueResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la file' })
-  queueId: number;
+  @IsUUID()
+  queueId: string;
 
   @ApiProperty({ example: 'CARDIO-01', description: 'Code unique de la file' })
   queueCode: string;
 
   @ApiProperty({ example: 1, description: 'ID du site' })
-  siteId: number;
+  @IsUUID()
+  siteId: string;
 
   @ApiProperty({
     example: 'Consultation Cardiologie',
@@ -186,7 +189,8 @@ export class PaginatedQueueResponseDto extends PaginatedResponseDto {
 
 export class NextAppointmentItemDto {
   @ApiProperty({ example: 42, description: "ID de l'inscription client" })
-  registrationId: number;
+  @IsUUID()
+  registrationId: string;
 
   @ApiProperty({ example: 'A-012', description: 'Numéro de ticket' })
   ticketNumber: string;
@@ -203,7 +207,8 @@ export class NextAppointmentItemDto {
 
 export class QueueStatusResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la file' })
-  queueId: number;
+  @IsUUID()
+  queueId: string;
 
   @ApiProperty({
     example: 4,
@@ -251,7 +256,8 @@ export class CallingTicketResponseDto {
 
 export class QueueDisplayResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la file' })
-  queueId: number;
+  @IsUUID()
+  queueId: string;
 
   @ApiPropertyOptional({
     example: 'Consultation Cardiologie',
@@ -271,7 +277,8 @@ export class QueueDisplayResponseDto {
 
 export class DeleteQueueResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la file supprimée' })
-  queueId: number;
+  @IsUUID()
+  queueId: string;
 
   @ApiProperty({ example: true, description: 'Confirmation de la suppression' })
   deleted: boolean;
@@ -279,7 +286,8 @@ export class DeleteQueueResponseDto {
 
 export class ResetQueueResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la file réinitialisée' })
-  queueId: number;
+  @IsUUID()
+  queueId: string;
 
   @ApiProperty({
     example: '2026-09-27T12:00:00.000Z',
@@ -293,7 +301,8 @@ export class ResetQueueResponseDto {
 
 export class QueueOperatorResponseDto {
   @ApiProperty({ example: 3, description: "ID de l'utilisateur opérateur" })
-  userId: number;
+  @IsUUID()
+  userId: string;
 
   @ApiProperty({
     example: 'operator1',
@@ -336,14 +345,16 @@ export class AssignOperatorResponseDto {
   assigned: boolean;
 
   @ApiProperty({ example: 1, description: 'ID de la file' })
-  queueId: number;
+  @IsUUID()
+  queueId: string;
 
   @ApiProperty({ example: 3, description: "ID de l'utilisateur" })
-  userId: number;
+  @IsUUID()
+  userId: string;
 }
 
 export class RemoveOperatorResponseDto {
-  @ApiProperty({ minimum: 1 }) queueId: number;
-  @ApiProperty({ minimum: 1 }) userId: number;
+  @ApiProperty({ minimum: 1 }) queueId: string;
+  @ApiProperty({ minimum: 1 }) userId: string;
   @ApiProperty({ example: true }) removed: boolean;
 }

@@ -1,4 +1,4 @@
-import {
+﻿import {
   Column,
   CreateDateColumn,
   Entity,
@@ -8,8 +8,8 @@ import {
 
 @Entity('dori_service_tier')
 export class DoriServiceTier {
-  @PrimaryGeneratedColumn()
-  tier_id: number;
+  @PrimaryGeneratedColumn('uuid')
+  tier_id: string;
 
   @Column({ type: 'varchar', length: 20, unique: true })
   tier_code: string;
@@ -29,11 +29,11 @@ export class DoriServiceTier {
   @Column({ type: 'timestamptz', nullable: true })
   deleted_at: Date | null;
 
-  @Column({ type: 'int', nullable: true })
-  created_by_user_id: number | null;
+  @Column({ type: 'uuid', nullable: true })
+  created_by_user_id: string | null;
 
-  @Column({ type: 'int', nullable: true })
-  updated_by_user_id: number | null;
+  @Column({ type: 'uuid', nullable: true })
+  updated_by_user_id: string | null;
 
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;

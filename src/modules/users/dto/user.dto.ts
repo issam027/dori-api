@@ -1,15 +1,15 @@
 import {
+  IsUUID,
+  isUUID,
   IsArray,
   IsBoolean,
   IsEmail,
   IsIn,
-  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
   MinLength,
   MaxLength,
-  Min,
   IsLocale,
   registerDecorator,
   ValidationArguments,
@@ -26,7 +26,7 @@ function IsSiteIdsCsv(): PropertyDecorator {
       target: target.constructor,
       propertyName: propertyName.toString(),
       options: {
-        message: 'siteIds must be a comma-separated list of positive integers',
+        message: 'siteIds must be a comma-separated list of UUIDs',
       },
       validator: {
         validate: (value: unknown, _args: ValidationArguments) =>
@@ -35,7 +35,7 @@ function IsSiteIdsCsv(): PropertyDecorator {
           value
             .split(',')
             .map((item) => item.trim())
-            .every((item) => /^\d+$/.test(item) && Number(item) > 0),
+            .every((item) => isUUID(item)),
       },
     });
 }
@@ -101,10 +101,9 @@ export class CreateUserDto {
     example: 2,
     description: 'Rôle initial à assigner (ID)',
   })
-  @IsInt()
-  @Min(1)
+  @IsUUID()
   @IsOptional()
-  roleId?: number;
+  roleId?: string;
 }
 
 export class UpdateUserDto {
@@ -157,9 +156,8 @@ export class SetUserPasswordDto {
 
 export class AssignUserRoleDto {
   @ApiProperty({ example: 2, description: 'ID du rôle à assigner' })
-  @IsInt()
-  @Min(1)
-  roleId: number;
+  @IsUUID()
+  roleId: string;
 }
 
 export class UpdateRolePermissionsDto {

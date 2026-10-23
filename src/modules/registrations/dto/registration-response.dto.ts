@@ -1,15 +1,19 @@
+import { IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
 export class RegistrationResponseDto {
   @ApiProperty({ example: 101, description: "ID de l'inscription" })
-  registrationId: number;
+  @IsUUID()
+  registrationId: string;
 
   @ApiProperty({ example: 1, description: 'ID de la file' })
-  queueId: number;
+  @IsUUID()
+  queueId: string;
 
   @ApiProperty({ example: 45, description: 'ID de la personne cliente' })
-  personId: number;
+  @IsUUID()
+  personId: string;
 
   @ApiProperty({ example: 'A-012', description: 'Numéro de ticket généré' })
   ticketNumber: string;
@@ -54,7 +58,8 @@ export class RegistrationResponseDto {
   registrationTrackingToken: string;
 
   @ApiProperty({ example: 1, description: 'ID du forfait de service' })
-  tierId: number;
+  @IsUUID()
+  tierId: string;
 
   @ApiProperty({
     example: '2026-09-27T08:30:00.000Z',
@@ -84,7 +89,8 @@ export class RegistrationResponseDto {
     description:
       "ID de la session opérateur ayant pris en charge l'inscription",
   })
-  servedBySessionId?: number | null;
+  @IsUUID()
+  servedBySessionId?: string | null;
 
   @ApiPropertyOptional({
     example: 12,
@@ -92,7 +98,8 @@ export class RegistrationResponseDto {
     description:
       "ID de l'utilisateur ayant pris en charge l'inscription, conservé directement sur l'inscription",
   })
-  servedByUserId?: number | null;
+  @IsUUID()
+  servedByUserId?: string | null;
 
   @ApiProperty({
     example: 2,
@@ -103,7 +110,7 @@ export class RegistrationResponseDto {
 }
 
 export class CreateRegistrationResponseDto {
-  @ApiProperty({ minimum: 1 }) registrationId: number;
+  @ApiProperty({ minimum: 1 }) registrationId: string;
   @ApiProperty() ticketNumber: string;
   @ApiProperty({ format: 'date' }) businessDate: string;
   @ApiProperty({ enum: ['walkin', 'appointment'] }) entryType: string;
@@ -132,7 +139,7 @@ export class CreateRegistrationResponseDto {
 }
 
 export class RescheduleRegistrationResponseDto {
-  @ApiProperty({ minimum: 1 }) registrationId: number;
+  @ApiProperty({ minimum: 1 }) registrationId: string;
   @ApiProperty({ example: 'A-012' }) ticketNumber: string;
   @ApiProperty() status: string;
   @ApiPropertyOptional({ nullable: true }) appointmentStatus?: string | null;
@@ -196,7 +203,8 @@ export class DailyAvailabilityItemDto {
 
 export class RegistrationAvailabilityResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la file' })
-  queueId: number;
+  @IsUUID()
+  queueId: string;
 
   @ApiProperty({ example: 'Europe/Berlin' }) timezone: string;
 
@@ -294,7 +302,8 @@ export class RegistrationPositionResponseDto {
 
 export class DeleteRegistrationResponseDto {
   @ApiProperty({ example: 101, description: "ID de l'inscription annulée" })
-  registrationId: number;
+  @IsUUID()
+  registrationId: string;
 
   @ApiProperty({ example: true, description: 'Annulation confirmée' })
   cancelled: boolean;

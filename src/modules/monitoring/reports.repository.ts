@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 export interface QueueIdentityRow {
-  queue_id?: number;
-  site_id?: number;
+  queue_id?: string;
+  site_id?: string;
   queue_name: string;
   queue_code: string;
   site_name: string;
@@ -45,11 +45,11 @@ export interface MonitoringSeriesData {
 export class ReportsRepository {
   constructor(private readonly dataSource: DataSource) {}
 
-  async findQueueIdentity(queueId: number): Promise<QueueIdentityRow | null> {
+  async findQueueIdentity(queueId: string): Promise<QueueIdentityRow | null> {
     const rows = await this.dataSource.query<QueueIdentityRow[]>(
       `SELECT q.queue_name, q.queue_code, s.site_name
-       FROM dori_queue q
-       JOIN dori_site s ON s.site_id = q.site_id
+       FROM dorify.dori_queue q
+       JOIN dorify.dori_site s ON s.site_id = q.site_id
        WHERE q.queue_id = $1`,
       [queueId],
     );
@@ -57,8 +57,8 @@ export class ReportsRepository {
   }
 
   findScopeIdentities(input: {
-    queueIds?: number[];
-    siteId?: number;
+    queueIds?: string[];
+    siteId?: string;
   }): Promise<QueueIdentityRow[]> {
     const params: unknown[] = [];
     let where = '1=1';
@@ -72,14 +72,14 @@ export class ReportsRepository {
     }
     return this.dataSource.query(
       `SELECT q.queue_id, q.queue_code, q.queue_name, s.site_id, s.site_name, s.timezone
-       FROM dori_queue q JOIN dori_site s ON s.site_id=q.site_id
+       FROM dorify.dori_queue q JOIN dorify.dori_site s ON s.site_id=q.site_id
        WHERE ${where} ORDER BY q.queue_id`,
       params,
     );
   }
 
   getSeries(input: {
-    queueIds: number[];
+    queueIds: string[];
     dateFrom: string;
     dateTo: string;
     granularity: 'day' | 'week' | 'month';
@@ -133,19 +133,19 @@ export class ReportsRepository {
       ? `UNION ALL
          SELECT 'group_summary', NULL::date, NULL::date, ${group[0]}, ${group[1]},
            CASE WHEN COUNT(DISTINCT ${group[2]})=1 THEN MIN(${group[2]}) ELSE NULL END, ${metrics('r')}
-         FROM scoped r JOIN dori_queue q ON q.queue_id=r.queue_id
-         JOIN dori_site s ON s.site_id=q.site_id LEFT JOIN dori_service_tier t ON t.tier_id=r.tier_id
+         FROM scoped r JOIN dorify.dori_queue q ON q.queue_id=r.queue_id
+         JOIN dorify.dori_site s ON s.site_id=q.site_id LEFT JOIN dorify.dori_service_tier t ON t.tier_id=r.tier_id
          GROUP BY ${group[0]}, ${group[1]}
          UNION ALL
          SELECT 'group_bucket', ${bucket}, LEAST($3::date, (${bucket}+${stride}-interval '1 day')::date),
            ${group[0]}, ${group[1]}, CASE WHEN COUNT(DISTINCT ${group[2]})=1 THEN MIN(${group[2]}) ELSE NULL END, ${metrics('r')}
-         FROM scoped r JOIN dori_queue q ON q.queue_id=r.queue_id
-         JOIN dori_site s ON s.site_id=q.site_id LEFT JOIN dori_service_tier t ON t.tier_id=r.tier_id
+         FROM scoped r JOIN dorify.dori_queue q ON q.queue_id=r.queue_id
+         JOIN dorify.dori_site s ON s.site_id=q.site_id LEFT JOIN dorify.dori_service_tier t ON t.tier_id=r.tier_id
          GROUP BY ${bucket}, ${group[0]}, ${group[1]}`
       : '';
     return this.dataSource.query(
       `WITH scoped AS (
-         SELECT * FROM dori_registration r
+         SELECT * FROM dorify.dori_registration r
          WHERE r.queue_id=ANY($1) AND r.business_date BETWEEN $2 AND $3
        ), periods AS (
          SELECT generate_series(date_trunc('${input.granularity}', $2::date)::date,
@@ -167,9 +167,9 @@ export class ReportsRepository {
   }
 
   async getMonitoringSeries(input: {
-    queueIds: number[];
-    userIds?: number[];
-    tierIds?: number[];
+    queueIds: string[];
+    userIds?: string[];
+    tierIds?: string[];
     statuses?: string[];
     entryTypes?: string[];
     from: string;
@@ -188,10 +188,10 @@ export class ReportsRepository {
     ];
     const seriesParams = [...scopedParams, input.timezone];
     const scoped = `WITH scoped AS (
-      SELECT r.* FROM dori_registration r
+      SELECT r.* FROM dorify.dori_registration r
       WHERE r.queue_id = ANY($1)
-        AND ($4::int[] IS NULL OR r.served_by_user_id = ANY($4))
-        AND ($5::int[] IS NULL OR r.tier_id = ANY($5))
+        AND ($4::uuid[] IS NULL OR r.served_by_user_id = ANY($4))
+        AND ($5::uuid[] IS NULL OR r.tier_id = ANY($5))
         AND ($6::text[] IS NULL OR r.status = ANY($6))
         AND ($7::text[] IS NULL OR r.entry_type = ANY($7))
         AND (r.created_at >= $2::timestamptz AND r.created_at < $3::timestamptz
@@ -245,7 +245,7 @@ export class ReportsRepository {
         ),
         this.dataSource.query(
           `${scoped} SELECT q.queue_id, q.queue_name, ${metrics} FROM scoped r
-           JOIN dori_queue q ON q.queue_id=r.queue_id GROUP BY q.queue_id,q.queue_name ORDER BY q.queue_id`,
+           JOIN dorify.dori_queue q ON q.queue_id=r.queue_id GROUP BY q.queue_id,q.queue_name ORDER BY q.queue_id`,
           scopedParams,
         ),
         this.dataSource.query(
@@ -254,7 +254,7 @@ export class ReportsRepository {
            COUNT(*) FILTER (WHERE r.status='served' AND r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz)::int AS served,
            COUNT(*) FILTER (WHERE r.status='no_show' AND r.closed_at >= $2::timestamptz AND r.closed_at < $3::timestamptz)::int AS no_show,
            ROUND(AVG(EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60) FILTER (WHERE r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz AND r.called_at IS NOT NULL)::numeric,2) AS average_service_minutes
-           FROM scoped r JOIN dori_user u ON u.user_id=r.served_by_user_id
+           FROM scoped r JOIN dorify.dori_user u ON u.user_id=r.served_by_user_id
            GROUP BY u.user_id,u.full_name,u.username ORDER BY u.user_id`,
           scopedParams,
         ),
@@ -264,7 +264,7 @@ export class ReportsRepository {
            COUNT(*) FILTER (WHERE r.status='served' AND r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz)::int AS served,
            COUNT(*) FILTER (WHERE r.status='no_show' AND r.closed_at >= $2::timestamptz AND r.closed_at < $3::timestamptz)::int AS no_show,
            ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at-r.checked_in_at))/60) FILTER (WHERE r.called_at >= $2::timestamptz AND r.called_at < $3::timestamptz)::numeric,2) AS average_wait_minutes
-           FROM scoped r JOIN dori_service_tier t ON t.tier_id=r.tier_id
+           FROM scoped r JOIN dorify.dori_service_tier t ON t.tier_id=r.tier_id
            GROUP BY t.tier_id,t.tier_code,t.tier_name ORDER BY t.tier_id`,
           scopedParams,
         ),
@@ -300,7 +300,7 @@ export class ReportsRepository {
     };
   }
 
-  async getDailyStats(queueId: number, date: string): Promise<DailyStatsRow> {
+  async getDailyStats(queueId: string, date: string): Promise<DailyStatsRow> {
     const rows = await this.dataSource.query<DailyStatsRow[]>(
       `SELECT COUNT(*)::int AS total_registered,
        COUNT(*) FILTER (WHERE entry_type = 'walkin')::int AS total_walkin,
@@ -313,7 +313,7 @@ export class ReportsRepository {
          FILTER (WHERE status = 'served' AND called_at IS NOT NULL)::numeric, 1) AS avg_wait_minutes,
        ROUND(AVG(EXTRACT(EPOCH FROM (served_at - called_at))/60)
          FILTER (WHERE status = 'served' AND served_at IS NOT NULL AND called_at IS NOT NULL)::numeric, 1) AS avg_service_minutes
-       FROM dori_registration WHERE queue_id = $1 AND business_date = $2`,
+       FROM dorify.dori_registration WHERE queue_id = $1 AND business_date = $2`,
       [queueId, date],
     );
     return rows[0];

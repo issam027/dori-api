@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import { OpenQueueSessionDto } from './dto/session.dto';
 import { QueueSessionResponseDto } from './dto/engine-response.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
@@ -26,7 +26,7 @@ export class QueueEngineService {
 
   // 1. Threads State (Â§6.1)
   async getThreads(
-    queueId: number,
+    queueId: string,
     user: AuthenticatedUser,
     pagination: PaginationDto = new PaginationDto(),
   ) {
@@ -86,7 +86,7 @@ export class QueueEngineService {
 
   // 2. Open or Take Over Session (Â§6.2, Â§4.6)
   async openSession(
-    queueId: number,
+    queueId: string,
     dto: OpenQueueSessionDto,
     user: AuthenticatedUser,
   ) {
@@ -257,8 +257,8 @@ export class QueueEngineService {
 
   // 3. Close Session (Â§4.6)
   async closeSession(
-    queueId: number,
-    sessionId: number,
+    queueId: string,
+    sessionId: string,
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkQueueAccess(user, queueId);
@@ -275,7 +275,7 @@ export class QueueEngineService {
   }
 
   // 4. Next Client Call (Â§6.3, Â§4.4, Â§7.6)
-  async next(queueId: number, user: AuthenticatedUser) {
+  async next(queueId: string, user: AuthenticatedUser) {
     await this.scopeService.checkQueueAccess(user, queueId);
     const now = this.clockService.now();
     const context = await this.queueEngineRepository.findCallContext(
@@ -339,7 +339,7 @@ export class QueueEngineService {
   }
 
   // 5. Close Registration Served / No-Show
-  async markServed(registrationId: number, user: AuthenticatedUser) {
+  async markServed(registrationId: string, user: AuthenticatedUser) {
     const now = this.clockService.now();
 
     // Verify registration is in_progress on a session owned by caller (Â§6.4)
@@ -373,7 +373,7 @@ export class QueueEngineService {
     };
   }
 
-  async markNoShow(registrationId: number, user: AuthenticatedUser) {
+  async markNoShow(registrationId: string, user: AuthenticatedUser) {
     const now = this.clockService.now();
 
     const reg =
@@ -409,7 +409,7 @@ export class QueueEngineService {
 
   // Active supervision sessions (Â§5.8)
   async getSessions(
-    queueId: number,
+    queueId: string,
     paginationOrUser?: PaginationDto | AuthenticatedUser,
     maybeUser?: AuthenticatedUser,
   ): Promise<PaginatedResult<QueueSessionResponseDto>> {
@@ -464,15 +464,15 @@ export class QueueEngineService {
   // 6. Next Preview (Â§10.2)
   async nextPreview(
     limit: number = 6,
-    siteId?: number,
-    queueId?: number,
+    siteId?: string,
+    queueId?: string,
     user?: AuthenticatedUser,
   ) {
     const scope = user
       ? await this.scopeService.getUserScope(user)
       : { isGlobal: true, siteIds: [], queueIds: [] };
     const now = this.clockService.now();
-    let targetQueueIds: number[];
+    let targetQueueIds: string[];
     if (queueId) {
       if (user) await this.scopeService.checkQueueAccess(user, queueId);
       targetQueueIds = [queueId];
@@ -522,15 +522,15 @@ export class QueueEngineService {
 
   async previewNext(
     user: AuthenticatedUser,
-    siteId?: number,
+    siteId?: string,
     limit?: number,
-    queueId?: number,
+    queueId?: string,
   ) {
     return this.nextPreview(limit ?? 10, siteId, queueId, user);
   }
 
   async getThreadsStatus(
-    queueId: number,
+    queueId: string,
     user: AuthenticatedUser,
     pagination?: PaginationDto,
   ) {
@@ -538,14 +538,14 @@ export class QueueEngineService {
   }
 
   async getActiveSessions(
-    queueId: number,
+    queueId: string,
     paginationOrUser?: PaginationDto | AuthenticatedUser,
     maybeUser?: AuthenticatedUser,
   ): Promise<PaginatedResult<QueueSessionResponseDto>> {
     return this.getSessions(queueId, paginationOrUser, maybeUser);
   }
 
-  async callNext(queueId: number, user: AuthenticatedUser) {
+  async callNext(queueId: string, user: AuthenticatedUser) {
     return this.next(queueId, user);
   }
 }

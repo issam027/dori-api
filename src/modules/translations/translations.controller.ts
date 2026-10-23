@@ -7,7 +7,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -147,7 +147,7 @@ export class TranslationsController {
     'Traduction mise à jour avec succès',
   )
   async updateTranslation(
-    @Param('translationId', ParseIntPipe) translationId: number,
+    @Param('translationId', ParseUUIDPipe) translationId: string,
     @Body() dto: UpdateTranslationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -172,7 +172,7 @@ export class TranslationsController {
     'Traduction supprimée avec succès',
   )
   async deleteTranslation(
-    @Param('translationId', ParseIntPipe) translationId: number,
+    @Param('translationId', ParseUUIDPipe) translationId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.translationsService.deleteTranslation(translationId, user);

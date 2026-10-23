@@ -5,11 +5,11 @@ import { DataSource } from 'typeorm';
 export class JwtSessionRepository {
   constructor(private readonly dataSource: DataSource) {}
 
-  async findValidSessionId(sessionId: string, userId: number, now: Date) {
+  async findValidSessionId(sessionId: string, userId: string, now: Date) {
     const rows = await this.dataSource.query<Array<{ session_id: string }>>(
       `SELECT s.session_id
-       FROM dori_user_session s
-       JOIN dori_user u ON u.user_id = s.user_id
+       FROM dorify.dori_user_session s
+       JOIN dorify.dori_user u ON u.user_id = s.user_id
        WHERE s.session_id = $1 AND s.user_id = $2
          AND s.revoked_reason IS NULL AND s.revoked_at IS NULL
          AND s.expires_at > $3

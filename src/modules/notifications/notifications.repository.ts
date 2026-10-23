@@ -7,13 +7,13 @@ import {
 } from './dto/notification.dto';
 
 export type NotificationRow = Record<string, unknown> & {
-  notification_id: number;
-  queue_id?: number;
+  notification_id: string;
+  queue_id?: string;
 };
 
 export interface NotificationListQuery {
   filter: NotificationFilterDto;
-  queueIds?: number[];
+  queueIds?: string[];
   sortField: string;
   sortOrder: 'ASC' | 'DESC';
   pageSize: number;
@@ -21,8 +21,8 @@ export interface NotificationListQuery {
 }
 
 export interface NotificationRegistrationRow extends Record<string, unknown> {
-  registration_id: number;
-  queue_id: number;
+  registration_id: string;
+  queue_id: string;
   phone_number?: string;
   email?: string;
   language_preference?: string;
@@ -31,7 +31,7 @@ export interface NotificationRegistrationRow extends Record<string, unknown> {
 
 export interface WaitingRegistrationRow extends NotificationRegistrationRow {
   ticket_number: string;
-  tier_id: number;
+  tier_id: string;
   first_name?: string;
   p_lang?: string;
   average_wait_time: number;
@@ -40,8 +40,8 @@ export interface WaitingRegistrationRow extends NotificationRegistrationRow {
 }
 
 export interface ThresholdRuleRow extends Record<string, unknown> {
-  rule_id: number;
-  tier_id: number;
+  rule_id: string;
+  tier_id: string;
   channel: 'sms' | 'email';
   threshold_position?: number;
   threshold_minutes?: number;
@@ -88,10 +88,10 @@ export class NotificationsRepository {
       params.push(query.filter.dateTo);
       where += ` AND c.business_date <= $${params.length}`;
     }
-    const from = `FROM dori_notification n
-      JOIN dori_registration c ON c.registration_id = n.registration_id
-      JOIN dori_person p ON p.person_id = c.person_id
-      JOIN dori_queue q ON q.queue_id = c.queue_id
+    const from = `FROM dorify.dori_notification n
+      JOIN dorify.dori_registration c ON c.registration_id = n.registration_id
+      JOIN dorify.dori_person p ON p.person_id = c.person_id
+      JOIN dorify.dori_queue q ON q.queue_id = c.queue_id
       WHERE ${where}`;
     const countRows: Array<{ total: number }> = await this.dataSource.query(
       `SELECT COUNT(*)::int AS total ${from}`,
@@ -106,11 +106,11 @@ export class NotificationsRepository {
     return { items, total: countRows[0]?.total ?? 0 };
   }
 
-  async findById(notificationId: number): Promise<NotificationRow | null> {
+  async findById(notificationId: string): Promise<NotificationRow | null> {
     const rows: NotificationRow[] = await this.dataSource.query(
       `SELECT n.*, c.queue_id, c.ticket_number, c.business_date
-       FROM dori_notification n
-       JOIN dori_registration c ON c.registration_id = n.registration_id
+       FROM dorify.dori_notification n
+       JOIN dorify.dori_registration c ON c.registration_id = n.registration_id
        WHERE n.notification_id = $1`,
       [notificationId],
     );
@@ -118,11 +118,11 @@ export class NotificationsRepository {
   }
 
   async findActiveRegistration(
-    registrationId: number,
+    registrationId: string,
   ): Promise<NotificationRegistrationRow | null> {
     const rows: NotificationRegistrationRow[] = await this.dataSource.query(
       `SELECT c.*, p.phone_number, p.email, p.language_preference AS person_lang
-       FROM dori_registration c JOIN dori_person p ON p.person_id = c.person_id
+       FROM dorify.dori_registration c JOIN dorify.dori_person p ON p.person_id = c.person_id
        WHERE c.registration_id = $1 AND c.is_active = TRUE`,
       [registrationId],
     );
@@ -136,7 +136,7 @@ export class NotificationsRepository {
     now: Date,
   ): Promise<NotificationRow> {
     const rows: NotificationRow[] = await this.dataSource.query(
-      `INSERT INTO dori_notification (
+      `INSERT INTO dorify.dori_notification (
         registration_id, channel, notification_type, locale, recipient, notification_content,
         notification_status, attempt_count, created_at, updated_at
       ) VALUES ($1, $2, 'welcome', $3, $4, $5, 'pending', 0, $6, $6) RETURNING *`,
@@ -146,11 +146,11 @@ export class NotificationsRepository {
   }
 
   async markPending(
-    notificationId: number,
+    notificationId: string,
     now: Date,
   ): Promise<NotificationRow> {
     const rows: NotificationRow[] = await this.dataSource.query(
-      `UPDATE dori_notification
+      `UPDATE dorify.dori_notification
        SET notification_status = 'pending', attempt_count = attempt_count + 1,
            failure_reason = NULL, updated_at = $1
        WHERE notification_id = $2 RETURNING *`,
@@ -167,13 +167,13 @@ export class NotificationsRepository {
   ): Promise<'updated' | 'duplicate' | 'missing'> {
     return this.dataSource.transaction(async (manager) => {
       const accepted: Array<{ event_id: string }> = await manager.query(
-        `INSERT INTO dori_webhook_event (provider, event_id, received_at)
+        `INSERT INTO dorify.dori_webhook_event (provider, event_id, received_at)
          VALUES ($1, $2, $3) ON CONFLICT (provider, event_id) DO NOTHING RETURNING event_id`,
         [provider, eventId, now],
       );
       if (accepted.length === 0) return 'duplicate';
-      const updated: Array<{ notification_id: number }> = await manager.query(
-        `UPDATE dori_notification
+      const updated: Array<{ notification_id: string }> = await manager.query(
+        `UPDATE dorify.dori_notification
          SET notification_status = $1,
              delivered_at = CASE WHEN $1 = 'delivered' THEN $2 ELSE delivered_at END,
              failure_reason = CASE WHEN $1 = 'failed' THEN $3 ELSE failure_reason END,
@@ -186,35 +186,35 @@ export class NotificationsRepository {
   }
 
   async findWaitingRegistrations(
-    queueId: number,
+    queueId: string,
   ): Promise<WaitingRegistrationRow[]> {
     return this.dataSource.query(
       `SELECT c.registration_id, c.ticket_number, c.tier_id, c.language_preference,
               c.registration_tracking_token,
               p.first_name, p.last_name, p.phone_number, p.email, p.language_preference AS p_lang,
               q.average_wait_time, s.timezone, s.default_locale
-       FROM dori_registration c
-       JOIN dori_person p ON p.person_id = c.person_id
-       JOIN dori_queue q ON q.queue_id = c.queue_id
-       JOIN dori_site s ON s.site_id = q.site_id
+       FROM dorify.dori_registration c
+       JOIN dorify.dori_person p ON p.person_id = c.person_id
+       JOIN dorify.dori_queue q ON q.queue_id = c.queue_id
+       JOIN dorify.dori_site s ON s.site_id = q.site_id
        WHERE c.queue_id = $1 AND c.status = 'waiting' AND c.is_active = TRUE
        ORDER BY c.priority_reference_time ASC`,
       [queueId],
     );
   }
 
-  async countActiveThreads(queueId: number): Promise<number> {
+  async countActiveThreads(queueId: string): Promise<number> {
     const rows: Array<{ count: number }> = await this.dataSource.query(
-      `SELECT COUNT(*)::int AS count FROM dori_operator_session
+      `SELECT COUNT(*)::int AS count FROM dorify.dori_operator_session
        WHERE queue_id = $1 AND disconnected_at IS NULL AND mode = 'active'`,
       [queueId],
     );
     return rows[0]?.count ?? 0;
   }
 
-  async findThresholdRules(queueId: number): Promise<ThresholdRuleRow[]> {
+  async findThresholdRules(queueId: string): Promise<ThresholdRuleRow[]> {
     return this.dataSource.query(
-      `SELECT * FROM dori_queue_tier_notification_rule
+      `SELECT * FROM dorify.dori_queue_tier_notification_rule
        WHERE queue_id = $1 AND notification_type = 'threshold' AND is_active = TRUE`,
       [queueId],
     );
@@ -228,7 +228,7 @@ export class NotificationsRepository {
   > {
     if (!keys.length) return [];
     return this.dataSource.query(
-      `SELECT translation_key, locale, content FROM dori_translation
+      `SELECT translation_key, locale, content FROM dorify.dori_translation
        WHERE translation_key = ANY($1) AND locale = ANY($2) AND is_active = TRUE`,
       [keys, locales],
     );
@@ -236,8 +236,8 @@ export class NotificationsRepository {
 
   async createThresholdNotifications(
     notifications: Array<{
-      registrationId: number;
-      ruleId: number;
+      registrationId: string;
+      ruleId: string;
       channel: string;
       locale: string;
       recipient: string | null | undefined;
@@ -248,9 +248,9 @@ export class NotificationsRepository {
     now: Date,
   ): Promise<number> {
     if (!notifications.length) return 0;
-    const rows: Array<{ notification_id: number }> =
+    const rows: Array<{ notification_id: string }> =
       await this.dataSource.query(
-        `INSERT INTO dori_notification (
+        `INSERT INTO dorify.dori_notification (
          registration_id, rule_id, channel, notification_type, locale, recipient,
          notification_content, notification_status, failure_reason,
          attempt_count, created_at, updated_at

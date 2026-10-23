@@ -17,7 +17,7 @@ describe('AuthRepository refresh rotation', () => {
 
   it('locks, consumes and replaces a refresh session in one transaction', async () => {
     const user = {
-      user_id: 7,
+      user_id: '00000000-0000-4000-8000-000000000007',
       username: 'agent',
       password_hash: 'hash',
       user_type: 'human' as const,
@@ -26,7 +26,7 @@ describe('AuthRepository refresh rotation', () => {
       [
         {
           session_id: 'old-session',
-          user_id: 7,
+          user_id: '00000000-0000-4000-8000-000000000007',
           expires_at: expiresAt,
           revoked_at: null,
         },
@@ -53,7 +53,7 @@ describe('AuthRepository refresh rotation', () => {
       'WHERE session_id = $2 AND revoked_at IS NULL',
     );
     expect(manager.query.mock.calls[3][0]).toContain(
-      'INSERT INTO dori_user_session',
+      'INSERT INTO dorify.dori_user_session',
     );
   });
 
@@ -62,7 +62,7 @@ describe('AuthRepository refresh rotation', () => {
       [
         {
           session_id: 'old-session',
-          user_id: 7,
+          user_id: '00000000-0000-4000-8000-000000000007',
           expires_at: expiresAt,
           revoked_at: now,
         },
@@ -83,18 +83,23 @@ describe('AuthRepository refresh rotation', () => {
     expect(manager.query.mock.calls[1][0]).toContain(
       "revoked_reason = 'rotation'",
     );
-    expect(manager.query.mock.calls[1][1]).toEqual([now, 7]);
+    expect(manager.query.mock.calls[1][1]).toEqual([
+      now,
+      '00000000-0000-4000-8000-000000000007',
+    ]);
   });
 });
 
 describe('AuthRepository login identifier', () => {
   it('looks up an active user by username or case-insensitive email', async () => {
-    const query = jest.fn().mockResolvedValue([{ user_id: 7 }]);
+    const query = jest
+      .fn()
+      .mockResolvedValue([{ user_id: '00000000-0000-4000-8000-000000000007' }]);
     const repository = new AuthRepository({ query } as unknown as DataSource);
 
     await expect(
       repository.findActiveUserByUsername('Agent@Example.com'),
-    ).resolves.toEqual({ user_id: 7 });
+    ).resolves.toEqual({ user_id: '00000000-0000-4000-8000-000000000007' });
 
     expect(query.mock.calls[0][0]).toContain('username = $1');
     expect(query.mock.calls[0][0]).toContain('LOWER(email) = LOWER($1)');

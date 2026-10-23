@@ -4,7 +4,7 @@ import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interf
 
 describe('ReportsService monitoring series', () => {
   const manager = {
-    userId: 1,
+    userId: '00000000-0000-4000-8000-000000000001',
     roles: ['manager'],
   } as AuthenticatedUser;
   const scopeService = {
@@ -30,7 +30,7 @@ describe('ReportsService monitoring series', () => {
   it('returns null durations and coherent zero totals for an empty period', async () => {
     repository.findScopeIdentities.mockResolvedValue([
       {
-        queue_id: 10,
+        queue_id: '00000000-0000-4000-8000-000000000010',
         queue_name: 'Accueil',
         timezone: 'Europe/Paris',
       },
@@ -52,7 +52,7 @@ describe('ReportsService monitoring series', () => {
       byStatus: [],
     });
     const query = Object.assign(new ReportSeriesQueryDto(), {
-      queueIds: '10',
+      queueIds: '00000000-0000-4000-8000-000000000010',
       from: '2026-10-01T00:00:00+02:00',
       to: '2026-10-02T00:00:00+02:00',
       bucket: 'day' as const,
@@ -60,16 +60,26 @@ describe('ReportsService monitoring series', () => {
 
     const result = await service.getSeries(query, manager);
 
-    expect(scopeService.checkQueueAccess).toHaveBeenCalledWith(manager, 10);
+    expect(scopeService.checkQueueAccess).toHaveBeenCalledWith(
+      manager,
+      '00000000-0000-4000-8000-000000000010',
+    );
     expect(result.totals.averageWaitMinutes).toBeNull();
     expect(result.totals.registered).toBe(0);
     expect(result.breakdowns.byQueue).toEqual([]);
   });
 
   it('forces a non-supervisor to their own activity', async () => {
-    const operator = { userId: 7, roles: ['operator'] } as AuthenticatedUser;
+    const operator = {
+      userId: '00000000-0000-4000-8000-000000000007',
+      roles: ['operator'],
+    } as AuthenticatedUser;
     repository.findScopeIdentities.mockResolvedValue([
-      { queue_id: 10, queue_name: 'Accueil', timezone: 'Europe/Paris' },
+      {
+        queue_id: '00000000-0000-4000-8000-000000000010',
+        queue_name: 'Accueil',
+        timezone: 'Europe/Paris',
+      },
     ]);
     repository.getMonitoringSeries.mockResolvedValue({
       totals: {},
@@ -88,7 +98,9 @@ describe('ReportsService monitoring series', () => {
       operator,
     );
     expect(repository.getMonitoringSeries).toHaveBeenCalledWith(
-      expect.objectContaining({ userIds: [7] }),
+      expect.objectContaining({
+        userIds: ['00000000-0000-4000-8000-000000000007'],
+      }),
     );
   });
 });

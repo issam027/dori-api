@@ -14,10 +14,13 @@ describe('MonitoringService', () => {
         registrations: { waiting: 5 },
       }),
       liveSnapshot: jest.fn().mockResolvedValue({
-        site: { site_id: 1, timezone: 'Europe/Paris' },
+        site: {
+          site_id: '00000000-0000-4000-8000-000000000001',
+          timezone: 'Europe/Paris',
+        },
         queues: [
           {
-            queue_id: 10,
+            queue_id: '00000000-0000-4000-8000-000000000010',
             queue_name: 'Accueil',
             waiting: 12,
             in_progress: 2,
@@ -29,12 +32,12 @@ describe('MonitoringService', () => {
         ],
         operators: [
           {
-            user_id: 7,
+            user_id: '00000000-0000-4000-8000-000000000007',
             display_name: 'Opérateur',
-            queue_id: 10,
-            session_id: 20,
+            queue_id: '00000000-0000-4000-8000-000000000010',
+            session_id: '00000000-0000-4000-8000-000000000020',
             connected_at: now,
-            registration_id: 30,
+            registration_id: '00000000-0000-4000-8000-000000000030',
             ticket_number: 'A-001',
           },
         ],
@@ -125,8 +128,8 @@ describe('MonitoringService', () => {
 
   it('returns live queues and hides ticket data without registration_view', async () => {
     const { service, scope } = createService();
-    const result = await service.live(1, {
-      userId: 7,
+    const result = await service.live('00000000-0000-4000-8000-000000000001', {
+      userId: '00000000-0000-4000-8000-000000000007',
       permissions: ['queue_view'],
     } as never);
 

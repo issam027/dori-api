@@ -16,6 +16,7 @@ export class DatabaseSeedService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap() {
+    await this.dataSource.query('SET search_path TO dorify, pg_catalog');
     // Only run if DB is connected and enabled
     if (
       this.configService.get<boolean>(

@@ -13,17 +13,17 @@ export class ReportsService {
   ) {}
 
   async getSeries(query: ReportSeriesQueryDto, user: AuthenticatedUser) {
-    const csvNumbers = (value?: string) =>
+    const csvUuids = (value?: string) =>
       value
-        ? [...new Set(value.split(',').map((item) => Number(item.trim())))]
+        ? [...new Set(value.split(',').map((item) => item.trim()))]
         : undefined;
     const csvStrings = (value?: string) =>
       value
         ? [...new Set(value.split(',').map((item) => item.trim()))]
         : undefined;
-    const requestedQueueIds = csvNumbers(query.queueIds);
-    const requestedUserIds = csvNumbers(query.userIds);
-    const tierIds = csvNumbers(query.tierIds);
+    const requestedQueueIds = csvUuids(query.queueIds);
+    const requestedUserIds = csvUuids(query.userIds);
+    const tierIds = csvUuids(query.tierIds);
     const statuses = csvStrings(query.statuses);
     const entryTypes = csvStrings(query.entryTypes);
     const from = new Date(query.from);
@@ -141,12 +141,12 @@ export class ReportsService {
       })),
       breakdowns: {
         byQueue: data.byQueue.map((row) => ({
-          queueId: Number(row.queue_id),
+          queueId: String(row.queue_id),
           queueName: row.queue_name,
           ...metric(row),
         })),
         byUser: data.byUser.map((row) => ({
-          userId: Number(row.user_id),
+          userId: String(row.user_id),
           displayName: row.display_name,
           registered: Number(row.registered ?? 0),
           served: Number(row.served ?? 0),
@@ -157,7 +157,7 @@ export class ReportsService {
               : Number(row.average_service_minutes),
         })),
         byTier: data.byTier.map((row) => ({
-          tierId: Number(row.tier_id),
+          tierId: String(row.tier_id),
           tierCode: row.tier_code,
           tierName: row.tier_name,
           registered: Number(row.registered ?? 0),

@@ -32,7 +32,7 @@ export class UsersService {
     return this.usersRepository.getCallerMaxRank(user.userId);
   }
 
-  private async getUserMaxRank(targetUserId: number): Promise<number> {
+  private async getUserMaxRank(targetUserId: string): Promise<number> {
     const info = await this.usersRepository.getUserMaxRank(targetUserId);
     if (!info.exists) {
       throw new DoriException('USER_NOT_FOUND', { userId: targetUserId });
@@ -78,8 +78,8 @@ export class UsersService {
 
   private async checkAntiEscalation(
     caller: AuthenticatedUser,
-    targetUserId?: number,
-    targetRoleId?: number,
+    targetUserId?: string,
+    targetRoleId?: string,
   ): Promise<void> {
     if (caller.roles?.includes('root')) {
       return;
@@ -136,16 +136,12 @@ export class UsersService {
   async findUsers(filter: UserFilterDto, user: AuthenticatedUser) {
     const scope = await this.scopeService.getUserScope(user);
     const siteIds = filter.siteIds
-      ? [
-          ...new Set(
-            filter.siteIds.split(',').map((item) => Number(item.trim())),
-          ),
-        ]
+      ? [...new Set(filter.siteIds.split(',').map((item) => item.trim()))]
       : undefined;
     return this.usersRepository.findUsers(filter, scope, siteIds);
   }
 
-  async findUserById(userId: number, user: AuthenticatedUser) {
+  async findUserById(userId: string, user: AuthenticatedUser) {
     const scope = await this.scopeService.getUserScope(user);
     const targetUser = await this.usersRepository.findUserById(userId);
 
@@ -210,7 +206,7 @@ export class UsersService {
   }
 
   async updateUser(
-    userId: number,
+    userId: string,
     dto: UpdateUserDto,
     user: AuthenticatedUser,
   ) {
@@ -230,7 +226,7 @@ export class UsersService {
   }
 
   async updateUserStatus(
-    userId: number,
+    userId: string,
     dto: UpdateUserStatusDto,
     user: AuthenticatedUser,
   ) {
@@ -251,7 +247,7 @@ export class UsersService {
   }
 
   async setUserPassword(
-    userId: number,
+    userId: string,
     dto: SetUserPasswordDto,
     user: AuthenticatedUser,
   ) {
@@ -274,8 +270,8 @@ export class UsersService {
   }
 
   async assignUserRole(
-    userId: number,
-    roleId: number,
+    userId: string,
+    roleId: string,
     user: AuthenticatedUser,
   ) {
     await this.checkAntiEscalation(user, userId, roleId);
@@ -300,8 +296,8 @@ export class UsersService {
   }
 
   async removeUserRole(
-    userId: number,
-    roleId: number,
+    userId: string,
+    roleId: string,
     user: AuthenticatedUser,
   ) {
     await this.checkAntiEscalation(user, userId, roleId);
@@ -322,7 +318,7 @@ export class UsersService {
   }
 
   async updateRolePermissions(
-    roleId: number,
+    roleId: string,
     dto: UpdateRolePermissionsDto,
     user: AuthenticatedUser,
   ) {
@@ -356,7 +352,7 @@ export class UsersService {
     return { roleId, permissionsUpdated: true };
   }
 
-  async deleteUser(userId: number, user: AuthenticatedUser) {
+  async deleteUser(userId: string, user: AuthenticatedUser) {
     await this.checkAntiEscalation(user, userId);
     await this.findUserById(userId, user);
 

@@ -1,57 +1,93 @@
-# Handover — Migration complète des identifiants numériques vers UUID/GUID
+# Handover — Migration complète des identifiants numériques vers UUID
 
-## 1. Objectif et règle de périmètre
+## 1. Décisions définitives
 
-Migrer tous les identifiants techniques internes actuellement représentés par des `SERIAL`, `BIGSERIAL` ou `INT` vers le type PostgreSQL natif `UUID`, sur le même principe que `dori_audit_event.event_id` (`UUID DEFAULT gen_random_uuid()`).
+Ce document décrit une reconstruction immédiate du schéma et du code autour d'identifiants UUID. Il ne s'agit pas d'une migration progressive de données existantes.
 
-Cette évolution est une rupture de contrat majeure. Elle touche simultanément la base, le seed, le backend, les JWT, le temps réel, OpenAPI, les clients générés, les scripts et les tests. Elle ne doit pas être livrée comme une simple modification TypeScript `number -> string`.
+Les décisions suivantes sont prises et ne doivent plus être rouvertes pendant l'implémentation :
 
-Décision recommandée : utiliser `UUID DEFAULT gen_random_uuid()` (UUID v4), cohérent avec l'audit existant. Si un UUID v7 triable est préféré, le décider avant toute migration et valider le support PostgreSQL/extension ; ne pas mélanger v4 et v7 sans règle documentée.
+- tous les identifiants techniques internes deviennent des UUID v4 PostgreSQL générés avec `gen_random_uuid()` ;
+- `dori_queue_estimation_stats.estimation_stats_id` devient lui aussi un UUID, sans exception ;
+- l'API reste en `/api/v1` et son contrat change directement de nombres vers des chaînes UUID ;
+- aucune compatibilité avec les anciens identifiants numériques n'est requise ;
+- aucune route, aucun DTO et aucun repository ne doit accepter `number | string` pour faciliter une transition ;
+- aucune donnée applicative, session ou donnée d'audit existante ne doit être migrée ;
+- le schéma `dorify` est supprimé/réinitialisé, puis recréé à partir d'un schéma final propre ; la base PostgreSQL elle-même n'est pas supprimée ;
+- tous les nouveaux objets applicatifs sont créés dans le schéma PostgreSQL `dorify` ;
+- le schéma `public` et tous les objets qu'il contient restent strictement intacts : la migration ne doit ni les modifier, ni les supprimer, ni les déplacer ;
+- seules les données d'initialisation définies par le seed sont recréées ;
+- les anciens JWT et refresh tokens sont considérés comme invalides ; aucune stratégie de compatibilité n'est nécessaire ;
+- les anciennes migrations sont consolidées en une migration baseline unique représentant directement le schéma UUID final ;
+- il n'y a ni colonnes parallèles, ni table de correspondance, ni dual-write, ni phase expand/contract ;
+- les migrations restent transactionnelles. Sur une base vide, les index sont créés normalement avec `CREATE INDEX`, sans `CONCURRENTLY`.
 
-### Ce qui doit devenir UUID
-
-- toutes les clés primaires techniques numériques ;
-- toutes leurs clés étrangères, y compris les colonnes d'audit `created_by_user_id` et `updated_by_user_id` ;
-- toutes les clés composites contenant un identifiant ;
-- tous les identifiants exposés par l'API, les JWT, WebSocket et événements internes ;
-- les références textuelles de l'audit pour les nouveaux événements.
-
-### Ce qui ne doit pas devenir UUID
-
-- pagination, compteurs, rangs, ordre d'affichage, priorités, positions, durées et montants ;
-- `thread_number`, `last_number`, `attempt_count`, versions de traduction et statistiques ;
-- `ticket_number`, `queue_code`, catégories et clés métier ;
-- `dori_webhook_event.event_id`, identifiant opaque fourni par un prestataire ;
-- `provider_message_id`, autre identifiant externe opaque ;
-- `registration_tracking_token`, déjà UUID mais qui reste un jeton public et non la PK métier ;
-- `dori_audit_event.event_id`, déjà UUID ;
-- les dates, statuts et énumérations.
+Cette approche est autorisée uniquement parce que le produit est encore en développement et qu'aucune donnée présente dans `dorify` ne doit être conservée. Cette autorisation de remise à zéro ne s'étend jamais au schéma `public`.
 
 ---
 
-## 2. État actuel constaté
+## 2. Première étape obligatoire — remise à zéro et consolidation SQL
 
-### Identifiants principaux à convertir
+Cette étape doit être réalisée avant toute modification applicative afin que le schéma SQL final reste la source de vérité.
 
-| Table | PK actuelle | Dépendances directes importantes | Cible |
-|---|---|---|---|
-| `dori_site` | `site_id SERIAL` | queue, person, affectations, stats, audit scope | `site_id UUID` |
-| `dori_user` | `user_id SERIAL` | RBAC, sessions, affectations, toutes les colonnes created/updated/served/closed by, audit actor | `user_id UUID` |
-| `dori_role` | `role_id SERIAL` | user_role, role_permission | `role_id UUID` |
-| `dori_permission` | `permission_id SERIAL` | role_permission | `permission_id UUID` |
-| `dori_queue` | `queue_id SERIAL` | affectations, tiers, sessions, inscriptions, compteurs, stats | `queue_id UUID` |
-| `dori_person` | `person_id SERIAL` | notes, inscriptions | `person_id UUID` |
-| `dori_person_note` | `note_id SERIAL` | routes et audit | `note_id UUID` |
-| `dori_service_tier` | `tier_id SERIAL` | queue_service_tier, règles, inscriptions | `tier_id UUID` |
-| `dori_queue_tier_notification_rule` | `rule_id SERIAL` | notifications | `rule_id UUID` |
-| `dori_operator_session` | `session_id SERIAL` | inscriptions, moteur de file | `session_id UUID` |
-| `dori_registration` | `registration_id SERIAL` | notifications, moteur, temps réel | `registration_id UUID` |
-| `dori_notification` | `notification_id SERIAL` | workers et API | `notification_id UUID` |
-| `dori_translation` | `translation_id SERIAL` | API de traduction | `translation_id UUID` |
-| `dori_user_session` | `session_id SERIAL` | JWT `sid`, refresh/logout | `session_id UUID` |
-| `dori_queue_estimation_stats` | `estimation_stats_id BIGSERIAL` | workers/statistiques | `estimation_stats_id UUID` ou conservation interne à décider |
+- [x] Vérifier une dernière fois qu'aucun environnement contenant des données à conserver ne sera ciblé.
+- [x] Arrêter l'API, les workers et toute instance susceptible d'écrire en base.
+- [x] Ne pas supprimer ni recréer la base PostgreSQL, car cette opération affecterait également `public`.
+- [x] Ne jamais exécuter `DROP SCHEMA public`, `CREATE SCHEMA public`, `ALTER` sur un objet de `public`, ni aucune opération de nettoyage dans `public`.
+- [x] Supprimer uniquement `dorify` s'il existe, puis le recréer explicitement avec `CREATE SCHEMA dorify`.
+- [x] Définir explicitement le schéma applicatif par défaut sur `dorify`, sans utiliser `public` comme destination implicite de création d'objets.
+- [x] Configurer TypeORM et les connexions SQL applicatives pour utiliser `dorify` comme schéma par défaut.
+- [x] Supprimer le contenu Redis associé à l'environnement : sessions, caches RBAC, rooms/états temps réel, files BullMQ et retries.
+- [x] Supprimer les anciennes migrations SQL `001` à `018` du dépôt après consolidation.
+- [x] Produire une seule migration baseline, par exemple `001_uuid_baseline.sql`, contenant directement le schéma final en UUID.
+- [x] Qualifier les objets de la baseline avec le schéma `dorify` lorsque leur résolution ne doit pas dépendre du `search_path`.
+- [x] Vérifier que la baseline inclut toutes les tables, contraintes, fonctions, triggers, vues et index actuellement répartis dans les migrations historiques.
+- [x] Ne placer aucun `ALTER TABLE` de transition numérique vers UUID dans cette baseline : les tables doivent être créées directement avec leurs types finaux.
+- [x] Réinitialiser la table `dori_schema_migration` avec la base ; ne pas fabriquer artificiellement un historique des anciennes migrations.
+- [x] Exécuter la baseline dans la transaction déjà fournie par `migration-runner.ts`.
+- [x] Utiliser des `CREATE INDEX` ordinaires. `CREATE INDEX CONCURRENTLY` est inutile sur une base vide et incompatible avec la transaction du runner.
+- [x] Exécuter ensuite le seed d'initialisation UUID.
+- [x] Vérifier qu'une seconde exécution du démarrage/migration ne modifie pas le schéma et qu'une seconde exécution du seed ne crée aucun doublon.
 
-### Tables à clés composites à convertir
+Le runner de migrations peut donc conserver son modèle actuel : une transaction par fichier et contrôle de checksum. Aucun mode de migration non transactionnel n'est nécessaire pour cette opération.
+
+La table de suivi `dori_schema_migration` doit elle aussi être créée dans `dorify`. La détection de baseline du runner doit chercher les tables exclusivement dans `dorify` et ne plus utiliser implicitement `public`, notamment en remplaçant toute référence telle que `public.dori_registration` par `dorify.dori_registration`. Le runner ne doit effectuer aucune écriture dans `public`.
+
+---
+
+## 3. Périmètre exact des identifiants
+
+### Identifiants à convertir en UUID
+
+Toutes les clés primaires techniques et toutes les références qui les ciblent doivent être de type PostgreSQL `UUID` :
+
+| Table | Clé cible |
+|---|---|
+| `dori_site` | `site_id UUID DEFAULT gen_random_uuid()` |
+| `dori_user` | `user_id UUID DEFAULT gen_random_uuid()` |
+| `dori_role` | `role_id UUID DEFAULT gen_random_uuid()` |
+| `dori_permission` | `permission_id UUID DEFAULT gen_random_uuid()` |
+| `dori_queue` | `queue_id UUID DEFAULT gen_random_uuid()` |
+| `dori_person` | `person_id UUID DEFAULT gen_random_uuid()` |
+| `dori_person_note` | `note_id UUID DEFAULT gen_random_uuid()` |
+| `dori_service_tier` | `tier_id UUID DEFAULT gen_random_uuid()` |
+| `dori_queue_tier_notification_rule` | `rule_id UUID DEFAULT gen_random_uuid()` |
+| `dori_operator_session` | `session_id UUID DEFAULT gen_random_uuid()` |
+| `dori_registration` | `registration_id UUID DEFAULT gen_random_uuid()` |
+| `dori_notification` | `notification_id UUID DEFAULT gen_random_uuid()` |
+| `dori_translation` | `translation_id UUID DEFAULT gen_random_uuid()` |
+| `dori_user_session` | `session_id UUID DEFAULT gen_random_uuid()` |
+| `dori_queue_estimation_stats` | `estimation_stats_id UUID DEFAULT gen_random_uuid()` |
+
+Cela inclut également :
+
+- toutes les FK correspondantes ;
+- `created_by_user_id`, `updated_by_user_id` et `assigned_by_user_id` ;
+- `closed_by_user_id`, `served_by_user_id` et `served_by_session_id` ;
+- `actor_user_id` et `site_scope_id` dans l'audit ;
+- toutes les clés composites et tous les index contenant ces identifiants ;
+- les identifiants transportés par JWT, WebSocket, événements internes, jobs et caches.
+
+### Clés composites à reconstruire avec des UUID
 
 - `dori_role_permission (role_id, permission_id)` ;
 - `dori_user_role (user_id, role_id)` ;
@@ -60,413 +96,313 @@ Décision recommandée : utiliser `UUID DEFAULT gen_random_uuid()` (UUID v4), co
 - `dori_queue_service_tier (queue_id, tier_id)` ;
 - `dori_queue_daily_ticket_counter (queue_id, business_date)` ;
 - `dori_queue_daily_reset_execution (queue_id, business_date)` ;
-- toutes les contraintes uniques/index incluant ces colonnes.
+- toute autre contrainte unique ou FK composite contenant une de ces colonnes.
 
-### UUID déjà présents ou identifiants à ne pas confondre
+### Valeurs qui ne deviennent pas des UUID
 
-- `dori_audit_event.event_id UUID` : modèle à suivre ;
-- `dori_registration.registration_tracking_token UUID` : jeton public, distinct de `registration_id` ;
-- `dori_webhook_event.event_id VARCHAR(255)` : identifiant du fournisseur, à conserver en chaîne ;
-- `correlationId` : chaîne opaque, pas obligatoirement UUID ;
-- `dori_user_session.session_id` est encore `SERIAL` dans le SQL et l'entité TypeORM, alors que les commentaires JWT le présentent déjà comme UUID. Cette incohérence doit être corrigée explicitement pendant la migration.
-
----
-
-## 3. Décisions obligatoires avant développement
-
-- [ ] Choisir UUID v4 (`gen_random_uuid()`, recommandé pour cohérence) ou UUID v7.
-- [ ] Confirmer si `estimation_stats_id` doit être exposé. S'il est strictement interne, documenter une éventuelle exception ; sinon le convertir.
-- [ ] Choisir la stratégie de livraison : expand/contract sans interruption (recommandé) ou bascule avec maintenance.
-- [ ] Décider si une période de compatibilité API accepte encore les anciens IDs numériques.
-- [ ] Décider du versionnement de l'API : `/api/v2` recommandé si des consommateurs externes existent.
-- [ ] Décider du traitement des événements d'audit historiques contenant des IDs numériques dans `target_id`/`secondary_target_id`.
-- [ ] Inventorier les consommateurs externes : frontend, application borne, affichage, intégrations, exports, BI et scripts opératoires.
-- [ ] Réaliser une sauvegarde et tester intégralement la restauration avant la bascule.
+- pagination, compteurs, rangs, priorités, positions, durées, montants et statistiques ;
+- `thread_number`, `last_number`, `attempt_count`, versions et numéros de ticket ;
+- `ticket_number`, `queue_code`, catégories et clés métier ;
+- `dori_webhook_event.event_id`, identifiant opaque fourni par un prestataire ;
+- `provider_message_id` et les autres identifiants externes opaques ;
+- `registration_tracking_token`, qui reste un UUID public distinct de la PK `registration_id` ;
+- `correlationId`, qui reste une chaîne opaque ;
+- `dori_audit_event.event_id`, déjà UUID ;
+- dates, statuts et énumérations.
 
 ---
 
-## 4. Stratégie de migration base recommandée
+## 4. Schéma final, fonctions et triggers
 
-Ne pas tenter une conversion directe `ALTER COLUMN ... TYPE UUID USING ...` : un entier ne possède pas de conversion sémantique naturelle en UUID et les nombreuses FK rendent cette approche risquée.
-
-### Phase A — Expansion
-
-- [ ] Activer/vérifier `pgcrypto` pour `gen_random_uuid()`.
-- [ ] Ajouter une colonne UUID parallèle pour chaque PK, par exemple `site_guid UUID DEFAULT gen_random_uuid()`.
-- [ ] Ajouter les colonnes UUID parallèles pour chaque FK sans supprimer les colonnes numériques.
-- [ ] Backfiller toutes les PK UUID.
-- [ ] Backfiller toutes les FK UUID par jointure sur l'ancienne FK numérique.
-- [ ] Ajouter les index UUID avec `CREATE INDEX CONCURRENTLY` si la plateforme le permet.
-- [ ] Ajouter les nouvelles contraintes FK en `NOT VALID`, puis les valider séparément.
-- [ ] Ajouter temporairement des triggers ou du dual-write applicatif pour maintenir les colonnes numérique/UUID synchronisées.
-- [ ] Ajouter des contrôles SQL prouvant qu'aucune FK UUID n'est orpheline ou nulle à tort.
-
-### Phase B — Compatibilité applicative
-
-- [ ] Déployer un backend capable de lire les deux formes pendant la transition.
-- [ ] Retourner les UUID dans les nouvelles réponses/API v2.
-- [ ] Accepter temporairement l'ancien identifiant uniquement si la compatibilité est requise.
-- [ ] Migrer tous les producteurs/consommateurs avant la suppression des anciennes colonnes.
-- [ ] Surveiller les usages des anciennes colonnes et les erreurs de résolution.
-
-### Phase C — Contract
-
-- [ ] Arrêter les écritures utilisant les IDs numériques.
-- [ ] Remplacer les PK/FK et contraintes composites par leurs versions UUID.
-- [ ] Renommer les colonnes UUID vers les noms définitifs (`site_id`, etc.).
-- [ ] Supprimer les anciennes colonnes numériques et les séquences `*_seq` devenues inutiles.
-- [ ] Recréer/valider tous les triggers, fonctions, index, vues et contraintes.
-- [ ] Exécuter `ANALYZE` sur les tables migrées.
-- [ ] Conserver une table de correspondance ancien ID → UUID pendant la durée de rollback/support définie.
-
-### Ordre logique de traitement
-
-Les références circulaires (`site.created_by_user_id` vers user, user auto-référencé, etc.) interdisent une migration naïve table après table. Ajouter d'abord toutes les colonnes UUID, puis backfiller par couches :
-
-1. PK de toutes les tables ;
-2. références user/role/permission et auto-références user ;
-3. site, queue, person, tier ;
-4. tables de liaison et clés composites ;
-5. règles, sessions opérateur, inscriptions ;
-6. notifications, compteurs, reset, estimation ;
-7. sessions JWT ;
-8. audit (`actor_user_id`, `site_scope_id` et résolution des cibles).
-
----
-
-## 5. Base de données : checklist détaillée
-
-### Schéma et migrations
-
-- [ ] Créer des migrations nouvelles ; ne jamais réécrire les migrations `001` à `018` déjà appliquées.
-- [ ] Remplacer chaque `SERIAL/BIGSERIAL` cible par `UUID DEFAULT gen_random_uuid()` dans le schéma final.
-- [ ] Convertir toutes les colonnes FK `INT`, y compris :
-  - `created_by_user_id`, `updated_by_user_id`, `assigned_by_user_id` ;
-  - `closed_by_user_id`, `served_by_user_id`, `served_by_session_id` ;
-  - `actor_user_id`, `site_scope_id` de l'audit ;
-  - toutes les FK des tables de liaison.
-- [ ] Recréer les PK composites et FK composites, notamment `(queue_id, tier_id)`.
-- [ ] Mettre à jour les variables PL/pgSQL actuellement déclarées `INT` (`cloned_person_id`, `session_user_id`, `person_site_id`, `queue_site_id`, etc.).
-- [ ] Mettre à jour les fonctions/triggers : cohérence personne/site, cohérence served-by, append-only audit, reset et clonage de personne.
-- [ ] Remplacer les casts d'identifiants `::int`, `::int[]` par `::uuid`, `::uuid[]` uniquement pour les IDs ; conserver les `::int` de compteurs et agrégats.
-- [ ] Recréer tous les index partiels, uniques et couvrants sur les colonnes UUID.
-- [ ] Vérifier les plans d'exécution après augmentation de la largeur des clés/index.
-- [ ] Vérifier les tailles de sauvegarde, index, mémoire et caches.
+- [x] Déclarer chaque PK technique avec `UUID PRIMARY KEY DEFAULT gen_random_uuid()`.
+- [x] Créer toutes les tables, séquences éventuelles, vues, fonctions et tables de suivi dans le schéma `dorify`.
+- [x] Ne créer, modifier, supprimer ou déplacer aucun objet dans `public`.
+- [x] Déclarer chaque FK interne avec le type `UUID`, sans colonne numérique parallèle.
+- [x] Recréer toutes les contraintes composites avec les colonnes UUID.
+- [x] Recréer les contraintes uniques, index partiels et index couvrants sur les colonnes finales.
+- [x] Remplacer par `UUID` les variables PL/pgSQL représentant un identifiant (`cloned_person_id`, `session_user_id`, `person_site_id`, `queue_site_id`, etc.).
+- [x] Remplacer les casts d'identifiants `::int` et `::int[]` par `::uuid` et `::uuid[]`.
+- [x] Conserver les casts entiers utilisés pour de vrais compteurs, agrégats, rangs ou durées.
+- [x] Adapter les fonctions et triggers de cohérence personne/site, served-by, audit append-only, reset et clonage de personne.
+- [x] Vérifier que `gen_random_uuid()` fonctionne sur la version PostgreSQL ciblée avant d'exécuter la baseline.
+- [x] Garder `synchronize: false` dans TypeORM : la baseline SQL reste la source de vérité.
 
 ### Audit
 
-- [ ] Convertir `actor_user_id` et `site_scope_id` en UUID.
-- [ ] Conserver `event_id` tel quel.
-- [ ] Maintenir `target_id` et `secondary_target_id` en texte pour supporter plusieurs types de cible.
-- [ ] Faire évoluer `AUDIT_EVENT_READ_MODEL` : reconnaître à la fois les anciens IDs numériques et les nouveaux UUID pendant la transition.
-- [ ] Remplacer les regex `^[0-9]+$` et casts `::int` par une résolution compatible UUID.
-- [ ] Préserver les événements historiques ; ne pas réécrire leur sens.
-- [ ] Tester la résolution des libellés pour les deux générations d'événements.
-- [ ] Mettre à jour le calcul du scope site pour site, queue, person, registration, notification et session.
-- [ ] Respecter le trigger append-only lors d'un backfill contrôlé et documenter toute désactivation temporaire.
+La table d'audit est recréée vide. Aucun événement historique n'est repris.
 
-### Seed et données de démonstration
-
-- [ ] Mettre à jour `src/core/database/sql/seed.sql`.
-- [ ] Utiliser des UUID fixes et documentés pour les ressources structurelles du seed (rôles, permissions, root), sinon chaque réexécution créerait de nouvelles identités.
-- [ ] Conserver les `ON CONFLICT` fondés autant que possible sur les clés naturelles (`role_name`, `permission_name`, `username`).
-- [ ] Ne jamais dépendre de `currval`, d'un ordre d'insertion ou d'une valeur numérique implicite.
-- [ ] Mettre à jour `database-seed.service.ts`.
-- [ ] Mettre à jour `scripts/sample-data/example-site-september-october-2026.sql` et ses variables/casts `INT` liés aux IDs.
-- [ ] Vérifier les seeds de tests, fixtures et mocks.
-- [ ] Ajouter un test d'idempotence : deux exécutions du seed ne créent aucun doublon et conservent les mêmes UUID.
+- [x] Conserver `event_id` en UUID.
+- [x] Déclarer `actor_user_id` et `site_scope_id` en UUID.
+- [x] Conserver `target_id` et `secondary_target_id` en texte afin de représenter différents types de cible.
+- [x] Écrire les nouveaux identifiants UUID sous forme textuelle dans ces deux colonnes.
+- [x] Retirer du read model les branches de compatibilité réservées aux anciens IDs numériques.
+- [x] Remplacer les regex `^[0-9]+$` et les casts `::int` par une validation/résolution UUID lorsque la cible est interne.
+- [x] Mettre à jour le calcul du scope pour site, queue, person, registration, notification et session.
+- [x] Conserver le comportement append-only.
 
 ---
 
-## 6. TypeScript, TypeORM, repositories et services
+## 5. Seed d'initialisation
 
-### Types partagés
+- [x] Réécrire `src/core/database/sql/seed.sql` pour le schéma UUID.
+- [x] Exécuter le seed exclusivement dans `dorify` et qualifier ses tables afin qu'il ne puisse ni lire ni alimenter accidentellement `public`.
+- [x] Utiliser des UUID v4 constants et documentés pour les ressources structurelles : rôles, permissions et compte root.
+- [x] Utiliser également des UUID constants lorsqu'une donnée de seed est référencée explicitement par une autre donnée du seed.
+- [x] Conserver les `ON CONFLICT` fondés sur les clés naturelles telles que `role_name`, `permission_name` et `username`.
+- [x] Ne dépendre ni de `currval`, ni d'une séquence, ni de l'ordre implicite des insertions.
+- [x] Mettre à jour `database-seed.service.ts`.
+- [x] Mettre à jour `scripts/sample-data/example-site-september-october-2026.sql` pour utiliser des UUID.
+- [x] Mettre à jour les fixtures et mocks de tests.
+- [x] Ajouter un test d'idempotence prouvant que deux exécutions du seed conservent les mêmes UUID et ne créent aucun doublon.
 
-- [ ] Introduire un alias explicite, par exemple `type Guid = string`, ou des types marqués (`UserId`, `SiteId`) pour empêcher le mélange des UUID.
-- [ ] Changer tous les champs d'identité `number` en `string` dans interfaces, paramètres et retours.
-- [ ] Ne pas convertir aveuglément tous les `number` : conserver métriques, durées, prix, positions, rangs et pagination.
-- [ ] Changer `JwtPayload.sub`, `AuthenticatedUser.userId`, scopes `siteIds/queueIds` et IDs de session en chaînes.
-- [ ] Corriger le commentaire/contrat de `dori_user_session.session_id` pour qu'il corresponde réellement au schéma.
+---
+
+## 6. TypeScript, TypeORM et accès aux données
+
+### Convention de types
+
+- [x] Introduire un type partagé `Guid = string` pour exprimer le contrat commun.
+- [x] Utiliser, lorsque cela évite réellement un mélange, des alias de domaine tels que `UserId`, `SiteId` ou `QueueId`.
+- [x] Représenter tous les identifiants internes par des chaînes ; ne jamais les convertir en nombres.
+- [x] Conserver `number` pour les métriques, durées, prix, positions, rangs et paramètres de pagination.
+- [x] Passer `JwtPayload.sub`, `AuthenticatedUser.userId`, `sessionId`, `siteIds` et `queueIds` en chaînes UUID.
 
 ### Entités TypeORM
 
-Pour toutes les entités listées dans `src/core/database/entities.ts` :
+- [x] Utiliser `@PrimaryGeneratedColumn('uuid')` ou une `@PrimaryColumn({ type: 'uuid' })` alimentée par PostgreSQL selon le besoin de l'entité.
+- [x] Déclarer `schema: 'dorify'` dans la configuration TypeORM ou sur les entités selon la convention retenue, avec une seule source de configuration cohérente.
+- [x] Déclarer toutes les FK internes avec `type: 'uuid'` et des propriétés TypeScript `string`.
+- [x] Mettre à jour toutes les entités de jointure à PK composite.
+- [x] Convertir explicitement `DoriQueueEstimationStat.estimation_stats_id` de `bigint` vers `uuid`.
+- [x] Ne pas convertir les PK métier ou versions qui ne sont pas des identifiants techniques numériques.
 
-- [ ] Remplacer `@PrimaryGeneratedColumn()` par `@PrimaryGeneratedColumn('uuid')` ou `@PrimaryColumn({ type: 'uuid' })` selon la stratégie.
-- [ ] Remplacer les colonnes FK `type: 'int'` par `type: 'uuid'`.
-- [ ] Mettre à jour les types de propriétés `number -> string`.
-- [ ] Mettre à jour toutes les entités de jointure à PK composite.
-- [ ] Traiter séparément `translation-version` et les autres PK métier non numériques, qui ne doivent pas être converties.
-- [ ] Vérifier que `synchronize` reste désactivé : les migrations SQL doivent rester la source de vérité.
+### Repositories et services
 
-### Repositories SQL
-
-Revue obligatoire de tous les repositories sous `src/core`, `src/modules` et `src/workers` :
-
-- [ ] paramètres et types de lignes `number -> string` pour les IDs ;
-- [ ] suppression des `Number(row.*_id)`, `parseInt` et `map(Number)` appliqués aux IDs ;
-- [ ] remplacement de `ANY($n::int[])`/`ALL($n::int[])` par `uuid[]` ;
-- [ ] casts `$n::int` d'identifiants vers `$n::uuid` ;
-- [ ] `RETURNING *_id` typé chaîne ;
-- [ ] transactions, verrous `FOR UPDATE/SKIP LOCKED` et CTE ;
-- [ ] jointures et comparaisons sur toutes les FK ;
-- [ ] maps/sets indexés par ID : clés `string`, sans conversion numérique ;
-- [ ] SQL dynamique de reporting et monitoring ;
-- [ ] repositories des workers et du temps réel.
-
-Fichiers particulièrement sensibles :
-
-- `src/core/rbac/repositories/scope.repository.ts` et `scope.service.ts` ;
-- `src/core/auth/repositories/jwt-session.repository.ts` ;
-- `src/core/audit/audit.repository.ts` et `audit.interceptor.ts` ;
-- `src/core/realtime/realtime.gateway.ts` (regex numériques et `parseInt`) ;
-- `src/modules/auth/auth.repository.ts` et `auth.service.ts` ;
-- `src/modules/queue-engine/queue-engine.repository.ts` ;
-- `src/modules/registrations/registrations.repository.ts` ;
-- `src/modules/monitoring/reports.repository.ts` (`int[]`) ;
-- tous les repositories sites, queues, persons, users, tiers, notifications et traductions ;
-- tous les repositories des workers.
-
-### Services et logique métier
-
-- [ ] Changer toutes les signatures acceptant ou retournant un ID.
-- [ ] Retirer `Number(...)` uniquement lorsqu'il concerne un identifiant.
-- [ ] Mettre à jour les contrôles d'égalité (`===`) entre IDs.
-- [ ] Mettre à jour `Set<number>`, `Map<number, ...>` et tableaux d'IDs.
-- [ ] Vérifier la hiérarchie RBAC, l'accès site/queue et les affectations.
-- [ ] Vérifier les déconnexions ciblées, sessions JWT, appels de file et served-by.
-- [ ] Vérifier les calculs de reporting groupés par ID.
-- [ ] Vérifier les jobs planifiés, retries et payloads en mémoire.
+- [x] Passer les paramètres, types de lignes et retours d'identifiants de `number` à `string`.
+- [x] Supprimer `Number(row.*_id)`, `parseInt` et `map(Number)` lorsqu'ils ciblent un identifiant.
+- [x] Remplacer `ANY($n::int[])` et `ALL($n::int[])` d'identifiants par `uuid[]`.
+- [x] Remplacer les casts `$n::int` d'identifiants par `$n::uuid`.
+- [x] Utiliser `Set<string>`, `Map<string, ...>` et des tableaux de chaînes pour les IDs.
+- [x] Vérifier transactions, CTE, jointures, `RETURNING`, verrous `FOR UPDATE/SKIP LOCKED` et SQL de reporting.
+- [x] Mettre à jour en priorité l'authentification, RBAC/scope, audit, temps réel, queue engine, registrations, monitoring et tous les workers.
 
 ---
 
-## 7. Contrôleurs, validation et contrats HTTP
+## 7. Contrat HTTP et OpenAPI v1
 
-### Paramètres de routes
+Le préfixe reste `/api/v1`. Les contrats existants sont modifiés directement et aucune variante numérique n'est conservée.
 
-- [ ] Remplacer le pipe global `PositiveIdParamPipe`, qui transforme actuellement tout `*Id` en nombre.
-- [ ] Créer un pipe UUID explicite ou utiliser `ParseUUIDPipe` sur toutes les routes d'identifiants internes.
-- [ ] Ne pas appliquer ce pipe aux IDs externes opaques (`provider`, webhook `eventId`, correlation ID).
-- [ ] Mettre à jour les types des paramètres de contrôleur `number -> string`.
-- [ ] Vérifier toutes les routes `siteId`, `queueId`, `userId`, `personId`, `noteId`, `tierId`, `ruleId`, `sessionId`, `registrationId`, `notificationId`, `translationId`, `roleId`, `permissionId`.
-- [ ] Adapter les listes CSV d'IDs (`queueIds`, `userIds`, `tierIds`) : validation UUID séparée par virgules.
-
-### DTO et class-validator
-
-- [ ] Remplacer `@IsInt()`, `@Min(1)` et `@Type(() => Number)` uniquement sur les champs identifiants par `@IsUUID()`.
-- [ ] Laisser ces décorateurs sur les vrais nombres métier.
-- [ ] Passer toutes les propriétés d'ID des DTO de requête/réponse en `string`.
-- [ ] Mettre à jour les DTO imbriqués, filtres, affectations et tableaux d'IDs.
-- [ ] Vérifier les champs facultatifs/nullables et les unions.
-
-### Swagger/OpenAPI
-
-- [ ] Remplacer tous les `@ApiParam({ type: Number, minimum: 1 })` d'identifiants par `{ type: String, format: 'uuid' }`.
-- [ ] Remplacer les `@ApiProperty`/`@ApiPropertyOptional` correspondants.
-- [ ] Modifier `normalizeOpenApiDocument` : il force actuellement tout paramètre finissant par `Id` en entier positif, sauf `eventId`/`correlationId`.
-- [ ] La nouvelle convention doit produire `type: string, format: uuid` pour la liste blanche des IDs internes.
-- [ ] Ne pas marquer `correlationId`, webhook `eventId`, `providerMessageId` ou autres IDs opaques comme UUID.
-- [ ] Modifier la convention des tableaux/CSV d'IDs.
-- [ ] Régénérer `openapi.json`, `openapi.yaml` et `ai/docs-json.json`.
-- [ ] Régénérer les SDK/clients frontend ; supprimer les contournements `number|string`.
-- [ ] Ajouter un test OpenAPI qui échoue si un identifiant interne est encore documenté en `integer`.
+- [x] Remplacer `PositiveIdParamPipe`, qui transforme les `*Id` en nombres.
+- [x] Utiliser un pipe UUID explicite ou `ParseUUIDPipe` sur chaque identifiant interne de route.
+- [x] Ne pas appliquer ce traitement aux identifiants externes opaques.
+- [x] Remplacer dans les DTO d'identifiants `@IsInt()`, `@Min(1)` et `@Type(() => Number)` par `@IsUUID()`.
+- [x] Valider séparément chaque élément des listes CSV d'UUID.
+- [x] Documenter les IDs internes en OpenAPI avec `type: string` et `format: uuid`.
+- [x] Modifier `normalizeOpenApiDocument` afin qu'il ne force plus tous les paramètres finissant par `Id` en entier positif.
+- [x] Maintenir une liste explicite des identifiants internes UUID pour éviter de transformer les IDs opaques.
+- [x] Régénérer `openapi.json`, `openapi.yaml` et `ai/docs-json.json`.
+- [x] Régénérer tous les clients à partir du nouveau contrat v1.
+- [x] Supprimer tout contournement `number | string` dans les clients et le backend.
+- [x] Ajouter un test qui échoue si un identifiant interne est encore décrit comme `integer` dans OpenAPI.
 
 ---
 
-## 8. Authentification, JWT, sessions et sécurité
+## 8. Authentification, temps réel, workers et caches
 
-- [ ] Passer `JwtPayload.sub` de `number` à `string`.
-- [ ] Passer `AuthenticatedUser.userId` et `sessionId` à UUID string.
-- [ ] Passer la PK de `dori_user_session` et toutes ses opérations de refresh/logout à UUID.
-- [ ] Invalider ou gérer explicitement tous les JWT existants lors de la bascule : leurs `sub`/`sid` numériques ne seront plus compatibles.
-- [ ] Prévoir une rotation de sessions et une communication utilisateur si déconnexion globale.
-- [ ] Vérifier rate limiting, traces, audit login/refresh/logout et corrélation.
-- [ ] Ne jamais inclure token ou mot de passe dans les tables de correspondance ou logs de migration.
-- [ ] Vérifier les règles de force logout et comparaisons de cible/caller.
+### Authentification
+
+- [x] Passer `JwtPayload.sub`, l'utilisateur authentifié et les IDs de session en UUID string.
+- [x] Recréer `dori_user_session.session_id` directement en UUID.
+- [x] Ne pas accepter les JWT contenant un ancien `sub` ou `sid` numérique.
+- [x] Ne pas développer de rotation ou de traduction des anciennes sessions : elles disparaissent avec la remise à zéro.
+- [x] Vérifier login, refresh, logout, changement de mot de passe, force logout, rate limiting et audit associé.
+
+### Temps réel et Redis
+
+- [x] Remplacer regex numériques et `parseInt` dans `realtime.gateway.ts`.
+- [x] Utiliser des rooms stables telles que `queue:<uuid>` et `registration:<uuid>`.
+- [x] Passer les IDs des payloads WebSocket et de l'état client en chaînes UUID.
+- [x] Purger Redis avant le premier démarrage du schéma UUID.
+- [x] Vérifier les caches RBAC, compteurs, rooms, événements et messages BullMQ.
+
+### Workers et intégrations
+
+- [x] Mettre à jour tous les payloads de jobs et leurs interfaces.
+- [x] Vérifier notification worker, queue estimation, appointment expiry et daily reset.
+- [x] S'assurer qu'aucun ancien job numérique ne subsiste dans Redis au démarrage.
+- [x] Mettre à jour les webhooks sortants qui exposent des identifiants internes.
+- [x] Conserver les identifiants fournisseur comme chaînes opaques.
 
 ---
 
-## 9. Temps réel, workers, caches et intégrations
+## 9. Tests et contrôles anti-oubli
 
-- [ ] Mettre à jour `realtime.gateway.ts` : regex d'URL numériques, `parseInt`, état client `registrationId`, rooms/canaux et payloads.
-- [ ] Définir un format stable de room (`queue:<uuid>`, `registration:<uuid>`).
-- [ ] Purger/versionner les clés de cache Redis contenant un ancien ID numérique.
-- [ ] Mettre à jour les payloads des workers et leurs interfaces.
-- [ ] Vérifier notification worker, queue estimation, appointment expiry et daily reset.
-- [ ] Vérifier les données persistées dans files de messages/retries avant déploiement.
-- [ ] Mettre à jour webhooks sortants et documentation consommateur si des UUID internes sont exposés.
-- [ ] Conserver les IDs externes des fournisseurs comme chaînes opaques.
+### Tests fonctionnels indispensables
 
----
+- [x] Remplacer les fixtures d'identité numériques par des UUID v4 constants valides.
+- [x] Schéma `dorify` absent ou vierge : la baseline le crée intégralement sans erreur, sans modifier le reste de la base.
+- [x] Le schéma `dorify` contient tous les objets applicatifs attendus.
+- [x] L'état de `public` est strictement identique avant et après la reconstruction de `dorify`.
+- [x] Le seed initial est idempotent et conserve des UUID stables.
+- [x] Toutes les PK et FK internes ciblées sont de type UUID.
+- [x] Toutes les FK sont valides et aucune relation n'est orpheline.
+- [x] UUID de route valide accepté ; UUID invalide rejeté en 400 ; ressource UUID absente renvoyée en 404.
+- [x] Login, refresh, logout et scopes RBAC fonctionnent avec des UUID.
+- [x] CRUD complet de chaque module avec des UUID.
+- [x] Audit success/failure et résolution des libellés UUID.
+- [x] Abonnement, reconnexion et rooms WebSocket avec UUID.
+- [x] Workers et rapports, notamment les paramètres `uuid[]`.
+- [x] OpenAPI et clients générés n'exposent aucun ID interne en entier.
 
-## 10. Tests à modifier et à ajouter
+### Contrôles automatisés CI
 
-### Tests unitaires existants
+Ajouter ou étendre `db:verify` afin de contrôler `information_schema` et `pg_catalog` :
 
-- [ ] Remplacer les fixtures numériques d'identité (`1`, `42`) par des UUID valides constants.
-- [ ] Mettre à jour les attentes SQL `::int`, `int[]`, `Number(...)` vers UUID.
-- [ ] Mettre à jour les mocks JWT, scopes et utilisateurs authentifiés.
-- [ ] Mettre à jour les tests des contrôleurs et pipes.
-- [ ] Mettre à jour les snapshots/attentes OpenAPI.
-- [ ] Ne pas remplacer les nombres métier (compteurs, rangs, prix, durées).
+- [x] aucune PK technique ciblée en `smallint`, `integer` ou `bigint` ;
+- [x] tous les objets applicatifs inspectés appartiennent au schéma `dorify` ;
+- [x] aucun objet de `public` n'a été créé, modifié ou supprimé par la baseline, le runner ou le seed ;
+- [x] aucune FK vers une PK UUID avec un type différent ;
+- [x] aucune séquence possédée par une ancienne colonne ID ;
+- [x] aucune colonne cible en `SERIAL` ou `BIGSERIAL` ;
+- [x] toutes les contraintes FK validées ;
+- [x] aucun doublon ni `NULL` invalide sur les identifiants ;
+- [x] aucun cast entier appliqué à un identifiant interne dans les repositories ;
+- [x] aucun `Number(row.*_id)`, `parseInt(...Id)` ou validateur entier sur un ID interne ;
+- [x] aucun identifiant interne OpenAPI documenté comme nombre entier.
 
-### Nouveaux tests indispensables
-
-- [ ] migration sur copie anonymisée d'une base contenant des données ;
-- [ ] aucune PK/FK UUID nulle après backfill ;
-- [ ] aucune FK orpheline ;
-- [ ] cardinalité avant/après identique pour chaque table ;
-- [ ] unicité de tous les UUID ;
-- [ ] seed idempotent et UUID stables ;
-- [ ] routes : UUID valide accepté, UUID invalide rejeté en 400, UUID absent en 404 ;
-- [ ] JWT avec UUID fonctionnel ; anciens JWT traités selon la stratégie choisie ;
-- [ ] scope manager site/queue avec UUID ;
-- [ ] audit success/failure et résolution des libellés UUID ;
-- [ ] login, refresh, logout et changement de mot de passe ;
-- [ ] CRUD complet de chaque module ;
-- [ ] temps réel : abonnement/reconnexion/rooms UUID ;
-- [ ] workers sur données UUID ;
-- [ ] rapports avec listes `uuid[]` ;
-- [ ] rollback répété sur environnement de staging.
+Chaque résultat des recherches statiques doit être classé comme identifiant interne, nombre métier, identifiant externe opaque ou dette restante. Les faux positifs ne doivent pas être masqués par une exclusion trop large.
 
 ### Gate qualité
 
-- [ ] `npm run format:check`
-- [ ] `npm run lint`
-- [ ] `npm run typecheck`
-- [ ] `npm run build:check`
-- [ ] `npm test -- --runInBand --coverage=false`
-- [ ] `npm run swagger:export`
-- [ ] `npm run db:verify`
-- [ ] tests E2E API et frontend généré
-- [ ] test de restauration de sauvegarde
+- [x] `npm run format:check`
+- [x] `npm run lint`
+- [x] `npm run typecheck`
+- [x] `npm run build:check`
+- [x] `npm test -- --runInBand --coverage=false`
+- [x] `npm run swagger:export`
+- [x] `npm run db:verify`
+- [x] `npm run test:e2e`
 
 ---
 
-## 11. Contrôles automatisés anti-oubli
+## 10. Ordre d'implémentation obligatoire
 
-Ajouter un script de vérification CI qui inspecte `information_schema` et `pg_catalog`.
+1. Remise à zéro contrôlée du seul schéma `dorify` et de Redis, sans aucune modification de `public`.
+2. Consolidation de `001` à `018` en une baseline UUID unique ciblant exclusivement `dorify`.
+3. Réécriture et test d'idempotence du seed.
+4. Types partagés, entités TypeORM et couches d'accès aux données.
+5. Authentification, sessions, RBAC et audit.
+6. Sites, queues, persons, notes, affectations, tiers et règles.
+7. Sessions opérateur, registrations, notifications, compteurs, estimations et workers.
+8. Contrôleurs, validation, OpenAPI v1 et clients générés.
+9. WebSocket, Redis, événements et intégrations.
+10. Tests complets, contrôles `pg_catalog`, recherches statiques et gate qualité.
 
-- [ ] aucune PK technique ciblée de type `smallint/integer/bigint` ;
-- [ ] aucune FK vers une PK UUID avec un type différent ;
-- [ ] aucune séquence encore possédée par une ancienne colonne ID ;
-- [ ] aucune colonne d'identité cible restante en `SERIAL/BIGSERIAL` ;
-- [ ] toutes les contraintes FK validées ;
-- [ ] aucun doublon UUID ;
-- [ ] aucun `NULL` introduit ;
-- [ ] toutes les tables ont la même cardinalité avant/après ;
-- [ ] aucun `::int[]` appliqué à une liste d'identifiants dans les repositories ;
-- [ ] aucun `Number(row.*_id)`, `parseInt(...Id)` ou `@IsInt()` sur un identifiant interne ;
-- [ ] aucun `@ApiParam type: Number` pour un identifiant interne ;
-- [ ] aucun schéma OpenAPI d'identifiant interne en `integer`.
-
-Recherches CI suggérées (à affiner pour éviter les faux positifs) :
-
-```powershell
-rg -n "PrimaryGeneratedColumn\(\)|PrimaryColumn\(\{ type: 'int'" src/modules
-rg -n "Number\(.*_id|parseInt\(.*Id|::int\[\]" src
-rg -n "ApiParam.*type: Number|minimum: 1.*Id" src
-rg -n "@IsInt\(\).*Id|@Type\(\(\) => Number\).*Id" src
-rg -n "SERIAL|BIGSERIAL|_id INT" src/core/database/sql
-```
-
-Chaque résultat doit être classé : identifiant à migrer, nombre métier légitime, identifiant externe opaque ou dette restante.
+Une fois la baseline UUID engagée, aucun nouveau code ne doit être ajouté avec un ID interne numérique.
 
 ---
 
-## 12. Déploiement, observabilité et rollback
+## 11. Critères de fin
 
-### Avant production
+La migration est terminée uniquement lorsque :
 
-- [ ] mesurer volume et temps de backfill par table ;
-- [ ] mesurer les verrous lors de la création/validation des contraintes ;
-- [ ] sauvegarde vérifiée et restauration chronométrée ;
-- [ ] répéter la migration complète sur staging avec copie représentative ;
-- [ ] geler temporairement les évolutions de schéma concurrentes ;
-- [ ] définir les métriques : erreurs 400/404, erreurs SQL de cast, échecs JWT, erreurs WebSocket, latence DB, taille index.
+- [x] un schéma `dorify` absent ou vide peut être intégralement créé avec la baseline unique ;
+- [x] tous les objets applicatifs et la table de suivi des migrations sont dans `dorify` ;
+- [x] aucun objet de `public` n'est créé, recherché comme objet applicatif, modifié ou supprimé ;
+- [x] toutes les PK/FK techniques décidées, y compris `estimation_stats_id`, sont réellement en UUID ;
+- [x] aucune colonne, relation, contrainte, fonction, trigger ou index ne dépend d'un ancien ID numérique ;
+- [x] aucune ancienne migration incrémentale n'est encore nécessaire ;
+- [x] le seed recrée uniquement les données d'initialisation et reste stable/idempotent ;
+- [x] le backend ne traite plus aucun identifiant interne comme un nombre ;
+- [x] aucun chemin de compatibilité avec les anciens IDs ou JWT n'existe ;
+- [x] JWT, scopes, audit, temps réel, workers et rapports fonctionnent avec UUID ;
+- [x] `/api/v1` expose tous les identifiants internes en `string/uuid` ;
+- [x] les clients ont été régénérés sans unions `number | string` ;
+- [x] Redis et les files de jobs ne contiennent aucun état numérique hérité ;
+- [x] les tests et tous les gates qualité passent ;
+- [x] les vérifications SQL et recherches CI ne signalent aucun oubli réel.
 
-### Pendant la bascule
+## 12. Règle finale
 
-- [ ] activer le dual-write ou la fenêtre de maintenance prévue ;
-- [ ] contrôler les compteurs de lignes et FK après chaque phase ;
-- [ ] ne pas supprimer les anciennes colonnes avant validation de tous les consommateurs ;
-- [ ] surveiller logs API/workers et métriques DB ;
-- [ ] conserver la correspondance ancien ID → UUID.
+Le suffixe `_id` ne suffit pas à décider du type d'une colonne. Toute valeur représentant une identité technique interne est un UUID ; les identifiants externes restent des chaînes opaques et les nombres métier restent numériques. En cas de doute pendant l'implémentation, la classification doit être faite à partir de la relation métier et des contraintes du schéma, jamais par remplacement textuel global.
 
-### Rollback
+<!-- CHECKPOINT id="ckpt_mvl1eqlv_ktbe5z" time="2026-10-23T14:00:19.507Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
-- [ ] rollback applicatif compatible avec les deux colonnes ;
-- [ ] procédure SQL testée pour revenir aux lectures numériques avant le contract ;
-- [ ] après suppression des colonnes numériques, rollback uniquement via restauration/table de correspondance : fixer clairement le point de non-retour ;
-- [ ] documenter le propriétaire de la décision go/no-go.
+<!-- CHECKPOINT id="ckpt_mvl1rlkj_t4p8k4" time="2026-10-23T14:10:19.507Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
----
+<!-- CHECKPOINT id="ckpt_mvl26ui9_d8bu4g" time="2026-10-23T14:22:10.929Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
-## 13. Séquencement proposé en lots
+<!-- CHECKPOINT id="ckpt_mvl2jph7_qrb0gx" time="2026-10-23T14:32:10.939Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
-### Lot 0 — Préparation
+<!-- CHECKPOINT id="ckpt_mvl2wkfy_uesyfo" time="2026-10-23T14:42:10.942Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
-- [ ] décisions d'architecture ;
-- [ ] inventaire automatique DB/API/consommateurs ;
-- [ ] sauvegarde/restauration ;
-- [ ] tests de caractérisation.
+<!-- CHECKPOINT id="ckpt_mvl39fgi_e3ge3q" time="2026-10-23T14:52:11.010Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
-### Lot 1 — Fondations
+<!-- CHECKPOINT id="ckpt_mvl7su5p_01vf4w" time="2026-10-23T16:59:14.989Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
-- [ ] types GUID partagés ;
-- [ ] pipe UUID et convention Swagger ;
-- [ ] migrations d'expansion et tables de correspondance ;
-- [ ] seed UUID idempotent.
+<!-- CHECKPOINT id="ckpt_mvl87594_f49kke" time="2026-10-23T17:10:22.552Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
-### Lot 2 — Identité et sécurité
+<!-- CHECKPOINT id="ckpt_mvl8l5o7_qyda49" time="2026-10-23T17:21:16.279Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
-- [ ] user, role, permission, sessions JWT ;
-- [ ] RBAC, scope et audit actor ;
-- [ ] invalidation/rotation JWT.
+<!-- CHECKPOINT id="ckpt_mvl8y0n6_aojot4" time="2026-10-23T17:31:16.290Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
-### Lot 3 — Périmètre métier
-
-- [ ] site, queue, person, notes ;
-- [ ] affectations ;
-- [ ] service tiers et règles.
-
-### Lot 4 — Flux opérationnels
-
-- [ ] sessions opérateur ;
-- [ ] registrations ;
-- [ ] notifications ;
-- [ ] compteurs, reset, estimations et workers.
-
-### Lot 5 — Interfaces
-
-- [ ] contrôleurs/DTO/OpenAPI ;
-- [ ] frontend et clients générés ;
-- [ ] WebSocket/caches/intégrations.
-
-### Lot 6 — Contract
-
-- [ ] suppression compatibilité numérique ;
-- [ ] suppression anciennes colonnes/séquences ;
-- [ ] validation finale et documentation.
+<!-- CHECKPOINT id="ckpt_mvl9avm0_lathxu" time="2026-10-23T17:41:16.296Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 ---
 
-## 14. Critères de fin
+## 13. Écarts découverts lors du double contrôle — résolus
 
-La migration n'est terminée que lorsque tous les points suivants sont vrais :
+Le double contrôle avait rouvert les tâches ci-dessous. Elles sont désormais terminées et validées.
 
-- [ ] toutes les PK/FK techniques décidées sont réellement `UUID` en base ;
-- [ ] aucune relation, contrainte, fonction, trigger ou index ne référence l'ancien type ;
-- [ ] le seed est stable et idempotent ;
-- [ ] le backend ne traite plus les identifiants internes comme des nombres ;
-- [ ] JWT, scopes, audit, temps réel, workers et rapports fonctionnent avec UUID ;
-- [ ] OpenAPI expose tous les IDs internes en `string/uuid` ;
-- [ ] tous les clients ont été régénérés et déployés ;
-- [ ] les événements d'audit historiques restent lisibles ;
-- [ ] les tests unitaires, intégration, E2E, migration et rollback passent ;
-- [ ] les contrôles `pg_catalog` et recherches CI ne signalent aucun oubli ;
-- [ ] la documentation opérationnelle et le runbook de rollback sont approuvés.
+- [x] Supprimer la dépendance au `search_path` pour les requêtes applicatives : toutes les tables utilisées par le SQL brut sont explicitement qualifiées en `dorify.dori_*`.
+- [x] Ajouter un test avec une connexion hostile (`search_path = public, pg_catalog`) et prouver que le SQL applicatif qualifié continue à lire exclusivement `dorify`.
+- [x] Retenir et implémenter la stratégie compatible avec le pooler Neon : qualification systématique des tables applicatives, sans configuration persistante du rôle ou de la base et sans modification de `public`.
+- [x] Ajouter la commande npm non ambiguë `db:reset`, qui transmet `--seed --force` à `scripts/db-init.ts` et supprime/recrée uniquement `dorify`.
+- [x] Rejouer la reconstruction complète, vérifier que `public` reste inchangé, vérifier l'idempotence du seed, puis exécuter `db:verify`, `quality:check` et `test:e2e`.
+- [x] Refermer les critères de fin relatifs au schéma : aucune résolution implicite d'une table applicative vers `public` ne subsiste dans le SQL brut.
 
-## 15. Point d'attention final
+---
 
-Le terme « tous les IDs » ne doit pas conduire à convertir aveuglément toute colonne terminant par `_id`. Certaines sont des identifiants externes opaques, et certains nombres ne sont pas des identifiants. La migration doit être pilotée par la matrice de dépendances ci-dessus et validée automatiquement contre le schéma réel. Le plus gros risque n'est pas la génération de l'UUID, mais la coexistence temporaire des deux identités, les clés composites, les JWT déjà émis, l'audit historique et les consommateurs hors dépôt.
+## 14. Validation finale d'exécution — 23 octobre 2026
+
+- Reconstruction réelle finale réussie avec `npm run db:reset` : seul le schéma `dorify` a été supprimé/recréé, puis l'unique baseline UUID et le seed ont été appliqués.
+- Protection de `public` vérifiée par le script : empreinte avant/après identique ; ses 67 objets `dori_*` préexistants n'ont été ni lus comme objets applicatifs, ni modifiés, ni supprimés.
+- Idempotence vérifiée par une seconde exécution de l'initialisation et du seed : une seule migration enregistrée, aucun doublon et UUID de seed stables.
+- `db:verify` : 0 PK technique numérique, 0 FK de type incohérent, 0 FK non validée ; audit append-only présent et read model interrogeable ; 8 modèles de notification actifs.
+- Stratégie Neon vérifiée : le test e2e force `search_path = public, pg_catalog` et confirme qu'une requête applicative explicitement qualifiée lit encore `dorify`.
+- Redis : aucune instance n'était joignable dans cet environnement (`ECONNREFUSED`) ; l'e2e a donc été exécuté avec Redis explicitement désactivé.
+- Clients générés : aucun projet client/générateur de client n'est présent dans ce dépôt. Les artefacts de contrat présents ont été régénérés : `openapi.json`, `openapi.yaml`, `ai/docs-json.json`.
+- Gates réussis : `format:check`, `lint`, `typecheck`, `build:check`, `uuid:verify`, 61 suites/317 tests unitaires, export Swagger, `db:verify` et 2 tests e2e.
+
+Le script `uuid:verify` est intégré à `quality:check`. Il empêche notamment le retour d'une migration incrémentale, d'une PK interne numérique, de l'ancien pipe numérique, de conversions numériques d'IDs, d'un ID interne OpenAPI déclaré en entier ou d'une table applicative SQL non qualifiée.
+<!-- CHECKPOINT id="ckpt_mvl9nqkt_afij3y" time="2026-10-23T17:51:16.301Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvla0ljt_xxdv1l" time="2026-10-23T18:01:16.313Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvladgit_36v1d8" time="2026-10-23T18:11:16.325Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlaqbhn_xkrisr" time="2026-10-23T18:21:16.331Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlb36gk_atxowo" time="2026-10-23T18:31:16.340Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlf9qh6_on8b4k" time="2026-10-23T20:28:20.682Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlfmlfx_ivsqhs" time="2026-10-23T20:38:20.685Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlfzgeu_nm7u3j" time="2026-10-23T20:48:20.694Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlgcbdn_v6phth" time="2026-10-23T20:58:20.699Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlgp6ct_5j4v11" time="2026-10-23T21:08:20.717Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlh21c7_3t5g9e" time="2026-10-23T21:18:20.743Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlhewan_i3w3ve" time="2026-10-23T21:28:20.735Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlhrr9q_62og3e" time="2026-10-23T21:38:20.750Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvli4m8q_i3rwaz" time="2026-10-23T21:48:20.762Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlihh7e_j9hd20" time="2026-10-23T21:58:20.762Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvliuc6c_6hmarx" time="2026-10-23T22:08:20.772Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

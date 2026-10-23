@@ -15,9 +15,14 @@ describe('ServiceTiersRepository queue-tier inheritance', () => {
     const repository = new ServiceTiersRepository(dataSource);
 
     await repository.upsertQueueTier(
-      10,
-      { tierId: 2, price: 15, currency: null, isDefault: true },
-      7,
+      '00000000-0000-4000-8000-000000000010',
+      {
+        tierId: '00000000-0000-4000-8000-000000000002',
+        price: 15,
+        currency: null,
+        isDefault: true,
+      },
+      '00000000-0000-4000-8000-000000000007',
       now,
     );
 
@@ -25,13 +30,13 @@ describe('ServiceTiersRepository queue-tier inheritance', () => {
     expect(manager.query.mock.calls[0][0]).toContain('is_default = FALSE');
     expect(manager.query.mock.calls[1][0]).toContain('is_default');
     expect(manager.query.mock.calls[1][1]).toEqual([
-      10,
-      2,
+      '00000000-0000-4000-8000-000000000010',
+      '00000000-0000-4000-8000-000000000002',
       15,
       null,
       null,
       true,
-      7,
+      '00000000-0000-4000-8000-000000000007',
       now,
     ]);
   });
@@ -39,8 +44,8 @@ describe('ServiceTiersRepository queue-tier inheritance', () => {
   it('reads the effective currency through association, queue then site', async () => {
     const query = jest.fn().mockResolvedValue([
       {
-        queue_id: 10,
-        tier_id: 2,
+        queue_id: '00000000-0000-4000-8000-000000000010',
+        tier_id: '00000000-0000-4000-8000-000000000002',
         price: '15',
         currency: 'EUR',
         currency_override: null,
@@ -53,7 +58,10 @@ describe('ServiceTiersRepository queue-tier inheritance', () => {
       query,
     } as unknown as DataSource);
 
-    const result = await repository.findQueueTier(10, 2);
+    const result = await repository.findQueueTier(
+      '00000000-0000-4000-8000-000000000010',
+      '00000000-0000-4000-8000-000000000002',
+    );
 
     expect(query.mock.calls[0][0]).toContain(
       'COALESCE(qt.currency, q.currency, s.default_currency)',

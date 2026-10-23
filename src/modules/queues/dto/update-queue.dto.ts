@@ -1,13 +1,13 @@
 import { PartialType, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CreateQueueDto } from './create-queue.dto';
 import {
+  IsUUID,
   IsBoolean,
-  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
 } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import { PaginationDto } from '../../../core/pagination/pagination.dto';
 import { strictBoolean } from '../../../core/validation/strict-boolean.transformer';
 
@@ -20,10 +20,9 @@ export class UpdateQueueDto extends PartialType(CreateQueueDto) {
 
 export class QueueFilterDto extends PaginationDto {
   @ApiPropertyOptional({ description: 'Filtrer par site', example: 1 })
-  @IsInt()
+  @IsUUID()
   @IsOptional()
-  @Type(() => Number)
-  siteId?: number;
+  siteId?: string;
 
   @ApiPropertyOptional({ description: 'Recherche libre (nom, code)' })
   @IsString()
@@ -42,7 +41,7 @@ export class AssignOperatorDto {
     description: "ID de l'opérateur ou de la borne à affecter",
     example: 3,
   })
-  @IsInt()
+  @IsUUID()
   @IsNotEmpty()
-  userId: number;
+  userId: string;
 }

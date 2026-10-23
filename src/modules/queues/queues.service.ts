@@ -121,7 +121,7 @@ export class QueuesService {
   ): Promise<PaginatedResult<QueueResponseDto>> {
     const scope = await this.scopeService.getUserScope(user);
     const { pageSize, offset, sortOrder } = filter.getParams();
-    // VAL-01 : allowlist des colonnes autorisées pour dori_queue (alias q)
+    // VAL-01 : allowlist des colonnes autorisées pour dorify.dori_queue (alias q)
     const sortField = filter.getSafeSortField(
       [
         'q.queue_id',
@@ -134,8 +134,8 @@ export class QueuesService {
       'q.created_at',
     );
 
-    let siteIds: number[] | undefined;
-    let queueIds: number[] | undefined;
+    let siteIds: string[] | undefined;
+    let queueIds: string[] | undefined;
     if (filter.siteId) {
       await this.scopeService.checkSiteAccess(user, filter.siteId);
     } else if (!scope.isGlobal) {
@@ -165,7 +165,7 @@ export class QueuesService {
     );
   }
 
-  async findQueueById(queueId: number, user: AuthenticatedUser) {
+  async findQueueById(queueId: string, user: AuthenticatedUser) {
     await this.scopeService.checkQueueAccess(user, queueId);
 
     const row = await this.queuesRepository.findById(queueId);
@@ -176,7 +176,7 @@ export class QueuesService {
   }
 
   async createQueue(
-    siteId: number,
+    siteId: string,
     dto: CreateQueueDto,
     user: AuthenticatedUser,
   ) {
@@ -198,7 +198,7 @@ export class QueuesService {
   }
 
   async updateQueue(
-    queueId: number,
+    queueId: string,
     dto: UpdateQueueDto,
     user: AuthenticatedUser,
   ) {
@@ -215,7 +215,7 @@ export class QueuesService {
     return this.findQueueById(queueId, user);
   }
 
-  async deleteQueue(queueId: number, user: AuthenticatedUser) {
+  async deleteQueue(queueId: string, user: AuthenticatedUser) {
     await this.scopeService.checkQueueAccess(user, queueId);
     await this.findQueueById(queueId, user);
 
@@ -229,7 +229,7 @@ export class QueuesService {
     return { queueId, deleted: true };
   }
 
-  async getQueueStatus(queueId: number, user: AuthenticatedUser) {
+  async getQueueStatus(queueId: string, user: AuthenticatedUser) {
     await this.scopeService.checkQueueAccess(user, queueId);
 
     const context = await this.queuesRepository.findOperationalContext(queueId);
@@ -264,7 +264,7 @@ export class QueuesService {
     };
   }
 
-  async getQueueDisplay(queueId: number, user: AuthenticatedUser) {
+  async getQueueDisplay(queueId: string, user: AuthenticatedUser) {
     await this.scopeService.checkQueueAccess(user, queueId);
 
     const context = await this.queuesRepository.findOperationalContext(queueId);
@@ -282,7 +282,7 @@ export class QueuesService {
     };
   }
 
-  async resetQueue(queueId: number, user: AuthenticatedUser) {
+  async resetQueue(queueId: string, user: AuthenticatedUser) {
     await this.scopeService.checkQueueAccess(user, queueId);
 
     // Run queue closure per §4.8
@@ -322,13 +322,13 @@ export class QueuesService {
   }
 
   async getOperators(
-    queueId: number,
+    queueId: string,
     pagination: PaginationDto,
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkQueueAccess(user, queueId);
     const { pageSize, offset, sortOrder } = pagination.getParams();
-    // VAL-01 : allowlist pour le JOIN dori_user_queue_assignment / dori_user
+    // VAL-01 : allowlist pour le JOIN dorify.dori_user_queue_assignment / dorify.dori_user
     const sortField = pagination.getSafeSortField(
       ['u.user_id', 'u.username', 'u.email', 'uq.assigned_at'],
       'uq.assigned_at',
@@ -345,8 +345,8 @@ export class QueuesService {
   }
 
   async assignOperator(
-    queueId: number,
-    targetUserId: number,
+    queueId: string,
+    targetUserId: string,
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkQueueAccess(user, queueId);
@@ -386,8 +386,8 @@ export class QueuesService {
   }
 
   async removeOperator(
-    queueId: number,
-    targetUserId: number,
+    queueId: string,
+    targetUserId: string,
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkQueueAccess(user, queueId);

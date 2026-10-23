@@ -1,3 +1,4 @@
+import { IsUUID } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class MonitoringSeriesMetricsDto {
@@ -16,12 +17,12 @@ export class MonitoringSeriesBucketDto extends MonitoringSeriesMetricsDto {
 }
 
 export class MonitoringQueueBreakdownDto extends MonitoringSeriesMetricsDto {
-  @ApiProperty() queueId: number;
+  @ApiProperty() queueId: string;
   @ApiProperty() queueName: string;
 }
 
 export class MonitoringUserBreakdownDto {
-  @ApiProperty() userId: number;
+  @ApiProperty() userId: string;
   @ApiProperty() displayName: string;
   @ApiProperty() registered: number;
   @ApiProperty() served: number;
@@ -30,7 +31,7 @@ export class MonitoringUserBreakdownDto {
 }
 
 export class MonitoringTierBreakdownDto {
-  @ApiProperty() tierId: number;
+  @ApiProperty() tierId: string;
   @ApiProperty() tierCode: string;
   @ApiProperty() tierName: string;
   @ApiProperty() registered: number;
@@ -66,10 +67,10 @@ export class MonitoringAppliedFiltersDto {
   @ApiProperty({ format: 'date-time' }) from: string;
   @ApiProperty({ format: 'date-time' }) to: string;
   @ApiProperty({ enum: ['hour', 'day', 'week', 'month'] }) bucket: string;
-  @ApiProperty({ required: false }) siteId?: number;
-  @ApiProperty({ type: [Number], required: false }) queueIds?: number[];
-  @ApiProperty({ type: [Number], required: false }) userIds?: number[];
-  @ApiProperty({ type: [Number], required: false }) tierIds?: number[];
+  @ApiProperty({ required: false }) siteId?: string;
+  @ApiProperty({ type: [Number], required: false }) queueIds?: string[];
+  @ApiProperty({ type: [Number], required: false }) userIds?: string[];
+  @ApiProperty({ type: [Number], required: false }) tierIds?: string[];
   @ApiProperty({ type: [String], required: false }) statuses?: string[];
   @ApiProperty({ type: [String], required: false }) entryTypes?: string[];
 }
@@ -156,7 +157,8 @@ export class QueuePeriodVolumesResponseDto {
     example: 10,
     description: "ID de la file d'attente supervisée",
   })
-  queueId: number;
+  @IsUUID()
+  queueId: string;
 
   @ApiProperty({
     type: Object,

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import {
   QueueWaitEstimationRepository,
   WaitEstimationRegistration,
@@ -70,8 +70,8 @@ export class QueueWaitEstimationService {
   }
 
   async estimateQueue(input: {
-    siteId: number;
-    queueId: number;
+    siteId: string;
+    queueId: string;
     activityDate: string;
     waitingCount: number;
     activeThreads: number;

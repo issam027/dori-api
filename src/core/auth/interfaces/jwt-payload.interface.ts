@@ -1,5 +1,7 @@
+import type { SessionId, UserId } from '../../types/guid';
+
 export interface JwtPayload {
-  sub: number;
+  sub: UserId;
   username: string;
   roles: string[];
   permissions: string[];
@@ -7,16 +9,16 @@ export interface JwtPayload {
   iat?: number;
   exp?: number;
   jti?: string;
-  /** UUID de la session (`dori_user_session.session_id`) liée à ce JWT — SEC-02 */
-  sid: string;
+  /** UUID de la session (`dorify.dori_user_session.session_id`) liÃ©e Ã  ce JWT â€” SEC-02 */
+  sid: SessionId;
 }
 
 export interface AuthenticatedUser {
-  userId: number;
+  userId: UserId;
   username: string;
   roles: string[];
   permissions: string[];
   userType: 'human' | 'kiosk';
-  /** UUID de la session liée au JWT courant — SEC-02 */
-  sessionId?: string;
+  /** UUID de la session liÃ©e au JWT courant â€” SEC-02 */
+  sessionId?: SessionId;
 }

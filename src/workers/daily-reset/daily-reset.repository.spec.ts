@@ -6,7 +6,10 @@ describe('DailyResetRepository', () => {
     const query = jest
       .fn()
       .mockResolvedValueOnce([{ acquired: true }])
-      .mockResolvedValueOnce([[{ queue_id: 4 }], 1])
+      .mockResolvedValueOnce([
+        [{ queue_id: '00000000-0000-4000-8000-000000000004' }],
+        1,
+      ])
       .mockResolvedValue([]);
     const dataSource = {
       transaction: jest.fn((callback) => callback({ query })),
@@ -14,7 +17,7 @@ describe('DailyResetRepository', () => {
     const now = new Date('2026-10-06T03:00:00Z');
 
     const executed = await new DailyResetRepository(dataSource).execute({
-      queueId: 4,
+      queueId: '00000000-0000-4000-8000-000000000004',
       businessDate: '2026-10-05',
       nextBusinessDate: '2026-10-06',
       trackingValidUntil: new Date('2026-10-07T03:00:00Z'),
@@ -36,7 +39,7 @@ describe('DailyResetRepository', () => {
     const repository = new DailyResetRepository(dataSource);
 
     const executed = await repository.execute({
-      queueId: 4,
+      queueId: '00000000-0000-4000-8000-000000000004',
       businessDate: '2026-10-05',
       nextBusinessDate: '2026-10-06',
       trackingValidUntil: new Date(),
@@ -53,14 +56,17 @@ describe('DailyResetRepository', () => {
     const query = jest
       .fn()
       .mockResolvedValueOnce([{ acquired: true }])
-      .mockResolvedValueOnce([[{ queue_id: 4 }], 1])
+      .mockResolvedValueOnce([
+        [{ queue_id: '00000000-0000-4000-8000-000000000004' }],
+        1,
+      ])
       .mockResolvedValue([]);
     const repository = new DailyResetRepository({
       transaction: jest.fn((callback) => callback({ query })),
     } as unknown as DataSource);
 
     await repository.execute({
-      queueId: 4,
+      queueId: '00000000-0000-4000-8000-000000000004',
       businessDate: '2026-10-05',
       nextBusinessDate: '2026-10-06',
       trackingValidUntil: new Date('2026-10-07T03:00:00Z'),
@@ -80,14 +86,17 @@ describe('DailyResetRepository', () => {
     const query = jest
       .fn()
       .mockResolvedValueOnce([{ acquired: true }])
-      .mockResolvedValueOnce([[{ queue_id: 4 }], 1])
+      .mockResolvedValueOnce([
+        [{ queue_id: '00000000-0000-4000-8000-000000000004' }],
+        1,
+      ])
       .mockResolvedValue([]);
     const repository = new DailyResetRepository({
       transaction: jest.fn((callback) => callback({ query })),
     } as unknown as DataSource);
 
     await repository.execute({
-      queueId: 4,
+      queueId: '00000000-0000-4000-8000-000000000004',
       businessDate: '2026-10-05',
       nextBusinessDate: '2026-10-06',
       trackingValidUntil: new Date('2026-10-07T03:00:00Z'),

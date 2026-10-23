@@ -10,13 +10,13 @@ import { RegistrationsRepository } from './registrations.repository';
 import { ConfigService } from '@nestjs/config';
 import { NotificationTemplateService } from '../../core/notifications/notification-template.service';
 
-describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
+describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ERR-02 PERSON_NOT_FOUND', () => {
   let service: RegistrationsService;
   let dataSourceMock: { query: jest.Mock; transaction: jest.Mock };
   let personsServiceMock: { createPerson: jest.Mock };
 
   const adminUser: AuthenticatedUser = {
-    userId: 1,
+    userId: '00000000-0000-4000-8000-000000000001',
     username: 'admin',
     roles: ['admin'],
     permissions: ['registration_create'],
@@ -91,12 +91,12 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
     service = module.get<RegistrationsService>(RegistrationsService);
   });
 
-  it('should throw PERSON_NOT_FOUND (404) when personId does not exist in dori_person', async () => {
+  it('should throw PERSON_NOT_FOUND (404) when personId does not exist in dorify.dori_person', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('FROM dori_queue q JOIN dori_site')) {
-        return [{ site_id: 7 }];
+      if (sql.includes('FROM dorify.dori_queue q JOIN dorify.dori_site')) {
+        return [{ site_id: '00000000-0000-4000-8000-000000000007' }];
       }
-      if (sql.includes('SELECT person_id FROM dori_person')) {
+      if (sql.includes('SELECT person_id FROM dorify.dori_person')) {
         return [];
       }
       if (sql.includes('pg_advisory_xact_lock')) return [];
@@ -104,60 +104,66 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
     });
 
     const dto = {
-      personId: 999999,
-      queueId: 1,
-      tierId: 1,
+      personId: '00000000-0000-4000-8000-000000999999',
+      queueId: '00000000-0000-4000-8000-000000000001',
+      tierId: '00000000-0000-4000-8000-000000000001',
       entryType: 'walk-in' as const,
     };
 
     await expect(
       service.createRegistration(dto as any, adminUser),
     ).rejects.toThrow(
-      new DoriException('PERSON_NOT_FOUND', { personId: 999999 }),
+      new DoriException('PERSON_NOT_FOUND', {
+        personId: '00000000-0000-4000-8000-000000999999',
+      }),
     );
   });
 
   it('should throw PERSON_NOT_FOUND (404) when person exists but is inactive or deleted', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('FROM dori_queue q JOIN dori_site')) {
-        return [{ site_id: 7 }];
+      if (sql.includes('FROM dorify.dori_queue q JOIN dorify.dori_site')) {
+        return [{ site_id: '00000000-0000-4000-8000-000000000007' }];
       }
-      if (sql.includes('SELECT person_id FROM dori_person')) {
+      if (sql.includes('SELECT person_id FROM dorify.dori_person')) {
         return [];
       }
       return [];
     });
 
     const dto = {
-      personId: 42,
-      queueId: 1,
-      tierId: 1,
+      personId: '00000000-0000-4000-8000-000000000042',
+      queueId: '00000000-0000-4000-8000-000000000001',
+      tierId: '00000000-0000-4000-8000-000000000001',
       entryType: 'walk-in' as const,
     };
 
     await expect(
       service.createRegistration(dto as any, adminUser),
-    ).rejects.toThrow(new DoriException('PERSON_NOT_FOUND', { personId: 42 }));
+    ).rejects.toThrow(
+      new DoriException('PERSON_NOT_FOUND', {
+        personId: '00000000-0000-4000-8000-000000000042',
+      }),
+    );
   });
 
   it('should proceed to tier validation when person belongs to the queue site', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('FROM dori_queue q JOIN dori_site')) {
-        return [{ site_id: 7 }];
+      if (sql.includes('FROM dorify.dori_queue q JOIN dorify.dori_site')) {
+        return [{ site_id: '00000000-0000-4000-8000-000000000007' }];
       }
-      if (sql.includes('SELECT person_id FROM dori_person')) {
-        return [{ person_id: 10 }];
+      if (sql.includes('SELECT person_id FROM dorify.dori_person')) {
+        return [{ person_id: '00000000-0000-4000-8000-000000000010' }];
       }
-      if (sql.includes('FROM dori_queue_service_tier')) {
+      if (sql.includes('FROM dorify.dori_queue_service_tier')) {
         return [];
       }
       return [];
     });
 
     const dto = {
-      personId: 10,
-      queueId: 1,
-      tierId: 1,
+      personId: '00000000-0000-4000-8000-000000000010',
+      queueId: '00000000-0000-4000-8000-000000000001',
+      tierId: '00000000-0000-4000-8000-000000000001',
       entryType: 'walk-in' as const,
     };
 
@@ -165,25 +171,30 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
       service.createRegistration(dto as any, adminUser),
     ).rejects.toThrow(
       new DoriException('TIER_NOT_OFFERED_BY_QUEUE', {
-        tierId: 1,
-        queueId: 1,
+        tierId: '00000000-0000-4000-8000-000000000001',
+        queueId: '00000000-0000-4000-8000-000000000001',
       }),
     );
     expect(dataSourceMock.query).toHaveBeenCalledWith(
       expect.stringContaining('person_id = $1 AND site_id = $2'),
-      [10, 7],
+      [
+        '00000000-0000-4000-8000-000000000010',
+        '00000000-0000-4000-8000-000000000007',
+      ],
     );
   });
 
   it('creates an inline person in the queue site', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('FROM dori_queue q JOIN dori_site')) {
-        return [{ site_id: 7 }];
+      if (sql.includes('FROM dorify.dori_queue q JOIN dorify.dori_site')) {
+        return [{ site_id: '00000000-0000-4000-8000-000000000007' }];
       }
-      if (sql.includes('FROM dori_queue_service_tier')) return [];
+      if (sql.includes('FROM dorify.dori_queue_service_tier')) return [];
       return [];
     });
-    personsServiceMock.createPerson.mockResolvedValue({ person_id: 15 });
+    personsServiceMock.createPerson.mockResolvedValue({
+      person_id: '00000000-0000-4000-8000-000000000015',
+    });
 
     const dto = {
       person: {
@@ -192,8 +203,8 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
         phoneNumber: '+21698765432',
         email: 'nadia@example.com',
       },
-      queueId: 1,
-      tierId: 1,
+      queueId: '00000000-0000-4000-8000-000000000001',
+      tierId: '00000000-0000-4000-8000-000000000001',
       entryType: 'walkin' as const,
     };
 
@@ -202,7 +213,7 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
     );
     expect(personsServiceMock.createPerson).toHaveBeenCalledWith(
       dto.person,
-      7,
+      '00000000-0000-4000-8000-000000000007',
       adminUser,
       expect.objectContaining({ query: expect.any(Function) }),
     );
@@ -211,7 +222,7 @@ describe('RegistrationsService — ERR-02 PERSON_NOT_FOUND', () => {
 
 describe('RegistrationsService reschedule ticket numbering', () => {
   const user: AuthenticatedUser = {
-    userId: 1,
+    userId: '00000000-0000-4000-8000-000000000001',
     username: 'admin',
     roles: ['admin'],
     permissions: ['appointment_manage'],
@@ -225,7 +236,7 @@ describe('RegistrationsService reschedule ticket numbering', () => {
       lockAndCountSlot: jest.fn().mockResolvedValue(0),
       nextTicketNumber: jest.fn().mockResolvedValue(7),
       reschedule: jest.fn().mockResolvedValue({
-        registration_id: 42,
+        registration_id: '00000000-0000-4000-8000-000000000042',
         ticket_number: 'H0007',
         appointment_status: 'rescheduled',
         status: 'booked',
@@ -235,8 +246,8 @@ describe('RegistrationsService reschedule ticket numbering', () => {
     };
     const repository = {
       findForReschedule: jest.fn().mockResolvedValue({
-        registration_id: 42,
-        queue_id: 3,
+        registration_id: '00000000-0000-4000-8000-000000000042',
+        queue_id: '00000000-0000-4000-8000-000000000003',
         queue_code: 'H0000',
         business_date: '2026-10-18',
         entry_type: 'appointment',
@@ -260,11 +271,22 @@ describe('RegistrationsService reschedule ticket numbering', () => {
     );
 
     await expect(
-      service.reschedule(42, { scheduledTime: newTime.toISOString() }, user),
-    ).resolves.toMatchObject({ registrationId: 42, ticketNumber: 'H0007' });
-    expect(tx.nextTicketNumber).toHaveBeenCalledWith(3, '2026-10-19', now);
+      service.reschedule(
+        '00000000-0000-4000-8000-000000000042',
+        { scheduledTime: newTime.toISOString() },
+        user,
+      ),
+    ).resolves.toMatchObject({
+      registrationId: '00000000-0000-4000-8000-000000000042',
+      ticketNumber: 'H0007',
+    });
+    expect(tx.nextTicketNumber).toHaveBeenCalledWith(
+      '00000000-0000-4000-8000-000000000003',
+      '2026-10-19',
+      now,
+    );
     expect(tx.reschedule).toHaveBeenCalledWith(
-      42,
+      '00000000-0000-4000-8000-000000000042',
       newTime,
       '2026-10-19',
       'H0007',
@@ -279,7 +301,7 @@ describe('RegistrationsService reschedule ticket numbering', () => {
       lockAndCountSlot: jest.fn().mockResolvedValue(0),
       nextTicketNumber: jest.fn(),
       reschedule: jest.fn().mockResolvedValue({
-        registration_id: 42,
+        registration_id: '00000000-0000-4000-8000-000000000042',
         ticket_number: 'H0003',
         appointment_status: 'rescheduled',
         status: 'booked',
@@ -289,8 +311,8 @@ describe('RegistrationsService reschedule ticket numbering', () => {
     };
     const repository = {
       findForReschedule: jest.fn().mockResolvedValue({
-        registration_id: 42,
-        queue_id: 3,
+        registration_id: '00000000-0000-4000-8000-000000000042',
+        queue_id: '00000000-0000-4000-8000-000000000003',
         queue_code: 'H0000',
         business_date: '2026-10-18',
         entry_type: 'appointment',
@@ -314,14 +336,14 @@ describe('RegistrationsService reschedule ticket numbering', () => {
     );
 
     await service.reschedule(
-      42,
+      '00000000-0000-4000-8000-000000000042',
       { scheduledTime: newTime.toISOString() },
       user,
     );
 
     expect(tx.nextTicketNumber).not.toHaveBeenCalled();
     expect(tx.reschedule).toHaveBeenCalledWith(
-      42,
+      '00000000-0000-4000-8000-000000000042',
       newTime,
       '2026-10-18',
       undefined,
@@ -411,9 +433,9 @@ describe('RegistrationsService public position', () => {
   );
 });
 
-describe('RegistrationsService — creation response', () => {
+describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â creation response', () => {
   const user: AuthenticatedUser = {
-    userId: 1,
+    userId: '00000000-0000-4000-8000-000000000001',
     username: 'admin',
     roles: ['admin'],
     permissions: ['registration_create'],
@@ -425,7 +447,7 @@ describe('RegistrationsService — creation response', () => {
     const tx = {
       manager: {},
       findQueueConfig: jest.fn().mockResolvedValue({
-        site_id: 7,
+        site_id: '00000000-0000-4000-8000-000000000007',
         queue_code: 'A-',
         timezone: 'Europe/Berlin',
       }),
@@ -438,7 +460,7 @@ describe('RegistrationsService — creation response', () => {
       hasOpenRegistration: jest.fn().mockResolvedValue(false),
       nextTicketNumber: jest.fn().mockResolvedValue(1),
       create: jest.fn().mockResolvedValue({
-        registration_id: 10,
+        registration_id: '00000000-0000-4000-8000-000000000010',
         registration_tracking_token: token,
         ticket_number: 'A-001',
         business_date: '2026-10-14',
@@ -480,7 +502,12 @@ describe('RegistrationsService — creation response', () => {
     );
 
     const response = await service.createRegistration(
-      { personId: 3, queueId: 2, tierId: 1, entryType: 'walkin' },
+      {
+        personId: '00000000-0000-4000-8000-000000000003',
+        queueId: '00000000-0000-4000-8000-000000000002',
+        tierId: '00000000-0000-4000-8000-000000000001',
+        entryType: 'walkin',
+      },
       user,
     );
 
@@ -491,7 +518,7 @@ describe('RegistrationsService — creation response', () => {
     expect(response).not.toHaveProperty('trackingUrl');
     expect(tx.createWelcomeNotifications).toHaveBeenCalledWith(
       expect.objectContaining({
-        registrationId: 10,
+        registrationId: '00000000-0000-4000-8000-000000000010',
         trackingToken: '550e8400-e29b-41d4-a716-446655440000',
         ticketNumber: 'A-001',
         now: new Date('2026-10-14T10:00:00Z'),
@@ -504,8 +531,8 @@ describe('RegistrationsService — creation response', () => {
       const scheduledUtc = '2026-09-01T07:00:00.000Z'; // 08:00 in Africa/Tunis
       const repository = {
         findAvailabilityConfig: jest.fn().mockResolvedValue({
-          queue_id: 1,
-          site_id: 2,
+          queue_id: '00000000-0000-4000-8000-000000000001',
+          site_id: '00000000-0000-4000-8000-000000000002',
           timezone: 'Africa/Tunis',
           appointments_enabled: true,
           appointment_slot_duration: 30,
@@ -536,7 +563,7 @@ describe('RegistrationsService — creation response', () => {
       );
 
       const result = await service.getAvailability(
-        1,
+        '00000000-0000-4000-8000-000000000001',
         {
           dateFrom: '2026-09-01',
           dateTo: '2026-09-01',
@@ -570,8 +597,8 @@ describe('RegistrationsService — creation response', () => {
       const scheduledUtc = '2026-09-01T07:00:00.000Z';
       const repository = {
         findAvailabilityConfig: jest.fn().mockResolvedValue({
-          queue_id: 1,
-          site_id: 2,
+          queue_id: '00000000-0000-4000-8000-000000000001',
+          site_id: '00000000-0000-4000-8000-000000000002',
           timezone: 'Africa/Tunis',
           appointments_enabled: true,
           appointment_slot_duration: 30,
@@ -601,7 +628,7 @@ describe('RegistrationsService — creation response', () => {
       );
 
       const result = await service.getAvailability(
-        1,
+        '00000000-0000-4000-8000-000000000001',
         {
           dateFrom: '2026-09-01',
           dateTo: '2026-09-01',
@@ -620,8 +647,8 @@ describe('RegistrationsService — creation response', () => {
     it('marks non-working days as closed with 0 capacity and empty slots', async () => {
       const repository = {
         findAvailabilityConfig: jest.fn().mockResolvedValue({
-          queue_id: 1,
-          site_id: 2,
+          queue_id: '00000000-0000-4000-8000-000000000001',
+          site_id: '00000000-0000-4000-8000-000000000002',
           timezone: 'Africa/Tunis',
           appointments_enabled: true,
           appointment_slot_duration: 30,
@@ -645,7 +672,7 @@ describe('RegistrationsService — creation response', () => {
 
       // 2026-09-06 is Sunday (isoDay 7)
       const result = await service.getAvailability(
-        1,
+        '00000000-0000-4000-8000-000000000001',
         {
           dateFrom: '2026-09-06',
           dateTo: '2026-09-06',

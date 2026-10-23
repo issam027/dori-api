@@ -1,4 +1,4 @@
-import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
+﻿import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
 import { AuthenticatedUser } from '../../auth/interfaces/jwt-payload.interface';
 import { DoriException } from '../../errors/dori.exception';
 import { ScopeRepository } from '../repositories/scope.repository';
@@ -7,8 +7,8 @@ import type Redis from 'ioredis';
 
 export interface UserScope {
   isGlobal: boolean;
-  siteIds: number[];
-  queueIds: number[];
+  siteIds: string[];
+  queueIds: string[];
 }
 
 /** Préfixe de toutes les clés Redis du cache de scope RBAC */
@@ -31,7 +31,7 @@ export class ScopeService {
     );
   }
 
-  private cacheKey(userId: number): string {
+  private cacheKey(userId: string): string {
     return `${SCOPE_KEY_PREFIX}${userId}`;
   }
 
@@ -54,8 +54,8 @@ export class ScopeService {
       }
     }
 
-    let siteIds: number[] = [];
-    let queueIds: number[] = [];
+    let siteIds: string[] = [];
+    let queueIds: string[] = [];
 
     if (user.roles?.includes('manager')) {
       // Managers have access to their assigned sites and ALL queues of those sites (§4.10)
@@ -98,7 +98,7 @@ export class ScopeService {
 
   async checkSiteAccess(
     user: AuthenticatedUser,
-    siteId: number,
+    siteId: string,
   ): Promise<void> {
     const scope = await this.getUserScope(user);
     if (scope.isGlobal) return;
@@ -111,7 +111,7 @@ export class ScopeService {
 
   async checkQueueAccess(
     user: AuthenticatedUser,
-    queueId: number,
+    queueId: string,
   ): Promise<void> {
     const scope = await this.getUserScope(user);
     if (scope.isGlobal) return;
@@ -123,7 +123,7 @@ export class ScopeService {
   }
 
   /** Invalide le scope d'un utilisateur sur TOUTES les instances (DEL Redis) */
-  invalidateUserScope(userId: number): void {
+  invalidateUserScope(userId: string): void {
     if (this.isRedisReady() && this.redis) {
       void this.redis.del(this.cacheKey(userId)).catch((err: Error) => {
         this.logger.debug(

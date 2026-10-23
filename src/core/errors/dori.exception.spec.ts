@@ -2,11 +2,15 @@ import { DoriException } from './dori.exception';
 
 describe('DoriException', () => {
   it('should initialize standard error correctly', () => {
-    const ex = new DoriException('QUEUE_NOT_FOUND', { queueId: 42 });
+    const ex = new DoriException('QUEUE_NOT_FOUND', {
+      queueId: '00000000-0000-4000-8000-000000000042',
+    });
     expect(ex.getStatus()).toBe(404);
     expect(ex.code).toBe('QUEUE_NOT_FOUND');
     expect(ex.translationKey).toBe('errors.queue_not_found');
-    expect(ex.translationParams).toEqual({ queueId: 42 });
+    expect(ex.translationParams).toEqual({
+      queueId: '00000000-0000-4000-8000-000000000042',
+    });
     expect(ex.payload).toBeNull();
   });
 

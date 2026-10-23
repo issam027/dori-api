@@ -1,4 +1,4 @@
-import {
+﻿import {
   Column,
   CreateDateColumn,
   Entity,
@@ -8,11 +8,11 @@ import {
 
 @Entity('dori_queue_estimation_stats')
 export class DoriQueueEstimationStat {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn('uuid')
   estimation_stats_id: string;
 
-  @Column({ type: 'int' }) site_id: number;
-  @Column({ type: 'int' }) queue_id: number;
+  @Column({ type: 'uuid' }) site_id: string;
+  @Column({ type: 'uuid' }) queue_id: string;
   @Column({ type: 'date' }) activity_date: string;
   @Column({ type: 'timestamptz' }) window_started_at: Date;
   @Column({ type: 'timestamptz' }) window_ended_at: Date;

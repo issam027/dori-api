@@ -1,12 +1,15 @@
+import { IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../pagination/pagination.dto';
 
 export class AuditEventResponseDto {
   @ApiProperty({ format: 'uuid' })
+  @IsUUID()
   eventId: string;
 
   @ApiPropertyOptional({ nullable: true })
-  actorUserId: number | null;
+  @IsUUID()
+  actorUserId: string | null;
 
   @ApiPropertyOptional({ nullable: true, example: 'Sophie Martin (smartin)' })
   actorDisplayName: string | null;
@@ -18,19 +21,22 @@ export class AuditEventResponseDto {
   targetType: string;
 
   @ApiPropertyOptional({ nullable: true, example: '8' })
+  @IsUUID()
   targetId: string | null;
 
   @ApiPropertyOptional({ nullable: true, example: 'Accueil principal' })
   targetDisplayName: string | null;
 
   @ApiPropertyOptional({ nullable: true, example: '12' })
+  @IsUUID()
   secondaryTargetId: string | null;
 
   @ApiPropertyOptional({ nullable: true, example: 'Opérateur Jean (jdupont)' })
   secondaryTargetDisplayName: string | null;
 
   @ApiPropertyOptional({ nullable: true, example: 3 })
-  siteScopeId: number | null;
+  @IsUUID()
+  siteScopeId: string | null;
 
   @ApiPropertyOptional({ nullable: true, example: 'Agence Centre' })
   siteScopeDisplayName: string | null;
@@ -39,6 +45,7 @@ export class AuditEventResponseDto {
   outcome: 'success' | 'failure';
 
   @ApiPropertyOptional({ nullable: true, type: String })
+  @IsUUID()
   correlationId: string | null;
 
   @ApiProperty({ example: 'POST' })

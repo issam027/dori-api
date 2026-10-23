@@ -34,17 +34,20 @@ describe('normalizeOpenApiDocument', () => {
 
     normalizeOpenApiDocument(document);
     const schema = document.components!.schemas!.Item as {
-      properties: Record<string, { minimum?: number; format?: string }>;
+      properties: Record<string, { type?: string; format?: string }>;
     };
-    expect(schema.properties.personId.minimum).toBe(1);
+    expect(schema.properties.personId).toMatchObject({
+      type: 'string',
+      format: 'uuid',
+    });
     expect(schema.properties.createdAt.format).toBe('date-time');
     const parameters = document.paths['/persons'].get!.parameters! as Array<{
       name: string;
-      schema: { enum?: string[]; minimum?: number };
+      schema: { enum?: string[]; type?: string; format?: string };
     }>;
     expect(
-      parameters.find((item) => item.name === 'siteId')!.schema.minimum,
-    ).toBe(1);
+      parameters.find((item) => item.name === 'siteId')!.schema,
+    ).toMatchObject({ type: 'string', format: 'uuid' });
     expect(
       parameters.find((item) => item.name === 'sort')!.schema.enum,
     ).toContain('personId:asc');

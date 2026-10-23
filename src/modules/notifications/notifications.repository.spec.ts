@@ -21,7 +21,7 @@ describe('NotificationsRepository', () => {
   it('binds a webhook delivery to provider and provider message id', async () => {
     const { repository, manager } = createRepository([
       [{ event_id: 'evt-1' }],
-      [{ notification_id: 1 }],
+      [{ notification_id: '00000000-0000-4000-8000-000000000001' }],
     ]);
     await expect(
       repository.applyWebhook('twilio', 'evt-1', dto, now),

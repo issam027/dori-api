@@ -11,14 +11,14 @@ describe('JwtSessionRepository', () => {
     const repository = new JwtSessionRepository(dataSource);
     const result = await repository.findValidSessionId(
       'test-session-123',
-      42,
+      '00000000-0000-4000-8000-000000000042',
       fixedNow,
     );
 
     expect(result).toBe('test-session-123');
     expect(dataSource.query).toHaveBeenCalledWith(
       expect.stringContaining('s.expires_at > $3'),
-      ['test-session-123', 42, fixedNow],
+      ['test-session-123', '00000000-0000-4000-8000-000000000042', fixedNow],
     );
     const sqlQuery = (dataSource.query as jest.Mock).mock.calls[0][0] as string;
     expect(sqlQuery).not.toContain('NOW()');
@@ -33,7 +33,7 @@ describe('JwtSessionRepository', () => {
     const repository = new JwtSessionRepository(dataSource);
     const result = await repository.findValidSessionId(
       'expired-session',
-      42,
+      '00000000-0000-4000-8000-000000000042',
       fixedNow,
     );
 

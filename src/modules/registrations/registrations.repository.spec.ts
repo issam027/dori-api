@@ -22,7 +22,7 @@ describe('RegistrationsTransaction welcome notifications', () => {
         .fn()
         .mockResolvedValueOnce([
           {
-            rule_id: 8,
+            rule_id: '00000000-0000-4000-8000-000000000008',
             channel: 'sms',
             include_tracking_link: includeTrackingLink,
             locale: 'fr',
@@ -40,7 +40,9 @@ describe('RegistrationsTransaction welcome notifications', () => {
               : 'Bienvenue. Ticket {ticket}.',
           },
         ])
-        .mockResolvedValueOnce([{ notification_id: 20 }]);
+        .mockResolvedValueOnce([
+          { notification_id: '00000000-0000-4000-8000-000000000020' },
+        ]);
       const tx = new RegistrationsTransaction({
         query,
       } as unknown as EntityManager);
@@ -49,7 +51,7 @@ describe('RegistrationsTransaction welcome notifications', () => {
       } as unknown as ConfigService);
 
       const count = await tx.createWelcomeNotifications({
-        registrationId: 10,
+        registrationId: '00000000-0000-4000-8000-000000000010',
         trackingToken: 'token-1',
         ticketNumber: 'A-001',
         now: new Date('2026-10-15T10:00:00Z'),
@@ -68,7 +70,7 @@ describe('RegistrationsTransaction welcome notifications', () => {
       .fn()
       .mockResolvedValueOnce([
         {
-          rule_id: 9,
+          rule_id: '00000000-0000-4000-8000-000000000009',
           channel: 'email',
           include_tracking_link: true,
           locale: 'fr',
@@ -78,7 +80,9 @@ describe('RegistrationsTransaction welcome notifications', () => {
         },
       ])
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([{ notification_id: 21 }]);
+      .mockResolvedValueOnce([
+        { notification_id: '00000000-0000-4000-8000-000000000021' },
+      ]);
     const tx = new RegistrationsTransaction({
       query,
     } as unknown as EntityManager);
@@ -88,7 +92,7 @@ describe('RegistrationsTransaction welcome notifications', () => {
 
     await expect(
       tx.createWelcomeNotifications({
-        registrationId: 10,
+        registrationId: '00000000-0000-4000-8000-000000000010',
         trackingToken: 'token-1',
         ticketNumber: 'A-001',
         now: new Date('2026-10-15T10:00:00Z'),
@@ -115,7 +119,9 @@ describe('RegistrationsRepository public position', () => {
       '550e8400-e29b-41d4-a716-446655440000',
     );
 
-    expect(query.mock.calls[0][0]).toContain('LEFT JOIN dori_operator_session');
+    expect(query.mock.calls[0][0]).toContain(
+      'LEFT JOIN dorify.dori_operator_session',
+    );
     expect(query.mock.calls[0][0]).toContain('os.counter_name');
   });
 });
@@ -129,7 +135,10 @@ describe('RegistrationsRepository appointment lookup', () => {
     const now = new Date('2026-10-17T23:30:00.000Z');
 
     await repository.lookup({
-      queueIds: [3, 4],
+      queueIds: [
+        '00000000-0000-4000-8000-000000000003',
+        '00000000-0000-4000-8000-000000000004',
+      ],
       phoneNumber: '+21698765432',
       now,
     });
@@ -141,7 +150,14 @@ describe('RegistrationsRepository appointment lookup', () => {
     expect(sql).toContain('r.queue_id=ANY($1)');
     expect(sql).toContain('p.phone_number=$2');
     expect(sql).toContain('AT TIME ZONE s.timezone');
-    expect(params).toEqual([[3, 4], '+21698765432', now]);
+    expect(params).toEqual([
+      [
+        '00000000-0000-4000-8000-000000000003',
+        '00000000-0000-4000-8000-000000000004',
+      ],
+      '+21698765432',
+      now,
+    ]);
   });
 
   it('matches the last name and appointment time exactly with the same restrictions', async () => {
@@ -152,7 +168,7 @@ describe('RegistrationsRepository appointment lookup', () => {
     const scheduledTime = new Date('2026-10-18T08:00:00.000Z');
 
     await repository.lookup({
-      queueIds: [3],
+      queueIds: ['00000000-0000-4000-8000-000000000003'],
       lastName: 'Ben Ali',
       scheduledTime,
       now: new Date('2026-10-17T10:00:00.000Z'),
@@ -162,7 +178,11 @@ describe('RegistrationsRepository appointment lookup', () => {
     expect(sql).toContain('LOWER(p.last_name)=LOWER($2)');
     expect(sql).toContain('r.scheduled_time=$3');
     expect(sql).not.toContain('AT TIME ZONE s.timezone');
-    expect(params).toEqual([[3], 'Ben Ali', scheduledTime]);
+    expect(params).toEqual([
+      ['00000000-0000-4000-8000-000000000003'],
+      'Ben Ali',
+      scheduledTime,
+    ]);
   });
 });
 
@@ -212,7 +232,12 @@ describe('RegistrationsRepository filters', () => {
     const query = jest
       .fn()
       .mockResolvedValueOnce([{ total: 1 }])
-      .mockResolvedValueOnce([{ registration_id: 10, active_note_count: 0 }]);
+      .mockResolvedValueOnce([
+        {
+          registration_id: '00000000-0000-4000-8000-000000000010',
+          active_note_count: 0,
+        },
+      ]);
     const repository = new RegistrationsRepository({
       query,
     } as unknown as DataSource);
@@ -242,7 +267,10 @@ describe('RegistrationsRepository filters', () => {
     } as unknown as DataSource);
 
     await repository.findPage(
-      { isActive: true, servedByUserId: 12 } as any,
+      {
+        isActive: true,
+        servedByUserId: '00000000-0000-4000-8000-000000000012',
+      } as any,
       undefined,
       'registration_id',
       'ASC',
@@ -251,7 +279,15 @@ describe('RegistrationsRepository filters', () => {
     );
 
     expect(query.mock.calls[0][0]).toContain('r.served_by_user_id=$2');
-    expect(query.mock.calls[0][1]).toEqual([true, 12]);
-    expect(query.mock.calls[1][1]).toEqual([true, 12, 25, 0]);
+    expect(query.mock.calls[0][1]).toEqual([
+      true,
+      '00000000-0000-4000-8000-000000000012',
+    ]);
+    expect(query.mock.calls[1][1]).toEqual([
+      true,
+      '00000000-0000-4000-8000-000000000012',
+      25,
+      0,
+    ]);
   });
 });

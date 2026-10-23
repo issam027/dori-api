@@ -1,4 +1,4 @@
-import {
+﻿import {
   Column,
   CreateDateColumn,
   Entity,
@@ -8,20 +8,20 @@ import {
 
 @Entity('dori_person_note')
 export class DoriPersonNote {
-  @PrimaryGeneratedColumn()
-  note_id: number;
+  @PrimaryGeneratedColumn('uuid')
+  note_id: string;
 
-  @Column({ type: 'int' })
-  person_id: number;
+  @Column({ type: 'uuid' })
+  person_id: string;
 
   @Column({ type: 'text' })
   content: string;
 
-  @Column({ type: 'int' })
-  created_by_user_id: number;
+  @Column({ type: 'uuid' })
+  created_by_user_id: string;
 
-  @Column({ type: 'int', nullable: true })
-  updated_by_user_id: number | null;
+  @Column({ type: 'uuid', nullable: true })
+  updated_by_user_id: string | null;
 
   @Column({ type: 'boolean', default: true })
   is_active: boolean;

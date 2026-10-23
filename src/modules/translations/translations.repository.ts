@@ -7,7 +7,7 @@ import {
 } from './dto/translation.dto';
 
 export interface TranslationRow {
-  translation_id: number;
+  translation_id: string;
   translation_key: string;
   category: string;
   locale: string;
@@ -31,13 +31,13 @@ export class TranslationsRepository {
   async getBundle(category: string, locale: string, isActive: boolean) {
     const [versions, rows] = await Promise.all([
       this.dataSource.query<Array<{ version: number }>>(
-        'SELECT version FROM dori_translation_category_version WHERE category = $1',
+        'SELECT version FROM dorify.dori_translation_category_version WHERE category = $1',
         [category],
       ),
       this.dataSource.query<
         Array<{ translation_key: string; content: string }>
       >(
-        `SELECT translation_key, content FROM dori_translation
+        `SELECT translation_key, content FROM dorify.dori_translation
          WHERE category = $1 AND locale = $2 AND is_active = $3`,
         [category, locale, isActive],
       ),
@@ -57,21 +57,21 @@ export class TranslationsRepository {
     if (filter.locale) add('locale = ?', filter.locale);
     if (filter.key) add('translation_key ILIKE ?', `%${filter.key}%`);
     const [count] = await this.dataSource.query<Array<{ total: number }>>(
-      `SELECT COUNT(*)::int AS total FROM dori_translation ${where}`,
+      `SELECT COUNT(*)::int AS total FROM dorify.dori_translation ${where}`,
       params,
     );
     const items = await this.dataSource.query<TranslationRow[]>(
-      `SELECT * FROM dori_translation ${where}
+      `SELECT * FROM dorify.dori_translation ${where}
        ORDER BY ${sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`,
       params,
     );
     return { items, total: count?.total ?? 0 };
   }
 
-  create(dto: CreateTranslationDto, userId: number, now: Date) {
+  create(dto: CreateTranslationDto, userId: string, now: Date) {
     return this.dataSource.transaction(async (manager) => {
       const rows = await manager.query<TranslationRow[]>(
-        `INSERT INTO dori_translation (translation_key, category, locale, content,
+        `INSERT INTO dorify.dori_translation (translation_key, category, locale, content,
          expected_params, created_by_user_id, updated_by_user_id, created_at, updated_at)
          VALUES ($1,$2,$3,$4,$5,$6,$6,$7,$7)
          ON CONFLICT (translation_key, locale) DO UPDATE SET content=$4,
@@ -95,23 +95,23 @@ export class TranslationsRepository {
     });
   }
 
-  async findById(translationId: number): Promise<TranslationRow | null> {
+  async findById(translationId: string): Promise<TranslationRow | null> {
     const rows = await this.dataSource.query<TranslationRow[]>(
-      `SELECT * FROM dori_translation WHERE translation_id = $1`,
+      `SELECT * FROM dorify.dori_translation WHERE translation_id = $1`,
       [translationId],
     );
     return rows[0] ?? null;
   }
 
   update(
-    translationId: number,
+    translationId: string,
     dto: UpdateTranslationDto,
-    userId: number,
+    userId: string,
     now: Date,
   ): Promise<VersionedResult<TranslationRow> | null> {
     return this.dataSource.transaction(async (manager) => {
       const existing = await manager.query<TranslationRow[]>(
-        `SELECT * FROM dori_translation
+        `SELECT * FROM dorify.dori_translation
          WHERE translation_id=$1 FOR UPDATE`,
         [translationId],
       );
@@ -135,7 +135,7 @@ export class TranslationsRepository {
       add('updated_at', now);
       values.push(translationId);
       const rows = await manager.query<TranslationRow[]>(
-        `UPDATE dori_translation SET ${fields.join(', ')}
+        `UPDATE dorify.dori_translation SET ${fields.join(', ')}
          WHERE translation_id=$${values.length} RETURNING *`,
         values,
       );
@@ -147,16 +147,16 @@ export class TranslationsRepository {
     });
   }
 
-  delete(translationId: number, userId: number, now: Date) {
+  delete(translationId: string, userId: string, now: Date) {
     return this.dataSource.transaction(async (manager) => {
       const existing = await manager.query<TranslationRow[]>(
-        `SELECT * FROM dori_translation
+        `SELECT * FROM dorify.dori_translation
          WHERE translation_id=$1 AND is_active=TRUE FOR UPDATE`,
         [translationId],
       );
       if (!existing[0]) return null;
       await manager.query(
-        `UPDATE dori_translation SET is_active=FALSE, deleted_at=$1,
+        `UPDATE dorify.dori_translation SET is_active=FALSE, deleted_at=$1,
          updated_by_user_id=$2, updated_at=$1 WHERE translation_id=$3`,
         [now, userId, translationId],
       );
@@ -177,9 +177,9 @@ export class TranslationsRepository {
     now: Date,
   ) {
     const rows = await manager.query<Array<{ version: number }>>(
-      `INSERT INTO dori_translation_category_version (category, version, updated_at)
+      `INSERT INTO dorify.dori_translation_category_version (category, version, updated_at)
        VALUES ($1,1,$2) ON CONFLICT (category) DO UPDATE SET
-       version=dori_translation_category_version.version+1, updated_at=$2 RETURNING version`,
+       version=dorify.dori_translation_category_version.version+1, updated_at=$2 RETURNING version`,
       [category, now],
     );
     return Number(rows[0].version);

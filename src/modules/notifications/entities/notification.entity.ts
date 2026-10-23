@@ -1,4 +1,4 @@
-import {
+﻿import {
   Column,
   CreateDateColumn,
   Entity,
@@ -8,14 +8,14 @@ import {
 
 @Entity('dori_notification')
 export class DoriNotification {
-  @PrimaryGeneratedColumn()
-  notification_id: number;
+  @PrimaryGeneratedColumn('uuid')
+  notification_id: string;
 
-  @Column({ type: 'int' })
-  registration_id: number;
+  @Column({ type: 'uuid' })
+  registration_id: string;
 
-  @Column({ type: 'int', nullable: true })
-  rule_id: number | null;
+  @Column({ type: 'uuid', nullable: true })
+  rule_id: string | null;
 
   @Column({ type: 'varchar', length: 20 })
   channel: 'sms' | 'email';

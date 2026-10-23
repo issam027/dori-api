@@ -1,4 +1,4 @@
-import {
+﻿import {
   Column,
   CreateDateColumn,
   Entity,
@@ -8,8 +8,8 @@ import {
 
 @Entity('dori_user')
 export class DoriUser {
-  @PrimaryGeneratedColumn()
-  user_id: number;
+  @PrimaryGeneratedColumn('uuid')
+  user_id: string;
 
   @Column({ type: 'varchar', length: 50, unique: true })
   username: string;
@@ -54,11 +54,11 @@ export class DoriUser {
   @Column({ type: 'boolean', default: false })
   must_change_password: boolean;
 
-  @Column({ type: 'int', nullable: true })
-  created_by_user_id: number | null;
+  @Column({ type: 'uuid', nullable: true })
+  created_by_user_id: string | null;
 
-  @Column({ type: 'int', nullable: true })
-  updated_by_user_id: number | null;
+  @Column({ type: 'uuid', nullable: true })
+  updated_by_user_id: string | null;
 
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;

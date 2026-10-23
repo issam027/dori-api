@@ -9,7 +9,7 @@
  *
  * Options:
  *   --seed   Also run seed.sql (default: false)
- *   --force  Drop & recreate tables or database if supported
+ *   --force  Drop and recreate only the dorify schema; public is untouched
  */
 
 import * as fs from 'fs';
@@ -99,19 +99,54 @@ async function execSqlFile(client: Client, filePath: string, label: string) {
     return;
   }
   const sql = fs.readFileSync(filePath, 'utf8');
-  log(`Running ${label}…`);
+  log(
+    `Running ${label}ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦`,
+  );
   await client.query(sql);
   log(`${label} completed successfully.`);
 }
 
+async function snapshotPublicSchema(client: Client): Promise<string> {
+  const { rows } = await client.query<{ fingerprint: string }>(`
+    SELECT md5(COALESCE(string_agg(definition, E'\n' ORDER BY definition), '')) AS fingerprint
+    FROM (
+      SELECT 'object|' || c.relkind::text || '|' || c.relname AS definition
+      FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public'
+      UNION ALL
+      SELECT 'column|' || table_name || '|' || column_name || '|' || data_type || '|' || is_nullable || '|' || COALESCE(column_default, '')
+      FROM information_schema.columns WHERE table_schema = 'public'
+      UNION ALL
+      SELECT 'constraint|' || con.conname || '|' || pg_get_constraintdef(con.oid, true)
+      FROM pg_constraint con JOIN pg_namespace n ON n.oid = con.connamespace
+      WHERE n.nspname = 'public'
+      UNION ALL
+      SELECT 'index|' || indexname || '|' || indexdef
+      FROM pg_indexes WHERE schemaname = 'public'
+      UNION ALL
+      SELECT 'function|' || p.proname || '|' || pg_get_function_identity_arguments(p.oid) || '|' || pg_get_functiondef(p.oid)
+      FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public'
+      UNION ALL
+      SELECT 'trigger|' || t.tgname || '|' || pg_get_triggerdef(t.oid, true)
+      FROM pg_trigger t
+      JOIN pg_class c ON c.oid = t.tgrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public' AND NOT t.tgisinternal
+    ) catalog
+  `);
+  return rows[0].fingerprint;
+}
 async function main() {
   log(`Target Database: ${DB_NAME} on ${DB_HOST}:${DB_PORT} (SSL: ${DB_SSL})`);
 
-  if (!DB_SKIP_CREATE) {
+  if (!DB_SKIP_CREATE && !force) {
     const adminClient = new Client(buildClientConfig(DB_ADMIN_NAME));
 
     try {
-      log(`Connecting to admin database "${DB_ADMIN_NAME}"…`);
+      log(
+        `Connecting to admin database "${DB_ADMIN_NAME}"ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦`,
+      );
       await adminClient.connect();
       log('Connected to admin database.');
 
@@ -121,14 +156,10 @@ async function main() {
       );
       const dbExists = rows.length > 0;
 
-      if (force && dbExists) {
-        log(`--force flag set: dropping database "${DB_NAME}"…`);
-        await adminClient.query(`DROP DATABASE "${DB_NAME}"`);
-        log(`Database "${DB_NAME}" dropped.`);
-      }
-
-      if (!dbExists || force) {
-        log(`Creating database "${DB_NAME}"…`);
+      if (!dbExists) {
+        log(
+          `Creating database "${DB_NAME}"ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦`,
+        );
         await adminClient.query(`CREATE DATABASE "${DB_NAME}"`);
         log(`Database "${DB_NAME}" created.`);
       } else {
@@ -147,16 +178,22 @@ async function main() {
   const appClient = new Client(buildClientConfig(DB_NAME));
 
   try {
-    log(`Connecting to target database "${DB_NAME}"…`);
+    log(
+      `Connecting to target database "${DB_NAME}"ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦`,
+    );
     await appClient.connect();
     log(`Connected to target database "${DB_NAME}".`);
+    await appClient.query('SET search_path TO dorify, pg_catalog');
+    const publicSchemaBefore = await snapshotPublicSchema(appClient);
 
-    if (force && DB_SKIP_CREATE) {
-      log(`--force flag set on managed DB: resetting public schema…`);
-      await appClient.query(
-        `DROP SCHEMA public CASCADE; CREATE SCHEMA public;`,
+    if (force) {
+      log(
+        `--force flag set: resetting dorify schema onlyÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦`,
       );
-      log(`Public schema reset.`);
+      await appClient.query(
+        `DROP SCHEMA IF EXISTS dorify CASCADE; CREATE SCHEMA dorify;`,
+      );
+      log(`Dorify schema reset; public schema was not modified.`);
     }
 
     await runMigrations(
@@ -191,6 +228,13 @@ async function main() {
       );
     }
 
+    const publicSchemaAfter = await snapshotPublicSchema(appClient);
+    if (publicSchemaAfter !== publicSchemaBefore) {
+      throw new Error(
+        'The public schema changed during dorify initialization.',
+      );
+    }
+    log('Verified: public schema is unchanged.');
     log('Database initialisation complete!');
   } finally {
     await appClient.end();
@@ -198,6 +242,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  err(e.message);
+  err(` position=${e.position ?? 'unknown'}`);
   process.exit(1);
 });

@@ -8,7 +8,7 @@ describe('NotificationWorker', () => {
     const repository = {
       claimPending: jest.fn().mockResolvedValue([
         {
-          notification_id: 42,
+          notification_id: '00000000-0000-4000-8000-000000000042',
           channel: 'sms',
           notification_type: 'welcome',
           recipient: '+21600000000',
@@ -29,7 +29,7 @@ describe('NotificationWorker', () => {
 
     expect(repository.claimPending).toHaveBeenCalledWith(now);
     expect(repository.markDelivered).toHaveBeenCalledWith(
-      42,
+      '00000000-0000-4000-8000-000000000042',
       expect.stringMatching(/^msg_[a-f0-9]{16}$/),
       now,
     );

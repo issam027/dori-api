@@ -1,25 +1,24 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsUUID,
+  isUUID,
   IsIn,
-  IsInt,
   IsISO8601,
   IsOptional,
   IsString,
   IsTimeZone,
-  Min,
   registerDecorator,
   ValidationArguments,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 
-function IsPositiveIntegerCsv(field: string): PropertyDecorator {
+function IsUuidCsv(field: string): PropertyDecorator {
   return (target, propertyName) =>
     registerDecorator({
-      name: 'isPositiveIntegerCsv',
+      name: 'isUuidCsv',
       target: target.constructor,
       propertyName: propertyName.toString(),
       options: {
-        message: `${field} must be a comma-separated list of positive integers`,
+        message: `${field} must be a comma-separated list of UUIDs`,
       },
       validator: {
         validate: (value: unknown, _args: ValidationArguments) =>
@@ -28,7 +27,7 @@ function IsPositiveIntegerCsv(field: string): PropertyDecorator {
           value
             .split(',')
             .map((item) => item.trim())
-            .every((item) => /^\d+$/.test(item) && Number(item) > 0),
+            .every((item) => isUUID(item)),
       },
     });
 }
@@ -68,27 +67,25 @@ const ENTRY_TYPES = ['walkin', 'appointment'] as const;
 
 export class ReportSeriesQueryDto {
   @ApiPropertyOptional({ minimum: 1, description: 'Site à superviser' })
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
+  @IsUUID()
   @IsOptional()
-  siteId?: number;
+  siteId?: string;
 
   @ApiPropertyOptional({ type: String, example: '10,11' })
   @IsString()
-  @IsPositiveIntegerCsv('queueIds')
+  @IsUuidCsv('queueIds')
   @IsOptional()
   queueIds?: string;
 
   @ApiPropertyOptional({ type: String, example: '4,7' })
   @IsString()
-  @IsPositiveIntegerCsv('userIds')
+  @IsUuidCsv('userIds')
   @IsOptional()
   userIds?: string;
 
   @ApiPropertyOptional({ type: String, example: '1,3' })
   @IsString()
-  @IsPositiveIntegerCsv('tierIds')
+  @IsUuidCsv('tierIds')
   @IsOptional()
   tierIds?: string;
 

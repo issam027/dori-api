@@ -6,7 +6,13 @@ describe('NotificationWorkerRepository', () => {
     ['flat rows', (rows: unknown[]) => rows],
     ['TypeORM tuple', (rows: unknown[]) => [rows, rows.length]],
   ])('normalizes %s returned by UPDATE RETURNING', async (_label, shape) => {
-    const rows = [{ notification_id: 7, channel: 'sms', recipient: '+216' }];
+    const rows = [
+      {
+        notification_id: '00000000-0000-4000-8000-000000000007',
+        channel: 'sms',
+        recipient: '+216',
+      },
+    ];
     const query = jest.fn().mockResolvedValue(shape(rows));
     const dataSource = {
       transaction: jest.fn((callback) => callback({ query })),

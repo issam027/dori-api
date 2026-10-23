@@ -7,7 +7,7 @@ describe('AuditRepository', () => {
     const query = jest.fn().mockResolvedValue([]);
     const repository = new AuditRepository({ query } as unknown as DataSource);
     const record = {
-      actorUserId: 1,
+      actorUserId: '00000000-0000-4000-8000-000000000001',
       action: 'queue.reset',
       targetType: 'queue',
       targetId: '4',
@@ -23,9 +23,11 @@ describe('AuditRepository', () => {
     await repository.append(record);
 
     expect(query).toHaveBeenCalledTimes(1);
-    expect(query.mock.calls[0][0]).toContain('INSERT INTO dori_audit_event');
+    expect(query.mock.calls[0][0]).toContain(
+      'INSERT INTO dorify.dori_audit_event',
+    );
     expect(query.mock.calls[0][1]).toEqual([
-      1,
+      '00000000-0000-4000-8000-000000000001',
       'queue.reset',
       'queue',
       '4',
@@ -46,7 +48,7 @@ describe('AuditRepository', () => {
       .mockResolvedValueOnce([{ event_id: 'event-1' }]);
     const repository = new AuditRepository({ query } as unknown as DataSource);
     const filter = Object.assign(new AuditEventQueryDto(), {
-      actorUserId: 7,
+      actorUserId: '00000000-0000-4000-8000-000000000007',
       outcome: 'success' as const,
       search: 'site%_admin',
       dateFrom: '2026-10-01',
@@ -65,7 +67,7 @@ describe('AuditRepository', () => {
     expect(query.mock.calls[0][0]).toContain('actor_user_id = $1');
     expect(query.mock.calls[1][0]).toContain('ORDER BY occurred_at DESC');
     expect(query.mock.calls[1][1]).toEqual([
-      7,
+      '00000000-0000-4000-8000-000000000007',
       'success',
       '2026-10-01',
       '2026-10-31',

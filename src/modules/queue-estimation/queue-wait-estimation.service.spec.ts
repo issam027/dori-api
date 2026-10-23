@@ -3,9 +3,9 @@ import { QueueWaitEstimationService } from './queue-wait-estimation.service';
 
 describe('QueueWaitEstimationService', () => {
   const registration = {
-    registration_id: 12,
-    site_id: 2,
-    queue_id: 4,
+    registration_id: '00000000-0000-4000-8000-000000000012',
+    site_id: '00000000-0000-4000-8000-000000000002',
+    queue_id: '00000000-0000-4000-8000-000000000004',
     business_date: '2026-10-20',
     average_wait_time: 10,
   };

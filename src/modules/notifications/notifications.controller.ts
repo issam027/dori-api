@@ -6,7 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Post,
   Query,
   RawBodyRequest,
@@ -82,7 +82,7 @@ export class NotificationsController {
   })
   @ApiDoriOkResponse(NotificationResponseDto, 'Détails de la notification')
   async findNotificationById(
-    @Param('notificationId', ParseIntPipe) notificationId: number,
+    @Param('notificationId', ParseUUIDPipe) notificationId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.notifService.findNotificationById(notificationId, user);
@@ -122,7 +122,7 @@ export class NotificationsController {
   })
   @ApiDoriOkResponse(NotificationResponseDto, 'Notification réémise')
   async resend(
-    @Param('notificationId', ParseIntPipe) notificationId: number,
+    @Param('notificationId', ParseUUIDPipe) notificationId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.notifService.resendNotification(notificationId, user);

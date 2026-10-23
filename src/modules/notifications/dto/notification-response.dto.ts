@@ -1,15 +1,18 @@
+import { IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
 export class NotificationResponseDto {
   @ApiProperty({ example: 1, description: 'ID unique de la notification' })
-  notificationId: number;
+  @IsUUID()
+  notificationId: string;
 
   @ApiProperty({
     example: 42,
     description: "ID de l'inscription client associée",
   })
-  registrationId: number;
+  @IsUUID()
+  registrationId: string;
 
   @ApiProperty({
     enum: ['sms', 'email'],

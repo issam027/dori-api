@@ -7,7 +7,7 @@ describe('AuditEventQueryDto', () => {
     const dto = plainToInstance(AuditEventQueryDto, {
       page: '1',
       pageSize: '25',
-      actorUserId: '7',
+      actorUserId: '00000000-0000-4000-8000-000000000007',
       outcome: 'success',
       search: 'site',
       dateFrom: '2026-10-01',

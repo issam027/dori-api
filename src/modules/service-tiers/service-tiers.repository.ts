@@ -8,13 +8,13 @@ import {
 } from './dto/service-tier.dto';
 
 export type ServiceTierRow = Record<string, unknown> & {
-  tier_id: number;
+  tier_id: string;
   is_system: boolean;
 };
 
 export type QueueTierRow = Record<string, unknown> & {
-  queue_id: number;
-  tier_id: number;
+  queue_id: string;
+  tier_id: string;
   price: string | number;
   currency: string;
   currency_override?: string | null;
@@ -30,9 +30,9 @@ export type QueueTierRow = Record<string, unknown> & {
 };
 
 export type NotificationRuleRow = Record<string, unknown> & {
-  rule_id: number;
-  queue_id: number;
-  tier_id: number;
+  rule_id: string;
+  queue_id: string;
+  tier_id: string;
   notification_type: 'welcome' | 'threshold';
   channel: string;
   threshold_position?: number | null;
@@ -61,19 +61,19 @@ export class ServiceTiersRepository {
     offset: number;
   }) {
     const counts: Array<{ total: number }> = await this.dataSource.query(
-      `SELECT COUNT(*)::int AS total FROM dori_service_tier WHERE is_active = TRUE`,
+      `SELECT COUNT(*)::int AS total FROM dorify.dori_service_tier WHERE is_active = TRUE`,
     );
     const items: ServiceTierRow[] = await this.dataSource.query(
-      `SELECT * FROM dori_service_tier WHERE is_active = TRUE
+      `SELECT * FROM dorify.dori_service_tier WHERE is_active = TRUE
        ORDER BY ${input.sortField} ${input.sortOrder} LIMIT $1 OFFSET $2`,
       [input.pageSize, input.offset],
     );
     return { items, total: counts[0]?.total ?? 0 };
   }
 
-  async findActiveTier(tierId: number): Promise<ServiceTierRow | null> {
+  async findActiveTier(tierId: string): Promise<ServiceTierRow | null> {
     const rows: ServiceTierRow[] = await this.dataSource.query(
-      `SELECT * FROM dori_service_tier WHERE tier_id = $1 AND is_active = TRUE`,
+      `SELECT * FROM dorify.dori_service_tier WHERE tier_id = $1 AND is_active = TRUE`,
       [tierId],
     );
     return rows[0] ?? null;
@@ -83,11 +83,11 @@ export class ServiceTiersRepository {
     tierCode: string;
     tierName: string;
     description?: string;
-    userId: number;
+    userId: string;
     now: Date;
   }) {
     const rows: ServiceTierRow[] = await this.dataSource.query(
-      `INSERT INTO dori_service_tier
+      `INSERT INTO dorify.dori_service_tier
        (tier_code, tier_name, description, is_system, created_by_user_id, updated_by_user_id, created_at, updated_at)
        VALUES ($1, $2, $3, FALSE, $4, $4, $5, $5) RETURNING *`,
       [
@@ -102,9 +102,9 @@ export class ServiceTiersRepository {
   }
 
   async updateTier(
-    tierId: number,
+    tierId: string,
     dto: UpdateTierDto,
-    userId: number,
+    userId: string,
     now: Date,
   ) {
     const entries: Array<[string, unknown]> = [
@@ -113,7 +113,7 @@ export class ServiceTiersRepository {
       ['is_active', dto.isActive],
     ];
     return this.dynamicUpdate<ServiceTierRow>(
-      'dori_service_tier',
+      'dorify.dori_service_tier',
       entries,
       userId,
       now,
@@ -122,20 +122,20 @@ export class ServiceTiersRepository {
   }
 
   async softDeleteTier(
-    tierId: number,
-    userId: number,
+    tierId: string,
+    userId: string,
     now: Date,
   ): Promise<void> {
     await this.dataSource.query(
-      `UPDATE dori_service_tier SET is_active = FALSE, deleted_at = $1,
+      `UPDATE dorify.dori_service_tier SET is_active = FALSE, deleted_at = $1,
        updated_by_user_id = $2, updated_at = $1 WHERE tier_id = $3`,
       [now, userId, tierId],
     );
   }
 
   async findQueueTier(
-    queueId: number,
-    tierId: number,
+    queueId: string,
+    tierId: string,
   ): Promise<QueueTierRow | null> {
     const rows: QueueTierRow[] = await this.dataSource.query(
       `SELECT qt.queue_id, qt.tier_id, qt.price, qt.currency AS currency_override,
@@ -144,10 +144,10 @@ export class ServiceTiersRepository {
                    WHEN q.currency IS NOT NULL THEN 'queue' ELSE 'site' END AS currency_origin,
               qt.is_active, qt.is_default, qt.display_order,
               t.tier_code, t.tier_name, t.description, t.is_system
-       FROM dori_queue_service_tier qt
-       JOIN dori_service_tier t ON t.tier_id = qt.tier_id
-       JOIN dori_queue q ON q.queue_id = qt.queue_id
-       JOIN dori_site s ON s.site_id = q.site_id
+       FROM dorify.dori_queue_service_tier qt
+       JOIN dorify.dori_service_tier t ON t.tier_id = qt.tier_id
+       JOIN dorify.dori_queue q ON q.queue_id = qt.queue_id
+       JOIN dorify.dori_site s ON s.site_id = q.site_id
        WHERE qt.queue_id = $1 AND qt.tier_id = $2`,
       [queueId, tierId],
     );
@@ -155,14 +155,14 @@ export class ServiceTiersRepository {
   }
 
   async findQueueTierPage(input: {
-    queueId: number;
+    queueId: string;
     sortField: string;
     sortOrder: 'ASC' | 'DESC';
     pageSize: number;
     offset: number;
   }) {
     const counts: Array<{ total: number }> = await this.dataSource.query(
-      `SELECT COUNT(*)::int AS total FROM dori_queue_service_tier
+      `SELECT COUNT(*)::int AS total FROM dorify.dori_queue_service_tier
        WHERE queue_id = $1 AND is_active = TRUE`,
       [input.queueId],
     );
@@ -174,10 +174,10 @@ export class ServiceTiersRepository {
               CASE WHEN qt.currency IS NOT NULL THEN 'association'
                    WHEN q.currency IS NOT NULL THEN 'queue' ELSE 'site' END AS currency_origin,
               t.tier_code, t.tier_name, t.description AS tier_description, t.is_system
-       FROM dori_queue_service_tier qt
-       JOIN dori_service_tier t ON t.tier_id = qt.tier_id
-       JOIN dori_queue q ON q.queue_id = qt.queue_id
-       JOIN dori_site s ON s.site_id = q.site_id
+       FROM dorify.dori_queue_service_tier qt
+       JOIN dorify.dori_service_tier t ON t.tier_id = qt.tier_id
+       JOIN dorify.dori_queue q ON q.queue_id = qt.queue_id
+       JOIN dorify.dori_site s ON s.site_id = q.site_id
        WHERE qt.queue_id = $1 AND qt.is_active = TRUE
        ORDER BY qt.${input.sortField} ${input.sortOrder}, qt.tier_id ASC LIMIT $2 OFFSET $3`,
       [input.queueId, input.pageSize, input.offset],
@@ -186,28 +186,28 @@ export class ServiceTiersRepository {
   }
 
   async upsertQueueTier(
-    queueId: number,
+    queueId: string,
     dto: AssociateQueueTierDto,
-    userId: number,
+    userId: string,
     now: Date,
   ) {
     await this.dataSource.transaction(async (manager) => {
       if (dto.isDefault === true) {
         await manager.query(
-          `UPDATE dori_queue_service_tier SET is_default = FALSE,
+          `UPDATE dorify.dori_queue_service_tier SET is_default = FALSE,
            updated_by_user_id = $2, updated_at = $3
            WHERE queue_id = $1 AND is_default = TRUE`,
           [queueId, userId, now],
         );
       }
       await manager.query(
-        `INSERT INTO dori_queue_service_tier
+        `INSERT INTO dorify.dori_queue_service_tier
          (queue_id, tier_id, price, currency, display_order, is_default,
           created_by_user_id, updated_by_user_id, created_at, updated_at)
          VALUES ($1, $2, $3, $4, COALESCE($5, 0), COALESCE($6, FALSE), $7, $7, $8, $8)
          ON CONFLICT (queue_id, tier_id) DO UPDATE SET price = $3, currency = $4,
-         display_order = COALESCE($5, dori_queue_service_tier.display_order),
-         is_default = COALESCE($6, dori_queue_service_tier.is_default), is_active = TRUE,
+         display_order = COALESCE($5, dorify.dori_queue_service_tier.display_order),
+         is_default = COALESCE($6, dorify.dori_queue_service_tier.is_default), is_active = TRUE,
          deleted_at = NULL, updated_by_user_id = $7, updated_at = $8`,
         [
           queueId,
@@ -224,16 +224,16 @@ export class ServiceTiersRepository {
   }
 
   async updateQueueTier(
-    queueId: number,
-    tierId: number,
+    queueId: string,
+    tierId: string,
     dto: UpdateQueueTierDto,
-    userId: number,
+    userId: string,
     now: Date,
   ) {
     await this.dataSource.transaction(async (manager) => {
       if (dto.isDefault === true) {
         await manager.query(
-          `UPDATE dori_queue_service_tier SET is_default = FALSE,
+          `UPDATE dorify.dori_queue_service_tier SET is_default = FALSE,
            updated_by_user_id = $2, updated_at = $3
            WHERE queue_id = $1 AND is_default = TRUE`,
           [queueId, userId, now],
@@ -247,7 +247,7 @@ export class ServiceTiersRepository {
         ['is_default', dto.isDefault],
       ];
       await this.dynamicUpdate<QueueTierRow>(
-        'dori_queue_service_tier',
+        'dorify.dori_queue_service_tier',
         entries,
         userId,
         now,
@@ -261,33 +261,33 @@ export class ServiceTiersRepository {
   }
 
   async removeQueueTier(
-    queueId: number,
-    tierId: number,
-    userId: number,
+    queueId: string,
+    tierId: string,
+    userId: string,
     now: Date,
   ) {
     await this.dataSource.query(
-      `UPDATE dori_queue_service_tier SET is_active = FALSE, deleted_at = $1,
+      `UPDATE dorify.dori_queue_service_tier SET is_active = FALSE, deleted_at = $1,
        updated_by_user_id = $2, updated_at = $1 WHERE queue_id = $3 AND tier_id = $4`,
       [now, userId, queueId, tierId],
     );
   }
 
   async findNotificationRulePage(input: {
-    queueId: number;
-    tierId: number;
+    queueId: string;
+    tierId: string;
     sortField: string;
     sortOrder: 'ASC' | 'DESC';
     pageSize: number;
     offset: number;
   }): Promise<{ items: NotificationRuleRow[]; total: number }> {
     const counts: Array<{ total: number }> = await this.dataSource.query(
-      `SELECT COUNT(*)::int AS total FROM dori_queue_tier_notification_rule
+      `SELECT COUNT(*)::int AS total FROM dorify.dori_queue_tier_notification_rule
        WHERE queue_id = $1 AND tier_id = $2 AND is_active = TRUE`,
       [input.queueId, input.tierId],
     );
     const items: NotificationRuleRow[] = await this.dataSource.query(
-      `SELECT * FROM dori_queue_tier_notification_rule
+      `SELECT * FROM dorify.dori_queue_tier_notification_rule
        WHERE queue_id = $1 AND tier_id = $2 AND is_active = TRUE
        ORDER BY ${input.sortField} ${input.sortOrder} LIMIT $3 OFFSET $4`,
       [input.queueId, input.tierId, input.pageSize, input.offset],
@@ -296,12 +296,12 @@ export class ServiceTiersRepository {
   }
 
   async findNotificationRule(
-    queueId: number,
-    tierId: number,
-    ruleId: number,
+    queueId: string,
+    tierId: string,
+    ruleId: string,
   ): Promise<NotificationRuleRow | null> {
     const rows: NotificationRuleRow[] = await this.dataSource.query(
-      `SELECT * FROM dori_queue_tier_notification_rule
+      `SELECT * FROM dorify.dori_queue_tier_notification_rule
        WHERE rule_id = $1 AND queue_id = $2 AND tier_id = $3
          AND deleted_at IS NULL`,
       [ruleId, queueId, tierId],
@@ -310,11 +310,11 @@ export class ServiceTiersRepository {
   }
 
   async findActiveNotificationRules(
-    queueId: number,
-    tierId: number,
+    queueId: string,
+    tierId: string,
   ): Promise<NotificationRuleRow[]> {
     return this.dataSource.query(
-      `SELECT * FROM dori_queue_tier_notification_rule
+      `SELECT * FROM dorify.dori_queue_tier_notification_rule
        WHERE queue_id = $1 AND tier_id = $2 AND is_active = TRUE
        ORDER BY rule_id ASC`,
       [queueId, tierId],
@@ -322,10 +322,10 @@ export class ServiceTiersRepository {
   }
 
   async createNotificationRule(
-    queueId: number,
-    tierId: number,
+    queueId: string,
+    tierId: string,
     dto: CreateNotificationRuleDto,
-    userId: number,
+    userId: string,
     now: Date,
   ): Promise<NotificationRuleRow> {
     const thresholdPosition =
@@ -338,7 +338,7 @@ export class ServiceTiersRepository {
         ? (dto.thresholdValue ?? null)
         : null;
     const rows: NotificationRuleRow[] = await this.dataSource.query(
-      `INSERT INTO dori_queue_tier_notification_rule (
+      `INSERT INTO dorify.dori_queue_tier_notification_rule (
         queue_id, tier_id, notification_type, channel, threshold_position,
         threshold_minutes, include_tracking_link, created_by_user_id,
         updated_by_user_id, created_at, updated_at
@@ -360,11 +360,11 @@ export class ServiceTiersRepository {
   }
 
   async updateNotificationRule(
-    queueId: number,
-    tierId: number,
-    ruleId: number,
+    queueId: string,
+    tierId: string,
+    ruleId: string,
     dto: NotificationRulePersistenceUpdate,
-    userId: number,
+    userId: string,
     now: Date,
   ): Promise<NotificationRuleRow> {
     const entries: Array<[string, unknown]> = [
@@ -376,7 +376,7 @@ export class ServiceTiersRepository {
       ['is_active', dto.isActive],
     ];
     return this.dynamicUpdate<NotificationRuleRow>(
-      'dori_queue_tier_notification_rule',
+      'dorify.dori_queue_tier_notification_rule',
       entries,
       userId,
       now,
@@ -389,14 +389,14 @@ export class ServiceTiersRepository {
   }
 
   async softDeleteNotificationRule(
-    queueId: number,
-    tierId: number,
-    ruleId: number,
-    userId: number,
+    queueId: string,
+    tierId: string,
+    ruleId: string,
+    userId: string,
     now: Date,
   ): Promise<void> {
     await this.dataSource.query(
-      `UPDATE dori_queue_tier_notification_rule
+      `UPDATE dorify.dori_queue_tier_notification_rule
        SET is_active = FALSE, deleted_at = $1, updated_by_user_id = $2, updated_at = $1
        WHERE rule_id = $3 AND queue_id = $4 AND tier_id = $5`,
       [now, userId, ruleId, queueId, tierId],
@@ -406,9 +406,9 @@ export class ServiceTiersRepository {
   private async dynamicUpdate<T>(
     table: string,
     entries: Array<[string, unknown]>,
-    userId: number,
+    userId: string,
     now: Date,
-    keys: Array<[string, number]>,
+    keys: Array<[string, string]>,
     executor: DataSource | EntityManager = this.dataSource,
   ): Promise<T> {
     const values: unknown[] = [];

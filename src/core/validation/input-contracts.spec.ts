@@ -68,10 +68,10 @@ describe('API input contracts', () => {
 
   it('converts and validates servedByUserId in registration filters', async () => {
     const dto = plainToInstance(RegistrationFilterDto, {
-      servedByUserId: '12',
+      servedByUserId: '00000000-0000-4000-8000-000000000012',
     });
 
     expect(await validate(dto)).toHaveLength(0);
-    expect(dto.servedByUserId).toBe(12);
+    expect(dto.servedByUserId).toBe('00000000-0000-4000-8000-000000000012');
   });
 });

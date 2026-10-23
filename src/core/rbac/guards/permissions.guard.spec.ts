@@ -24,7 +24,10 @@ describe('PermissionsGuard', () => {
 
   it('should allow access if no permissions are required', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
-    const context = createMockContext({ userId: 1, permissions: [] });
+    const context = createMockContext({
+      userId: '00000000-0000-4000-8000-000000000001',
+      permissions: [],
+    });
     expect(guard.canActivate(context)).toBe(true);
   });
 
@@ -34,7 +37,7 @@ describe('PermissionsGuard', () => {
       return undefined;
     });
     const context = createMockContext({
-      userId: 1,
+      userId: '00000000-0000-4000-8000-000000000001',
       roles: ['root'],
       permissions: [],
     });
@@ -50,7 +53,7 @@ describe('PermissionsGuard', () => {
     });
 
     const context = createMockContext({
-      userId: 2,
+      userId: '00000000-0000-4000-8000-000000000002',
       permissions: ['user_manage_operator'],
     });
 
@@ -66,7 +69,7 @@ describe('PermissionsGuard', () => {
     });
 
     const context = createMockContext({
-      userId: 2,
+      userId: '00000000-0000-4000-8000-000000000002',
       permissions: ['user_manage_operator'],
     });
 

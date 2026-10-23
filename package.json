@@ -17,7 +17,7 @@
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --max-warnings=0",
     "lint:fix": "npm run lint -- --fix",
     "typecheck": "tsc --noEmit --noUnusedLocals --noUnusedParameters",
-    "quality:check": "npm run format:check && npm run lint && npm run typecheck && npm run build:check && npm test -- --runInBand --coverage=false",
+    "quality:check": "npm run format:check \u0026\u0026 npm run lint \u0026\u0026 npm run typecheck \u0026\u0026 npm run build:check \u0026\u0026 npm run uuid:verify \u0026\u0026 npm test -- --runInBand --coverage=false",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
@@ -28,7 +28,9 @@
     "db:schema": "ts-node -r tsconfig-paths/register scripts/db-init.ts",
     "db:seed": "ts-node -r tsconfig-paths/register scripts/db-init.ts --seed",
     "db:verify": "ts-node -r tsconfig-paths/register scripts/db-verify.ts",
-    "swagger:export": "ts-node -r tsconfig-paths/register scripts/swagger-export.ts"
+    "swagger:export": "ts-node -r tsconfig-paths/register scripts/swagger-export.ts",
+    "uuid:verify": "ts-node -r tsconfig-paths/register scripts/uuid-verify.ts",
+    "db:reset": "ts-node -r tsconfig-paths/register scripts/db-init.ts --seed --force"
   },
   "dependencies": {
     "@nestjs/bullmq": "^11.0.5",

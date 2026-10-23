@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -159,7 +159,7 @@ export class AuthService {
    *   - body.userId != caller.userId → force-disconnect d'un autre user :
    *       nécessite d'être manager/admin/root et de passer le contrôle hiérarchique
    */
-  async logout(caller: AuthenticatedUser, logoutDto?: { userId?: number }) {
+  async logout(caller: AuthenticatedUser, logoutDto?: { userId?: string }) {
     const now = this.clockService.now();
     const targetUserId = logoutDto?.userId;
 
@@ -258,10 +258,10 @@ export class AuthService {
   }
 
   async changePassword(
-    userOrId: AuthenticatedUser | number,
+    userOrId: AuthenticatedUser | string,
     dto: { currentPassword: string; newPassword: string },
   ) {
-    const userId = typeof userOrId === 'number' ? userOrId : userOrId.userId;
+    const userId = typeof userOrId === 'string' ? userOrId : userOrId.userId;
     const user = await this.authRepository.findActiveUserById(userId);
 
     if (!user) {
@@ -290,7 +290,7 @@ export class AuthService {
   }
 
   private async getUserRolesAndPermissions(
-    userId: number,
+    userId: string,
   ): Promise<{ roles: string[]; permissions: string[] }> {
     return this.authRepository.getRolesAndPermissions(userId);
   }

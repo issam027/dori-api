@@ -17,14 +17,17 @@ describe('AuditInterceptor', () => {
     getAllAndOverride: jest.fn().mockReturnValue(definition),
   } as unknown as Reflector;
   const request = {
-    user: { userId: 7 },
-    params: { userId: '42', roleId: '3' },
+    user: { userId: '00000000-0000-4000-8000-000000000007' },
+    params: {
+      userId: '00000000-0000-4000-8000-000000000042',
+      roleId: '00000000-0000-4000-8000-000000000003',
+    },
     headers: { 'x-correlation-id': 'corr-1' },
     method: 'DELETE',
-    path: '/api/v1/users/42/roles/3',
+    path: '/api/v1/users/00000000-0000-4000-8000-000000000042/roles/00000000-0000-4000-8000-000000000003',
     route: { path: 'users/:userId/roles/:roleId' },
     body: {
-      roleId: 3,
+      roleId: '00000000-0000-4000-8000-000000000003',
       password: 'never-audited',
       email: 'private@example.test',
     },
@@ -49,11 +52,11 @@ describe('AuditInterceptor', () => {
 
     expect(result).toEqual({ ok: true });
     expect(append).toHaveBeenCalledWith({
-      actorUserId: 7,
+      actorUserId: '00000000-0000-4000-8000-000000000007',
       action: 'user.role.remove',
       targetType: 'user',
-      targetId: '42',
-      secondaryTargetId: '3',
+      targetId: '00000000-0000-4000-8000-000000000042',
+      secondaryTargetId: '00000000-0000-4000-8000-000000000003',
       outcome: 'success',
       correlationId: 'corr-1',
       requestMethod: 'DELETE',
@@ -93,12 +96,20 @@ describe('AuditInterceptor', () => {
 
     await lastValueFrom(
       interceptor.intercept(context, {
-        handle: () => of({ data: { siteId: 81, siteName: 'Accueil' } }),
+        handle: () =>
+          of({
+            data: {
+              siteId: '00000000-0000-4000-8000-000000000081',
+              siteName: 'Accueil',
+            },
+          }),
       }),
     );
 
     expect(append).toHaveBeenCalledWith(
-      expect.objectContaining({ targetId: '81' }),
+      expect.objectContaining({
+        targetId: '00000000-0000-4000-8000-000000000081',
+      }),
     );
     expect(JSON.stringify(append.mock.calls)).not.toContain('Accueil');
   });
@@ -118,7 +129,7 @@ describe('AuditInterceptor', () => {
       ...request,
       params: { userId: '42' },
       body: {
-        roleId: 3,
+        roleId: '00000000-0000-4000-8000-000000000003',
         password: 'never-audited',
         email: 'private@example.test',
       },
@@ -134,14 +145,16 @@ describe('AuditInterceptor', () => {
     );
 
     expect(append).toHaveBeenCalledWith(
-      expect.objectContaining({ secondaryTargetId: '3' }),
+      expect.objectContaining({
+        secondaryTargetId: '00000000-0000-4000-8000-000000000003',
+      }),
     );
     const serialized = JSON.stringify(append.mock.calls);
     expect(serialized).not.toContain('never-audited');
     expect(serialized).not.toContain('private@example');
   });
 
-  it('extracts only explicitly allowed numeric body identifiers', async () => {
+  it('extracts only explicitly allowed UUID body identifiers', async () => {
     const bodyDefinition = {
       action: 'user.role.assign',
       targetType: 'user',
@@ -159,8 +172,8 @@ describe('AuditInterceptor', () => {
 
     expect(append).toHaveBeenCalledWith(
       expect.objectContaining({
-        targetId: '42',
-        secondaryTargetId: '3',
+        targetId: '00000000-0000-4000-8000-000000000042',
+        secondaryTargetId: '00000000-0000-4000-8000-000000000003',
       }),
     );
     expect(JSON.stringify(append.mock.calls)).not.toContain('never-audited');
@@ -186,7 +199,11 @@ describe('AuditInterceptor', () => {
 
     await lastValueFrom(
       interceptor.intercept(automaticContext, {
-        handle: () => of({ user: { userId: 12 }, accessToken: 'secret' }),
+        handle: () =>
+          of({
+            user: { userId: '00000000-0000-4000-8000-000000000012' },
+            accessToken: 'secret',
+          }),
       }),
     );
 
@@ -194,7 +211,7 @@ describe('AuditInterceptor', () => {
       expect.objectContaining({
         action: 'auth.login',
         targetType: 'user',
-        targetId: '12',
+        targetId: '00000000-0000-4000-8000-000000000012',
         requestMethod: 'POST',
       }),
     );

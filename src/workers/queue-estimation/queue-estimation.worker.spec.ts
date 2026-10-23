@@ -6,11 +6,13 @@ describe('QueueEstimationWorker', () => {
   it('aggregates each queue for its current local activity date', async () => {
     const now = new Date('2026-10-20T23:30:00Z');
     const repository = {
-      findActiveQueues: jest
-        .fn()
-        .mockResolvedValue([
-          { site_id: 2, queue_id: 4, timezone: 'Europe/Berlin' },
-        ]),
+      findActiveQueues: jest.fn().mockResolvedValue([
+        {
+          site_id: '00000000-0000-4000-8000-000000000002',
+          queue_id: '00000000-0000-4000-8000-000000000004',
+          timezone: 'Europe/Berlin',
+        },
+      ]),
       aggregateQueue: jest.fn().mockResolvedValue(true),
     } as unknown as QueueEstimationWorkerRepository;
     const clock = {
@@ -21,8 +23,8 @@ describe('QueueEstimationWorker', () => {
     await new QueueEstimationWorker(repository, clock).handleQueueEstimation();
 
     expect(repository.aggregateQueue).toHaveBeenCalledWith({
-      siteId: 2,
-      queueId: 4,
+      siteId: '00000000-0000-4000-8000-000000000002',
+      queueId: '00000000-0000-4000-8000-000000000004',
       activityDate: '2026-10-21',
       now,
     });
@@ -31,8 +33,16 @@ describe('QueueEstimationWorker', () => {
   it('continues when one queue aggregation fails', async () => {
     const repository = {
       findActiveQueues: jest.fn().mockResolvedValue([
-        { site_id: 2, queue_id: 4, timezone: 'UTC' },
-        { site_id: 2, queue_id: 5, timezone: 'UTC' },
+        {
+          site_id: '00000000-0000-4000-8000-000000000002',
+          queue_id: '00000000-0000-4000-8000-000000000004',
+          timezone: 'UTC',
+        },
+        {
+          site_id: '00000000-0000-4000-8000-000000000002',
+          queue_id: '00000000-0000-4000-8000-000000000005',
+          timezone: 'UTC',
+        },
       ]),
       aggregateQueue: jest
         .fn()

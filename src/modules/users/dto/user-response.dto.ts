@@ -1,9 +1,11 @@
+import { IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
 export class UserSummaryItemDto {
   @ApiProperty({ example: 1, description: "ID unique de l'utilisateur" })
-  userId: number;
+  @IsUUID()
+  userId: string;
 
   @ApiProperty({ example: 'jdupont', description: "Nom d'utilisateur" })
   username: string;
@@ -71,7 +73,8 @@ export class PaginatedUserResponseDto extends PaginatedResponseDto {
 
 export class UserRoleItemDto {
   @ApiProperty({ example: 2, description: 'ID du rôle' })
-  roleId: number;
+  @IsUUID()
+  roleId: string;
 
   @ApiProperty({ example: 'manager', description: 'Nom de code du rôle' })
   roleName: string;
@@ -88,7 +91,8 @@ export class UserRoleItemDto {
 
 export class UserSiteItemDto {
   @ApiProperty({ example: 1, description: 'ID du site' })
-  siteId: number;
+  @IsUUID()
+  siteId: string;
 
   @ApiProperty({ example: 'Site Principal', description: 'Nom du site' })
   siteName: string;
@@ -99,7 +103,8 @@ export class UserSiteItemDto {
 
 export class UserQueueItemDto {
   @ApiProperty({ example: 1, description: 'ID de la file' })
-  queueId: number;
+  @IsUUID()
+  queueId: string;
 
   @ApiProperty({ example: 'CARDIO-01', description: 'Code de la file' })
   queueCode: string;
@@ -108,12 +113,14 @@ export class UserQueueItemDto {
   queueName: string;
 
   @ApiProperty({ example: 1, description: 'ID du site associé' })
-  siteId: number;
+  @IsUUID()
+  siteId: string;
 }
 
 export class UserResponseDto {
   @ApiProperty({ example: 1, description: "ID unique de l'utilisateur" })
-  userId: number;
+  @IsUUID()
+  userId: string;
 
   @ApiProperty({ example: 'jdupont', description: "Nom d'utilisateur" })
   username: string;
@@ -170,7 +177,8 @@ export class UserResponseDto {
 
 export class CreateUserResponseDto {
   @ApiProperty({ example: 1, description: "ID de l'utilisateur créé" })
-  userId: number;
+  @IsUUID()
+  userId: string;
 
   @ApiProperty({ example: 'jdupont', description: "Nom d'utilisateur" })
   username: string;
@@ -206,7 +214,8 @@ export class CreateUserResponseDto {
 
 export class UpdateUserResponseDto {
   @ApiProperty({ example: 1, description: "ID de l'utilisateur mis à jour" })
-  userId: number;
+  @IsUUID()
+  userId: string;
 
   @ApiProperty({ example: 'jdupont', description: "Nom d'utilisateur" })
   username: string;
@@ -242,7 +251,8 @@ export class UpdateUserResponseDto {
 
 export class UpdateUserStatusResponseDto {
   @ApiProperty({ example: 1, description: "ID de l'utilisateur" })
-  userId: number;
+  @IsUUID()
+  userId: string;
 
   @ApiProperty({ example: false, description: 'Nouveau statut actif' })
   isActive: boolean;
@@ -250,7 +260,8 @@ export class UpdateUserStatusResponseDto {
 
 export class SetUserPasswordResponseDto {
   @ApiProperty({ example: 1, description: "ID de l'utilisateur" })
-  userId: number;
+  @IsUUID()
+  userId: string;
 
   @ApiProperty({
     example: true,
@@ -261,10 +272,12 @@ export class SetUserPasswordResponseDto {
 
 export class AssignUserRoleResponseDto {
   @ApiProperty({ example: 1, description: "ID de l'utilisateur" })
-  userId: number;
+  @IsUUID()
+  userId: string;
 
   @ApiProperty({ example: 2, description: 'ID du rôle assigné' })
-  roleId: number;
+  @IsUUID()
+  roleId: string;
 
   @ApiProperty({ example: true, description: "Confirmation de l'assignation" })
   assigned: boolean;
@@ -272,10 +285,12 @@ export class AssignUserRoleResponseDto {
 
 export class RemoveUserRoleResponseDto {
   @ApiProperty({ example: 1, description: "ID de l'utilisateur" })
-  userId: number;
+  @IsUUID()
+  userId: string;
 
   @ApiProperty({ example: 2, description: 'ID du rôle retiré' })
-  roleId: number;
+  @IsUUID()
+  roleId: string;
 
   @ApiProperty({ example: true, description: 'Confirmation du retrait' })
   removed: boolean;
@@ -283,7 +298,8 @@ export class RemoveUserRoleResponseDto {
 
 export class RoleResponseDto {
   @ApiProperty({ example: 1, description: 'ID unique du rôle' })
-  roleId: number;
+  @IsUUID()
+  roleId: string;
 
   @ApiProperty({ example: 'manager', description: 'Nom de code du rôle' })
   roleName: string;
@@ -342,7 +358,8 @@ export class PaginatedRoleResponseDto extends PaginatedResponseDto {
 
 export class UpdateRolePermissionsResponseDto {
   @ApiProperty({ example: 1, description: 'ID du rôle mis à jour' })
-  roleId: number;
+  @IsUUID()
+  roleId: string;
 
   @ApiProperty({
     example: true,
@@ -353,7 +370,8 @@ export class UpdateRolePermissionsResponseDto {
 
 export class DeleteUserResponseDto {
   @ApiProperty({ example: 1, description: "ID de l'utilisateur supprimé" })
-  userId: number;
+  @IsUUID()
+  userId: string;
 
   @ApiProperty({ example: true, description: 'Confirmation de la suppression' })
   deleted: boolean;

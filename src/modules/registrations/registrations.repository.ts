@@ -8,9 +8,9 @@ import {
 import { NotificationTemplateService } from '../../core/notifications/notification-template.service';
 
 export type RegistrationRow = Record<string, unknown> & {
-  registration_id: number;
-  site_id: number;
-  queue_id: number;
+  registration_id: string;
+  site_id: string;
+  queue_id: string;
   business_date: string;
   priority_reference_time: Date | string;
   registration_tracking_token_valid_until: Date | string;
@@ -27,45 +27,45 @@ export type RegistrationRow = Record<string, unknown> & {
 export class RegistrationsTransaction {
   constructor(readonly manager: EntityManager) {}
 
-  async findQueueConfig(queueId: number) {
+  async findQueueConfig(queueId: string) {
     const rows = await this.manager.query(
       `SELECT q.*, s.timezone, s.default_currency,
        s.default_appointments_enabled, s.default_appointment_slot_duration, s.default_slot_capacity,
        s.default_working_hours_start, s.default_working_hours_end, s.default_break_start,
        s.default_break_end, s.default_late_tolerance_minutes, s.default_working_days
-       FROM dori_queue q JOIN dori_site s ON s.site_id = q.site_id
+       FROM dorify.dori_queue q JOIN dorify.dori_site s ON s.site_id = q.site_id
        WHERE q.queue_id = $1 AND q.is_active = TRUE`,
       [queueId],
     );
     return rows[0] ?? null;
   }
 
-  async personExistsInSite(personId: number, siteId: number) {
+  async personExistsInSite(personId: string, siteId: string) {
     const rows = await this.manager.query(
-      `SELECT person_id FROM dori_person WHERE person_id = $1 AND site_id = $2
+      `SELECT person_id FROM dorify.dori_person WHERE person_id = $1 AND site_id = $2
        AND is_active = TRUE AND deleted_at IS NULL`,
       [personId, siteId],
     );
     return rows.length > 0;
   }
 
-  async findOfferedTier(queueId: number, tierId: number) {
+  async findOfferedTier(queueId: string, tierId: string) {
     const rows = await this.manager.query(
       `SELECT qt.price, COALESCE(qt.currency, q.currency, s.default_currency) AS currency,
               t.tier_code, t.tier_name
-       FROM dori_queue_service_tier qt
-       JOIN dori_service_tier t ON t.tier_id = qt.tier_id
-       JOIN dori_queue q ON q.queue_id = qt.queue_id
-       JOIN dori_site s ON s.site_id = q.site_id
+       FROM dorify.dori_queue_service_tier qt
+       JOIN dorify.dori_service_tier t ON t.tier_id = qt.tier_id
+       JOIN dorify.dori_queue q ON q.queue_id = qt.queue_id
+       JOIN dorify.dori_site s ON s.site_id = q.site_id
        WHERE qt.queue_id = $1 AND qt.tier_id = $2 AND qt.is_active = TRUE`,
       [queueId, tierId],
     );
     return rows[0] ?? null;
   }
 
-  async hasOpenRegistration(queueId: number, personId: number) {
+  async hasOpenRegistration(queueId: string, personId: string) {
     const rows = await this.manager.query(
-      `SELECT registration_id FROM dori_registration WHERE queue_id = $1 AND person_id = $2
+      `SELECT registration_id FROM dorify.dori_registration WHERE queue_id = $1 AND person_id = $2
        AND status IN ('booked','waiting','in_progress') AND is_active = TRUE`,
       [queueId, personId],
     );
@@ -73,9 +73,9 @@ export class RegistrationsTransaction {
   }
 
   async lockAndCountSlot(
-    queueId: number,
+    queueId: string,
     scheduledTime: Date,
-    excludedId?: number,
+    excludedId?: string,
   ) {
     await this.manager.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [
       `appointment-slot:${queueId}:${scheduledTime.toISOString()}`,
@@ -85,7 +85,7 @@ export class RegistrationsTransaction {
       excludedId === undefined ? '' : ` AND registration_id <> $3`;
     if (excludedId !== undefined) params.push(excludedId);
     const rows = await this.manager.query(
-      `SELECT COUNT(*)::int AS count FROM dori_registration
+      `SELECT COUNT(*)::int AS count FROM dorify.dori_registration
        WHERE queue_id = $1 AND scheduled_time = $2
        AND status NOT IN ('cancelled') AND is_active = TRUE${exclusion}`,
       params,
@@ -93,11 +93,11 @@ export class RegistrationsTransaction {
     return rows[0]?.count ?? 0;
   }
 
-  async nextTicketNumber(queueId: number, businessDate: string, now: Date) {
+  async nextTicketNumber(queueId: string, businessDate: string, now: Date) {
     const rows = await this.manager.query(
-      `INSERT INTO dori_queue_daily_ticket_counter (queue_id, business_date, last_number) VALUES ($1,$2,1)
+      `INSERT INTO dorify.dori_queue_daily_ticket_counter (queue_id, business_date, last_number) VALUES ($1,$2,1)
        ON CONFLICT (queue_id,business_date) DO UPDATE SET
-       last_number = dori_queue_daily_ticket_counter.last_number + 1, updated_at = $3 RETURNING last_number`,
+       last_number = dorify.dori_queue_daily_ticket_counter.last_number + 1, updated_at = $3 RETURNING last_number`,
       [queueId, businessDate, now],
     );
     return Number(rows[0].last_number);
@@ -105,7 +105,7 @@ export class RegistrationsTransaction {
 
   async create(input: {
     dto: CreateRegistrationDto;
-    personId: number;
+    personId: string;
     businessDate: string;
     ticketNumber: string;
     scheduledTime: Date | null;
@@ -113,11 +113,11 @@ export class RegistrationsTransaction {
     priorityReferenceTime: Date;
     status: string;
     tokenValidUntil: Date;
-    userId: number;
+    userId: string;
     now: Date;
   }): Promise<RegistrationRow> {
     const rows = await this.manager.query(
-      `INSERT INTO dori_registration (person_id,queue_id,tier_id,business_date,ticket_number,
+      `INSERT INTO dorify.dori_registration (person_id,queue_id,tier_id,business_date,ticket_number,
        entry_type,scheduled_time,checked_in_at,appointment_status,priority_reference_time,status,
        registration_tracking_token_valid_until,language_preference,created_by_user_id,
        updated_by_user_id,created_at,updated_at)
@@ -144,14 +144,14 @@ export class RegistrationsTransaction {
   }
 
   async createWelcomeNotifications(input: {
-    registrationId: number;
+    registrationId: string;
     trackingToken: string;
     ticketNumber: string;
     now: Date;
     templateService: NotificationTemplateService;
   }): Promise<number> {
     const rules: Array<{
-      rule_id: number;
+      rule_id: string;
       channel: 'sms' | 'email';
       include_tracking_link: boolean;
       locale: string;
@@ -162,11 +162,11 @@ export class RegistrationsTransaction {
       `SELECT nr.rule_id, nr.channel, nr.include_tracking_link,
               COALESCE(r.language_preference, p.language_preference, s.default_locale, 'fr') AS locale,
               p.first_name, p.phone_number, p.email
-       FROM dori_registration r
-       JOIN dori_person p ON p.person_id = r.person_id
-       JOIN dori_queue q ON q.queue_id = r.queue_id
-       JOIN dori_site s ON s.site_id = q.site_id
-       JOIN dori_queue_tier_notification_rule nr
+       FROM dorify.dori_registration r
+       JOIN dorify.dori_person p ON p.person_id = r.person_id
+       JOIN dorify.dori_queue q ON q.queue_id = r.queue_id
+       JOIN dorify.dori_site s ON s.site_id = q.site_id
+       JOIN dorify.dori_queue_tier_notification_rule nr
          ON nr.queue_id = r.queue_id AND nr.tier_id = r.tier_id
        WHERE r.registration_id = $1
          AND nr.notification_type = 'welcome'
@@ -188,7 +188,7 @@ export class RegistrationsTransaction {
       locale: string;
       content: string;
     }> = await this.manager.query(
-      `SELECT translation_key, locale, content FROM dori_translation
+      `SELECT translation_key, locale, content FROM dorify.dori_translation
        WHERE translation_key = ANY($1) AND locale = ANY($2) AND is_active = TRUE`,
       [templateKeys, locales],
     );
@@ -232,9 +232,9 @@ export class RegistrationsTransaction {
         failureReason,
       };
     });
-    const inserted: Array<{ notification_id: number }> =
+    const inserted: Array<{ notification_id: string }> =
       await this.manager.query(
-        `INSERT INTO dori_notification (
+        `INSERT INTO dorify.dori_notification (
            registration_id, rule_id, channel, notification_type, locale, recipient,
            notification_content, notification_status, failure_reason,
            attempt_count, created_at, updated_at
@@ -267,14 +267,14 @@ export class RegistrationsTransaction {
   }
 
   async reschedule(
-    registrationId: number,
+    registrationId: string,
     newTime: Date,
     businessDate: string,
     ticketNumber: string | undefined,
     now: Date,
   ) {
     const rows = await this.manager.query(
-      `UPDATE dori_registration SET scheduled_time=$1, priority_reference_time=$1, business_date=$2,
+      `UPDATE dorify.dori_registration SET scheduled_time=$1, priority_reference_time=$1, business_date=$2,
        ticket_number=COALESCE($3, ticket_number), appointment_status='rescheduled', status='booked',
        checked_in_at=NULL, updated_at=$4 WHERE registration_id=$5 RETURNING *`,
       [newTime, businessDate, ticketNumber ?? null, now, registrationId],
@@ -295,20 +295,20 @@ export class RegistrationsRepository {
     );
   }
 
-  async findAvailabilityConfig(queueId: number) {
+  async findAvailabilityConfig(queueId: string) {
     const rows = await this.dataSource.query(
       `SELECT q.*, s.timezone, s.default_appointments_enabled, s.default_appointment_slot_duration,
        s.default_slot_capacity, s.default_working_hours_start, s.default_working_hours_end,
-       s.default_break_start, s.default_break_end, s.default_working_days FROM dori_queue q
-       JOIN dori_site s ON s.site_id=q.site_id WHERE q.queue_id=$1 AND q.is_active=TRUE`,
+       s.default_break_start, s.default_break_end, s.default_working_days FROM dorify.dori_queue q
+       JOIN dorify.dori_site s ON s.site_id=q.site_id WHERE q.queue_id=$1 AND q.is_active=TRUE`,
       [queueId],
     );
     return rows[0] ?? null;
   }
 
-  findBookedSlotsBetween(queueId: number, dateFrom: string, dateTo: string) {
+  findBookedSlotsBetween(queueId: string, dateFrom: string, dateTo: string) {
     return this.dataSource.query(
-      `SELECT business_date::text AS business_date, scheduled_time, COUNT(*)::int AS count FROM dori_registration
+      `SELECT business_date::text AS business_date, scheduled_time, COUNT(*)::int AS count FROM dorify.dori_registration
        WHERE queue_id=$1
          AND entry_type='appointment'
          AND scheduled_time IS NOT NULL
@@ -320,46 +320,46 @@ export class RegistrationsRepository {
     );
   }
 
-  async findSiteTimezone(siteId: number): Promise<string | null> {
+  async findSiteTimezone(siteId: string): Promise<string | null> {
     const rows = await this.dataSource.query(
-      `SELECT timezone FROM dori_site WHERE site_id=$1`,
+      `SELECT timezone FROM dorify.dori_site WHERE site_id=$1`,
       [siteId],
     );
     return rows[0]?.timezone ?? null;
   }
 
-  async findForCheckIn(registrationId: number) {
+  async findForCheckIn(registrationId: string) {
     const rows = await this.dataSource.query(
       `SELECT r.*,q.late_tolerance_minutes,s.default_late_tolerance_minutes
-       FROM dori_registration r JOIN dori_queue q ON q.queue_id=r.queue_id
-       JOIN dori_site s ON s.site_id=q.site_id WHERE r.registration_id=$1 AND r.is_active=TRUE`,
+       FROM dorify.dori_registration r JOIN dorify.dori_queue q ON q.queue_id=r.queue_id
+       JOIN dorify.dori_site s ON s.site_id=q.site_id WHERE r.registration_id=$1 AND r.is_active=TRUE`,
       [registrationId],
     );
     return rows[0] ?? null;
   }
 
-  expire(registrationId: number, now: Date) {
+  expire(registrationId: string, now: Date) {
     return this.dataSource.query(
-      `UPDATE dori_registration SET status='expired',appointment_status='expired',closed_at=$1,
+      `UPDATE dorify.dori_registration SET status='expired',appointment_status='expired',closed_at=$1,
        updated_at=$1 WHERE registration_id=$2`,
       [now, registrationId],
     );
   }
 
-  async checkIn(registrationId: number, now: Date) {
+  async checkIn(registrationId: string, now: Date) {
     const rows = await this.dataSource.query(
-      `UPDATE dori_registration SET status='waiting',appointment_status='checked_in',
+      `UPDATE dorify.dori_registration SET status='waiting',appointment_status='checked_in',
        checked_in_at=$1,updated_at=$1 WHERE registration_id=$2 RETURNING *`,
       [now, registrationId],
     );
     return rows[0];
   }
 
-  async findForReschedule(registrationId: number) {
+  async findForReschedule(registrationId: string) {
     const rows = await this.dataSource.query(
       `SELECT r.*,r.business_date::text AS business_date,q.queue_code,q.slot_capacity,
-       s.default_slot_capacity,s.timezone FROM dori_registration r
-       JOIN dori_queue q ON q.queue_id=r.queue_id JOIN dori_site s ON s.site_id=q.site_id
+       s.default_slot_capacity,s.timezone FROM dorify.dori_registration r
+       JOIN dorify.dori_queue q ON q.queue_id=r.queue_id JOIN dorify.dori_site s ON s.site_id=q.site_id
        WHERE r.registration_id=$1 AND r.is_active=TRUE`,
       [registrationId],
     );
@@ -367,7 +367,7 @@ export class RegistrationsRepository {
   }
 
   async lookup(input: {
-    queueIds?: number[];
+    queueIds?: string[];
     phoneNumber?: string;
     lastName?: string;
     scheduledTime?: Date;
@@ -395,12 +395,12 @@ export class RegistrationsRepository {
     }
     const rows = await this.dataSource.query(
       `SELECT r.*,p.first_name,p.last_name,p.phone_number,
-       (SELECT COUNT(*)::int FROM dori_person_note pn
+       (SELECT COUNT(*)::int FROM dorify.dori_person_note pn
         WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
-       FROM dori_registration r
-       JOIN dori_person p ON p.person_id=r.person_id
-       JOIN dori_queue q ON q.queue_id=r.queue_id
-       JOIN dori_site s ON s.site_id=q.site_id
+       FROM dorify.dori_registration r
+       JOIN dorify.dori_person p ON p.person_id=r.person_id
+       JOIN dorify.dori_queue q ON q.queue_id=r.queue_id
+       JOIN dorify.dori_site s ON s.site_id=q.site_id
        WHERE ${where} ORDER BY r.scheduled_time ASC, r.registration_id ASC LIMIT 1`,
       params,
     );
@@ -409,7 +409,7 @@ export class RegistrationsRepository {
 
   async findPage(
     filter: RegistrationFilterDto,
-    scopeQueueIds: number[] | undefined,
+    scopeQueueIds: string[] | undefined,
     sortField: string,
     sortOrder: 'ASC' | 'DESC',
     pageSize: number,
@@ -465,8 +465,8 @@ export class RegistrationsRepository {
       params.push(`%${filter.search}%`);
       where += ` AND (r.ticket_number ILIKE $${params.length} OR p.last_name ILIKE $${params.length} OR p.first_name ILIKE $${params.length})`;
     }
-    const from = `FROM dori_registration r JOIN dori_person p ON p.person_id=r.person_id
-      JOIN dori_queue q ON q.queue_id=r.queue_id JOIN dori_service_tier t ON t.tier_id=r.tier_id
+    const from = `FROM dorify.dori_registration r JOIN dorify.dori_person p ON p.person_id=r.person_id
+      JOIN dorify.dori_queue q ON q.queue_id=r.queue_id JOIN dorify.dori_service_tier t ON t.tier_id=r.tier_id
       WHERE ${where}`;
     const counts = await this.dataSource.query(
       `SELECT COUNT(*)::int AS total ${from}`,
@@ -475,7 +475,7 @@ export class RegistrationsRepository {
     const items = await this.dataSource.query(
       `SELECT r.*,p.first_name,p.last_name,p.phone_number,p.email,
       q.queue_name,q.queue_code,q.site_id,q.average_wait_time,t.tier_code,t.tier_name,
-      (SELECT COUNT(*)::int FROM dori_person_note pn
+      (SELECT COUNT(*)::int FROM dorify.dori_person_note pn
        WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
       ${from} ORDER BY r.${sortField} ${sortOrder}
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
@@ -484,33 +484,33 @@ export class RegistrationsRepository {
     return { items, total: counts[0]?.total ?? 0 };
   }
 
-  async findById(registrationId: number): Promise<RegistrationRow | null> {
+  async findById(registrationId: string): Promise<RegistrationRow | null> {
     const rows = await this.dataSource.query(
       `SELECT r.*,p.first_name,p.last_name,p.phone_number,p.email,
       q.queue_name,q.queue_code,t.tier_code,t.tier_name,
-      (SELECT COUNT(*)::int FROM dori_person_note pn
+      (SELECT COUNT(*)::int FROM dorify.dori_person_note pn
        WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
-      FROM dori_registration r
-      JOIN dori_person p ON p.person_id=r.person_id JOIN dori_queue q ON q.queue_id=r.queue_id
-      JOIN dori_service_tier t ON t.tier_id=r.tier_id
+      FROM dorify.dori_registration r
+      JOIN dorify.dori_person p ON p.person_id=r.person_id JOIN dorify.dori_queue q ON q.queue_id=r.queue_id
+      JOIN dorify.dori_service_tier t ON t.tier_id=r.tier_id
       WHERE r.registration_id=$1`,
       [registrationId],
     );
     return rows[0] ?? null;
   }
 
-  async isTierOffered(queueId: number, tierId: number) {
+  async isTierOffered(queueId: string, tierId: string) {
     const rows = await this.dataSource.query(
-      `SELECT 1 FROM dori_queue_service_tier WHERE queue_id=$1 AND tier_id=$2 AND is_active=TRUE`,
+      `SELECT 1 FROM dorify.dori_queue_service_tier WHERE queue_id=$1 AND tier_id=$2 AND is_active=TRUE`,
       [queueId, tierId],
     );
     return rows.length > 0;
   }
 
   async update(
-    registrationId: number,
+    registrationId: string,
     dto: UpdateRegistrationDto,
-    userId: number,
+    userId: string,
     now: Date,
   ) {
     const values: unknown[] = [];
@@ -535,15 +535,15 @@ export class RegistrationsRepository {
     fields.push(`updated_at=$${values.length}`);
     values.push(registrationId);
     const rows = await this.dataSource.query(
-      `UPDATE dori_registration SET ${fields.join(',')} WHERE registration_id=$${values.length} RETURNING *`,
+      `UPDATE dorify.dori_registration SET ${fields.join(',')} WHERE registration_id=$${values.length} RETURNING *`,
       values,
     );
     return rows[0];
   }
 
-  cancel(registrationId: number, userId: number, now: Date) {
+  cancel(registrationId: string, userId: string, now: Date) {
     return this.dataSource.query(
-      `UPDATE dori_registration SET status='cancelled',appointment_status=CASE WHEN entry_type='appointment'
+      `UPDATE dorify.dori_registration SET status='cancelled',appointment_status=CASE WHEN entry_type='appointment'
      THEN 'cancelled' ELSE appointment_status END,closed_at=$1,
      updated_by_user_id=$2,updated_at=$1 WHERE registration_id=$3`,
       [now, userId, registrationId],
@@ -555,9 +555,9 @@ export class RegistrationsRepository {
       `SELECT r.*, q.average_wait_time, q.queue_name,
               q.site_id,
               os.thread_number, os.counter_name
-       FROM dori_registration r
-       JOIN dori_queue q ON q.queue_id = r.queue_id
-       LEFT JOIN dori_operator_session os
+       FROM dorify.dori_registration r
+       JOIN dorify.dori_queue q ON q.queue_id = r.queue_id
+       LEFT JOIN dorify.dori_operator_session os
          ON os.session_id = r.served_by_session_id
        WHERE r.registration_tracking_token = $1`,
       [token],
@@ -567,16 +567,16 @@ export class RegistrationsRepository {
 
   async countWaitingBefore(row: RegistrationRow) {
     const rows = await this.dataSource.query(
-      `SELECT COUNT(*)::int AS count FROM dori_registration WHERE queue_id=$1 AND business_date=$2
+      `SELECT COUNT(*)::int AS count FROM dorify.dori_registration WHERE queue_id=$1 AND business_date=$2
      AND status='waiting' AND is_active=TRUE AND priority_reference_time<$3`,
       [row.queue_id, row.business_date, row.priority_reference_time],
     );
     return rows[0]?.count ?? 0;
   }
 
-  async countActiveThreads(queueId: number) {
+  async countActiveThreads(queueId: string) {
     const rows = await this.dataSource.query(
-      `SELECT COUNT(*)::int AS count FROM dori_operator_session WHERE queue_id=$1 AND disconnected_at IS NULL AND mode='active'`,
+      `SELECT COUNT(*)::int AS count FROM dorify.dori_operator_session WHERE queue_id=$1 AND disconnected_at IS NULL AND mode='active'`,
       [queueId],
     );
     return rows[0]?.count ?? 0;

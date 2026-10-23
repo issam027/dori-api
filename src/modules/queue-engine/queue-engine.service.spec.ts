@@ -8,13 +8,13 @@ import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { RealtimeService } from '../../core/realtime/realtime.service';
 import { QueueEngineRepository } from './queue-engine.repository';
 
-describe('QueueEngineService — getSessions & getActiveSessions (VAL-04 Manquement A)', () => {
+describe('QueueEngineService ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â getSessions & getActiveSessions (VAL-04 Manquement A)', () => {
   let service: QueueEngineService;
   let dataSourceMock: { query: jest.Mock };
   let scopeServiceMock: { checkQueueAccess: jest.Mock };
 
   const testUser: AuthenticatedUser = {
-    userId: 1,
+    userId: '00000000-0000-4000-8000-000000000001',
     username: 'operator1',
     roles: ['operator'],
     permissions: ['session_operate'],
@@ -70,11 +70,11 @@ describe('QueueEngineService — getSessions & getActiveSessions (VAL-04 Manquem
   it('should return paginated active sessions conforming to PaginatedResult contract', async () => {
     const rawSessions = [
       {
-        session_id: 101,
-        queue_id: 1,
+        session_id: '00000000-0000-4000-8000-000000000101',
+        queue_id: '00000000-0000-4000-8000-000000000001',
         thread_number: 1,
         counter_name: 'Guichet 04',
-        user_id: 2,
+        user_id: '00000000-0000-4000-8000-000000000002',
         username: 'alice',
         mode: 'active',
         connected_at: new Date('2026-09-29T08:00:00Z'),
@@ -96,17 +96,24 @@ describe('QueueEngineService — getSessions & getActiveSessions (VAL-04 Manquem
     pagination.page = 1;
     pagination.pageSize = 10;
 
-    const result = await service.getActiveSessions(1, pagination, testUser);
+    const result = await service.getActiveSessions(
+      '00000000-0000-4000-8000-000000000001',
+      pagination,
+      testUser,
+    );
 
-    expect(scopeServiceMock.checkQueueAccess).toHaveBeenCalledWith(testUser, 1);
+    expect(scopeServiceMock.checkQueueAccess).toHaveBeenCalledWith(
+      testUser,
+      '00000000-0000-4000-8000-000000000001',
+    );
     expect(result).toEqual({
       items: [
         {
-          sessionId: 101,
-          queueId: 1,
+          sessionId: '00000000-0000-4000-8000-000000000101',
+          queueId: '00000000-0000-4000-8000-000000000001',
           threadNumber: 1,
           counterName: 'Guichet 04',
-          userId: 2,
+          userId: '00000000-0000-4000-8000-000000000002',
           username: 'alice',
           mode: 'active',
           connectedAt: new Date('2026-09-29T08:00:00Z'),
@@ -132,7 +139,10 @@ describe('QueueEngineService — getSessions & getActiveSessions (VAL-04 Manquem
     });
 
     // Appel avec l'ancienne signature (queueId, user)
-    const result = await service.getActiveSessions(1, testUser);
+    const result = await service.getActiveSessions(
+      '00000000-0000-4000-8000-000000000001',
+      testUser,
+    );
 
     expect(result.page).toBe(1);
     expect(result.pageSize).toBe(25);
@@ -153,7 +163,11 @@ describe('QueueEngineService — getSessions & getActiveSessions (VAL-04 Manquem
     const pagination = new PaginationDto();
     pagination.sort = 'maliciousColumn:asc';
 
-    await service.getActiveSessions(1, pagination, testUser);
+    await service.getActiveSessions(
+      '00000000-0000-4000-8000-000000000001',
+      pagination,
+      testUser,
+    );
 
     // Ne doit pas injecter maliciousColumn mais retomber sur qs.connected_at
     expect(capturedSql).toContain('ORDER BY qs.connected_at');
@@ -164,22 +178,33 @@ describe('QueueEngineService — getSessions & getActiveSessions (VAL-04 Manquem
 describe('QueueEngineService next preview scope', () => {
   it('keeps only site queues that belong to the user scope', async () => {
     const user: AuthenticatedUser = {
-      userId: 8,
+      userId: '00000000-0000-4000-8000-000000000008',
       username: 'operator',
       roles: ['operator'],
       permissions: ['queue_view'],
       userType: 'human',
     };
     const repository = {
-      findQueueIds: jest.fn().mockResolvedValue([10, 11, 12]),
-      findActiveQueueIdsForUser: jest.fn().mockResolvedValue([11]),
+      findQueueIds: jest
+        .fn()
+        .mockResolvedValue([
+          '00000000-0000-4000-8000-000000000010',
+          '00000000-0000-4000-8000-000000000011',
+          '00000000-0000-4000-8000-000000000012',
+        ]),
+      findActiveQueueIdsForUser: jest
+        .fn()
+        .mockResolvedValue(['00000000-0000-4000-8000-000000000011']),
       findPreviewCandidates: jest.fn().mockResolvedValue([]),
     };
     const scope = {
       getUserScope: jest.fn().mockResolvedValue({
         isGlobal: false,
-        siteIds: [5],
-        queueIds: [11, 99],
+        siteIds: ['00000000-0000-4000-8000-000000000005'],
+        queueIds: [
+          '00000000-0000-4000-8000-000000000011',
+          '00000000-0000-4000-8000-000000000099',
+        ],
       }),
       checkSiteAccess: jest.fn().mockResolvedValue(undefined),
     };
@@ -191,15 +216,18 @@ describe('QueueEngineService next preview scope', () => {
       {} as RealtimeService,
     );
 
-    await service.previewNext(user, 5, 10);
+    await service.previewNext(user, '00000000-0000-4000-8000-000000000005', 10);
 
-    expect(scope.checkSiteAccess).toHaveBeenCalledWith(user, 5);
+    expect(scope.checkSiteAccess).toHaveBeenCalledWith(
+      user,
+      '00000000-0000-4000-8000-000000000005',
+    );
     expect(repository.findActiveQueueIdsForUser).toHaveBeenCalledWith(
-      [11],
+      ['00000000-0000-4000-8000-000000000011'],
       user.userId,
     );
     expect(repository.findPreviewCandidates).toHaveBeenCalledWith(
-      [11],
+      ['00000000-0000-4000-8000-000000000011'],
       now,
       10,
     );

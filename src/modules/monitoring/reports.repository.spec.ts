@@ -11,9 +11,12 @@ describe('ReportsRepository monitoring series', () => {
       } as unknown as DataSource);
 
       await repository.getMonitoringSeries({
-        queueIds: [1, 2],
-        userIds: [7],
-        tierIds: [3],
+        queueIds: [
+          '00000000-0000-4000-8000-000000000001',
+          '00000000-0000-4000-8000-000000000002',
+        ],
+        userIds: ['00000000-0000-4000-8000-000000000007'],
+        tierIds: ['00000000-0000-4000-8000-000000000003'],
         statuses: ['served'],
         entryTypes: ['walkin'],
         from: '2026-10-01T00:00:00Z',

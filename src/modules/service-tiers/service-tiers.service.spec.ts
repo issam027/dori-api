@@ -7,7 +7,7 @@ import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interf
 import { PaginationDto } from '../../core/pagination/pagination.dto';
 import { ServiceTiersRepository } from './service-tiers.repository';
 
-describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
+describe('ServiceTiersService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â VAL-02 Pagination & Queue Tiers', () => {
   let service: ServiceTiersService;
   let dataSourceMock: { query: jest.Mock };
   let scopeServiceMock: {
@@ -16,7 +16,7 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
   };
 
   const adminUser: AuthenticatedUser = {
-    userId: 1,
+    userId: '00000000-0000-4000-8000-000000000001',
     username: 'admin_user',
     roles: ['admin'],
     permissions: ['tier_view', 'queue_tier_manage'],
@@ -68,11 +68,11 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
         if (sql.includes('COUNT(*)')) {
           return [{ total: 1 }];
         }
-        if (sql.includes('FROM dori_queue_service_tier')) {
+        if (sql.includes('FROM dorify.dori_queue_service_tier')) {
           return [
             {
-              queue_id: 10,
-              tier_id: 2,
+              queue_id: '00000000-0000-4000-8000-000000000010',
+              tier_id: '00000000-0000-4000-8000-000000000002',
               price: '15.50',
               currency: 'TND',
               currency_override: null,
@@ -83,7 +83,8 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
               display_order: 1,
               tier_code: 'VIP',
               tier_name: 'Forfait VIP',
-              tier_description: 'Accès prioritaire',
+              tier_description:
+                'AccÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨s prioritaire',
             },
           ];
         }
@@ -94,13 +95,17 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
       pagination.page = 1;
       pagination.pageSize = 10;
 
-      const result = await service.findQueueTiers(10, pagination, adminUser);
+      const result = await service.findQueueTiers(
+        '00000000-0000-4000-8000-000000000010',
+        pagination,
+        adminUser,
+      );
       expect(result.page).toBe(1);
       expect(result.pageSize).toBe(10);
       expect(result.total).toBe(1);
       expect(result.items[0]).toEqual({
-        queueId: 10,
-        tierId: 2,
+        queueId: '00000000-0000-4000-8000-000000000010',
+        tierId: '00000000-0000-4000-8000-000000000002',
         price: 15.5,
         currency: 'TND',
         currencyOverride: null,
@@ -109,10 +114,11 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
         isDefault: false,
         displayOrder: 1,
         tier: {
-          tierId: 2,
+          tierId: '00000000-0000-4000-8000-000000000002',
           tierCode: 'VIP',
           tierName: 'Forfait VIP',
-          description: 'Accès prioritaire',
+          description:
+            'AccÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨s prioritaire',
           isSystem: false,
           isActive: true,
         },
@@ -124,11 +130,11 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
         if (sql.includes('COUNT(*)')) {
           return [{ total: 1 }];
         }
-        if (sql.includes('FROM dori_queue_service_tier')) {
+        if (sql.includes('FROM dorify.dori_queue_service_tier')) {
           return [
             {
-              queue_id: 10,
-              tier_id: 1,
+              queue_id: '00000000-0000-4000-8000-000000000010',
+              tier_id: '00000000-0000-4000-8000-000000000001',
               price: '0',
               currency: 'TND',
               currency_override: null,
@@ -150,11 +156,15 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
       pagination.page = 2;
       pagination.pageSize = 5;
 
-      const res = await service.getQueueTiers(10, pagination, adminUser);
+      const res = await service.getQueueTiers(
+        '00000000-0000-4000-8000-000000000010',
+        pagination,
+        adminUser,
+      );
       expect(res.page).toBe(2);
       expect(res.pageSize).toBe(5);
       expect(res.total).toBe(1);
-      expect(res.items[0].tierId).toBe(1);
+      expect(res.items[0].tierId).toBe('00000000-0000-4000-8000-000000000001');
       expect(res.items[0].isDefault).toBe(true);
     });
   });
@@ -162,12 +172,12 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
   describe('getNotificationRules', () => {
     it('should return all notification rules without artificial limit/truncation', async () => {
       dataSourceMock.query.mockImplementation(async (sql: string) => {
-        if (sql.includes('FROM dori_queue_tier_notification_rule')) {
+        if (sql.includes('FROM dorify.dori_queue_tier_notification_rule')) {
           return [
             {
-              rule_id: 1,
-              queue_id: 10,
-              tier_id: 2,
+              rule_id: '00000000-0000-4000-8000-000000000001',
+              queue_id: '00000000-0000-4000-8000-000000000010',
+              tier_id: '00000000-0000-4000-8000-000000000002',
               notification_type: 'threshold',
               threshold_position: 3,
               threshold_minutes: null,
@@ -180,12 +190,16 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
         return [];
       });
 
-      const rules = await service.getNotificationRules(10, 2, adminUser);
+      const rules = await service.getNotificationRules(
+        '00000000-0000-4000-8000-000000000010',
+        '00000000-0000-4000-8000-000000000002',
+        adminUser,
+      );
       expect(rules).toHaveLength(1);
       expect(rules[0]).toEqual({
-        ruleId: 1,
-        queueId: 10,
-        tierId: 2,
+        ruleId: '00000000-0000-4000-8000-000000000001',
+        queueId: '00000000-0000-4000-8000-000000000010',
+        tierId: '00000000-0000-4000-8000-000000000002',
         notificationType: 'threshold',
         thresholdType: 'position',
         thresholdValue: 3,
@@ -199,9 +213,9 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
       dataSourceMock.query
         .mockResolvedValueOnce([
           {
-            rule_id: 1,
-            queue_id: 10,
-            tier_id: 2,
+            rule_id: '00000000-0000-4000-8000-000000000001',
+            queue_id: '00000000-0000-4000-8000-000000000010',
+            tier_id: '00000000-0000-4000-8000-000000000002',
             notification_type: 'welcome',
             channel: 'sms',
             threshold_position: null,
@@ -212,9 +226,9 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
         ])
         .mockResolvedValueOnce([
           {
-            rule_id: 2,
-            queue_id: 10,
-            tier_id: 2,
+            rule_id: '00000000-0000-4000-8000-000000000002',
+            queue_id: '00000000-0000-4000-8000-000000000010',
+            tier_id: '00000000-0000-4000-8000-000000000002',
             notification_type: 'threshold',
             channel: 'email',
             threshold_position: null,
@@ -225,8 +239,8 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
         ]);
 
       const welcome = await service.createNotificationRule(
-        10,
-        2,
+        '00000000-0000-4000-8000-000000000010',
+        '00000000-0000-4000-8000-000000000002',
         {
           notificationType: 'welcome',
           channel: 'sms',
@@ -235,8 +249,8 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
         adminUser,
       );
       const threshold = await service.createNotificationRule(
-        10,
-        2,
+        '00000000-0000-4000-8000-000000000010',
+        '00000000-0000-4000-8000-000000000002',
         {
           notificationType: 'threshold',
           channel: 'email',
@@ -257,8 +271,8 @@ describe('ServiceTiersService — VAL-02 Pagination & Queue Tiers', () => {
     it('rejects a threshold rule without a complete threshold', async () => {
       await expect(
         service.createNotificationRule(
-          10,
-          2,
+          '00000000-0000-4000-8000-000000000010',
+          '00000000-0000-4000-8000-000000000002',
           { notificationType: 'threshold', channel: 'sms' },
           adminUser,
         ),

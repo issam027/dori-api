@@ -1,16 +1,16 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
+﻿import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('dori_role_permission')
 export class DoriRolePermission {
-  @PrimaryColumn({ type: 'int' })
-  role_id: number;
+  @PrimaryColumn({ type: 'uuid' })
+  role_id: string;
 
-  @PrimaryColumn({ type: 'int' })
-  permission_id: number;
+  @PrimaryColumn({ type: 'uuid' })
+  permission_id: string;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'assigned_at' })
   assigned_at: Date;
 
-  @Column({ type: 'int', nullable: true })
-  assigned_by_user_id: number | null;
+  @Column({ type: 'uuid', nullable: true })
+  assigned_by_user_id: string | null;
 }

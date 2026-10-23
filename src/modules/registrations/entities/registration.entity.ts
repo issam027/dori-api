@@ -1,4 +1,4 @@
-import {
+﻿import {
   Column,
   CreateDateColumn,
   Entity,
@@ -8,17 +8,17 @@ import {
 
 @Entity('dori_registration')
 export class DoriRegistration {
-  @PrimaryGeneratedColumn()
-  registration_id: number;
+  @PrimaryGeneratedColumn('uuid')
+  registration_id: string;
 
-  @Column({ type: 'int' })
-  person_id: number;
+  @Column({ type: 'uuid' })
+  person_id: string;
 
-  @Column({ type: 'int' })
-  queue_id: number;
+  @Column({ type: 'uuid' })
+  queue_id: string;
 
-  @Column({ type: 'int' })
-  tier_id: number;
+  @Column({ type: 'uuid' })
+  tier_id: string;
 
   @Column({ type: 'date' })
   business_date: string;
@@ -52,11 +52,11 @@ export class DoriRegistration {
     | 'expired'
     | 'cancelled';
 
-  @Column({ type: 'int', nullable: true })
-  served_by_session_id: number | null;
+  @Column({ type: 'uuid', nullable: true })
+  served_by_session_id: string | null;
 
-  @Column({ type: 'int', nullable: true })
-  served_by_user_id: number | null;
+  @Column({ type: 'uuid', nullable: true })
+  served_by_user_id: string | null;
 
   @Column({ type: 'timestamptz', nullable: true })
   called_at: Date | null;
@@ -97,11 +97,11 @@ export class DoriRegistration {
   @Column({ type: 'varchar', length: 10, nullable: true })
   language_preference: string | null;
 
-  @Column({ type: 'int', nullable: true })
-  created_by_user_id: number | null;
+  @Column({ type: 'uuid', nullable: true })
+  created_by_user_id: string | null;
 
-  @Column({ type: 'int', nullable: true })
-  updated_by_user_id: number | null;
+  @Column({ type: 'uuid', nullable: true })
+  updated_by_user_id: string | null;
 
   @Column({ type: 'boolean', default: true })
   is_active: boolean;

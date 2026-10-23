@@ -69,7 +69,7 @@ export class NotificationsService {
     );
   }
 
-  async findNotificationById(notificationId: number, user: AuthenticatedUser) {
+  async findNotificationById(notificationId: string, user: AuthenticatedUser) {
     const notification =
       await this.notificationsRepository.findById(notificationId);
     if (!notification) {
@@ -124,7 +124,7 @@ export class NotificationsService {
     );
   }
 
-  async resendNotification(notificationId: number, user: AuthenticatedUser) {
+  async resendNotification(notificationId: string, user: AuthenticatedUser) {
     await this.findNotificationById(notificationId, user);
     const now = this.clockService.now();
 
@@ -192,7 +192,7 @@ export class NotificationsService {
   }
 
   // Threshold Evaluation (§4.1, §4.13)
-  async evaluateQueueThresholds(queueId: number) {
+  async evaluateQueueThresholds(queueId: string) {
     const now = this.clockService.now();
 
     // 1. Fetch active waiting clients for this queue
@@ -211,7 +211,7 @@ export class NotificationsService {
     const rules =
       await this.notificationsRepository.findThresholdRules(queueId);
 
-    const rulesByTier = new Map<number, ThresholdRuleRow[]>();
+    const rulesByTier = new Map<string, ThresholdRuleRow[]>();
     for (const r of rules) {
       if (!rulesByTier.has(r.tier_id)) rulesByTier.set(r.tier_id, []);
       rulesByTier.get(r.tier_id)!.push(r);

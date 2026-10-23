@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import {
   CreateTierDto,
   UpdateTierDto,
@@ -58,9 +58,9 @@ export class ServiceTiersService {
   }
 
   private toNotificationRuleResponse(rule: {
-    rule_id: number;
-    queue_id: number;
-    tier_id: number;
+    rule_id: string;
+    queue_id: string;
+    tier_id: string;
     notification_type: 'welcome' | 'threshold';
     channel: string;
     threshold_position?: number | null;
@@ -86,7 +86,7 @@ export class ServiceTiersService {
     };
   }
 
-  private async getQueueTierRepresentation(queueId: number, tierId: number) {
+  private async getQueueTierRepresentation(queueId: string, tierId: string) {
     const row = await this.serviceTiersRepository.findQueueTier(
       queueId,
       tierId,
@@ -135,7 +135,7 @@ export class ServiceTiersService {
     );
   }
 
-  async findTierById(tierId: number, _user?: AuthenticatedUser) {
+  async findTierById(tierId: string, _user?: AuthenticatedUser) {
     const tier = await this.serviceTiersRepository.findActiveTier(tierId);
     if (!tier) {
       throw new DoriException('TIER_NOT_FOUND', { tierId });
@@ -153,7 +153,7 @@ export class ServiceTiersService {
   }
 
   async updateTier(
-    tierId: number,
+    tierId: string,
     dto: UpdateTierDto,
     user: AuthenticatedUser,
   ) {
@@ -168,7 +168,7 @@ export class ServiceTiersService {
     );
   }
 
-  async deleteTier(tierId: number, user: AuthenticatedUser) {
+  async deleteTier(tierId: string, user: AuthenticatedUser) {
     const tier = await this.findTierById(tierId);
     if (tier.is_system) {
       throw new DoriException('TIER_IS_SYSTEM', { tierId });
@@ -181,7 +181,7 @@ export class ServiceTiersService {
   }
 
   async findQueueTiers(
-    queueId: number,
+    queueId: string,
     pagination: PaginationDto,
     user: AuthenticatedUser,
   ): Promise<PaginatedResult<QueueTierResponseDto>> {
@@ -227,7 +227,7 @@ export class ServiceTiersService {
   }
 
   async associateQueueTier(
-    queueId: number,
+    queueId: string,
     dto: AssociateQueueTierDto,
     user: AuthenticatedUser,
   ) {
@@ -246,8 +246,8 @@ export class ServiceTiersService {
   }
 
   async updateQueueTier(
-    queueId: number,
-    tierId: number,
+    queueId: string,
+    tierId: string,
     dto: UpdateQueueTierDto,
     user: AuthenticatedUser,
   ) {
@@ -272,8 +272,8 @@ export class ServiceTiersService {
   }
 
   async removeQueueTier(
-    queueId: number,
-    tierId: number,
+    queueId: string,
+    tierId: string,
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkQueueAccess(user, queueId);
@@ -296,8 +296,8 @@ export class ServiceTiersService {
 
   // 3. Notification Rules
   async findNotificationRules(
-    queueId: number,
-    tierId: number,
+    queueId: string,
+    tierId: string,
     pagination: PaginationDto,
     user: AuthenticatedUser,
   ) {
@@ -323,8 +323,8 @@ export class ServiceTiersService {
   }
 
   async createNotificationRule(
-    queueId: number,
-    tierId: number,
+    queueId: string,
+    tierId: string,
     dto: CreateNotificationRuleDto,
     user: AuthenticatedUser,
   ) {
@@ -343,9 +343,9 @@ export class ServiceTiersService {
   }
 
   async updateNotificationRule(
-    queueId: number,
-    tierId: number,
-    ruleId: number,
+    queueId: string,
+    tierId: string,
+    ruleId: string,
     dto: UpdateNotificationRuleDto,
     user: AuthenticatedUser,
   ) {
@@ -407,9 +407,9 @@ export class ServiceTiersService {
   }
 
   async deleteNotificationRule(
-    queueId: number,
-    tierId: number,
-    ruleId: number,
+    queueId: string,
+    tierId: string,
+    ruleId: string,
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkQueueAccess(user, queueId);
@@ -427,7 +427,7 @@ export class ServiceTiersService {
   }
 
   async getQueueTiers(
-    queueId: number,
+    queueId: string,
     paginationOrUser?: PaginationDto | AuthenticatedUser,
     maybeUser?: AuthenticatedUser,
   ): Promise<PaginatedResult<QueueTierResponseDto>> {
@@ -446,8 +446,8 @@ export class ServiceTiersService {
   }
 
   async getNotificationRules(
-    queueId: number,
-    tierId: number,
+    queueId: string,
+    tierId: string,
     user: AuthenticatedUser,
   ) {
     await this.scopeService.checkQueueAccess(user, queueId);

@@ -1,9 +1,11 @@
+import { IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
 export class TranslationResponseDto {
   @ApiProperty({ example: 1, description: 'ID unique de la traduction' })
-  translationId: number;
+  @IsUUID()
+  translationId: string;
 
   @ApiProperty({
     example: 'queue.ticket.your_turn',
@@ -98,7 +100,8 @@ export class TranslationBundleResponseDto {
 
 export class DeleteTranslationResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la traduction supprimée' })
-  translationId: number;
+  @IsUUID()
+  translationId: string;
 
   @ApiProperty({ example: true, description: 'Confirmation de la suppression' })
   deleted: boolean;

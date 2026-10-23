@@ -13,7 +13,7 @@ import {
   createOpenApiConfig,
   normalizeOpenApiDocument,
 } from './core/swagger/openapi.config';
-import { PositiveIdParamPipe } from './core/validation/positive-id-param.pipe';
+import { InternalUuidParamPipe } from './core/validation/internal-uuid-param.pipe';
 
 async function createApp(): Promise<NestExpressApplication> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -70,7 +70,7 @@ async function createApp(): Promise<NestExpressApplication> {
   });
 
   app.useGlobalPipes(
-    new PositiveIdParamPipe(),
+    new InternalUuidParamPipe(),
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,

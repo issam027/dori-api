@@ -1,4 +1,4 @@
-import {
+﻿import {
   Column,
   CreateDateColumn,
   Entity,
@@ -17,11 +17,11 @@ export type UserSessionRevocationReason =
 
 @Entity('dori_user_session')
 export class DoriUserSession {
-  @PrimaryGeneratedColumn()
-  session_id: number;
+  @PrimaryGeneratedColumn('uuid')
+  session_id: string;
 
-  @Column({ type: 'int' })
-  user_id: number;
+  @Column({ type: 'uuid' })
+  user_id: string;
 
   @Column({ type: 'varchar', length: 255, unique: true })
   refresh_token_hash: string;

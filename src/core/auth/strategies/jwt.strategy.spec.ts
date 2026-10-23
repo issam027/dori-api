@@ -8,7 +8,7 @@ import { ClockService } from '../../clock/clock.service';
 
 describe('JwtStrategy', () => {
   const payload: JwtPayload = {
-    sub: 1,
+    sub: '00000000-0000-4000-8000-000000000001',
     sid: 'session-a',
     username: 'agent',
     roles: ['operator'],
@@ -62,13 +62,13 @@ describe('JwtStrategy', () => {
     ]);
 
     await expect(strategy.validate(payload)).resolves.toMatchObject({
-      userId: 1,
+      userId: '00000000-0000-4000-8000-000000000001',
       sessionId: 'session-a',
     });
     expect(clockService.now).toHaveBeenCalledTimes(1);
     expect(dataSource.query).toHaveBeenCalledWith(
       expect.stringContaining('s.session_id = $1 AND s.user_id = $2'),
-      ['session-a', 1, fixedDate],
+      ['session-a', '00000000-0000-4000-8000-000000000001', fixedDate],
     );
   });
 });

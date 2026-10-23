@@ -19,6 +19,7 @@ import { DatabaseSeedService } from './database-seed.service';
         username: configService.get<string>('database.username'),
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.name'),
+        schema: 'dorify',
         ssl: configService.get<boolean>('database.ssl')
           ? { rejectUnauthorized: false }
           : false,
@@ -30,7 +31,7 @@ import { DatabaseSeedService } from './database-seed.service';
           configService.get<string>('nodeEnv') === 'development'
             ? ['error', 'warn']
             : false,
-        // Pool adapté au serverless : 1 connexion par instance Vercel
+        // Pool adapte au serverless : 1 connexion par instance Vercel
         extra: {
           max: 1,
           idleTimeoutMillis: 10000,

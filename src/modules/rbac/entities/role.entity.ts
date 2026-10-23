@@ -1,4 +1,4 @@
-import {
+﻿import {
   Column,
   CreateDateColumn,
   Entity,
@@ -8,8 +8,8 @@ import {
 
 @Entity('dori_role')
 export class DoriRole {
-  @PrimaryGeneratedColumn()
-  role_id: number;
+  @PrimaryGeneratedColumn('uuid')
+  role_id: string;
 
   @Column({ type: 'varchar', length: 50, unique: true })
   role_name: string;

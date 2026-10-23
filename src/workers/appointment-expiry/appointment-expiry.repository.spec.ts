@@ -8,7 +8,12 @@ describe('AppointmentExpiryRepository', () => {
       .fn()
       .mockResolvedValueOnce([{ acquired: true }])
       .mockResolvedValueOnce([
-        [{ registration_id: 3, ticket_number: 'A-003' }],
+        [
+          {
+            registration_id: '00000000-0000-4000-8000-000000000003',
+            ticket_number: 'A-003',
+          },
+        ],
         1,
       ]);
     const dataSource = {
@@ -19,7 +24,12 @@ describe('AppointmentExpiryRepository', () => {
       dataSource,
     ).expireLateAppointments(now);
 
-    expect(rows).toEqual([{ registration_id: 3, ticket_number: 'A-003' }]);
+    expect(rows).toEqual([
+      {
+        registration_id: '00000000-0000-4000-8000-000000000003',
+        ticket_number: 'A-003',
+      },
+    ]);
     expect(query.mock.calls[1][0]).toContain('c.scheduled_time');
     expect(query.mock.calls[1][1]).toEqual([now]);
   });

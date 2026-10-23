@@ -236,11 +236,10 @@ export function normalizeOpenApiDocument(
       }
       property.description ??=
         propertyDescriptions[name] ?? `Valeur du champ « ${humanize(name)} ».`;
-      if (
-        /Id$/.test(name) &&
-        ['integer', 'number'].includes(property.type ?? '')
-      ) {
-        property.minimum ??= 1;
+      if (/Id$/.test(name) && !['eventId', 'correlationId'].includes(name)) {
+        property.type = 'string';
+        property.format = 'uuid';
+        delete property.minimum;
       }
       if (property.type === 'string' && !property.format) {
         if (/^(businessDate|birthDate|date)$/.test(name))
@@ -296,8 +295,8 @@ export function normalizeOpenApiDocument(
           if (/Id$/.test(parameter.name) && !isOpaqueStringId)
             parameter.schema = {
               ...parameter.schema,
-              type: 'integer',
-              minimum: 1,
+              type: 'string',
+              format: 'uuid',
             };
           if (parameter.name === 'sort') {
             const fields = sortFields[operation.operationId ?? ''];
@@ -325,8 +324,9 @@ export function normalizeOpenApiDocument(
             parameter.schema = {
               ...parameter.schema,
               type: 'string',
-              pattern: '^\\d+(?:\\s*,\\s*\\d+)*$',
-              example: '1,2,3',
+              pattern: '^[0-9a-fA-F-]{36}(?:\\s*,\\s*[0-9a-fA-F-]{36})*$',
+              example:
+                '11111111-1111-4111-8111-111111111111,22222222-2222-4222-8222-222222222222',
             };
           }
           return true;

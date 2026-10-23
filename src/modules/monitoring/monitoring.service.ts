@@ -1,4 +1,4 @@
-import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
+﻿import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
 import { ClockService } from '../../core/clock/clock.service';
 import { MonitoringRepository } from './monitoring.repository';
 import { ScopeService } from '../../core/rbac/services/scope.service';
@@ -94,12 +94,12 @@ export class MonitoringService {
     };
   }
 
-  async live(siteId: number, user: AuthenticatedUser) {
+  async live(siteId: string, user: AuthenticatedUser) {
     await this.scopeService.checkSiteAccess(user, siteId);
     const snapshot = await this.repository.liveSnapshot(siteId);
     if (!snapshot.site) throw new DoriException('SITE_NOT_FOUND', { siteId });
     const queues: Array<{
-      queueId: number;
+      queueId: string;
       queueName: string;
       waiting: number;
       inProgress: number;
@@ -108,7 +108,7 @@ export class MonitoringService {
       estimatedWaitMinutes: number | null;
       longestWaitMinutes: number | null;
     }> = snapshot.queues.map((row: Record<string, unknown>) => ({
-      queueId: Number(row.queue_id),
+      queueId: String(row.queue_id),
       queueName: String(row.queue_name),
       waiting: Number(row.waiting ?? 0),
       inProgress: Number(row.in_progress ?? 0),
@@ -125,12 +125,12 @@ export class MonitoringService {
     }));
     const canViewRegistrations =
       user.permissions?.includes('registration_view');
-    const operators: Array<{ userId: number; [key: string]: unknown }> =
+    const operators: Array<{ userId: string; [key: string]: unknown }> =
       snapshot.operators.map((row: Record<string, unknown>) => ({
-        userId: Number(row.user_id),
+        userId: String(row.user_id),
         displayName: String(row.display_name),
-        queueIds: [Number(row.queue_id)],
-        sessionId: Number(row.session_id),
+        queueIds: [String(row.queue_id)],
+        sessionId: String(row.session_id),
         ...(row.counter_name ? { counterName: String(row.counter_name) } : {}),
         ...(row.thread_number != null
           ? { threadNumber: Number(row.thread_number) }
@@ -138,7 +138,7 @@ export class MonitoringService {
         startedAt: new Date(row.connected_at as string | Date).toISOString(),
         ...(canViewRegistrations && row.registration_id != null
           ? {
-              currentRegistrationId: Number(row.registration_id),
+              currentRegistrationId: String(row.registration_id),
               currentTicketNumber: String(row.ticket_number),
             }
           : {}),
@@ -146,7 +146,7 @@ export class MonitoringService {
     const alerts = queues.flatMap<{
       code: string;
       severity: 'info' | 'warning' | 'critical';
-      queueId?: number;
+      queueId?: string;
       messageKey: string;
       translationParams?: Record<string, string | number>;
     }>((queue) => {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import { DoriException } from '../errors/dori.exception';
 import { AuditRepository } from './audit.repository';
 import { AuditEventQueryDto } from './dto/audit-query.dto';
@@ -79,8 +79,8 @@ export class AuditService {
 
   private async allowedSiteIds(
     user: AuthenticatedUser,
-    requestedSiteId?: number,
-  ): Promise<number[] | undefined> {
+    requestedSiteId?: string,
+  ): Promise<string[] | undefined> {
     const scope = await this.scopeService.getUserScope(user);
     if (requestedSiteId !== undefined && !scope.isGlobal) {
       await this.scopeService.checkSiteAccess(user, requestedSiteId);

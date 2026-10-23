@@ -1,16 +1,17 @@
+import { IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
 export class QueueCandidatePersonItemDto {
-  @ApiProperty({ minimum: 1 }) personId: number;
+  @ApiProperty({ minimum: 1 }) personId: string;
   @ApiPropertyOptional() firstName?: string;
   @ApiPropertyOptional() lastName?: string;
 }
 
 export class QueuePreviewItemDto {
-  @ApiProperty({ minimum: 1 }) registrationId: number;
+  @ApiProperty({ minimum: 1 }) registrationId: string;
   @ApiProperty() ticketNumber: string;
-  @ApiProperty({ minimum: 1 }) queueId: number;
+  @ApiProperty({ minimum: 1 }) queueId: string;
   @ApiProperty() queueCode: string;
   @ApiProperty() queueName: string;
   @ApiProperty() siteName: string;
@@ -24,8 +25,8 @@ export class QueuePreviewItemDto {
 }
 
 export class ThreadSessionItemDto {
-  @ApiProperty({ minimum: 1 }) sessionId: number;
-  @ApiProperty({ minimum: 1 }) userId: number;
+  @ApiProperty({ minimum: 1 }) sessionId: string;
+  @ApiProperty({ minimum: 1 }) userId: string;
   @ApiProperty() username: string;
   @ApiProperty({ format: 'date-time' }) connectedAt: string;
   @ApiProperty({ format: 'date-time' }) lastSeenAt: string;
@@ -49,13 +50,13 @@ export class PaginatedQueueThreadResponseDto extends PaginatedResponseDto {
 }
 
 export class QueueSessionResponseDto {
-  @ApiProperty({ minimum: 1 }) sessionId: number;
-  @ApiProperty({ minimum: 1 }) queueId: number;
+  @ApiProperty({ minimum: 1 }) sessionId: string;
+  @ApiProperty({ minimum: 1 }) queueId: string;
   @ApiPropertyOptional({ minimum: 1, nullable: true }) threadNumber?:
     number | null;
   @ApiPropertyOptional({ type: String, nullable: true, example: 'Guichet 04' })
   counterName?: string | null;
-  @ApiProperty({ minimum: 1 }) userId: number;
+  @ApiProperty({ minimum: 1 }) userId: string;
   @ApiProperty({ enum: ['active', 'consultation_only'] }) mode: string;
   @ApiProperty({ format: 'date-time' }) connectedAt: string;
   @ApiPropertyOptional({ format: 'date-time', nullable: true })
@@ -64,7 +65,8 @@ export class QueueSessionResponseDto {
   @ApiPropertyOptional({ minimum: 1, nullable: true }) takenOverFromSessionId?:
     number | null;
   @ApiPropertyOptional({ minimum: 1, nullable: true })
-  reassignedRegistrationId?: number | null;
+  @IsUUID()
+  reassignedRegistrationId?: string | null;
 }
 
 export class PaginatedQueueSessionResponseDto extends PaginatedResponseDto {
@@ -73,7 +75,7 @@ export class PaginatedQueueSessionResponseDto extends PaginatedResponseDto {
 }
 
 export class CallNextRegistrationResponseDto {
-  @ApiProperty({ minimum: 1 }) registrationId: number;
+  @ApiProperty({ minimum: 1 }) registrationId: string;
   @ApiProperty() ticketNumber: string;
   @ApiProperty({ enum: ['walkin', 'appointment'] }) entryType: string;
   @ApiPropertyOptional({ format: 'date-time', nullable: true }) scheduledTime?:
@@ -81,7 +83,7 @@ export class CallNextRegistrationResponseDto {
   @ApiProperty() calledEarly: boolean;
   @ApiProperty({ type: 'object' }) tier: Record<string, unknown>;
   @ApiProperty({ example: 'in_progress' }) status: string;
-  @ApiProperty({ minimum: 1 }) sessionId: number;
+  @ApiProperty({ minimum: 1 }) sessionId: string;
   @ApiProperty({ minimum: 1 }) threadNumber: number;
   @ApiProperty() priorityScore: number;
   @ApiProperty({ format: 'date-time' }) calledAt: string;
@@ -89,16 +91,16 @@ export class CallNextRegistrationResponseDto {
 }
 
 export class CloseSessionResponseDto {
-  @ApiProperty({ minimum: 1 }) sessionId: number;
+  @ApiProperty({ minimum: 1 }) sessionId: string;
   @ApiProperty() closed: boolean;
 }
 
 export class UpdateRegistrationStatusResponseDto {
-  @ApiProperty({ minimum: 1 }) registrationId: number;
+  @ApiProperty({ minimum: 1 }) registrationId: string;
   @ApiProperty({ enum: ['served', 'no_show'] }) status: string;
   @ApiPropertyOptional({ format: 'date-time', nullable: true }) servedAt?:
     string | null;
   @ApiProperty({ format: 'date-time' }) closedAt: string;
-  @ApiProperty({ minimum: 1 }) handledBySessionId: number;
-  @ApiProperty({ minimum: 1 }) handledByUserId: number;
+  @ApiProperty({ minimum: 1 }) handledBySessionId: string;
+  @ApiProperty({ minimum: 1 }) handledByUserId: string;
 }

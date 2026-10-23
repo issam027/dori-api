@@ -17,7 +17,7 @@ describe('AuthService refresh rotation', () => {
               status,
               sessionId: 'new-session',
               user: {
-                user_id: 7,
+                user_id: '00000000-0000-4000-8000-000000000007',
                 username: 'agent',
                 password_hash: 'hash',
                 user_type: 'human',
@@ -64,7 +64,10 @@ describe('AuthService refresh rotation', () => {
       }),
     );
     expect(jwt.sign).toHaveBeenCalledWith(
-      expect.objectContaining({ sid: 'new-session', sub: 7 }),
+      expect.objectContaining({
+        sid: 'new-session',
+        sub: '00000000-0000-4000-8000-000000000007',
+      }),
     );
   });
 

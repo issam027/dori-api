@@ -14,8 +14,8 @@ describe('QueueEstimationWorkerRepository', () => {
 
     await expect(
       repository.aggregateQueue({
-        siteId: 2,
-        queueId: 4,
+        siteId: '00000000-0000-4000-8000-000000000002',
+        queueId: '00000000-0000-4000-8000-000000000004',
         activityDate: '2026-10-20',
         now: new Date('2026-10-20T10:00:00Z'),
       }),
@@ -24,8 +24,8 @@ describe('QueueEstimationWorkerRepository', () => {
     expect(query.mock.calls[1][0]).toContain('/ 60.0');
     expect(query.mock.calls[1][0]).toContain('cycle_p50_minutes');
     expect(query.mock.calls[1][1]).toEqual([
-      2,
-      4,
+      '00000000-0000-4000-8000-000000000002',
+      '00000000-0000-4000-8000-000000000004',
       '2026-10-20',
       new Date('2026-10-20T10:00:00Z'),
     ]);

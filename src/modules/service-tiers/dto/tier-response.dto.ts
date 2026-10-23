@@ -1,9 +1,11 @@
+import { IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
 export class ServiceTierResponseDto {
   @ApiProperty({ example: 1, description: 'ID du forfait' })
-  tierId: number;
+  @IsUUID()
+  tierId: string;
 
   @ApiProperty({ example: 'standard', description: 'Code unique du forfait' })
   tierCode: string;
@@ -46,10 +48,12 @@ export class PaginatedServiceTierResponseDto extends PaginatedResponseDto {
 
 export class QueueTierResponseDto {
   @ApiProperty({ example: 1, description: 'ID de la file' })
-  queueId: number;
+  @IsUUID()
+  queueId: string;
 
   @ApiProperty({ example: 1, description: 'ID du forfait' })
-  tierId: number;
+  @IsUUID()
+  tierId: string;
 
   @ApiProperty({
     example: 0,
@@ -116,13 +120,16 @@ export class PaginatedQueueTierResponseDto extends PaginatedResponseDto {
 
 export class NotificationRuleResponseDto {
   @ApiProperty({ example: 10, description: 'ID de la règle de notification' })
-  ruleId: number;
+  @IsUUID()
+  ruleId: string;
 
   @ApiProperty({ example: 1, description: 'ID de la file' })
-  queueId: number;
+  @IsUUID()
+  queueId: string;
 
   @ApiProperty({ example: 1, description: 'ID du forfait' })
-  tierId: number;
+  @IsUUID()
+  tierId: string;
 
   @ApiProperty({
     example: 'threshold',
@@ -176,13 +183,16 @@ export class PaginatedNotificationRuleResponseDto extends PaginatedResponseDto {
 
 export class DeleteTierResponseDto {
   @ApiProperty({ example: 1, description: "ID de l'élément supprimé" })
-  tierId?: number;
+  @IsUUID()
+  tierId?: string;
 
   @ApiPropertyOptional({ example: 1 })
-  queueId?: number;
+  @IsUUID()
+  queueId?: string;
 
   @ApiPropertyOptional({ example: 1 })
-  ruleId?: number;
+  @IsUUID()
+  ruleId?: string;
 
   @ApiProperty({ example: true, description: 'Confirmation de suppression' })
   deleted: boolean;

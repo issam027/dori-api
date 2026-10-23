@@ -1,12 +1,10 @@
 import {
+  IsUUID,
   IsIn,
-  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
-  Min,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../../core/pagination/pagination.dto';
 import {
@@ -20,10 +18,9 @@ export class SendManualNotificationDto {
     description: 'ID de la personne / client destinataire',
     example: 1,
   })
-  @IsInt()
-  @Min(1)
+  @IsUUID()
   @IsNotEmpty()
-  registrationId: number;
+  registrationId: string;
 
   @ApiProperty({
     enum: ['sms', 'email'],
@@ -53,11 +50,9 @@ export class SendManualNotificationDto {
 @ValidDateRange(DATE_RANGE_LIMITS.notificationFilterDays)
 export class NotificationFilterDto extends PaginationDto {
   @ApiPropertyOptional({ description: "Filtrer par ID d'inscription" })
-  @IsInt()
-  @Min(1)
+  @IsUUID()
   @IsOptional()
-  @Type(() => Number)
-  registrationId?: number;
+  registrationId?: string;
 
   @ApiPropertyOptional({
     enum: ['sms', 'email'],
@@ -95,18 +90,14 @@ export class NotificationFilterDto extends PaginationDto {
   dateTo?: string;
 
   @ApiPropertyOptional({ example: 1, description: 'Filtrer par file' })
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
+  @IsUUID()
   @IsOptional()
-  queueId?: number;
+  queueId?: string;
 
   @ApiPropertyOptional({ example: 1, description: 'Filtrer par site' })
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
+  @IsUUID()
   @IsOptional()
-  siteId?: number;
+  siteId?: string;
 }
 
 export class WebhookDeliveryDto {
@@ -116,6 +107,7 @@ export class WebhookDeliveryDto {
   })
   @IsString()
   @IsNotEmpty()
+  @IsUUID()
   messageId: string;
 
   @ApiProperty({

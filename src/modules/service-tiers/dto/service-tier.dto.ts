@@ -1,4 +1,5 @@
 import {
+  IsUUID,
   IsBoolean,
   IsIn,
   IsInt,
@@ -53,8 +54,8 @@ export class UpdateTierDto {
 
 export class AssociateQueueTierDto {
   @ApiProperty({ example: 2, description: 'ID du forfait à associer' })
-  @IsInt()
-  tierId: number;
+  @IsUUID()
+  tierId: string;
 
   @ApiProperty({ example: 5.0, description: 'Tarif (≥ 0)', minimum: 0 })
   @IsNumber()

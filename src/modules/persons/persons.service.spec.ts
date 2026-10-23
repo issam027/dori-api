@@ -12,7 +12,7 @@ describe('PersonsService', () => {
   let repository: Record<string, jest.Mock>;
   let scope: { getUserScope: jest.Mock; checkSiteAccess: jest.Mock };
   const user: AuthenticatedUser = {
-    userId: 1,
+    userId: '00000000-0000-4000-8000-000000000001',
     username: 'admin',
     roles: ['admin'],
     permissions: ['registration_delete', 'registration_view'],
@@ -57,65 +57,83 @@ describe('PersonsService', () => {
   });
 
   it('deduplicates a phone number only inside the requested site', async () => {
-    repository.findByPhone.mockResolvedValue({ person_id: 10, site_id: 2 });
+    repository.findByPhone.mockResolvedValue({
+      person_id: '00000000-0000-4000-8000-000000000010',
+      site_id: '00000000-0000-4000-8000-000000000002',
+    });
     const result = await service.createPerson(
       { lastName: 'Ben Ali', phoneNumber: '+21698765432' },
-      2,
+      '00000000-0000-4000-8000-000000000002',
       user,
     );
     expect(repository.findByPhone).toHaveBeenCalledWith(
-      2,
+      '00000000-0000-4000-8000-000000000002',
       '+21698765432',
       undefined,
     );
     expect(repository.create).not.toHaveBeenCalled();
-    expect(result.person_id).toBe(10);
+    expect(result.person_id).toBe('00000000-0000-4000-8000-000000000010');
   });
 
   it('creates a person when no identity exists in that site', async () => {
     repository.findByPhone.mockResolvedValue(null);
-    repository.create.mockResolvedValue({ person_id: 20, site_id: 2 });
+    repository.create.mockResolvedValue({
+      person_id: '00000000-0000-4000-8000-000000000020',
+      site_id: '00000000-0000-4000-8000-000000000002',
+    });
     const result = await service.createPerson(
       {
         firstName: 'Amine',
         lastName: 'Ben Ali',
         phoneNumber: '+21698765432',
       },
-      2,
+      '00000000-0000-4000-8000-000000000002',
       user,
     );
     expect(repository.create).toHaveBeenCalledWith(
       expect.objectContaining({ firstName: 'Amine' }),
-      2,
-      1,
+      '00000000-0000-4000-8000-000000000002',
+      '00000000-0000-4000-8000-000000000001',
       new Date('2026-09-29T12:00:00Z'),
       undefined,
     );
-    expect(result.person_id).toBe(20);
+    expect(result.person_id).toBe('00000000-0000-4000-8000-000000000020');
   });
 
   it('hides a person outside the user site scope', async () => {
     scope.getUserScope.mockResolvedValue({
       isGlobal: false,
-      siteIds: [1],
+      siteIds: ['00000000-0000-4000-8000-000000000001'],
       queueIds: [],
     });
     repository.existsInSites.mockResolvedValue(false);
-    await expect(service.findPersonById(42, user)).rejects.toThrow(
-      new DoriException('PERSON_NOT_FOUND', { personId: 42 }),
+    await expect(
+      service.findPersonById('00000000-0000-4000-8000-000000000042', user),
+    ).rejects.toThrow(
+      new DoriException('PERSON_NOT_FOUND', {
+        personId: '00000000-0000-4000-8000-000000000042',
+      }),
     );
-    expect(repository.existsInSites).toHaveBeenCalledWith(42, [1]);
+    expect(repository.existsInSites).toHaveBeenCalledWith(
+      '00000000-0000-4000-8000-000000000042',
+      ['00000000-0000-4000-8000-000000000001'],
+    );
   });
 
   it('soft deletes a person and its notes through one repository operation', async () => {
-    repository.findById.mockResolvedValue({ person_id: 42, site_id: 1 });
-    await expect(service.deletePerson(42, user)).resolves.toEqual({
-      id: 42,
+    repository.findById.mockResolvedValue({
+      person_id: '00000000-0000-4000-8000-000000000042',
+      site_id: '00000000-0000-4000-8000-000000000001',
+    });
+    await expect(
+      service.deletePerson('00000000-0000-4000-8000-000000000042', user),
+    ).resolves.toEqual({
+      id: '00000000-0000-4000-8000-000000000042',
       deleted: true,
     });
     expect(repository.softDeleteWithNotes).toHaveBeenCalledWith(
-      42,
-      1,
+      '00000000-0000-4000-8000-000000000042',
+      '00000000-0000-4000-8000-000000000001',
       new Date('2026-09-29T12:00:00Z'),
     );
   });
@@ -123,15 +141,25 @@ describe('PersonsService', () => {
   it('delegates paginated notes to the repository', async () => {
     repository.findNotes.mockResolvedValue({
       total: 1,
-      items: [{ note_id: 1, person_id: 10, content: 'VIP' }],
+      items: [
+        {
+          note_id: '00000000-0000-4000-8000-000000000001',
+          person_id: '00000000-0000-4000-8000-000000000010',
+          content: 'VIP',
+        },
+      ],
     });
     const pagination = Object.assign(new PaginationDto(), {
       page: 3,
       pageSize: 2,
     });
-    const result = await service.findPersonNotes(10, pagination, user);
+    const result = await service.findPersonNotes(
+      '00000000-0000-4000-8000-000000000010',
+      pagination,
+      user,
+    );
     expect(repository.findNotes).toHaveBeenCalledWith({
-      personId: 10,
+      personId: '00000000-0000-4000-8000-000000000010',
       isActive: true,
       sortField: 'created_at',
       sortOrder: 'DESC',

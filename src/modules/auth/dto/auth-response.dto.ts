@@ -1,8 +1,10 @@
+import { IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class AuthUserDto {
   @ApiProperty({ example: 1, description: "ID unique de l'utilisateur" })
-  userId: number;
+  @IsUUID()
+  userId: string;
 
   @ApiProperty({ example: 'admin', description: "Nom d'utilisateur" })
   username: string;
@@ -89,10 +91,10 @@ export class UserScopeDto {
   isGlobal: boolean;
 
   @ApiProperty({ type: [Number], example: [1] })
-  siteIds: number[];
+  siteIds: string[];
 
   @ApiProperty({ type: [Number], example: [1, 2] })
-  queueIds: number[];
+  queueIds: string[];
 }
 
 export class CurrentUserResponseDto extends AuthUserDto {

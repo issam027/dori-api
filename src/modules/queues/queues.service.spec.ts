@@ -7,7 +7,7 @@ import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interf
 import { DoriException } from '../../core/errors/dori.exception';
 import { QueuesRepository } from './queues.repository';
 
-describe('QueuesService — SEC-04 assignOperator', () => {
+describe('QueuesService ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â SEC-04 assignOperator', () => {
   let service: QueuesService;
   let dataSourceMock: { query: jest.Mock; transaction: jest.Mock };
   let scopeServiceMock: {
@@ -18,7 +18,7 @@ describe('QueuesService — SEC-04 assignOperator', () => {
   };
 
   const managerUser: AuthenticatedUser = {
-    userId: 1,
+    userId: '00000000-0000-4000-8000-000000000001',
     username: 'manager_user',
     roles: ['manager'],
     permissions: ['user_queue_assign'],
@@ -69,45 +69,65 @@ describe('QueuesService — SEC-04 assignOperator', () => {
     service = module.get<QueuesService>(QueuesService);
   });
 
-  it('should throw USER_NOT_FOUND when target user does not exist in dori_user', async () => {
+  it('should throw USER_NOT_FOUND when target user does not exist in dorify.dori_user', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('SELECT site_id FROM dori_queue')) {
-        return [{ site_id: 10 }];
+      if (sql.includes('SELECT site_id FROM dorify.dori_queue')) {
+        return [{ site_id: '00000000-0000-4000-8000-000000000010' }];
       }
-      if (sql.includes('SELECT user_id, is_active FROM dori_user')) {
+      if (sql.includes('SELECT user_id, is_active FROM dorify.dori_user')) {
         return [];
       }
       return [];
     });
 
-    await expect(service.assignOperator(5, 999, managerUser)).rejects.toThrow(
-      new DoriException('USER_NOT_FOUND', { userId: 999 }),
+    await expect(
+      service.assignOperator(
+        '00000000-0000-4000-8000-000000000005',
+        '00000000-0000-4000-8000-000000000999',
+        managerUser,
+      ),
+    ).rejects.toThrow(
+      new DoriException('USER_NOT_FOUND', {
+        userId: '00000000-0000-4000-8000-000000000999',
+      }),
     );
   });
 
   it('should throw ACCOUNT_LOCKED when target user is inactive', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('SELECT site_id FROM dori_queue')) {
-        return [{ site_id: 10 }];
+      if (sql.includes('SELECT site_id FROM dorify.dori_queue')) {
+        return [{ site_id: '00000000-0000-4000-8000-000000000010' }];
       }
-      if (sql.includes('SELECT user_id, is_active FROM dori_user')) {
-        return [{ user_id: 2, is_active: false }];
+      if (sql.includes('SELECT user_id, is_active FROM dorify.dori_user')) {
+        return [
+          { user_id: '00000000-0000-4000-8000-000000000002', is_active: false },
+        ];
       }
       return [];
     });
 
-    await expect(service.assignOperator(5, 2, managerUser)).rejects.toThrow(
-      new DoriException('ACCOUNT_LOCKED', { userId: 2 }),
+    await expect(
+      service.assignOperator(
+        '00000000-0000-4000-8000-000000000005',
+        '00000000-0000-4000-8000-000000000002',
+        managerUser,
+      ),
+    ).rejects.toThrow(
+      new DoriException('ACCOUNT_LOCKED', {
+        userId: '00000000-0000-4000-8000-000000000002',
+      }),
     );
   });
 
   it('should throw FORBIDDEN_ROLE_ESCALATION when target user does not have operator role', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('SELECT site_id FROM dori_queue')) {
-        return [{ site_id: 10 }];
+      if (sql.includes('SELECT site_id FROM dorify.dori_queue')) {
+        return [{ site_id: '00000000-0000-4000-8000-000000000010' }];
       }
-      if (sql.includes('SELECT user_id, is_active FROM dori_user')) {
-        return [{ user_id: 2, is_active: true }];
+      if (sql.includes('SELECT user_id, is_active FROM dorify.dori_user')) {
+        return [
+          { user_id: '00000000-0000-4000-8000-000000000002', is_active: true },
+        ];
       }
       if (sql.includes("r.role_name IN ('operator', 'kiosk')")) {
         return [];
@@ -115,39 +135,55 @@ describe('QueuesService — SEC-04 assignOperator', () => {
       return [];
     });
 
-    await expect(service.assignOperator(5, 2, managerUser)).rejects.toThrow(
-      new DoriException('FORBIDDEN_ROLE_ESCALATION'),
-    );
+    await expect(
+      service.assignOperator(
+        '00000000-0000-4000-8000-000000000005',
+        '00000000-0000-4000-8000-000000000002',
+        managerUser,
+      ),
+    ).rejects.toThrow(new DoriException('FORBIDDEN_ROLE_ESCALATION'));
   });
 
   it('should assign operator successfully when user exists, is active and has operator role', async () => {
     dataSourceMock.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('SELECT site_id FROM dori_queue')) {
-        return [{ site_id: 10 }];
+      if (sql.includes('SELECT site_id FROM dorify.dori_queue')) {
+        return [{ site_id: '00000000-0000-4000-8000-000000000010' }];
       }
-      if (sql.includes('SELECT user_id, is_active FROM dori_user')) {
-        return [{ user_id: 2, is_active: true }];
+      if (sql.includes('SELECT user_id, is_active FROM dorify.dori_user')) {
+        return [
+          { user_id: '00000000-0000-4000-8000-000000000002', is_active: true },
+        ];
       }
       if (sql.includes("r.role_name IN ('operator', 'kiosk')")) {
-        return [{ user_id: 2 }];
+        return [{ user_id: '00000000-0000-4000-8000-000000000002' }];
       }
-      if (sql.includes('INSERT INTO dori_user_queue_assignment')) {
+      if (sql.includes('INSERT INTO dorify.dori_user_queue_assignment')) {
         return [];
       }
       return [];
     });
 
-    const result = await service.assignOperator(5, 2, managerUser);
-    expect(result).toEqual({ queueId: 5, userId: 2, assigned: true });
-    expect(scopeServiceMock.invalidateUserScope).toHaveBeenCalledWith(2);
+    const result = await service.assignOperator(
+      '00000000-0000-4000-8000-000000000005',
+      '00000000-0000-4000-8000-000000000002',
+      managerUser,
+    );
+    expect(result).toEqual({
+      queueId: '00000000-0000-4000-8000-000000000005',
+      userId: '00000000-0000-4000-8000-000000000002',
+      assigned: true,
+    });
+    expect(scopeServiceMock.invalidateUserScope).toHaveBeenCalledWith(
+      '00000000-0000-4000-8000-000000000002',
+    );
   });
 
   it('resolves site defaults and queue overrides, including currency and locale', async () => {
     dataSourceMock.query.mockResolvedValue([
       {
-        queue_id: 5,
+        queue_id: '00000000-0000-4000-8000-000000000005',
         queue_code: 'CARDIO',
-        site_id: 10,
+        site_id: '00000000-0000-4000-8000-000000000010',
         queue_name: 'Cardiologie',
         average_wait_time: 10,
         thread_count: 2,
@@ -191,7 +227,10 @@ describe('QueuesService — SEC-04 assignOperator', () => {
       },
     ]);
 
-    const result = await service.findQueueById(5, managerUser);
+    const result = await service.findQueueById(
+      '00000000-0000-4000-8000-000000000005',
+      managerUser,
+    );
 
     expect(result.currency).toBe('EUR');
     expect(result.locale).toBe('fr');
@@ -206,14 +245,21 @@ describe('QueuesService — SEC-04 assignOperator', () => {
   describe('deleteQueue (DAT-05)', () => {
     it('should throw QUEUE_NOT_FOUND when queue does not exist or is inactive', async () => {
       dataSourceMock.query.mockImplementation(async (sql: string) => {
-        if (sql.includes('FROM dori_queue q')) {
+        if (sql.includes('FROM dorify.dori_queue q')) {
           return [];
         }
         return [];
       });
 
-      await expect(service.deleteQueue(999, managerUser)).rejects.toThrow(
-        new DoriException('QUEUE_NOT_FOUND', { queueId: 999 }),
+      await expect(
+        service.deleteQueue(
+          '00000000-0000-4000-8000-000000000999',
+          managerUser,
+        ),
+      ).rejects.toThrow(
+        new DoriException('QUEUE_NOT_FOUND', {
+          queueId: '00000000-0000-4000-8000-000000000999',
+        }),
       );
     });
 
@@ -222,39 +268,56 @@ describe('QueuesService — SEC-04 assignOperator', () => {
       dataSourceMock.query.mockImplementation(
         async (sql: string, params: any[]) => {
           queries.push({ sql, params });
-          if (sql.includes('FROM dori_queue q')) {
-            return [{ queue_id: 5, is_active: true }];
+          if (sql.includes('FROM dorify.dori_queue q')) {
+            return [
+              {
+                queue_id: '00000000-0000-4000-8000-000000000005',
+                is_active: true,
+              },
+            ];
           }
           return [];
         },
       );
 
-      const result = await service.deleteQueue(5, managerUser);
-      expect(result).toEqual({ queueId: 5, deleted: true });
+      const result = await service.deleteQueue(
+        '00000000-0000-4000-8000-000000000005',
+        managerUser,
+      );
+      expect(result).toEqual({
+        queueId: '00000000-0000-4000-8000-000000000005',
+        deleted: true,
+      });
 
       const queueUpdate = queries.find(
         (q) =>
-          q.sql.includes('UPDATE dori_queue') &&
+          q.sql.includes('UPDATE dorify.dori_queue') &&
           q.sql.includes('SET is_active = FALSE'),
       );
       expect(queueUpdate).toBeDefined();
-      expect(queueUpdate?.params[2]).toBe(5);
+      expect(queueUpdate?.params[2]).toBe(
+        '00000000-0000-4000-8000-000000000005',
+      );
 
       const tiersUpdate = queries.find(
         (q) =>
-          q.sql.includes('UPDATE dori_queue_service_tier') &&
+          q.sql.includes('UPDATE dorify.dori_queue_service_tier') &&
           q.sql.includes('SET is_active = FALSE'),
       );
       expect(tiersUpdate).toBeDefined();
-      expect(tiersUpdate?.params[2]).toBe(5);
+      expect(tiersUpdate?.params[2]).toBe(
+        '00000000-0000-4000-8000-000000000005',
+      );
 
       const sessionsUpdate = queries.find(
         (q) =>
-          q.sql.includes('UPDATE dori_operator_session') &&
+          q.sql.includes('UPDATE dorify.dori_operator_session') &&
           q.sql.includes("closure_reason = 'forced'"),
       );
       expect(sessionsUpdate).toBeDefined();
-      expect(sessionsUpdate?.params[2]).toBe(5);
+      expect(sessionsUpdate?.params[2]).toBe(
+        '00000000-0000-4000-8000-000000000005',
+      );
     });
   });
 });

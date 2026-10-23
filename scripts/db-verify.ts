@@ -28,49 +28,98 @@ function clientConfig(): ClientConfig {
 async function main(): Promise<void> {
   const client = new Client(clientConfig());
   await client.connect();
+  await client.query('SET search_path TO dorify, pg_catalog');
   try {
     const state = await client.query(`
       SELECT
-        (SELECT COUNT(*)::int FROM dori_schema_migration) AS migrations,
-        (SELECT COUNT(*)::int FROM dori_translation
+        (SELECT COUNT(*)::int FROM dorify.dori_schema_migration) AS migrations,
+        (SELECT COUNT(*)::int FROM dorify.dori_translation
          WHERE translation_key IN (
            'sms.welcome', 'sms.welcome_with_tracking',
            'email.welcome', 'email.welcome_with_tracking',
            'sms.threshold', 'sms.threshold_with_tracking',
            'email.threshold', 'email.threshold_with_tracking'
          ) AND is_active) AS active_notification_templates,
-        (SELECT COUNT(*)::int FROM dori_registration
+        (SELECT COUNT(*)::int FROM dorify.dori_registration
          WHERE status IN ('in_progress','served','no_show')
            AND (served_by_session_id IS NULL OR served_by_user_id IS NULL)) AS invalid_served_by,
-        (SELECT COUNT(*)::int FROM dori_registration
+        (SELECT COUNT(*)::int FROM dorify.dori_registration
          WHERE status IN ('served','no_show','expired','cancelled')
            AND NOT is_active) AS terminal_registrations_marked_inactive,
         (SELECT COUNT(*)::int
-         FROM dori_user_queue_assignment uq
-         JOIN dori_queue q ON q.queue_id = uq.queue_id
-         LEFT JOIN dori_user_site_assignment us
+         FROM dorify.dori_user_queue_assignment uq
+         JOIN dorify.dori_queue q ON q.queue_id = uq.queue_id
+         LEFT JOIN dorify.dori_user_site_assignment us
            ON us.user_id = uq.user_id AND us.site_id = q.site_id
          WHERE us.user_id IS NULL) AS queue_assignments_without_site,
-        (SELECT COUNT(*)::int FROM dori_operator_session
+        (SELECT COUNT(*)::int FROM dorify.dori_operator_session
          WHERE counter_name IS NOT NULL
            AND LENGTH(BTRIM(counter_name)) NOT BETWEEN 1 AND 100) AS invalid_counter_names,
-        (to_regclass('public.dori_audit_event') IS NOT NULL) AS audit_table_exists,
+        (to_regclass('dorify.dori_audit_event') IS NOT NULL) AS audit_table_exists,
         EXISTS (
           SELECT 1 FROM pg_trigger
           WHERE tgname = 'trg_audit_event_append_only'
-            AND tgrelid = 'dori_audit_event'::regclass
+            AND tgrelid = 'dorify.dori_audit_event'::regclass
             AND NOT tgisinternal
         ) AS audit_append_only_trigger_exists
     `);
     const constraints = await client.query<{ conname: string }>(`
-      SELECT conname FROM pg_constraint
-      WHERE conname IN (
+      SELECT conname FROM pg_constraint con
+      JOIN pg_namespace ns ON ns.oid = con.connamespace
+      WHERE ns.nspname = 'dorify' AND conname IN (
         'ck_registration_served_by_pair',
         'ck_registration_served_by_status',
         'ck_notification_dispatchable',
         'ck_operator_session_counter_name'
       ) ORDER BY conname
     `);
+    const uuidIntegrity = await client.query<{
+      numeric_primary_keys: number;
+      mismatched_foreign_keys: number;
+      invalid_foreign_keys: number;
+      public_dori_objects_present: number;
+    }>(`
+      SELECT
+        (SELECT COUNT(*)::int
+         FROM information_schema.table_constraints tc
+         JOIN information_schema.key_column_usage kcu
+           ON kcu.constraint_schema = tc.constraint_schema
+          AND kcu.constraint_name = tc.constraint_name
+         JOIN information_schema.columns c
+           ON c.table_schema = kcu.table_schema
+          AND c.table_name = kcu.table_name
+          AND c.column_name = kcu.column_name
+         WHERE tc.constraint_schema = 'dorify'
+           AND tc.constraint_type = 'PRIMARY KEY'
+           AND kcu.column_name LIKE '%\\_id' ESCAPE '\\'
+           AND c.data_type IN ('smallint', 'integer', 'bigint')) AS numeric_primary_keys,
+        (SELECT COUNT(*)::int
+         FROM pg_constraint fk
+         JOIN pg_attribute child
+           ON child.attrelid = fk.conrelid AND child.attnum = fk.conkey[1]
+         JOIN pg_attribute parent
+           ON parent.attrelid = fk.confrelid AND parent.attnum = fk.confkey[1]
+         JOIN pg_namespace ns ON ns.oid = fk.connamespace
+         WHERE fk.contype = 'f' AND ns.nspname = 'dorify'
+           AND child.atttypid <> parent.atttypid) AS mismatched_foreign_keys,
+        (SELECT COUNT(*)::int FROM pg_constraint fk
+         JOIN pg_namespace ns ON ns.oid = fk.connamespace
+         WHERE fk.contype = 'f' AND ns.nspname = 'dorify'
+           AND NOT fk.convalidated) AS invalid_foreign_keys,
+        (SELECT COUNT(*)::int FROM pg_class c
+         JOIN pg_namespace ns ON ns.oid = c.relnamespace
+         WHERE ns.nspname = 'public' AND c.relname LIKE 'dori_%') AS public_dori_objects_present
+    `);
+    const integrity = uuidIntegrity.rows[0];
+    if (
+      integrity.numeric_primary_keys !== 0 ||
+      integrity.mismatched_foreign_keys !== 0 ||
+      integrity.invalid_foreign_keys !== 0
+    ) {
+      throw new Error(
+        `UUID integrity verification failed: ${JSON.stringify(integrity)}`,
+      );
+    }
     await client.query(`
       SELECT actor_display_name, target_display_name,
              secondary_target_display_name
@@ -81,6 +130,7 @@ async function main(): Promise<void> {
       `${JSON.stringify({
         state: { ...state.rows[0], audit_read_model_queryable: true },
         constraints: constraints.rows.map((row) => row.conname),
+        uuidIntegrity: integrity,
       })}\n`,
     );
   } finally {

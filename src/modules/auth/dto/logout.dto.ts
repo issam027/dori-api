@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, Min } from 'class-validator';
+import { IsUUID, IsOptional } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class LogoutDto {
@@ -9,8 +9,7 @@ export class LogoutDto {
       'Si différent, le caller doit être manager, admin ou root et avoir les droits hiérarchiques.',
     example: 42,
   })
-  @IsInt()
-  @Min(1)
+  @IsUUID()
   @IsOptional()
-  userId?: number;
+  userId?: string;
 }

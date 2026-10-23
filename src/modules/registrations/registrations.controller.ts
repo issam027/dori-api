@@ -8,7 +8,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -63,13 +63,18 @@ export class RegistrationsController {
     description:
       'Retourne les disponibilités journalières sur une plage inclusive. Les créneaux peuvent être omis avec summaryOnly=true.',
   })
-  @ApiParam({ name: 'queueId', type: Number, description: 'ID de la file' })
+  @ApiParam({
+    name: '',
+    type: String,
+    format: 'uuid',
+    description: 'ID de la file',
+  })
   @ApiDoriOkResponse(
     RegistrationAvailabilityResponseDto,
     'Disponibilités des créneaux',
   )
   async getAvailability(
-    @Param('queueId', ParseIntPipe) queueId: number,
+    @Param('queueId', ParseUUIDPipe) queueId: string,
     @Query() query: RegistrationAvailabilityQueryDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -146,7 +151,7 @@ export class RegistrationsController {
   })
   @ApiDoriOkResponse(RegistrationResponseDto, "Détails de l'inscription")
   async findOne(
-    @Param('registrationId', ParseIntPipe) registrationId: number,
+    @Param('registrationId', ParseUUIDPipe) registrationId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.registrationsService.findRegistrationById(registrationId, user);
@@ -167,7 +172,7 @@ export class RegistrationsController {
   })
   @ApiDoriOkResponse(RegistrationResponseDto, 'Inscription mise à jour')
   async update(
-    @Param('registrationId', ParseIntPipe) registrationId: number,
+    @Param('registrationId', ParseUUIDPipe) registrationId: string,
     @Body() dto: UpdateRegistrationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -197,7 +202,7 @@ export class RegistrationsController {
     'Rendez-vous reprogrammé',
   )
   async reschedule(
-    @Param('registrationId', ParseIntPipe) registrationId: number,
+    @Param('registrationId', ParseUUIDPipe) registrationId: string,
     @Body() dto: RescheduleRegistrationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -220,7 +225,7 @@ export class RegistrationsController {
   })
   @ApiDoriOkResponse(RegistrationResponseDto, 'Arrivée validée')
   async checkIn(
-    @Param('registrationId', ParseIntPipe) registrationId: number,
+    @Param('registrationId', ParseUUIDPipe) registrationId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.registrationsService.checkIn(registrationId, user);
@@ -243,7 +248,7 @@ export class RegistrationsController {
     'Inscription annulée avec succès',
   )
   async remove(
-    @Param('registrationId', ParseIntPipe) registrationId: number,
+    @Param('registrationId', ParseUUIDPipe) registrationId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.registrationsService.cancelRegistration(registrationId, user);

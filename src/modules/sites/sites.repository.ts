@@ -12,7 +12,7 @@ interface CountRow {
 }
 
 interface UserStatusRow {
-  user_id: number;
+  user_id: string;
   is_active: boolean;
 }
 
@@ -21,7 +21,7 @@ export class SitesRepository {
   constructor(private readonly dataSource: DataSource) {}
 
   async findPage(
-    siteIds: number[] | null,
+    siteIds: string[] | null,
     isActive: boolean | undefined,
     sortField: string,
     sortOrder: 'ASC' | 'DESC',
@@ -41,11 +41,11 @@ export class SitesRepository {
     const filter =
       conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     const [count] = await this.dataSource.query<CountRow[]>(
-      `SELECT COUNT(*)::int AS total FROM dori_site ${filter}`,
+      `SELECT COUNT(*)::int AS total FROM dorify.dori_site ${filter}`,
       params,
     );
     const items = await this.dataSource.query<SiteResponseDto[]>(
-      `SELECT * FROM dori_site ${filter}
+      `SELECT * FROM dorify.dori_site ${filter}
        ORDER BY ${sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`,
       params,
     );
@@ -54,11 +54,11 @@ export class SitesRepository {
 
   async create(
     dto: CreateSiteDto,
-    userId: number,
+    userId: string,
     now: Date,
   ): Promise<SiteResponseDto> {
     const rows = await this.dataSource.query<SiteResponseDto[]>(
-      `INSERT INTO dori_site (
+      `INSERT INTO dorify.dori_site (
         site_name, site_location, site_logo_url, site_type, timezone, default_currency,
         default_appointments_enabled, default_appointment_slot_duration, default_slot_capacity,
         default_working_hours_start, default_working_hours_end, default_break_start, default_break_end,
@@ -106,18 +106,18 @@ export class SitesRepository {
     return rows[0];
   }
 
-  async findById(siteId: number): Promise<SiteResponseDto | null> {
+  async findById(siteId: string): Promise<SiteResponseDto | null> {
     const rows = await this.dataSource.query<SiteResponseDto[]>(
-      'SELECT * FROM dori_site WHERE site_id = $1',
+      'SELECT * FROM dorify.dori_site WHERE site_id = $1',
       [siteId],
     );
     return rows[0] ?? null;
   }
 
   async update(
-    siteId: number,
+    siteId: string,
     dto: UpdateSiteDto,
-    userId: number,
+    userId: string,
     now: Date,
   ): Promise<SiteResponseDto> {
     const fields: string[] = [];
@@ -176,13 +176,13 @@ export class SitesRepository {
     const updateSite = async (query: DataSource['query']) => {
       const rows = (await query.call(
         this.dataSource,
-        `UPDATE dori_site SET ${fields.join(', ')} WHERE site_id = $${values.length} RETURNING *`,
+        `UPDATE dorify.dori_site SET ${fields.join(', ')} WHERE site_id = $${values.length} RETURNING *`,
         values,
       )) as SiteResponseDto[];
       if (dto.isActive === false) {
         await query.call(
           this.dataSource,
-          `UPDATE dori_queue SET is_active = FALSE, deleted_at = $1,
+          `UPDATE dorify.dori_queue SET is_active = FALSE, deleted_at = $1,
            updated_by_user_id = $2, updated_at = $1
            WHERE site_id = $3 AND is_active = TRUE`,
           [now, userId, siteId],
@@ -198,81 +198,81 @@ export class SitesRepository {
     return updateSite(this.dataSource.query.bind(this.dataSource));
   }
 
-  deactivate(siteId: number, userId: number, now: Date): Promise<void> {
+  deactivate(siteId: string, userId: string, now: Date): Promise<void> {
     return this.dataSource.transaction(async (manager) => {
-      // 1. Désactiver le site
+      // 1. DÃ©sactiver le site
       await manager.query(
-        `UPDATE dori_site SET is_active = FALSE, deleted_at = $1,
+        `UPDATE dorify.dori_site SET is_active = FALSE, deleted_at = $1,
          updated_by_user_id = $2, updated_at = $1 WHERE site_id = $3`,
         [now, userId, siteId],
       );
-      // 2. Désactiver les files d'attente du site
+      // 2. DÃ©sactiver les files d'attente du site
       await manager.query(
-        `UPDATE dori_queue SET is_active = FALSE, deleted_at = $1,
+        `UPDATE dorify.dori_queue SET is_active = FALSE, deleted_at = $1,
          updated_by_user_id = $2, updated_at = $1
          WHERE site_id = $3 AND is_active = TRUE`,
         [now, userId, siteId],
       );
-      // 3. Désactiver les forfaits des files du site
+      // 3. DÃ©sactiver les forfaits des files du site
       await manager.query(
-        `UPDATE dori_queue_service_tier SET is_active = FALSE, deleted_at = $1,
+        `UPDATE dorify.dori_queue_service_tier SET is_active = FALSE, deleted_at = $1,
          updated_by_user_id = $2, updated_at = $1
-         WHERE queue_id IN (SELECT queue_id FROM dori_queue WHERE site_id = $3) AND is_active = TRUE`,
+         WHERE queue_id IN (SELECT queue_id FROM dorify.dori_queue WHERE site_id = $3) AND is_active = TRUE`,
         [now, userId, siteId],
       );
-      // 4. Désactiver les règles de notification des files du site
+      // 4. DÃ©sactiver les rÃ¨gles de notification des files du site
       await manager.query(
-        `UPDATE dori_queue_tier_notification_rule SET is_active = FALSE, deleted_at = $1,
+        `UPDATE dorify.dori_queue_tier_notification_rule SET is_active = FALSE, deleted_at = $1,
          updated_by_user_id = $2, updated_at = $1
-         WHERE queue_id IN (SELECT queue_id FROM dori_queue WHERE site_id = $3) AND is_active = TRUE`,
+         WHERE queue_id IN (SELECT queue_id FROM dorify.dori_queue WHERE site_id = $3) AND is_active = TRUE`,
         [now, userId, siteId],
       );
-      // 5. Clôturer immédiatement les sessions guichets ouvertes sur les files du site
+      // 5. ClÃ´turer immÃ©diatement les sessions guichets ouvertes sur les files du site
       await manager.query(
-        `UPDATE dori_operator_session SET disconnected_at = $1,
+        `UPDATE dorify.dori_operator_session SET disconnected_at = $1,
          closure_reason = 'forced', closed_by_user_id = $2
-         WHERE queue_id IN (SELECT queue_id FROM dori_queue WHERE site_id = $3) AND disconnected_at IS NULL`,
+         WHERE queue_id IN (SELECT queue_id FROM dorify.dori_queue WHERE site_id = $3) AND disconnected_at IS NULL`,
         [now, userId, siteId],
       );
       // 6. Annuler toutes les inscriptions / rendez-vous actifs sur les files du site
       await manager.query(
-        `UPDATE dori_registration
+        `UPDATE dorify.dori_registration
          SET status = 'cancelled',
              appointment_status = CASE WHEN entry_type = 'appointment' THEN 'cancelled' ELSE appointment_status END,
              is_active = FALSE,
              closed_at = $1,
              updated_by_user_id = $2,
              updated_at = $1
-         WHERE queue_id IN (SELECT queue_id FROM dori_queue WHERE site_id = $3)
+         WHERE queue_id IN (SELECT queue_id FROM dorify.dori_queue WHERE site_id = $3)
            AND status IN ('booked', 'waiting', 'in_progress') AND is_active = TRUE`,
         [now, userId, siteId],
       );
       // 7. Supprimer les assignations d'utilisateurs aux files du site
       await manager.query(
-        `DELETE FROM dori_user_queue_assignment WHERE queue_id IN (SELECT queue_id FROM dori_queue WHERE site_id = $1)`,
+        `DELETE FROM dorify.dori_user_queue_assignment WHERE queue_id IN (SELECT queue_id FROM dorify.dori_queue WHERE site_id = $1)`,
         [siteId],
       );
       // 8. Supprimer les assignations directes d'utilisateurs au site
       await manager.query(
-        `DELETE FROM dori_user_site_assignment WHERE site_id = $1`,
+        `DELETE FROM dorify.dori_user_site_assignment WHERE site_id = $1`,
         [siteId],
       );
     });
   }
 
   async findDirectSiteUsers(
-    siteId: number,
+    siteId: string,
     sortField: string,
     sortOrder: 'ASC' | 'DESC',
     pageSize: number,
     offset: number,
     role?: 'admin' | 'manager',
   ): Promise<{ items: SiteDirectUserResponseDto[]; total: number }> {
-    const from = `FROM dori_user_site_assignment us JOIN dori_user u ON u.user_id = us.user_id
+    const from = `FROM dorify.dori_user_site_assignment us JOIN dorify.dori_user u ON u.user_id = us.user_id
       WHERE us.site_id = $1 AND u.is_active = TRUE
         AND EXISTS (
-          SELECT 1 FROM dori_user_role ur
-          JOIN dori_role r ON r.role_id = ur.role_id
+          SELECT 1 FROM dorify.dori_user_role ur
+          JOIN dorify.dori_role r ON r.role_id = ur.role_id
           WHERE ur.user_id = u.user_id
             AND r.role_name IN ('admin', 'manager')
             AND ($2::text IS NULL OR r.role_name = $2)
@@ -290,17 +290,17 @@ export class SitesRepository {
     return { items, total: count?.total ?? 0 };
   }
 
-  async findUserStatus(userId: number): Promise<UserStatusRow | null> {
+  async findUserStatus(userId: string): Promise<UserStatusRow | null> {
     const rows = await this.dataSource.query<UserStatusRow[]>(
-      'SELECT user_id, is_active FROM dori_user WHERE user_id = $1 AND deleted_at IS NULL',
+      'SELECT user_id, is_active FROM dorify.dori_user WHERE user_id = $1 AND deleted_at IS NULL',
       [userId],
     );
     return rows[0] ?? null;
   }
 
-  async hasActiveDirectSiteRole(userId: number): Promise<boolean> {
-    const rows = await this.dataSource.query<Array<{ user_id: number }>>(
-      `SELECT ur.user_id FROM dori_user_role ur JOIN dori_role r ON r.role_id = ur.role_id
+  async hasActiveDirectSiteRole(userId: string): Promise<boolean> {
+    const rows = await this.dataSource.query<Array<{ user_id: string }>>(
+      `SELECT ur.user_id FROM dorify.dori_user_role ur JOIN dorify.dori_role r ON r.role_id = ur.role_id
        WHERE ur.user_id = $1 AND r.role_name IN ('admin', 'manager') AND r.is_active = TRUE LIMIT 1`,
       [userId],
     );
@@ -308,21 +308,21 @@ export class SitesRepository {
   }
 
   async assignDirectSiteUser(
-    siteId: number,
-    userId: number,
-    assignedBy: number,
+    siteId: string,
+    userId: string,
+    assignedBy: string,
     now: Date,
   ) {
     await this.dataSource.query(
-      `INSERT INTO dori_user_site_assignment (user_id, site_id, assigned_at, assigned_by_user_id)
+      `INSERT INTO dorify.dori_user_site_assignment (user_id, site_id, assigned_at, assigned_by_user_id)
        VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, site_id) DO NOTHING`,
       [userId, siteId, now, assignedBy],
     );
   }
 
-  async removeDirectSiteUser(siteId: number, userId: number) {
+  async removeDirectSiteUser(siteId: string, userId: string) {
     await this.dataSource.query(
-      'DELETE FROM dori_user_site_assignment WHERE user_id = $1 AND site_id = $2',
+      'DELETE FROM dorify.dori_user_site_assignment WHERE user_id = $1 AND site_id = $2',
       [userId, siteId],
     );
   }

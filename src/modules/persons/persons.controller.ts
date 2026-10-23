@@ -6,7 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -94,7 +94,7 @@ export class PersonsController {
   })
   @ApiDoriOkResponse(PersonResponseDto, 'Détails de la personne')
   async findOne(
-    @Param('personId', ParseIntPipe) personId: number,
+    @Param('personId', ParseUUIDPipe) personId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.personsService.findPersonById(personId, user);
@@ -113,7 +113,7 @@ export class PersonsController {
   })
   @ApiDoriOkResponse(PersonResponseDto, 'Fiche modifiée')
   async updatePerson(
-    @Param('personId', ParseIntPipe) personId: number,
+    @Param('personId', ParseUUIDPipe) personId: string,
     @Body() dto: UpdatePersonDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -137,7 +137,7 @@ export class PersonsController {
     'Liste paginée des notes de la personne',
   )
   async getNotes(
-    @Param('personId', ParseIntPipe) personId: number,
+    @Param('personId', ParseUUIDPipe) personId: string,
     @Query() pagination: PersonNoteFilterDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -164,7 +164,7 @@ export class PersonsController {
   })
   @ApiDoriCreatedResponse(PersonNoteResponseDto, 'Note ajoutée')
   async createNote(
-    @Param('personId', ParseIntPipe) personId: number,
+    @Param('personId', ParseUUIDPipe) personId: string,
     @Body() dto: CreatePersonNoteDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -188,11 +188,16 @@ export class PersonsController {
     type: Number,
     description: 'ID de la personne',
   })
-  @ApiParam({ name: 'noteId', type: Number, description: 'ID de la note' })
+  @ApiParam({
+    name: '',
+    type: String,
+    format: 'uuid',
+    description: 'ID de la note',
+  })
   @ApiDoriOkResponse(PersonNoteResponseDto, 'Note mise à jour')
   async updateNote(
-    @Param('personId', ParseIntPipe) personId: number,
-    @Param('noteId', ParseIntPipe) noteId: number,
+    @Param('personId', ParseUUIDPipe) personId: string,
+    @Param('noteId', ParseUUIDPipe) noteId: string,
     @Body() dto: UpdatePersonNoteDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -216,11 +221,16 @@ export class PersonsController {
     type: Number,
     description: 'ID de la personne',
   })
-  @ApiParam({ name: 'noteId', type: Number, description: 'ID de la note' })
+  @ApiParam({
+    name: '',
+    type: String,
+    format: 'uuid',
+    description: 'ID de la note',
+  })
   @ApiDoriOkResponse(DeleteItemResponseDto, 'Note supprimée')
   async deleteNote(
-    @Param('personId', ParseIntPipe) personId: number,
-    @Param('noteId', ParseIntPipe) noteId: number,
+    @Param('personId', ParseUUIDPipe) personId: string,
+    @Param('noteId', ParseUUIDPipe) noteId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.personsService.deleteNote(personId, noteId, user);
@@ -244,7 +254,7 @@ export class PersonsController {
   })
   @ApiDoriOkResponse(DeleteItemResponseDto, 'Personne supprimée avec succès')
   async deletePerson(
-    @Param('personId', ParseIntPipe) personId: number,
+    @Param('personId', ParseUUIDPipe) personId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.personsService.deletePerson(personId, user);

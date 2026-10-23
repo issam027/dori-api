@@ -28,7 +28,7 @@ describe('person identity validation', () => {
 
   it('applies the identity invariant to direct creation', async () => {
     const dto = plainToInstance(CreatePersonDto, {
-      siteId: 1,
+      siteId: '00000000-0000-4000-8000-000000000001',
       lastName: 'Ben Ali',
     });
     const errors = await validate(dto);
@@ -38,9 +38,9 @@ describe('person identity validation', () => {
   it('applies the identity invariant to embedded registration creation', async () => {
     const dto = plainToInstance(CreateRegistrationDto, {
       person: { firstName: 'Nadia' },
-      queueId: 1,
+      queueId: '00000000-0000-4000-8000-000000000001',
       entryType: 'walkin',
-      tierId: 1,
+      tierId: '00000000-0000-4000-8000-000000000001',
     });
     const errors = await validate(dto);
     const personError = errors.find((error) => error.property === 'person');

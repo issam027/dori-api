@@ -3,7 +3,7 @@ import { DataSource } from 'typeorm';
 import { returningRows } from '../../core/database/returning-rows';
 
 export interface ExpiredAppointmentRow {
-  registration_id: number;
+  registration_id: string;
   ticket_number: string;
 }
 
@@ -22,11 +22,11 @@ export class AppointmentExpiryRepository {
       if (!lock[0]?.acquired) return [];
 
       const raw: unknown = await manager.query(
-        `UPDATE dori_registration c
+        `UPDATE dorify.dori_registration c
          SET status = 'expired', appointment_status = 'expired',
              closed_at = $1, updated_at = $1
-         FROM dori_queue q
-         JOIN dori_site s ON s.site_id = q.site_id
+         FROM dorify.dori_queue q
+         JOIN dorify.dori_site s ON s.site_id = q.site_id
          WHERE c.queue_id = q.queue_id
            AND c.entry_type = 'appointment'
            AND c.status IN ('booked', 'rescheduled')

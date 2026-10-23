@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import { Server } from 'socket.io';
 import { ClockService } from '../clock/clock.service';
 
@@ -13,14 +13,14 @@ export class RealtimeService {
   }
 
   // queue:{queueId}:ops - full details except notes (§7.9)
-  emitQueueOps(queueId: number, event: string, payload: Record<string, any>) {
+  emitQueueOps(queueId: string, event: string, payload: Record<string, any>) {
     if (!this.server) return;
     this.server.to(`queue:${queueId}:ops`).emit(event, payload);
   }
 
   // queue:{queueId}:display - ONLY ticket numbers and thread numbers, NO names/phone/notes (§7.9)
   emitQueueDisplay(
-    queueId: number,
+    queueId: string,
     event: string,
     payload: {
       ticketNumber?: string;

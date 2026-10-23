@@ -1,4 +1,4 @@
-import {
+﻿import {
   Column,
   CreateDateColumn,
   Entity,
@@ -8,8 +8,8 @@ import {
 
 @Entity('dori_permission')
 export class DoriPermission {
-  @PrimaryGeneratedColumn()
-  permission_id: number;
+  @PrimaryGeneratedColumn('uuid')
+  permission_id: string;
 
   @Column({ type: 'varchar', length: 100, unique: true })
   permission_name: string;

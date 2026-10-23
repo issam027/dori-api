@@ -10,7 +10,7 @@ describe('SitesRepository direct site users', () => {
     const repository = new SitesRepository({ query } as unknown as DataSource);
 
     await repository.findDirectSiteUsers(
-      1,
+      '00000000-0000-4000-8000-000000000001',
       'us.assigned_at',
       'ASC',
       25,
@@ -23,17 +23,28 @@ describe('SitesRepository direct site users', () => {
     );
     expect(query.mock.calls[0][0]).toContain('r.is_active = TRUE');
     expect(query.mock.calls[0][0]).toContain('r.role_name = $2');
-    expect(query.mock.calls[0][1]).toEqual([1, 'admin']);
+    expect(query.mock.calls[0][1]).toEqual([
+      '00000000-0000-4000-8000-000000000001',
+      'admin',
+    ]);
     expect(query.mock.calls[1][0]).toContain(
       "r.role_name IN ('admin', 'manager')",
     );
   });
 
   it('accepts only active admin or manager roles for direct assignment', async () => {
-    const query = jest.fn().mockResolvedValueOnce([{ user_id: 2 }]);
+    const query = jest
+      .fn()
+      .mockResolvedValueOnce([
+        { user_id: '00000000-0000-4000-8000-000000000002' },
+      ]);
     const repository = new SitesRepository({ query } as unknown as DataSource);
 
-    await expect(repository.hasActiveDirectSiteRole(2)).resolves.toBe(true);
+    await expect(
+      repository.hasActiveDirectSiteRole(
+        '00000000-0000-4000-8000-000000000002',
+      ),
+    ).resolves.toBe(true);
     expect(query.mock.calls[0][0]).toContain(
       "r.role_name IN ('admin', 'manager')",
     );
@@ -46,7 +57,10 @@ describe('SitesRepository site status filter', () => {
     const query = jest
       .fn()
       .mockResolvedValueOnce([{ total: 2 }])
-      .mockResolvedValueOnce([{ site_id: 1 }, { site_id: 2 }]);
+      .mockResolvedValueOnce([
+        { site_id: '00000000-0000-4000-8000-000000000001' },
+        { site_id: '00000000-0000-4000-8000-000000000002' },
+      ]);
     const repository = new SitesRepository({ query } as unknown as DataSource);
 
     await repository.findPage(null, undefined, 'created_at', 'DESC', 25, 0);

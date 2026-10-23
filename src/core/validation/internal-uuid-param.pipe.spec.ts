@@ -1,15 +1,16 @@
 import { BadRequestException } from '@nestjs/common';
-import { PositiveIdParamPipe } from './positive-id-param.pipe';
+import { InternalUuidParamPipe } from './internal-uuid-param.pipe';
 
-describe('PositiveIdParamPipe', () => {
-  const pipe = new PositiveIdParamPipe();
+describe('InternalUuidParamPipe', () => {
+  const pipe = new InternalUuidParamPipe();
   const metadata = { type: 'param' as const, data: 'queueId' };
 
-  it('parses a positive id', () => {
-    expect(pipe.transform('12', metadata)).toBe(12);
+  it('accepts and normalizes an internal UUID', () => {
+    const value = 'AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA';
+    expect(pipe.transform(value, metadata)).toBe(value.toLowerCase());
   });
 
-  it.each(['0', '-1', 'abc', '1.2'])('rejects invalid id %s', (value) => {
+  it.each(['0', '-1', 'abc', '1.2'])('rejects invalid UUID %s', (value) => {
     expect(() => pipe.transform(value, metadata)).toThrow(BadRequestException);
   });
 

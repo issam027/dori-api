@@ -1,13 +1,12 @@
 import {
+  IsUUID,
   IsDateString,
   IsBoolean,
   IsIn,
-  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
   Matches,
-  Min,
   ValidateNested,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
@@ -34,10 +33,9 @@ export class CreateRegistrationDto {
     example: 5,
     description: "ID d'une personne existante (si connue)",
   })
-  @IsInt()
-  @Min(1)
+  @IsUUID()
   @IsOptional()
-  personId?: number;
+  personId?: string;
 
   @ApiPropertyOptional({
     type: () => PersonIdentityDto,
@@ -49,10 +47,9 @@ export class CreateRegistrationDto {
   person?: PersonIdentityDto;
 
   @ApiProperty({ example: 1, description: 'ID de la queue cible' })
-  @IsInt()
-  @Min(1)
+  @IsUUID()
   @IsNotEmpty()
-  queueId: number;
+  queueId: string;
 
   @ApiProperty({
     enum: ['walkin', 'appointment'],
@@ -72,10 +69,9 @@ export class CreateRegistrationDto {
   scheduledTime?: string;
 
   @ApiProperty({ example: 1, description: 'ID du forfait (tier) choisi' })
-  @IsInt()
-  @Min(1)
+  @IsUUID()
   @IsNotEmpty()
-  tierId: number;
+  tierId: string;
 
   @ApiPropertyOptional({
     example: 'fr',
@@ -88,9 +84,9 @@ export class CreateRegistrationDto {
 
 export class UpdateRegistrationDto {
   @ApiPropertyOptional({ example: 2, description: 'Changer de forfait' })
-  @IsInt()
+  @IsUUID()
   @IsOptional()
-  tierId?: number;
+  tierId?: string;
 
   @ApiPropertyOptional({ example: 'ar' })
   @IsString()
@@ -155,18 +151,14 @@ export class RegistrationFilterDto extends PaginationDto {
   @IsOptional()
   isActive?: boolean;
   @ApiPropertyOptional({ example: 1 })
-  @IsInt()
-  @Min(1)
+  @IsUUID()
   @IsOptional()
-  @Type(() => Number)
-  queueId?: number;
+  queueId?: string;
 
   @ApiPropertyOptional({ example: 1 })
-  @IsInt()
-  @Min(1)
+  @IsUUID()
   @IsOptional()
-  @Type(() => Number)
-  siteId?: number;
+  siteId?: string;
 
   @ApiPropertyOptional({
     example: '2026-10-01',
@@ -225,29 +217,23 @@ export class RegistrationFilterDto extends PaginationDto {
   appointmentStatus?: string;
 
   @ApiPropertyOptional({ example: 5 })
-  @IsInt()
-  @Min(1)
+  @IsUUID()
   @IsOptional()
-  @Type(() => Number)
-  personId?: number;
+  personId?: string;
 
   @ApiPropertyOptional({
     example: 12,
     description:
       "Filtrer par l'identifiant de l'utilisateur ayant servi le client",
   })
-  @IsInt()
-  @Min(1)
+  @IsUUID()
   @IsOptional()
-  @Type(() => Number)
-  servedByUserId?: number;
+  servedByUserId?: string;
 
   @ApiPropertyOptional({ example: 1 })
-  @IsInt()
-  @Min(1)
+  @IsUUID()
   @IsOptional()
-  @Type(() => Number)
-  tierId?: number;
+  tierId?: string;
 
   @ApiPropertyOptional({ description: 'Recherche libre (nom, ticket)' })
   @IsString()

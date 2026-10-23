@@ -14,7 +14,7 @@ describe('MonitoringController series & DTO Validation (VAL-03)', () => {
   };
 
   const testUser: AuthenticatedUser = {
-    userId: 1,
+    userId: '00000000-0000-4000-8000-000000000001',
     username: 'admin',
     roles: ['admin'],
     permissions: ['report_view'],
@@ -46,7 +46,7 @@ describe('MonitoringController series & DTO Validation (VAL-03)', () => {
   describe('ReportSeriesQueryDto validation', () => {
     it('validates an explicit timestamp range and scope', async () => {
       const dto = plainToInstance(ReportSeriesQueryDto, {
-        queueIds: '1',
+        queueIds: '00000000-0000-4000-8000-000000000001',
         from: '2026-09-01T00:00:00Z',
         to: '2026-09-29T00:00:00Z',
       });
@@ -55,15 +55,17 @@ describe('MonitoringController series & DTO Validation (VAL-03)', () => {
     });
 
     it('fails when the date range is missing', async () => {
-      const dto = plainToInstance(ReportSeriesQueryDto, { queueIds: '1' });
+      const dto = plainToInstance(ReportSeriesQueryDto, {
+        queueIds: '00000000-0000-4000-8000-000000000001',
+      });
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
     });
 
     it('accepts a site narrowed to selected queues', async () => {
       const dto = plainToInstance(ReportSeriesQueryDto, {
-        queueIds: '1',
-        siteId: 2,
+        queueIds: '00000000-0000-4000-8000-000000000001',
+        siteId: '00000000-0000-4000-8000-000000000002',
         from: '2026-09-01T00:00:00Z',
         to: '2026-09-02T00:00:00Z',
       });
@@ -75,7 +77,7 @@ describe('MonitoringController series & DTO Validation (VAL-03)', () => {
   describe('MonitoringController endpoint delegation', () => {
     it('series forwards the complete query and user', async () => {
       const query = plainToInstance(ReportSeriesQueryDto, {
-        queueIds: '42',
+        queueIds: '00000000-0000-4000-8000-000000000042',
         from: '2026-09-01T00:00:00Z',
         to: '2026-09-29T00:00:00Z',
       });

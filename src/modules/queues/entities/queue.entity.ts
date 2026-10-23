@@ -1,4 +1,4 @@
-import {
+﻿import {
   Column,
   CreateDateColumn,
   Entity,
@@ -8,14 +8,14 @@ import {
 
 @Entity('dori_queue')
 export class DoriQueue {
-  @PrimaryGeneratedColumn()
-  queue_id: number;
+  @PrimaryGeneratedColumn('uuid')
+  queue_id: string;
 
   @Column({ type: 'varchar', length: 10 })
   queue_code: string;
 
-  @Column({ type: 'int' })
-  site_id: number;
+  @Column({ type: 'uuid' })
+  site_id: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   queue_name: string | null;
@@ -87,11 +87,11 @@ export class DoriQueue {
   @Column({ type: 'varchar', length: 10, nullable: true })
   locale: string | null;
 
-  @Column({ type: 'int', nullable: true })
-  created_by_user_id: number | null;
+  @Column({ type: 'uuid', nullable: true })
+  created_by_user_id: string | null;
 
-  @Column({ type: 'int', nullable: true })
-  updated_by_user_id: number | null;
+  @Column({ type: 'uuid', nullable: true })
+  updated_by_user_id: string | null;
 
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
