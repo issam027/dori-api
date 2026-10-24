@@ -8,7 +8,7 @@ DO $$
 BEGIN
   IF EXISTS (
     SELECT 1 FROM dorify.dori_site
-    WHERE site_name = 'PERF-01 - Site volumetrique'
+    WHERE site_name LIKE 'PERF-01 - %'
   ) OR EXISTS (
     SELECT 1 FROM dorify.dori_user WHERE username LIKE 'perf01_%'
   ) THEN
@@ -54,11 +54,17 @@ INSERT INTO dorify.dori_site (
   default_late_tolerance_minutes, default_locale,
   created_by_user_id, updated_by_user_id
 )
-SELECT
-  'PERF-01 - Site volumetrique', 'Dataset automatise - ne pas utiliser en production',
-  'public', 'Europe/Berlin', 'EUR', TRUE, 15, 8, '07:00', '20:00',
-  '12:30', '13:00', 20, 'fr', user_id, user_id
-FROM dorify.dori_user WHERE username = 'perf01_manager';
+SELECT v.name, v.location, v.site_type, 'Africa/Tunis', 'TND', TRUE, 15, 8,
+       v.opens_at, v.closes_at, v.break_start, v.break_end, 20, 'fr',
+       manager.user_id, manager.user_id
+FROM dorify.dori_user manager
+CROSS JOIN (VALUES
+  ('PERF-01 - Mairie de Tunis', 'Avenue de Carthage, Tunis', 'public', TIME '08:00', TIME '16:30', TIME '12:30', TIME '13:30'),
+  ('PERF-01 - Hopital de Tunis', 'Bab Saadoun, Tunis', 'hospital', TIME '07:00', TIME '20:00', TIME '12:30', TIME '13:00'),
+  ('PERF-01 - Cabinet medical Tunis', 'El Menzah, Tunis', 'medical_office', TIME '08:00', TIME '19:00', TIME '13:00', TIME '14:00'),
+  ('PERF-01 - Restaurant a emporter Tunis', 'Lac 2, Tunis', 'restaurant', TIME '10:00', TIME '23:00', TIME '15:00', TIME '16:00')
+) v(name, location, site_type, opens_at, closes_at, break_start, break_end)
+WHERE manager.username = 'perf01_manager';
 
 INSERT INTO dorify.dori_user_site_assignment (
   user_id, site_id, assigned_by_user_id
@@ -68,7 +74,7 @@ FROM dorify.dori_user u
 CROSS JOIN dorify.dori_site s
 CROSS JOIN dorify.dori_user manager
 WHERE u.username LIKE 'perf01_%'
-  AND s.site_name = 'PERF-01 - Site volumetrique'
+  AND s.site_name LIKE 'PERF-01 - %'
   AND manager.username = 'perf01_manager';
 DO $$ BEGIN RAISE NOTICE 'stage=structure'; END $$;
 
@@ -89,7 +95,7 @@ CROSS JOIN (VALUES
   ('PF03', 'PERF-01 Expertise', 18),
   ('PF04', 'PERF-01 Retraits', 6)
 ) v(code, name, wait_minutes)
-WHERE s.site_name = 'PERF-01 - Site volumetrique'
+WHERE s.site_name LIKE 'PERF-01 - %'
   AND manager.username = 'perf01_manager';
 
 INSERT INTO dorify.dori_user_queue_assignment (
@@ -101,7 +107,7 @@ JOIN dorify.dori_site s ON s.site_id = q.site_id
 JOIN dorify.dori_user operator ON operator.username =
   'perf01_operator_' || RIGHT(q.queue_code, 1)
 CROSS JOIN dorify.dori_user manager
-WHERE s.site_name = 'PERF-01 - Site volumetrique'
+WHERE s.site_name LIKE 'PERF-01 - %'
   AND manager.username = 'perf01_manager';
 
 INSERT INTO dorify.dori_queue_service_tier (
@@ -116,7 +122,7 @@ FROM dorify.dori_queue q
 JOIN dorify.dori_site s ON s.site_id = q.site_id
 CROSS JOIN dorify.dori_service_tier tier
 CROSS JOIN dorify.dori_user manager
-WHERE s.site_name = 'PERF-01 - Site volumetrique'
+WHERE s.site_name LIKE 'PERF-01 - %'
   AND tier.tier_code IN ('free', 'standard', 'premium')
   AND manager.username = 'perf01_manager';
 
@@ -136,7 +142,7 @@ CROSS JOIN (VALUES
   ('threshold'::varchar, 'sms'::varchar, 5::int, NULL::int),
   ('threshold'::varchar, 'email'::varchar, NULL::int, 15::int)
 ) v(kind, channel, position, minutes)
-WHERE s.site_name = 'PERF-01 - Site volumetrique'
+WHERE s.site_name LIKE 'PERF-01 - %'
   AND manager.username = 'perf01_manager'
   AND qt.is_default;
 
@@ -155,10 +161,10 @@ SELECT s.site_id,
        CASE WHEN g % 10 = 0 THEN 'en' ELSE 'fr' END,
        manager.user_id, manager.user_id,
        CURRENT_TIMESTAMP - ((g % 365) * INTERVAL '1 day'), CURRENT_TIMESTAMP
-FROM generate_series(1, 5000) g
+FROM generate_series(1, 12500) g
 CROSS JOIN dorify.dori_site s
 CROSS JOIN dorify.dori_user manager
-WHERE s.site_name = 'PERF-01 - Site volumetrique'
+WHERE s.site_name LIKE 'PERF-01 - %'
   AND manager.username = 'perf01_manager';
 
 INSERT INTO dorify.dori_person_note (person_id, content, created_by_user_id)
@@ -166,7 +172,7 @@ SELECT p.person_id, 'Note PERF-01 synthetique pour tester les lectures avec note
 FROM dorify.dori_person p
 JOIN dorify.dori_site s ON s.site_id = p.site_id
 CROSS JOIN dorify.dori_user manager
-WHERE s.site_name = 'PERF-01 - Site volumetrique'
+WHERE s.site_name LIKE 'PERF-01 - %'
   AND manager.username = 'perf01_manager'
   AND p.last_name ~ '[05]$';
 DO $$ BEGIN RAISE NOTICE 'stage=persons'; END $$;
@@ -187,13 +193,13 @@ CROSS JOIN LATERAL (
   FROM generate_series(CURRENT_DATE - 60, CURRENT_DATE - 1, INTERVAL '1 day') day
   WHERE EXTRACT(ISODOW FROM day) <= 6
 ) d
-WHERE s.site_name = 'PERF-01 - Site volumetrique';
+WHERE s.site_name LIKE 'PERF-01 - %';
 DO $$ BEGIN RAISE NOTICE 'stage=historical-sessions'; END $$;
 
 -- Historical load: normal days plus deterministic contention peaks every 10th day.
 WITH days AS (
   SELECT q.queue_id, q.queue_code, q.site_id, d.day,
-         CASE WHEN (CURRENT_DATE - d.day) % 10 = 0 THEN 240 ELSE 90 END AS volume
+         CASE WHEN (CURRENT_DATE - d.day) % 10 = 0 THEN 600 ELSE 225 END AS volume
   FROM dorify.dori_queue q
   JOIN dorify.dori_site s ON s.site_id = q.site_id
   CROSS JOIN LATERAL (
@@ -201,7 +207,7 @@ WITH days AS (
     FROM generate_series(CURRENT_DATE - 60, CURRENT_DATE - 1, INTERVAL '1 day') day
     WHERE EXTRACT(ISODOW FROM day) <= 6
   ) d
-  WHERE s.site_name = 'PERF-01 - Site volumetrique'
+  WHERE s.site_name LIKE 'PERF-01 - %'
 ), load AS (
   SELECT days.*, n,
          ROW_NUMBER() OVER (ORDER BY day, queue_id, n) AS global_n,
@@ -241,7 +247,7 @@ SELECT p.person_id, load.queue_id, tier.tier_id, load.day,
        load.arrived_at + make_interval(mins => load.wait_minutes + load.service_minutes)
 FROM load
 JOIN dorify.dori_person p ON p.site_id = load.site_id
- AND p.last_name = 'Perf-' || LPAD((((load.global_n - 1) % 5000) + 1)::text, 6, '0')
+ AND p.last_name = 'Perf-' || LPAD((((load.global_n - 1) % 12500) + 1)::text, 6, '0')
 JOIN dorify.dori_service_tier tier ON tier.tier_code = CASE
   WHEN load.n % 20 = 0 THEN 'premium'
   WHEN load.n % 4 = 0 THEN 'standard'
@@ -261,15 +267,15 @@ FROM dorify.dori_queue q
 JOIN dorify.dori_site s ON s.site_id = q.site_id
 JOIN dorify.dori_user operator ON operator.username =
   'perf01_operator_' || RIGHT(q.queue_code, 1)
-WHERE s.site_name = 'PERF-01 - Site volumetrique';
+WHERE s.site_name LIKE 'PERF-01 - %';
 
 WITH current_load AS (
   SELECT q.queue_id, q.queue_code, q.site_id, n,
          ROW_NUMBER() OVER (ORDER BY q.queue_id, n) AS global_n
   FROM dorify.dori_queue q
   JOIN dorify.dori_site s ON s.site_id = q.site_id
-  CROSS JOIN generate_series(1, 300) n
-  WHERE s.site_name = 'PERF-01 - Site volumetrique'
+  CROSS JOIN generate_series(1, 750) n
+  WHERE s.site_name LIKE 'PERF-01 - %'
 )
 INSERT INTO dorify.dori_registration (
   person_id, queue_id, tier_id, business_date, ticket_number, entry_type,
@@ -293,7 +299,7 @@ SELECT p.person_id, current_load.queue_id, tier.tier_id, CURRENT_DATE,
        CURRENT_DATE + TIME '07:00' + current_load.n * INTERVAL '2 minutes', CURRENT_TIMESTAMP
 FROM current_load
 JOIN dorify.dori_person p ON p.site_id = current_load.site_id
- AND p.last_name = 'Perf-' || LPAD((3500 + current_load.global_n)::text, 6, '0')
+ AND p.last_name = 'Perf-' || LPAD((((current_load.global_n - 1) % 12500) + 1)::text, 6, '0')
 JOIN dorify.dori_service_tier tier ON tier.tier_code = CASE
   WHEN current_load.n % 25 = 0 THEN 'premium'
   WHEN current_load.n % 5 = 0 THEN 'standard'
@@ -316,8 +322,8 @@ WITH future_load AS (
     FROM generate_series(CURRENT_DATE + 1, CURRENT_DATE + 14, INTERVAL '1 day') day
     WHERE EXTRACT(ISODOW FROM day) <= 6
   ) d
-  CROSS JOIN generate_series(1, 30) n
-  WHERE s.site_name = 'PERF-01 - Site volumetrique'
+  CROSS JOIN generate_series(1, 75) n
+  WHERE s.site_name LIKE 'PERF-01 - %'
 )
 INSERT INTO dorify.dori_registration (
   person_id, queue_id, tier_id, business_date, ticket_number, entry_type,
@@ -336,7 +342,7 @@ SELECT p.person_id, future_load.queue_id, tier.tier_id, future_load.day,
        CURRENT_TIMESTAMP - ((future_load.global_n % 20) * INTERVAL '1 hour'), CURRENT_TIMESTAMP
 FROM future_load
 JOIN dorify.dori_person p ON p.site_id = future_load.site_id
- AND p.last_name = 'Perf-' || LPAD((((future_load.global_n - 1) % 3000) + 1)::text, 6, '0')
+ AND p.last_name = 'Perf-' || LPAD((((future_load.global_n - 1) % 12500) + 1)::text, 6, '0')
 JOIN dorify.dori_service_tier tier ON tier.tier_code = CASE
   WHEN future_load.n % 10 = 0 THEN 'premium'
   WHEN future_load.n % 3 = 0 THEN 'standard'
@@ -382,7 +388,7 @@ JOIN LATERAL (
   ORDER BY candidate.channel DESC
   LIMIT 1
 ) rule ON TRUE
-WHERE s.site_name = 'PERF-01 - Site volumetrique'
+WHERE s.site_name LIKE 'PERF-01 - %'
   AND (hashtext(r.registration_id::text) & 2147483647) % 3 = 0;
 DO $$ BEGIN RAISE NOTICE 'stage=notifications'; END $$;
 
@@ -393,7 +399,7 @@ SELECT r.queue_id, r.business_date, COUNT(*)::int, MAX(r.updated_at)
 FROM dorify.dori_registration r
 JOIN dorify.dori_queue q ON q.queue_id = r.queue_id
 JOIN dorify.dori_site s ON s.site_id = q.site_id
-WHERE s.site_name = 'PERF-01 - Site volumetrique'
+WHERE s.site_name LIKE 'PERF-01 - %'
 GROUP BY r.queue_id, r.business_date;
 
 INSERT INTO dorify.dori_queue_estimation_stats (
@@ -415,7 +421,7 @@ SELECT q.site_id, r.queue_id, r.business_date, r.business_date::timestamp,
 FROM dorify.dori_registration r
 JOIN dorify.dori_queue q ON q.queue_id = r.queue_id
 JOIN dorify.dori_site s ON s.site_id = q.site_id
-WHERE s.site_name = 'PERF-01 - Site volumetrique'
+WHERE s.site_name LIKE 'PERF-01 - %'
   AND r.status = 'served' AND r.called_at IS NOT NULL AND r.served_at IS NOT NULL
 GROUP BY q.site_id, r.queue_id, r.business_date;
 DO $$ BEGIN RAISE NOTICE 'stage=stats'; END $$;
