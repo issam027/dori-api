@@ -6,21 +6,17 @@ describe('Vercel deployment configuration', () => {
   const config = JSON.parse(
     fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'),
   ) as {
-    functions: Record<string, unknown>;
-    rewrites: Array<{ source: string; destination: string }>;
+    framework?: string;
+    functions?: Record<string, unknown>;
+    rewrites?: Array<{ source: string; destination: string }>;
   };
 
-  it('targets a discoverable function in the api directory', () => {
-    expect(
-      Object.prototype.hasOwnProperty.call(config.functions, 'api/index.ts'),
-    ).toBe(true);
-    expect(fs.existsSync(path.join(root, 'api/index.ts'))).toBe(true);
+  it('delegates function generation to the native NestJS preset', () => {
+    expect(config.framework).toBe('nestjs');
+    expect(config.functions).toBeUndefined();
   });
 
-  it('forwards every HTTP route to the Nest function', () => {
-    expect(config.rewrites).toContainEqual({
-      source: '/(.*)',
-      destination: '/api',
-    });
+  it('does not use a global rewrite that can intercept the function itself', () => {
+    expect(config.rewrites).toBeUndefined();
   });
 });
