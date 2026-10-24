@@ -1,3 +1,5 @@
+export const DEFAULT_TIMEZONE = 'Africa/Tunis';
+
 function parseInteger(
   name: string,
   value: string | undefined,
@@ -8,6 +10,10 @@ function parseInteger(
     throw new Error(`${name} must be an integer`);
   }
   return parsed;
+}
+
+export function isVercelRuntime(): boolean {
+  return Boolean(process.env.VERCEL);
 }
 
 export function validateEnvironment(
@@ -47,6 +53,7 @@ export function validateEnvironment(
     ['THROTTLE_AUTH_LIMIT', 1, 100000],
     ['TRACKING_TOKEN_TTL_MINUTES', 1, 10080],
     ['TRACKING_CLOSED_GRACE_MINUTES', 0, 1440],
+    ['APPOINTMENT_EXPIRY_INTERVAL_MINUTES', 1, 1440],
   ] as const) {
     if (environment[name] === undefined) continue;
     const value = Number(environment[name]);
@@ -121,9 +128,26 @@ export default () => {
     port: parseInteger('PORT', process.env.PORT, 3000),
     nodeEnv: process.env.NODE_ENV ?? 'development',
     swaggerExport: process.env.SWAGGER_EXPORT === 'true',
+    swagger: {
+      servers: (
+        process.env.SWAGGER_SERVERS ??
+        'http://localhost:3000,https://dori-api.vercel.app'
+      )
+        .split(',')
+        .map((server) => server.trim())
+        .filter(Boolean),
+    },
 
     platform: {
-      isVercel: !!process.env.VERCEL,
+      isVercel: isVercelRuntime(),
+    },
+
+    defaults: {
+      timezone: process.env.DEFAULT_TIMEZONE ?? DEFAULT_TIMEZONE,
+    },
+
+    cron: {
+      secret: process.env.CRON_SECRET,
     },
 
     database: {
@@ -261,7 +285,11 @@ export default () => {
     },
 
     appointmentExpiry: {
-      intervalMinutes: 5,
+      intervalMinutes: parseInteger(
+        'APPOINTMENT_EXPIRY_INTERVAL_MINUTES',
+        process.env.APPOINTMENT_EXPIRY_INTERVAL_MINUTES,
+        5,
+      ),
     },
   };
 };

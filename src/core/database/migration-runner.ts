@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 export interface MigrationConnection {
-  query(sql: string, parameters?: unknown[]): Promise<any>;
+  query(sql: string, parameters?: unknown[]): Promise<unknown>;
   transaction<T>(
     work: (connection: MigrationConnection) => Promise<T>,
   ): Promise<T>;

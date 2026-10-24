@@ -9,20 +9,20 @@ import { SERIALIZATION_DTO_KEY } from '../swagger/api-dori-response.decorator';
 
 class ProjectionDto {
   @ApiProperty()
-  userId: string;
+  userId!: string;
 }
 
 class ProjectionItemDto {
   @ApiProperty()
-  queueId: string;
+  queueId!: string;
 }
 
 class ProjectionPageDto {
   @ApiProperty({ type: [ProjectionItemDto] })
-  items: ProjectionItemDto[];
+  items!: ProjectionItemDto[];
 
   @ApiProperty()
-  total: number;
+  total!: number;
 }
 
 describe('SerializationInterceptor', () => {

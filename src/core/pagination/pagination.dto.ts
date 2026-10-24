@@ -101,14 +101,12 @@ export class PaginationDto {
   }
 
   createResponse<T>(items: T[], total: number): PaginatedResult<T> {
-    const page = Number(this.page) || 1;
-    const pageSize = Number(this.pageSize) || 25;
     return {
       items,
-      page,
-      pageSize,
+      page: this.page,
+      pageSize: this.pageSize,
       total,
-      totalPages: Math.ceil(total / (pageSize || 1)),
+      totalPages: Math.ceil(total / this.pageSize),
     };
   }
 }

@@ -9,6 +9,10 @@ import { DoriException } from '../../core/errors/dori.exception';
 import { RegistrationsRepository } from './registrations.repository';
 import { ConfigService } from '@nestjs/config';
 import { NotificationTemplateService } from '../../core/notifications/notification-template.service';
+import {
+  CreateRegistrationDto,
+  RegistrationAvailabilityQueryDto,
+} from './dto/registration.dto';
 
 describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ERR-02 PERSON_NOT_FOUND', () => {
   let service: RegistrationsService;
@@ -103,16 +107,14 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
       return [];
     });
 
-    const dto = {
+    const dto: CreateRegistrationDto = {
       personId: '00000000-0000-4000-8000-000000999999',
       queueId: '00000000-0000-4000-8000-000000000001',
       tierId: '00000000-0000-4000-8000-000000000001',
-      entryType: 'walk-in' as const,
+      entryType: 'walkin',
     };
 
-    await expect(
-      service.createRegistration(dto as any, adminUser),
-    ).rejects.toThrow(
+    await expect(service.createRegistration(dto, adminUser)).rejects.toThrow(
       new DoriException('PERSON_NOT_FOUND', {
         personId: '00000000-0000-4000-8000-000000999999',
       }),
@@ -130,16 +132,14 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
       return [];
     });
 
-    const dto = {
+    const dto: CreateRegistrationDto = {
       personId: '00000000-0000-4000-8000-000000000042',
       queueId: '00000000-0000-4000-8000-000000000001',
       tierId: '00000000-0000-4000-8000-000000000001',
-      entryType: 'walk-in' as const,
+      entryType: 'walkin',
     };
 
-    await expect(
-      service.createRegistration(dto as any, adminUser),
-    ).rejects.toThrow(
+    await expect(service.createRegistration(dto, adminUser)).rejects.toThrow(
       new DoriException('PERSON_NOT_FOUND', {
         personId: '00000000-0000-4000-8000-000000000042',
       }),
@@ -160,16 +160,14 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
       return [];
     });
 
-    const dto = {
+    const dto: CreateRegistrationDto = {
       personId: '00000000-0000-4000-8000-000000000010',
       queueId: '00000000-0000-4000-8000-000000000001',
       tierId: '00000000-0000-4000-8000-000000000001',
-      entryType: 'walk-in' as const,
+      entryType: 'walkin',
     };
 
-    await expect(
-      service.createRegistration(dto as any, adminUser),
-    ).rejects.toThrow(
+    await expect(service.createRegistration(dto, adminUser)).rejects.toThrow(
       new DoriException('TIER_NOT_OFFERED_BY_QUEUE', {
         tierId: '00000000-0000-4000-8000-000000000001',
         queueId: '00000000-0000-4000-8000-000000000001',
@@ -498,7 +496,7 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
         templateKey: jest.fn(),
         buildTrackingUrl: jest.fn(),
         render: jest.fn(),
-      } as any,
+      } as unknown as NotificationTemplateService,
     );
 
     const response = await service.createRegistration(
@@ -568,7 +566,7 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
           dateFrom: '2026-09-01',
           dateTo: '2026-09-01',
           summaryOnly: false,
-        } as any,
+        } as RegistrationAvailabilityQueryDto,
         user,
       );
 
@@ -633,7 +631,7 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
           dateFrom: '2026-09-01',
           dateTo: '2026-09-01',
           summaryOnly: true,
-        } as any,
+        } as RegistrationAvailabilityQueryDto,
         user,
       );
 
@@ -677,7 +675,7 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
           dateFrom: '2026-09-06',
           dateTo: '2026-09-06',
           summaryOnly: false,
-        } as any,
+        } as RegistrationAvailabilityQueryDto,
         user,
       );
 

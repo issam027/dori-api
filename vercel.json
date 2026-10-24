@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["fra1"],
+  "functions": {
+    "src/main.ts": { "maxDuration": 60 }
+  },
+  "crons": [
+    { "path": "/api/internal/cron/daily-reset", "schedule": "* * * * *" },
+    {
+      "path": "/api/internal/cron/appointment-expiry",
+      "schedule": "* * * * *"
+    },
+    { "path": "/api/internal/cron/notifications", "schedule": "* * * * *" },
+    { "path": "/api/internal/cron/queue-estimation", "schedule": "* * * * *" }
+  ]
+}

@@ -41,6 +41,18 @@ export interface MonitoringSeriesData {
   byStatus: Array<Record<string, unknown>>;
 }
 
+const REGISTRATION_COLUMNS = `registration_id, person_id, queue_id, tier_id, business_date,
+  ticket_number, entry_type, scheduled_time, appointment_status, checked_in_at,
+  priority_reference_time, status, called_at, served_at, closed_at, carried_over_from_date,
+  served_by_session_id, served_by_user_id, registration_tracking_token,
+  registration_tracking_token_valid_until, payment_status, payment_amount, payment_currency,
+  payment_method, paid_at, payment_reference, language_preference, is_active, deleted_at,
+  created_by_user_id, updated_by_user_id, created_at, updated_at`;
+const registrationColumns = (alias: string) =>
+  REGISTRATION_COLUMNS.split(',')
+    .map((column) => `${alias}.${column.trim()}`)
+    .join(', ');
+
 @Injectable()
 export class ReportsRepository {
   constructor(private readonly dataSource: DataSource) {}
@@ -145,7 +157,7 @@ export class ReportsRepository {
       : '';
     return this.dataSource.query(
       `WITH scoped AS (
-         SELECT * FROM dorify.dori_registration r
+         SELECT ${registrationColumns('r')} FROM dorify.dori_registration r
          WHERE r.queue_id=ANY($1) AND r.business_date BETWEEN $2 AND $3
        ), periods AS (
          SELECT generate_series(date_trunc('${input.granularity}', $2::date)::date,
@@ -188,7 +200,7 @@ export class ReportsRepository {
     ];
     const seriesParams = [...scopedParams, input.timezone];
     const scoped = `WITH scoped AS (
-      SELECT r.* FROM dorify.dori_registration r
+      SELECT ${registrationColumns('r')} FROM dorify.dori_registration r
       WHERE r.queue_id = ANY($1)
         AND ($4::uuid[] IS NULL OR r.served_by_user_id = ANY($4))
         AND ($5::uuid[] IS NULL OR r.tier_id = ANY($5))

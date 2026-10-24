@@ -24,10 +24,10 @@ export class QueuesService {
   ) {}
 
   private mapQueueResponse(row: QueueDetailRow): QueueResponseDto {
-    const effective = (queueField: string, siteField: string) =>
-      row[queueField] !== null && row[queueField] !== undefined
+    const effective = <T>(queueField: string, siteField: string): T =>
+      (row[queueField] !== null && row[queueField] !== undefined
         ? row[queueField]
-        : row[siteField];
+        : row[siteField]) as T;
     const origin = (queueField: string): 'inherited' | 'overridden' =>
       row[queueField] !== null && row[queueField] !== undefined
         ? 'overridden'

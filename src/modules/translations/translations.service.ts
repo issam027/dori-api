@@ -11,7 +11,10 @@ import {
   UpdateTranslationDto,
 } from './dto/translation.dto';
 import { TranslationResponseDto } from './dto/translation-response.dto';
-import { TranslationsRepository } from './translations.repository';
+import {
+  TranslationRow,
+  TranslationsRepository,
+} from './translations.repository';
 
 @Injectable()
 export class TranslationsService {
@@ -20,6 +23,21 @@ export class TranslationsService {
     private readonly clockService: ClockService,
     private readonly realtimeService: RealtimeService,
   ) {}
+
+  private toResponseDto(row: TranslationRow): TranslationResponseDto {
+    const iso = (value: Date) => value.toISOString();
+    return {
+      translationId: row.translation_id,
+      translationKey: row.translation_key,
+      category: row.category,
+      locale: row.locale,
+      content: row.content,
+      expectedParams: row.expected_params ?? undefined,
+      isActive: row.is_active,
+      createdAt: iso(row.created_at),
+      updatedAt: iso(row.updated_at),
+    };
+  }
 
   async getBundle(query: TranslationBundleQueryDto) {
     const category = query.category || 'ihm';
@@ -57,7 +75,7 @@ export class TranslationsService {
       sortField,
     );
     return filter.createResponse(
-      items as unknown as TranslationResponseDto[],
+      items.map((item) => this.toResponseDto(item)),
       total,
     );
   }

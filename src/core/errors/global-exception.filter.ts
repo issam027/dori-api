@@ -9,6 +9,7 @@ import {
 import { Request, Response } from 'express';
 import { DoriException } from './dori.exception';
 import { safeErrorName } from '../logging/safe-error';
+import { ERROR_CATALOG } from './error-catalog';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -53,19 +54,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         429: 'RATE_LIMITED',
       };
       const code = codeByStatus[status] ?? 'INTERNAL_ERROR';
-      const translations: Record<string, string> = {
-        VALIDATION_ERROR: 'errors.validation_error',
-        UNAUTHENTICATED: 'errors.unauthenticated',
-        FORBIDDEN_PERMISSION: 'errors.forbidden_permission',
-        RESOURCE_NOT_FOUND: 'errors.resource_not_found',
-        CONFLICT: 'errors.conflict',
-        RATE_LIMITED: 'errors.rate_limited',
-        INTERNAL_ERROR: 'errors.internal_error',
-      };
-
       return response.status(status).json({
         code,
-        translationKey: translations[code],
+        translationKey: ERROR_CATALOG[code].translationKey,
         translationParams: {},
         data: null,
       });

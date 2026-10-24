@@ -9,11 +9,27 @@ import {
 export type PersonRow = Record<string, unknown> & {
   person_id: string;
   site_id: string;
+  last_name: string;
+  first_name: string;
+  phone_number?: string | null;
+  email?: string | null;
+  birth_date?: string | null;
+  language_preference: string;
+  is_active: boolean;
+  created_at: Date | string;
+  active_note_count?: number;
 };
 
 export type PersonNoteRow = Record<string, unknown> & {
   note_id: string;
   person_id: string;
+  content: string;
+  created_by_user_id: string;
+  author_username?: string;
+  created_at: Date | string;
+  updated_at?: Date | string;
+  is_active: boolean;
+  deleted_at?: Date | string | null;
 };
 
 export interface PersonListQuery {
@@ -34,6 +50,29 @@ export interface PersonNoteListQuery {
   pageSize: number;
   offset: number;
 }
+
+const PERSON_COLUMNS = [
+  'person_id',
+  'site_id',
+  'first_name',
+  'last_name',
+  'email',
+  'phone_number',
+  'birth_date',
+  'language_preference',
+  'is_active',
+  'deleted_at',
+  'created_by_user_id',
+  'updated_by_user_id',
+  'created_at',
+  'updated_at',
+] as const;
+const personColumns = (alias?: string) =>
+  PERSON_COLUMNS.map((column) => (alias ? `${alias}.${column}` : column)).join(
+    ', ',
+  );
+const NOTE_COLUMNS = `note_id, person_id, content, is_active, deleted_at,
+  created_by_user_id, updated_by_user_id, created_at, updated_at`;
 
 @Injectable()
 export class PersonsRepository {
@@ -72,7 +111,7 @@ export class PersonsRepository {
       params,
     );
     const items: PersonRow[] = await this.dataSource.query(
-      `SELECT DISTINCT p.*,
+      `SELECT DISTINCT ${personColumns('p')},
        (SELECT COUNT(*)::int FROM dorify.dori_person_note pn
         WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
        FROM dorify.dori_person p WHERE ${where}
@@ -84,7 +123,7 @@ export class PersonsRepository {
 
   async findById(personId: string): Promise<PersonRow | null> {
     const rows: PersonRow[] = await this.dataSource.query(
-      `SELECT p.*,
+      `SELECT ${personColumns('p')},
        (SELECT COUNT(*)::int FROM dorify.dori_person_note pn
         WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
        FROM dorify.dori_person p
@@ -101,7 +140,7 @@ export class PersonsRepository {
     manager?: EntityManager,
   ): Promise<PersonRow | null> {
     const rows: PersonRow[] = await this.database(manager).query(
-      `SELECT p.*,
+      `SELECT ${personColumns('p')},
        (SELECT COUNT(*)::int FROM dorify.dori_person_note pn
         WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
        FROM dorify.dori_person p
@@ -119,7 +158,7 @@ export class PersonsRepository {
     manager?: EntityManager,
   ): Promise<PersonRow | null> {
     const rows: PersonRow[] = await this.database(manager).query(
-      `SELECT p.*,
+      `SELECT ${personColumns('p')},
        (SELECT COUNT(*)::int FROM dorify.dori_person_note pn
         WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
        FROM dorify.dori_person p
@@ -143,7 +182,7 @@ export class PersonsRepository {
         site_id, first_name, last_name, email, phone_number, birth_date, language_preference,
         created_by_user_id, updated_by_user_id, created_at, updated_at
       ) VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, 'fr'), $8, $8, $9, $9)
-      RETURNING *`,
+      RETURNING ${personColumns()}`,
       [
         siteId,
         dto.firstName ?? null,
@@ -191,7 +230,7 @@ export class PersonsRepository {
     assignments.push(`updated_at = $${values.length}`);
     values.push(personId);
     const rows: PersonRow[] = await this.dataSource.query(
-      `UPDATE dorify.dori_person SET ${assignments.join(', ')} WHERE person_id = $${values.length} RETURNING *`,
+      `UPDATE dorify.dori_person SET ${assignments.join(', ')} WHERE person_id = $${values.length} RETURNING ${personColumns()}`,
       values,
     );
     return rows[0];
@@ -244,7 +283,7 @@ export class PersonsRepository {
        is_active = COALESCE($2, is_active),
        deleted_at = CASE WHEN $2::boolean IS TRUE THEN NULL WHEN $2::boolean IS FALSE THEN $3 ELSE deleted_at END,
        updated_by_user_id = $4, updated_at = $3
-       WHERE note_id = $5 AND person_id = $6 RETURNING *`,
+       WHERE note_id = $5 AND person_id = $6 RETURNING ${NOTE_COLUMNS}`,
       [
         dto.content ?? null,
         dto.isActive ?? null,

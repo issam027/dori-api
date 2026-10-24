@@ -24,6 +24,9 @@ interface VersionedResult<T> {
   version: number;
 }
 
+const TRANSLATION_COLUMNS = `translation_id, translation_key, category, locale,
+  content, expected_params, is_active, created_at, updated_at`;
+
 @Injectable()
 export class TranslationsRepository {
   constructor(private readonly dataSource: DataSource) {}
@@ -60,10 +63,12 @@ export class TranslationsRepository {
       `SELECT COUNT(*)::int AS total FROM dorify.dori_translation ${where}`,
       params,
     );
+    const pageParams = [...params, pageSize, offset];
     const items = await this.dataSource.query<TranslationRow[]>(
-      `SELECT * FROM dorify.dori_translation ${where}
-       ORDER BY ${sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`,
-      params,
+      `SELECT ${TRANSLATION_COLUMNS} FROM dorify.dori_translation ${where}
+       ORDER BY ${sortField} ${sortOrder}
+       LIMIT $${pageParams.length - 1} OFFSET $${pageParams.length}`,
+      pageParams,
     );
     return { items, total: count?.total ?? 0 };
   }
@@ -76,7 +81,7 @@ export class TranslationsRepository {
          VALUES ($1,$2,$3,$4,$5,$6,$6,$7,$7)
          ON CONFLICT (translation_key, locale) DO UPDATE SET content=$4,
          expected_params=$5, is_active=TRUE, deleted_at=NULL,
-         updated_by_user_id=$6, updated_at=$7 RETURNING *`,
+         updated_by_user_id=$6, updated_at=$7 RETURNING ${TRANSLATION_COLUMNS}`,
         [
           dto.translationKey,
           dto.category,
@@ -97,7 +102,7 @@ export class TranslationsRepository {
 
   async findById(translationId: string): Promise<TranslationRow | null> {
     const rows = await this.dataSource.query<TranslationRow[]>(
-      `SELECT * FROM dorify.dori_translation WHERE translation_id = $1`,
+      `SELECT ${TRANSLATION_COLUMNS} FROM dorify.dori_translation WHERE translation_id = $1`,
       [translationId],
     );
     return rows[0] ?? null;
@@ -111,7 +116,7 @@ export class TranslationsRepository {
   ): Promise<VersionedResult<TranslationRow> | null> {
     return this.dataSource.transaction(async (manager) => {
       const existing = await manager.query<TranslationRow[]>(
-        `SELECT * FROM dorify.dori_translation
+        `SELECT ${TRANSLATION_COLUMNS} FROM dorify.dori_translation
          WHERE translation_id=$1 FOR UPDATE`,
         [translationId],
       );
@@ -136,7 +141,7 @@ export class TranslationsRepository {
       values.push(translationId);
       const rows = await manager.query<TranslationRow[]>(
         `UPDATE dorify.dori_translation SET ${fields.join(', ')}
-         WHERE translation_id=$${values.length} RETURNING *`,
+         WHERE translation_id=$${values.length} RETURNING ${TRANSLATION_COLUMNS}`,
         values,
       );
       return {
@@ -150,7 +155,7 @@ export class TranslationsRepository {
   delete(translationId: string, userId: string, now: Date) {
     return this.dataSource.transaction(async (manager) => {
       const existing = await manager.query<TranslationRow[]>(
-        `SELECT * FROM dorify.dori_translation
+        `SELECT ${TRANSLATION_COLUMNS} FROM dorify.dori_translation
          WHERE translation_id=$1 AND is_active=TRUE FOR UPDATE`,
         [translationId],
       );

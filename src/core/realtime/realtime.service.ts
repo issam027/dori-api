@@ -13,7 +13,11 @@ export class RealtimeService {
   }
 
   // queue:{queueId}:ops - full details except notes (§7.9)
-  emitQueueOps(queueId: string, event: string, payload: Record<string, any>) {
+  emitQueueOps(
+    queueId: string,
+    event: string,
+    payload: Record<string, unknown>,
+  ) {
     if (!this.server) return;
     this.server.to(`queue:${queueId}:ops`).emit(event, payload);
   }
@@ -27,7 +31,7 @@ export class RealtimeService {
       threadNumber?: number;
       calledTickets?: string[];
       waitingCount?: number;
-      [key: string]: any;
+      [key: string]: unknown;
     },
   ) {
     if (!this.server) return;

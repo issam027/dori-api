@@ -4,6 +4,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule } from '@nestjs/swagger';
 import type { IncomingMessage, ServerResponse } from 'http';
+import type { Express } from 'express';
 import helmet from 'helmet';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import cookieParser = require('cookie-parser');
@@ -83,7 +84,10 @@ async function createApp(): Promise<NestExpressApplication> {
   );
 
   const document = normalizeOpenApiDocument(
-    SwaggerModule.createDocument(app, createOpenApiConfig()),
+    SwaggerModule.createDocument(
+      app,
+      createOpenApiConfig(configService.get<string[]>('swagger.servers')),
+    ),
   );
   SwaggerModule.setup('api/docs', app, document, {
     customCssUrl:
@@ -99,11 +103,10 @@ async function createApp(): Promise<NestExpressApplication> {
   });
 
   // Redirige la racine vers la documentation Swagger
-  app
-    .getHttpAdapter()
-    .get('/', (_req: unknown, res: { redirect: (url: string) => void }) => {
-      res.redirect('/api/docs');
-    });
+  const expressApp = app.getHttpAdapter().getInstance() as Express;
+  expressApp.get('/', (_req, res) => {
+    res.redirect('/api/docs');
+  });
 
   await app.init(); // init(), not listen(): Vercel owns the HTTP server
   return app;

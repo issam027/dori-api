@@ -15,9 +15,12 @@ import { UsersRepository } from './users.repository';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { DoriException } from '../../core/errors/dori.exception';
+import { RankService, ROLE_RANK } from '../../core/rbac/services/rank.service';
 
 @Injectable()
 export class UsersService {
+  private readonly rankService = new RankService();
+
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly scopeService: ScopeService,
@@ -26,10 +29,10 @@ export class UsersService {
   ) {}
 
   private async getCallerMaxRank(user: AuthenticatedUser): Promise<number> {
-    if (user.roles?.includes('root')) {
-      return 5;
-    }
-    return this.usersRepository.getCallerMaxRank(user.userId);
+    return this.rankService.callerRank(
+      user.roles,
+      await this.usersRepository.getCallerMaxRank(user.userId),
+    );
   }
 
   private async getUserMaxRank(targetUserId: string): Promise<number> {
@@ -37,16 +40,14 @@ export class UsersService {
     if (!info.exists) {
       throw new DoriException('USER_NOT_FOUND', { userId: targetUserId });
     }
-    if (info.maxRank > 0) return info.maxRank;
-    if (info.userType === 'kiosk') return 1;
-    return 0;
+    return this.rankService.userRank(info.maxRank, info.userType);
   }
 
   private async getCallerMaxManageRank(
     user: AuthenticatedUser,
   ): Promise<number> {
     if (user.roles?.includes('root')) {
-      return 5;
+      return ROLE_RANK.root;
     }
 
     const permsRes = await this.usersRepository.getUserPermissionNames(
@@ -61,16 +62,16 @@ export class UsersService {
       permissions.has('system_manage') ||
       permissions.has('user_manage_admin')
     ) {
-      return 4;
+      return ROLE_RANK.admin;
     }
     if (permissions.has('user_manage_manager')) {
-      return 3;
+      return ROLE_RANK.manager;
     }
     if (permissions.has('user_manage_operator')) {
-      return 2;
+      return ROLE_RANK.operator;
     }
     if (permissions.has('user_manage_kiosk')) {
-      return 1;
+      return ROLE_RANK.kiosk;
     }
 
     return 0;
@@ -88,22 +89,19 @@ export class UsersService {
     const callerRank = await this.getCallerMaxRank(caller);
 
     if (
-      callerRank < 3 ||
+      callerRank < ROLE_RANK.manager ||
       caller.roles?.includes('operator') ||
       caller.roles?.includes('kiosk')
     ) {
       throw new DoriException('FORBIDDEN_PERMISSION');
     }
 
-    let maxManageRank = 2;
-    if (callerRank >= 4 || caller.roles?.includes('admin')) {
-      maxManageRank = 3;
-    }
-
     const callerMaxManagePerm = await this.getCallerMaxManageRank(caller);
-    if (callerMaxManagePerm > 0 && callerMaxManagePerm < maxManageRank) {
-      maxManageRank = callerMaxManagePerm;
-    }
+    const maxManageRank = this.rankService.maximumManageableRank(
+      callerRank,
+      caller.roles,
+      callerMaxManagePerm,
+    );
 
     if (targetUserId) {
       if (caller.userId === targetUserId) {

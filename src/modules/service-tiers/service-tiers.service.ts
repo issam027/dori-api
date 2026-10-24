@@ -130,7 +130,14 @@ export class ServiceTiersService {
       offset,
     });
     return pagination.createResponse<ServiceTierResponseDto>(
-      result.items as unknown as ServiceTierResponseDto[],
+      result.items.map((item) => ({
+        tierId: item.tier_id,
+        tierCode: item.tier_code,
+        tierName: item.tier_name,
+        description: item.description ?? undefined,
+        isSystem: item.is_system,
+        isActive: item.is_active,
+      })),
       result.total,
     );
   }

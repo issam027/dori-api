@@ -114,10 +114,6 @@ export const ERROR_CATALOG: Record<
     status: 409,
     translationKey: 'errors.account_locked',
   },
-  QUEUE_EMPTY: {
-    status: 200,
-    translationKey: 'queue.next.empty',
-  },
   APPOINTMENTS_DISABLED: {
     status: 422,
     translationKey: 'errors.appointments_disabled',

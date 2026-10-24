@@ -69,7 +69,10 @@ describe('MonitoringService', () => {
     const result = await service.health();
 
     expect(result.status).toBe('ok');
-    expect(result.checks.database).toBe('up');
+    expect(result).toEqual({
+      status: 'ok',
+      timestamp: '2026-10-15T12:00:00.000Z',
+    });
     expect(result).not.toHaveProperty('registrations');
     expect(repository.activitySnapshot).not.toHaveBeenCalled();
   });

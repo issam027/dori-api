@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { CreateSiteDto } from './dto/create-site.dto';
 import { UpdateSiteDto } from './dto/update-site.dto';
 import {
@@ -15,6 +15,16 @@ interface UserStatusRow {
   user_id: string;
   is_active: boolean;
 }
+
+const SITE_COLUMNS = `site_id, site_name, site_location, site_logo_url, site_type,
+  timezone, default_currency, is_active, default_appointments_enabled,
+  default_appointment_slot_duration, default_slot_capacity,
+  default_working_hours_start, default_working_hours_end, default_break_start,
+  default_break_end, default_late_tolerance_minutes, default_working_days,
+  default_base_weight_walkin, default_base_weight_appointment,
+  default_escalation_rate_walkin, default_escalation_rate_appointment,
+  default_carry_over_waiting, default_daily_reset_mode, default_daily_reset_time,
+  default_locale, created_at, updated_at`;
 
 @Injectable()
 export class SitesRepository {
@@ -44,10 +54,12 @@ export class SitesRepository {
       `SELECT COUNT(*)::int AS total FROM dorify.dori_site ${filter}`,
       params,
     );
+    const pageParams = [...params, pageSize, offset];
     const items = await this.dataSource.query<SiteResponseDto[]>(
-      `SELECT * FROM dorify.dori_site ${filter}
-       ORDER BY ${sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`,
-      params,
+      `SELECT ${SITE_COLUMNS} FROM dorify.dori_site ${filter}
+       ORDER BY ${sortField} ${sortOrder}
+       LIMIT $${pageParams.length - 1} OFFSET $${pageParams.length}`,
+      pageParams,
     );
     return { items, total: count?.total ?? 0 };
   }
@@ -71,10 +83,12 @@ export class SitesRepository {
         COALESCE($7, FALSE), COALESCE($8, 15), COALESCE($9, 1),
         COALESCE($10::time, TIME '08:00'), COALESCE($11::time, TIME '17:00'),
         COALESCE($12::time, TIME '12:00'), COALESCE($13::time, TIME '14:00'),
-        COALESCE($14, 60), COALESCE($15::int[], '{1,2,3,4,5}'::int[]), COALESCE($16, 0), COALESCE($17, 60), COALESCE($18, 1), COALESCE($19, 1),
-        COALESCE($20, FALSE), COALESCE($21, 'close_all'), COALESCE($22::time, TIME '03:00'), COALESCE($23, 'fr'),
+        COALESCE($14, 60), COALESCE($15::int[], '{1,2,3,4,5}'::int[]),
+        COALESCE($16, 0), COALESCE($17, 60), COALESCE($18, 1), COALESCE($19, 1),
+        COALESCE($20, FALSE), COALESCE($21, 'close_all'),
+        COALESCE($22::time, TIME '03:00'), COALESCE($23, 'fr'),
         $24, $24, $25, $25
-      ) RETURNING *`,
+      ) RETURNING ${SITE_COLUMNS}`,
       [
         dto.siteName,
         dto.siteLocation || null,
@@ -108,7 +122,7 @@ export class SitesRepository {
 
   async findById(siteId: string): Promise<SiteResponseDto | null> {
     const rows = await this.dataSource.query<SiteResponseDto[]>(
-      'SELECT * FROM dorify.dori_site WHERE site_id = $1',
+      `SELECT ${SITE_COLUMNS} FROM dorify.dori_site WHERE site_id = $1`,
       [siteId],
     );
     return rows[0] ?? null;
@@ -173,15 +187,13 @@ export class SitesRepository {
     add('updated_by_user_id', userId);
     add('updated_at', now);
     values.push(siteId);
-    const updateSite = async (query: DataSource['query']) => {
-      const rows = (await query.call(
-        this.dataSource,
-        `UPDATE dorify.dori_site SET ${fields.join(', ')} WHERE site_id = $${values.length} RETURNING *`,
+    const updateSite = async (executor: DataSource | EntityManager) => {
+      const rows = await executor.query<SiteResponseDto[]>(
+        `UPDATE dorify.dori_site SET ${fields.join(', ')} WHERE site_id = $${values.length} RETURNING ${SITE_COLUMNS}`,
         values,
-      )) as SiteResponseDto[];
+      );
       if (dto.isActive === false) {
-        await query.call(
-          this.dataSource,
+        await executor.query(
           `UPDATE dorify.dori_queue SET is_active = FALSE, deleted_at = $1,
            updated_by_user_id = $2, updated_at = $1
            WHERE site_id = $3 AND is_active = TRUE`,
@@ -191,11 +203,9 @@ export class SitesRepository {
       return rows[0];
     };
     if (dto.isActive === false) {
-      return this.dataSource.transaction((manager) =>
-        updateSite(manager.query.bind(manager)),
-      );
+      return this.dataSource.transaction((manager) => updateSite(manager));
     }
-    return updateSite(this.dataSource.query.bind(this.dataSource));
+    return updateSite(this.dataSource);
   }
 
   deactivate(siteId: string, userId: string, now: Date): Promise<void> {
@@ -284,8 +294,8 @@ export class SitesRepository {
     );
     const items = await this.dataSource.query<SiteDirectUserResponseDto[]>(
       `SELECT u.user_id, u.username, u.email, u.user_type, u.is_active, us.assigned_at
-       ${from} ORDER BY ${sortField} ${sortOrder} LIMIT ${pageSize} OFFSET ${offset}`,
-      [siteId, role ?? null],
+       ${from} ORDER BY ${sortField} ${sortOrder} LIMIT $3 OFFSET $4`,
+      [siteId, role ?? null, pageSize, offset],
     );
     return { items, total: count?.total ?? 0 };
   }

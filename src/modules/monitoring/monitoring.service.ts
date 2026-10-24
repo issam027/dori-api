@@ -47,8 +47,6 @@ export class MonitoringService {
     return {
       status: database === 'up' ? ('ok' as const) : ('degraded' as const),
       timestamp: this.clockService.now().toISOString(),
-      uptime: process.uptime(),
-      checks: { database, memoryUsage: process.memoryUsage() },
     };
   }
 

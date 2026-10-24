@@ -28,7 +28,7 @@ export class ThreadSessionItemDto {
   @ApiProperty({ minimum: 1 }) sessionId: string;
   @ApiProperty({ minimum: 1 }) userId: string;
   @ApiProperty() username: string;
-  @ApiProperty({ format: 'date-time' }) connectedAt: string;
+  @ApiProperty({ format: 'date-time' }) connectedAt: string | Date;
   @ApiProperty({ format: 'date-time' }) lastSeenAt: string;
   @ApiPropertyOptional({ type: String, nullable: true, example: 'Guichet 04' })
   counterName?: string | null;
@@ -58,9 +58,9 @@ export class QueueSessionResponseDto {
   counterName?: string | null;
   @ApiProperty({ minimum: 1 }) userId: string;
   @ApiProperty({ enum: ['active', 'consultation_only'] }) mode: string;
-  @ApiProperty({ format: 'date-time' }) connectedAt: string;
+  @ApiProperty({ format: 'date-time' }) connectedAt: string | Date;
   @ApiPropertyOptional({ format: 'date-time', nullable: true })
-  disconnectedAt?: string | null;
+  disconnectedAt?: string | Date | null;
   @ApiPropertyOptional() username?: string;
   @ApiPropertyOptional({ minimum: 1, nullable: true }) takenOverFromSessionId?:
     number | null;

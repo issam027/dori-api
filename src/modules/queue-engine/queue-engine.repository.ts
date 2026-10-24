@@ -21,6 +21,7 @@ export interface QueueSessionRow extends Record<string, unknown> {
   mode: 'active' | 'consultation_only';
   connected_at: Date | string;
   last_seen_at: Date | string;
+  disconnected_at?: Date | string | null;
   username?: string;
 }
 
@@ -60,6 +61,13 @@ export interface PreviewCandidateRow extends Record<string, unknown> {
   called_early: boolean;
 }
 
+const SESSION_COLUMNS = `session_id, queue_id, user_id, thread_number, counter_name, mode,
+  connected_at, last_seen_at, disconnected_at, closure_reason, closed_by_user_id`;
+const sessionColumns = (alias: string) =>
+  SESSION_COLUMNS.split(',')
+    .map((column) => `${alias}.${column.trim()}`)
+    .join(', ');
+
 @Injectable()
 export class QueueEngineRepository {
   constructor(private readonly dataSource: DataSource) {}
@@ -74,7 +82,7 @@ export class QueueEngineRepository {
     );
     if (!queues.length) return null;
     const sessions: ActiveThreadSessionRow[] = await this.dataSource.query(
-      `SELECT qs.*, u.username, c.registration_id AS current_registration_id
+      `SELECT ${sessionColumns('qs')}, u.username, c.registration_id AS current_registration_id
        FROM dorify.dori_operator_session qs JOIN dorify.dori_user u ON u.user_id = qs.user_id
        LEFT JOIN dorify.dori_registration c ON c.served_by_session_id = qs.session_id
          AND c.status = 'in_progress' AND c.is_active = TRUE
@@ -117,7 +125,7 @@ export class QueueEngineRepository {
     const rows: QueueSessionRow[] = await this.dataSource.query(
       `INSERT INTO dorify.dori_operator_session
          (queue_id, user_id, thread_number, counter_name, mode, connected_at, last_seen_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $6) RETURNING *`,
+       VALUES ($1, $2, $3, $4, $5, $6, $6) RETURNING ${SESSION_COLUMNS}`,
       [
         input.queueId,
         input.userId,
@@ -152,7 +160,7 @@ export class QueueEngineRepository {
     threadNumber: number,
   ): Promise<QueueSessionRow | null> {
     const rows: QueueSessionRow[] = await this.dataSource.query(
-      `SELECT qs.*, u.username FROM dorify.dori_operator_session qs
+      `SELECT ${sessionColumns('qs')}, u.username FROM dorify.dori_operator_session qs
        JOIN dorify.dori_user u ON u.user_id = qs.user_id
        WHERE qs.queue_id = $1 AND qs.thread_number = $2
          AND qs.disconnected_at IS NULL`,
@@ -174,7 +182,7 @@ export class QueueEngineRepository {
   } | null> {
     return this.dataSource.transaction(async (manager) => {
       const locked: QueueSessionRow[] = await manager.query(
-        `SELECT qs.*, u.username FROM dorify.dori_operator_session qs
+        `SELECT ${sessionColumns('qs')}, u.username FROM dorify.dori_operator_session qs
          JOIN dorify.dori_user u ON u.user_id = qs.user_id
          WHERE qs.queue_id = $1 AND qs.thread_number = $2
            AND qs.disconnected_at IS NULL FOR UPDATE OF qs`,
@@ -190,7 +198,7 @@ export class QueueEngineRepository {
       const created: QueueSessionRow[] = await manager.query(
         `INSERT INTO dorify.dori_operator_session
            (queue_id, user_id, thread_number, counter_name, mode, connected_at, last_seen_at)
-         VALUES ($1, $2, $3, $4, 'active', $5, $5) RETURNING *`,
+         VALUES ($1, $2, $3, $4, 'active', $5, $5) RETURNING ${SESSION_COLUMNS}`,
         [
           input.queueId,
           input.userId,
@@ -295,7 +303,7 @@ export class QueueEngineRepository {
     } | null;
   }> {
     const sessions: QueueSessionRow[] = await this.dataSource.query(
-      `SELECT * FROM dorify.dori_operator_session WHERE queue_id = $1 AND user_id = $2
+      `SELECT ${SESSION_COLUMNS} FROM dorify.dori_operator_session WHERE queue_id = $1 AND user_id = $2
        AND disconnected_at IS NULL AND mode = 'active'`,
       [queueId, userId],
     );

@@ -34,7 +34,10 @@ export class AuthRepository {
 
   async findActiveUserByUsername(usernameOrEmail: string) {
     const rows = await this.dataSource.query<AuthUserRow[]>(
-      `SELECT * FROM dorify.dori_user
+      `SELECT user_id, username, full_name, email, password_hash, user_type,
+              language_preference, last_login, must_change_password,
+              failed_attempts, locked_until
+       FROM dorify.dori_user
        WHERE (username = $1 OR LOWER(email) = LOWER($1))
          AND is_active = TRUE AND deleted_at IS NULL
        ORDER BY CASE WHEN username = $1 THEN 0 ELSE 1 END LIMIT 1`,
@@ -45,7 +48,10 @@ export class AuthRepository {
 
   async findActiveUserById(userId: string) {
     const rows = await this.dataSource.query<AuthUserRow[]>(
-      `SELECT * FROM dorify.dori_user WHERE user_id = $1 AND is_active = TRUE`,
+      `SELECT user_id, username, full_name, email, password_hash, user_type,
+              language_preference, last_login, must_change_password,
+              failed_attempts, locked_until
+       FROM dorify.dori_user WHERE user_id = $1 AND is_active = TRUE`,
       [userId],
     );
     return rows[0] ?? null;
@@ -117,7 +123,10 @@ export class AuthRepository {
       }
 
       const users = await manager.query<AuthUserRow[]>(
-        `SELECT * FROM dorify.dori_user
+        `SELECT user_id, username, full_name, email, password_hash, user_type,
+                language_preference, last_login, must_change_password,
+                failed_attempts, locked_until
+         FROM dorify.dori_user
          WHERE user_id = $1 AND is_active = TRUE AND deleted_at IS NULL
          FOR SHARE`,
         [session.user_id],

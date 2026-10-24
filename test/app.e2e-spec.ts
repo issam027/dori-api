@@ -24,6 +24,33 @@ describe('AppModule (e2e)', () => {
     return request(app.getHttpServer()).get('/').expect(404);
   });
 
+  it('exposes the public health endpoint without infrastructure details', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/monitoring/health')
+      .expect(200);
+
+    expect(response.body).toEqual(
+      expect.objectContaining({ status: expect.any(String) }),
+    );
+    expect(response.body).not.toHaveProperty('database');
+    expect(response.body).not.toHaveProperty('redis');
+  });
+
+  it.each([
+    ['logout', 'post', '/api/v1/auth/logout'],
+    ['registration creation', 'post', '/api/v1/registrations'],
+    [
+      'call next',
+      'post',
+      '/api/v1/queues/00000000-0000-4000-8000-000000000000/next',
+    ],
+  ])('rejects unauthenticated %s', async (_name, method, path) => {
+    await request(app.getHttpServer())
+      [method as 'post'](path)
+      .send({})
+      .expect(401);
+  });
+
   it('resolves qualified application SQL to dorify even with a hostile search_path', async () => {
     const dataSource = app.get(DataSource);
     await dataSource.query('SET search_path TO public, pg_catalog');

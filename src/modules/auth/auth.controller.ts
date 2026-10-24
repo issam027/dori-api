@@ -175,7 +175,7 @@ export class AuthController {
   })
   @ApiDoriOkResponse(CurrentUserResponseDto, 'Profil et permissions')
   async me(@CurrentUser() user: AuthenticatedUser) {
-    return this.authService.getCurrentUser(user);
+    return this.authService.me(user);
   }
 
   @Post('password/change')

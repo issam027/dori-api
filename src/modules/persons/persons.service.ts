@@ -30,6 +30,44 @@ export class PersonsService {
     private readonly clockService: ClockService,
   ) {}
 
+  private iso(value: Date | string): string {
+    return value instanceof Date ? value.toISOString() : value;
+  }
+
+  private toPersonResponse(
+    row: import('./persons.repository').PersonRow,
+  ): PersonResponseDto {
+    return {
+      personId: row.person_id,
+      siteId: row.site_id,
+      lastName: row.last_name,
+      firstName: row.first_name,
+      phoneNumber: row.phone_number ?? undefined,
+      email: row.email ?? undefined,
+      birthDate: row.birth_date ?? undefined,
+      preferredLanguage: row.language_preference,
+      isActive: row.is_active,
+      createdAt: this.iso(row.created_at),
+      activeNoteCount: row.active_note_count ?? 0,
+    };
+  }
+
+  private toNoteResponse(
+    row: import('./persons.repository').PersonNoteRow,
+  ): PersonNoteResponseDto {
+    return {
+      noteId: row.note_id,
+      personId: row.person_id,
+      content: row.content,
+      createdByUserId: row.created_by_user_id,
+      authorUsername: row.author_username,
+      createdAt: this.iso(row.created_at),
+      updatedAt: row.updated_at ? this.iso(row.updated_at) : undefined,
+      isActive: row.is_active,
+      deletedAt: row.deleted_at ? this.iso(row.deleted_at) : row.deleted_at,
+    };
+  }
+
   private async checkPersonScope(personId: string, user: AuthenticatedUser) {
     const scope = await this.scopeService.getUserScope(user);
     if (scope.isGlobal) return;
@@ -74,7 +112,7 @@ export class PersonsService {
       offset,
     });
     return filter.createResponse<PersonResponseDto>(
-      result.items as unknown as PersonResponseDto[],
+      result.items.map((item) => this.toPersonResponse(item)),
       result.total,
     );
   }
@@ -167,7 +205,7 @@ export class PersonsService {
       offset,
     });
     return pagination.createResponse<PersonNoteResponseDto>(
-      result.items as unknown as PersonNoteResponseDto[],
+      result.items.map((item) => this.toNoteResponse(item)),
       result.total,
     );
   }

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppointmentExpiryWorker } from './appointment-expiry/appointment-expiry.worker';
 import { DailyResetWorker } from './daily-reset/daily-reset.worker';
 import { NotificationWorker } from './notification-worker/notification.worker';
@@ -11,7 +12,7 @@ import { QueueEstimationWorker } from './queue-estimation/queue-estimation.worke
 import { QueueEstimationWorkerRepository } from './queue-estimation/queue-estimation.repository';
 
 @Module({
-  imports: [DatabaseModule, ClockModule],
+  imports: [ConfigModule, DatabaseModule, ClockModule],
   providers: [
     AppointmentExpiryWorker,
     DailyResetWorker,
@@ -21,6 +22,12 @@ import { QueueEstimationWorkerRepository } from './queue-estimation/queue-estima
     DailyResetRepository,
     QueueEstimationWorker,
     QueueEstimationWorkerRepository,
+  ],
+  exports: [
+    AppointmentExpiryWorker,
+    DailyResetWorker,
+    NotificationWorker,
+    QueueEstimationWorker,
   ],
 })
 export class WorkersModule {}

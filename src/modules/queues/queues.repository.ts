@@ -3,7 +3,7 @@ import { DataSource } from 'typeorm';
 import { CreateQueueDto } from './dto/create-queue.dto';
 import { UpdateQueueDto } from './dto/update-queue.dto';
 
-export type QueueDetailRow = Record<string, any> & {
+export type QueueDetailRow = Record<string, unknown> & {
   queue_id: string;
   queue_code: string;
   site_id: string;
@@ -16,6 +16,18 @@ export type QueueDetailRow = Record<string, any> & {
   created_at: string;
   updated_at: string;
 };
+
+const QUEUE_COLUMNS = `queue_id, queue_code, site_id, queue_name, is_active, deleted_at,
+  average_wait_time, thread_count, currency, locale, appointments_enabled,
+  appointment_slot_duration, slot_capacity, working_days, working_hours_start,
+  working_hours_end, break_start, break_end, late_tolerance_minutes, base_weight_walkin,
+  base_weight_appointment, escalation_rate_walkin, escalation_rate_appointment,
+  carry_over_waiting, daily_reset_mode, daily_reset_time, created_by_user_id,
+  updated_by_user_id, created_at, updated_at`;
+const queueColumns = (alias: string) =>
+  QUEUE_COLUMNS.split(',')
+    .map((column) => `${alias}.${column.trim()}`)
+    .join(', ');
 
 @Injectable()
 export class QueuesRepository {
@@ -130,7 +142,7 @@ export class QueuesRepository {
     );
     const pageParams = [...params, input.pageSize, input.offset];
     const items: QueueDetailRow[] = await this.dataSource.query(
-      `SELECT q.*, s.site_name, s.timezone, s.default_currency, s.default_locale,
+      `SELECT ${queueColumns('q')}, s.site_name, s.timezone, s.default_currency, s.default_locale,
               s.default_appointments_enabled, s.default_appointment_slot_duration,
               s.default_slot_capacity, s.default_working_hours_start,
               s.default_working_hours_end, s.default_break_start, s.default_break_end,
@@ -147,7 +159,7 @@ export class QueuesRepository {
 
   async findById(queueId: string): Promise<QueueDetailRow | null> {
     const rows: QueueDetailRow[] = await this.dataSource.query(
-      `SELECT q.*, s.site_name, s.timezone AS site_timezone,
+      `SELECT ${queueColumns('q')}, s.site_name, s.timezone AS site_timezone,
               s.default_currency, s.default_locale,
               s.default_appointments_enabled, s.default_appointment_slot_duration,
               s.default_slot_capacity, s.default_working_hours_start,

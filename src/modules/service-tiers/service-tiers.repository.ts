@@ -9,7 +9,11 @@ import {
 
 export type ServiceTierRow = Record<string, unknown> & {
   tier_id: string;
+  tier_code: string;
+  tier_name: string;
+  description?: string | null;
   is_system: boolean;
+  is_active: boolean;
 };
 
 export type QueueTierRow = Record<string, unknown> & {
@@ -50,6 +54,14 @@ type NotificationRulePersistenceUpdate = {
   isActive?: boolean;
 };
 
+const TIER_COLUMNS = `tier_id, tier_code, tier_name, description, is_system,
+  is_active, deleted_at, created_by_user_id, updated_by_user_id, created_at, updated_at`;
+const QUEUE_TIER_COLUMNS = `queue_id, tier_id, price, currency, is_active, is_default,
+  display_order, deleted_at, created_by_user_id, updated_by_user_id, created_at, updated_at`;
+const NOTIFICATION_RULE_COLUMNS = `rule_id, queue_id, tier_id, notification_type, channel,
+  threshold_position, threshold_minutes, include_tracking_link, is_active, deleted_at,
+  created_by_user_id, updated_by_user_id, created_at, updated_at`;
+
 @Injectable()
 export class ServiceTiersRepository {
   constructor(private readonly dataSource: DataSource) {}
@@ -64,7 +76,7 @@ export class ServiceTiersRepository {
       `SELECT COUNT(*)::int AS total FROM dorify.dori_service_tier WHERE is_active = TRUE`,
     );
     const items: ServiceTierRow[] = await this.dataSource.query(
-      `SELECT * FROM dorify.dori_service_tier WHERE is_active = TRUE
+      `SELECT ${TIER_COLUMNS} FROM dorify.dori_service_tier WHERE is_active = TRUE
        ORDER BY ${input.sortField} ${input.sortOrder} LIMIT $1 OFFSET $2`,
       [input.pageSize, input.offset],
     );
@@ -73,7 +85,7 @@ export class ServiceTiersRepository {
 
   async findActiveTier(tierId: string): Promise<ServiceTierRow | null> {
     const rows: ServiceTierRow[] = await this.dataSource.query(
-      `SELECT * FROM dorify.dori_service_tier WHERE tier_id = $1 AND is_active = TRUE`,
+      `SELECT ${TIER_COLUMNS} FROM dorify.dori_service_tier WHERE tier_id = $1 AND is_active = TRUE`,
       [tierId],
     );
     return rows[0] ?? null;
@@ -89,7 +101,7 @@ export class ServiceTiersRepository {
     const rows: ServiceTierRow[] = await this.dataSource.query(
       `INSERT INTO dorify.dori_service_tier
        (tier_code, tier_name, description, is_system, created_by_user_id, updated_by_user_id, created_at, updated_at)
-       VALUES ($1, $2, $3, FALSE, $4, $4, $5, $5) RETURNING *`,
+       VALUES ($1, $2, $3, FALSE, $4, $4, $5, $5) RETURNING ${TIER_COLUMNS}`,
       [
         input.tierCode,
         input.tierName,
@@ -118,6 +130,7 @@ export class ServiceTiersRepository {
       userId,
       now,
       [['tier_id', tierId]],
+      TIER_COLUMNS,
     );
   }
 
@@ -255,6 +268,7 @@ export class ServiceTiersRepository {
           ['queue_id', queueId],
           ['tier_id', tierId],
         ],
+        QUEUE_TIER_COLUMNS,
         manager,
       );
     });
@@ -287,7 +301,7 @@ export class ServiceTiersRepository {
       [input.queueId, input.tierId],
     );
     const items: NotificationRuleRow[] = await this.dataSource.query(
-      `SELECT * FROM dorify.dori_queue_tier_notification_rule
+      `SELECT ${NOTIFICATION_RULE_COLUMNS} FROM dorify.dori_queue_tier_notification_rule
        WHERE queue_id = $1 AND tier_id = $2 AND is_active = TRUE
        ORDER BY ${input.sortField} ${input.sortOrder} LIMIT $3 OFFSET $4`,
       [input.queueId, input.tierId, input.pageSize, input.offset],
@@ -301,7 +315,7 @@ export class ServiceTiersRepository {
     ruleId: string,
   ): Promise<NotificationRuleRow | null> {
     const rows: NotificationRuleRow[] = await this.dataSource.query(
-      `SELECT * FROM dorify.dori_queue_tier_notification_rule
+      `SELECT ${NOTIFICATION_RULE_COLUMNS} FROM dorify.dori_queue_tier_notification_rule
        WHERE rule_id = $1 AND queue_id = $2 AND tier_id = $3
          AND deleted_at IS NULL`,
       [ruleId, queueId, tierId],
@@ -314,7 +328,7 @@ export class ServiceTiersRepository {
     tierId: string,
   ): Promise<NotificationRuleRow[]> {
     return this.dataSource.query(
-      `SELECT * FROM dorify.dori_queue_tier_notification_rule
+      `SELECT ${NOTIFICATION_RULE_COLUMNS} FROM dorify.dori_queue_tier_notification_rule
        WHERE queue_id = $1 AND tier_id = $2 AND is_active = TRUE
        ORDER BY rule_id ASC`,
       [queueId, tierId],
@@ -343,7 +357,7 @@ export class ServiceTiersRepository {
         threshold_minutes, include_tracking_link, created_by_user_id,
         updated_by_user_id, created_at, updated_at
       ) VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, FALSE), $8, $8, $9, $9)
-      RETURNING *`,
+      RETURNING ${NOTIFICATION_RULE_COLUMNS}`,
       [
         queueId,
         tierId,
@@ -385,6 +399,7 @@ export class ServiceTiersRepository {
         ['queue_id', queueId],
         ['tier_id', tierId],
       ],
+      NOTIFICATION_RULE_COLUMNS,
     );
   }
 
@@ -409,6 +424,7 @@ export class ServiceTiersRepository {
     userId: string,
     now: Date,
     keys: Array<[string, string]>,
+    returningColumns: string,
     executor: DataSource | EntityManager = this.dataSource,
   ): Promise<T> {
     const values: unknown[] = [];
@@ -429,7 +445,7 @@ export class ServiceTiersRepository {
       })
       .join(' AND ');
     const rows: T[] = await executor.query(
-      `UPDATE ${table} SET ${fields.join(', ')} WHERE ${where} RETURNING *`,
+      `UPDATE ${table} SET ${fields.join(', ')} WHERE ${where} RETURNING ${returningColumns}`,
       values,
     );
     return rows[0];

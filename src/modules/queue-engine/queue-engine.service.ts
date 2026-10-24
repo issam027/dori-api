@@ -299,7 +299,14 @@ export class QueueEngineService {
       rateWalkin: context.config.rateWalkin,
       rateAppointment: context.config.rateAppointment,
     });
-    if (!candidate) throw new DoriException('QUEUE_EMPTY');
+    if (!candidate) {
+      return {
+        code: 'QUEUE_EMPTY',
+        translationKey: 'queue.next.empty',
+        translationParams: {},
+        data: null,
+      };
+    }
     const result = {
       registrationId: candidate.registration_id,
       ticketNumber: candidate.ticket_number,
@@ -446,7 +453,7 @@ export class QueueEngineService {
       offset,
     });
     return pagination.createResponse<QueueSessionResponseDto>(
-      result.items.map((session) => ({
+      result.items.map((session): QueueSessionResponseDto => ({
         sessionId: session.session_id,
         queueId: session.queue_id,
         userId: session.user_id,
@@ -456,7 +463,7 @@ export class QueueEngineService {
         mode: session.mode,
         connectedAt: session.connected_at,
         disconnectedAt: session.disconnected_at,
-      })) as QueueSessionResponseDto[],
+      })),
       result.total,
     );
   }

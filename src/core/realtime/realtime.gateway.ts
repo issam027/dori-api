@@ -10,18 +10,13 @@
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 import { ScopeService } from '../rbac/services/scope.service';
 import { RealtimeService } from './realtime.service';
 import { ClockService } from '../clock/clock.service';
-import {
-  JwtPayload,
-  AuthenticatedUser,
-} from '../auth/interfaces/jwt-payload.interface';
-import { JwtStrategy } from '../auth/strategies/jwt.strategy';
+import { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
 import { RealtimeRepository } from './realtime.repository';
 import { safeErrorName } from '../logging/safe-error';
+import { WsAuthService } from './ws-auth.service';
 
 interface AuthenticatedSocket extends Socket {
   user?: AuthenticatedUser;
@@ -39,13 +34,11 @@ export class RealtimeGateway
   private readonly logger = new Logger(RealtimeGateway.name);
 
   constructor(
-    private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
+    private readonly wsAuthService: WsAuthService,
     private readonly realtimeRepository: RealtimeRepository,
     private readonly scopeService: ScopeService,
     private readonly realtimeService: RealtimeService,
     private readonly clockService: ClockService,
-    private readonly jwtStrategy: JwtStrategy,
   ) {}
 
   afterInit(server: Server) {
@@ -66,9 +59,7 @@ export class RealtimeGateway
         auth.registrationToken || headers['x-registration-token'];
 
       if (token) {
-        const secret = this.configService.getOrThrow<string>('jwt.secret');
-        const payload: JwtPayload = this.jwtService.verify(token, { secret });
-        client.user = await this.jwtStrategy.validate(payload);
+        client.user = await this.wsAuthService.authenticate(token);
         this.logger.debug(
           `Authenticated user connected via WS userId=${client.user.userId}`,
         );

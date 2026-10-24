@@ -30,6 +30,32 @@ export class NotificationsService {
     private readonly notificationTemplateService: NotificationTemplateService,
   ) {}
 
+  private toResponseDto(
+    row: import('./notifications.repository').NotificationRow,
+  ): NotificationResponseDto {
+    const iso = (value: Date | string | null | undefined) =>
+      value instanceof Date ? value.toISOString() : (value ?? undefined);
+    return {
+      notificationId: row.notification_id,
+      registrationId: row.registration_id,
+      channel: row.channel,
+      notificationType: row.notification_type,
+      locale: row.locale,
+      recipient: row.recipient ?? undefined,
+      notificationContent: row.notification_content,
+      notificationStatus: row.notification_status,
+      attemptCount: row.attempt_count,
+      deliveredAt: iso(row.delivered_at),
+      failureReason: row.failure_reason ?? undefined,
+      createdAt: iso(row.created_at)!,
+      updatedAt: iso(row.updated_at)!,
+      ticketNumber: row.ticket_number,
+      businessDate: row.business_date,
+      firstName: row.first_name,
+      lastName: row.last_name,
+    };
+  }
+
   async findNotifications(
     filter: NotificationFilterDto,
     user: AuthenticatedUser,
@@ -64,7 +90,7 @@ export class NotificationsService {
       offset,
     });
     return filter.createResponse<NotificationResponseDto>(
-      result.items as unknown as NotificationResponseDto[],
+      result.items.map((item) => this.toResponseDto(item)),
       result.total,
     );
   }

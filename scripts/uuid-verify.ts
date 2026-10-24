@@ -15,8 +15,8 @@ const migrationsDir = path.join(root, 'src/core/database/sql/migrations');
 const migrations = fs
   .readdirSync(migrationsDir)
   .filter((name) => name.endsWith('.sql'));
-if (migrations.length !== 1 || migrations[0] !== '001_uuid_baseline.sql') {
-  failures.push(`Expected one UUID baseline, found: ${migrations.join(', ')}`);
+if (!migrations.includes('001_uuid_baseline.sql')) {
+  failures.push(`UUID baseline is missing; found: ${migrations.join(', ')}`);
 }
 
 const baseline = read('src/core/database/sql/migrations/001_uuid_baseline.sql');

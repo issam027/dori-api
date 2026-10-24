@@ -656,7 +656,50 @@ export class RegistrationsService {
       dateBounds,
     );
     return filter.createResponse<RegistrationResponseDto>(
-      result.items as RegistrationResponseDto[],
+      result.items.map((registration): RegistrationResponseDto => ({
+        registrationId: String(registration.registration_id),
+        queueId: String(registration.queue_id),
+        personId: String(registration.person_id),
+        ticketNumber: String(registration.ticket_number),
+        entryType: String(registration.entry_type),
+        status: String(registration.status),
+        scheduledTime: registration.scheduled_time
+          ? String(registration.scheduled_time)
+          : undefined,
+        appointmentStatus: registration.appointment_status
+          ? String(registration.appointment_status)
+          : undefined,
+        businessDate: String(registration.business_date),
+        registrationTrackingToken: String(
+          registration.registration_tracking_token,
+        ),
+        tierId: String(registration.tier_id),
+        createdAt: String(registration.created_at),
+        updatedAt: String(registration.updated_at),
+        isActive: Boolean(registration.is_active),
+        deletedAt: registration.deleted_at
+          ? String(registration.deleted_at)
+          : null,
+        firstName: registration.first_name
+          ? String(registration.first_name)
+          : undefined,
+        lastName: registration.last_name
+          ? String(registration.last_name)
+          : undefined,
+        queueName: registration.queue_name
+          ? String(registration.queue_name)
+          : undefined,
+        tierName: registration.tier_name
+          ? String(registration.tier_name)
+          : undefined,
+        servedBySessionId: registration.served_by_session_id
+          ? String(registration.served_by_session_id)
+          : null,
+        servedByUserId: registration.served_by_user_id
+          ? String(registration.served_by_user_id)
+          : null,
+        activeNoteCount: Number(registration.active_note_count ?? 0),
+      })),
       result.total,
     );
   }

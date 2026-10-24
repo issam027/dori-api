@@ -16,8 +16,8 @@ export interface UserDetailsResult {
   is_active: boolean;
   language_preference: string;
   last_login: Date | null;
-  created_at: Date;
-  updated_at: Date;
+  created_at: Date | string;
+  updated_at: Date | string;
   roles: Array<{
     role_id: string;
     role_name: string;
@@ -35,6 +35,33 @@ export interface UserDetailsResult {
     queue_name: string;
     site_id: string;
   }>;
+}
+
+export interface UserMutationRow {
+  user_id: string;
+  username: string;
+  full_name: string | null;
+  email: string | null;
+  user_type: string;
+  is_active: boolean;
+  language_preference: string;
+  created_at?: Date;
+  updated_at?: Date;
+}
+
+interface PermissionNameRow {
+  permission_name: string;
+}
+
+interface RoleRow {
+  role_id: string;
+  role_name: string;
+  rank: number;
+  description: string | null;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+  permissions: string[];
 }
 
 @Injectable()
@@ -80,7 +107,7 @@ export class UsersRepository {
   }
 
   async getUserPermissionNames(userId: string): Promise<string[]> {
-    const permsRes = await this.dataSource.query(
+    const permsRes = await this.dataSource.query<PermissionNameRow[]>(
       `SELECT DISTINCT p.permission_name
        FROM dorify.dori_user_role ur
        JOIN dorify.dori_role_permission rp ON rp.role_id = ur.role_id
@@ -88,7 +115,7 @@ export class UsersRepository {
        WHERE ur.user_id = $1 AND p.is_active = TRUE`,
       [userId],
     );
-    return permsRes.map((r: any) => r.permission_name);
+    return permsRes.map((row) => row.permission_name);
   }
 
   async getRoleRank(roleId: string): Promise<number | null> {
@@ -134,7 +161,7 @@ export class UsersRepository {
       LEFT JOIN dorify.dori_role r ON r.role_id = ur.role_id
       WHERE u.is_active = $1
     `;
-    const params: any[] = [filter.isActive ?? true];
+    const params: unknown[] = [filter.isActive ?? true];
 
     if (!scope.isGlobal) {
       if (scope.siteIds.length === 0) {
@@ -230,7 +257,7 @@ export class UsersRepository {
     roleId?: string;
     creatorUserId: string;
     now: Date;
-  }): Promise<any | null> {
+  }): Promise<UserMutationRow | null> {
     return this.dataSource.transaction(async (manager) => {
       if (params.roleId) {
         const roles = await manager.query(
@@ -240,7 +267,7 @@ export class UsersRepository {
         if (roles.length === 0) return null;
       }
 
-      const res = await manager.query(
+      const res = await manager.query<UserMutationRow[]>(
         `INSERT INTO dorify.dori_user (
           username, full_name, email, password_hash, user_type, language_preference,
           created_by_user_id, updated_by_user_id, created_at, updated_at
@@ -278,9 +305,9 @@ export class UsersRepository {
     dto: UpdateUserDto,
     updaterUserId: string,
     now: Date,
-  ): Promise<any> {
+  ): Promise<UserMutationRow> {
     const fields: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let idx = 1;
 
     if (dto.fullName !== undefined) {
@@ -304,13 +331,13 @@ export class UsersRepository {
 
     values.push(userId);
 
-    const res = await this.dataSource.query(
+    const res = await this.dataSource.query<UserMutationRow[]>(
       `UPDATE dorify.dori_user SET ${fields.join(', ')} WHERE user_id = $${idx}
        RETURNING user_id, username, full_name, email, user_type, is_active, language_preference, updated_at`,
       values,
     );
 
-    return res[0];
+    return res[0]!;
   }
 
   async updateUserStatus(
@@ -440,29 +467,49 @@ export class UsersRepository {
     );
     const total = countRes[0]?.total || 0;
 
-    const roles = await this.dataSource.query(
-      `SELECT * FROM dorify.dori_role
+    const roles = await this.dataSource.query<RoleRow[]>(
+      `SELECT role_id, role_name, rank, description, is_active, created_at, updated_at
+       FROM dorify.dori_role
        WHERE is_active = TRUE
        ORDER BY rank ASC
-       LIMIT ${pageSize} OFFSET ${offset}`,
+       LIMIT $1 OFFSET $2`,
+      [pageSize, offset],
     );
 
     for (const r of roles) {
-      const perms = await this.dataSource.query(
+      const perms = await this.dataSource.query<PermissionNameRow[]>(
         `SELECT p.permission_name, p.description
          FROM dorify.dori_role_permission rp
          JOIN dorify.dori_permission p ON p.permission_id = rp.permission_id
          WHERE rp.role_id = $1 AND p.is_active = TRUE`,
         [r.role_id],
       );
-      r.permissions = perms.map((p: any) => p.permission_name);
+      r.permissions = perms.map((permission) => permission.permission_name);
     }
 
-    return pagination.createResponse(roles, total);
+    return pagination.createResponse<RoleResponseDto>(
+      roles.map((role) => ({
+        roleId: role.role_id,
+        roleName: role.role_name,
+        rank: role.rank,
+        description: role.description ?? undefined,
+        isActive: role.is_active,
+        createdAt:
+          role.created_at instanceof Date
+            ? role.created_at.toISOString()
+            : role.created_at,
+        updatedAt:
+          role.updated_at instanceof Date
+            ? role.updated_at.toISOString()
+            : role.updated_at,
+        permissions: role.permissions,
+      })),
+      total,
+    );
   }
 
   async roleExists(roleId: string): Promise<boolean> {
-    const res = await this.dataSource.query(
+    const res = await this.dataSource.query<PermissionNameRow[]>(
       `SELECT 1 FROM dorify.dori_role WHERE role_id = $1 AND is_active = TRUE`,
       [roleId],
     );
@@ -470,12 +517,12 @@ export class UsersRepository {
   }
 
   async findActivePermissionNames(names: string[]): Promise<string[]> {
-    const res = await this.dataSource.query(
+    const res = await this.dataSource.query<PermissionNameRow[]>(
       `SELECT permission_name FROM dorify.dori_permission
        WHERE permission_name = ANY($1) AND is_active = TRUE`,
       [names],
     );
-    return res.map((item: any) => item.permission_name);
+    return res.map((item) => item.permission_name);
   }
 
   async updateRolePermissions(

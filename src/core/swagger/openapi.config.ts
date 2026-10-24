@@ -5,19 +5,17 @@ import type {
 } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
 
 /** Single source of truth for the served and exported OpenAPI documents. */
-export function createOpenApiConfig(): Omit<OpenAPIObject, 'paths'> {
-  const config = new DocumentBuilder()
+export function createOpenApiConfig(
+  servers: string[] = ['http://localhost:3000', 'https://dori-api.vercel.app'],
+): Omit<OpenAPIObject, 'paths'> {
+  const builder = new DocumentBuilder()
     .setTitle('Dori API')
     .setDescription(
       "Spécification de référence de la plateforme de gestion de files d'attente et de rendez-vous Dori",
     )
-    .setVersion('1.0.0')
-    .addServer('http://localhost:3000', 'Environnement local de développement')
-    .addServer(
-      'https://dori-api-dev.vercel.app',
-      'Environnement distant de développement',
-    )
-    .addServer('https://dori-api.vercel.app', 'Environnement de production')
+    .setVersion('1.0.0');
+  servers.forEach((server) => builder.addServer(server));
+  const config = builder
     .addTag('Authentification', 'Authentification, sessions et mots de passe')
     .addTag('Sites', 'Gestion des sites et affectation des gestionnaires')
     .addTag('Queues', "Gestion et configuration des files d'attente")

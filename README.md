@@ -43,7 +43,7 @@
 - **Langage** : [TypeScript 5](https://www.typescriptlang.org/) (mode strict, typage complet)
 - **Base de données** : PostgreSQL 14+ avec [TypeORM](https://typeorm.io/)
 - **Cache & Distribution** : [Redis](https://redis.io/) (via `ioredis`) pour le cache de scope RBAC, les compteurs de métriques et le scaling WebSocket
-- **Files de traitement** : [BullMQ](https://bullmq.io/)
+- **Tâches planifiées** : workers NestJS hors Vercel et déclencheurs HTTP Vercel Cron en production serverless
 - **Documentation API** : OpenAPI 3.0 via `@nestjs/swagger` + Swagger UI
 - **Tests** : Jest, ts-jest, Supertest
 
@@ -122,8 +122,14 @@ Principales variables configurables dans `.env` :
 | `REFRESH_TOKEN_EXPIRES_DAYS` | Durée de validité du Refresh Token                  | `30`                                          |
 | `CORS_ORIGINS`               | Origines autorisées (séparées par virgule)          | `http://localhost:3001,http://localhost:5173` |
 | `PUBLIC_WEB_URL`             | URL de l'application usager pour les liens de suivi | `http://localhost:5173`                       |
+| `CRON_SECRET`                | Secret Bearer des endpoints Vercel Cron             | secret aléatoire long                         |
+| `DEFAULT_TIMEZONE`           | Fuseau horaire IANA utilisé en repli                 | `Africa/Tunis`                                |
+| `APPOINTMENT_EXPIRY_INTERVAL_MINUTES` | Délai avant traitement des rendez-vous expirés | `5`                                    |
+| `SWAGGER_SERVERS`            | URLs OpenAPI séparées par des virgules               | local et production                           |
 
 Consultez [.env.example](file:///.env.example) pour la liste exhaustive et commentée.
+
+Ne déployez jamais la valeur d'exemple de `JWT_SECRET`. En production, utilisez soit un secret HMAC aléatoire d'au moins 32 caractères, soit de préférence une paire `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` dédiée.
 
 ---
 
@@ -183,6 +189,8 @@ src/
 ## ⏰ Workers d'Arrière-Plan
 
 Quatre workers CRON s'exécutent en tâche de fond pour garantir la fluidité opérationnelle :
+
+Sur Vercel, les workers persistants sont désactivés. `vercel.json` déclenche à la place quatre routes `GET /api/v1/internal/cron/*`, protégées par `Authorization: Bearer <CRON_SECRET>`. En développement ou sur un serveur Node.js persistant, les workers NestJS restent actifs.
 
 | Worker                      | Fréquence        | Rôle                                                                  |
 | --------------------------- | ---------------- | --------------------------------------------------------------------- |

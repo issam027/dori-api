@@ -26,7 +26,7 @@ export const REDIS_CLIENT = 'REDIS_CLIENT';
       inject: [ConfigService],
       useFactory: (config: ConfigService): Redis | null => {
         const logger = new Logger('RedisModule');
-        const isExport = process.env.SWAGGER_EXPORT === 'true';
+        const isExport = config.get<boolean>('swaggerExport') ?? false;
         const enabled = config.get<boolean>('redis.enabled', true);
         const host = config.get<string | undefined>('redis.host');
 

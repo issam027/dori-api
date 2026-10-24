@@ -39,9 +39,9 @@ export class DoriException extends HttpException {
         data = { errors: data };
       } else if (typeof data === 'string') {
         data = { errors: [data] };
-      } else if (typeof data === 'object' && !('errors' in (data as object))) {
-        if ('message' in (data as object)) {
-          data = { errors: [String((data as any).message)] };
+      } else if (typeof data === 'object' && !('errors' in data)) {
+        if ('message' in data) {
+          data = { errors: [String(data.message)] };
         }
       }
     }

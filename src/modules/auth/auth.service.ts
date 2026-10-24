@@ -11,9 +11,12 @@ import {
   JwtPayload,
 } from '../../core/auth/interfaces/jwt-payload.interface';
 import { AuthRepository, AuthUserRow } from './auth.repository';
+import { RankService } from '../../core/rbac/services/rank.service';
 
 @Injectable()
 export class AuthService {
+  private readonly rankService = new RankService();
+
   constructor(
     private readonly authRepository: AuthRepository,
     private readonly jwtService: JwtService,
@@ -195,20 +198,17 @@ export class AuthService {
     }
 
     // Vérification hiérarchique : le caller ne peut pas déconnecter un user de rang >= le sien
-    const callerMaxRank = callerRoles.includes('root')
-      ? 5
-      : await this.authRepository.getMaxRoleRank(caller.userId);
+    const callerMaxRank = this.rankService.callerRank(
+      callerRoles,
+      await this.authRepository.getMaxRoleRank(caller.userId),
+    );
 
     const targetMaxRank =
       await this.authRepository.getMaxRoleRank(targetUserId);
 
     // Un manager (rank 3) ne peut déconnecter que des users de rang < 3 (opérateur, kiosk)
     // Un admin (rank 4) peut déconnecter jusqu'au rang 3 (manager)
-    const maxDisconnectableRank = callerMaxRank - 1;
-    if (
-      targetMaxRank >= callerMaxRank ||
-      targetMaxRank > maxDisconnectableRank
-    ) {
+    if (!this.rankService.canActOn(callerMaxRank, targetMaxRank)) {
       throw new DoriException('FORBIDDEN_ROLE_ESCALATION');
     }
 
@@ -225,10 +225,6 @@ export class AuthService {
     );
 
     return { success: true };
-  }
-
-  async getCurrentUser(currentUser: AuthenticatedUser) {
-    return this.me(currentUser);
   }
 
   async me(currentUser: AuthenticatedUser) {

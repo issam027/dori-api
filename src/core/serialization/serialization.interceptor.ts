@@ -24,7 +24,7 @@ const SENSITIVE_FIELDS = new Set([
   'password',
 ]);
 
-export function transformKeysToCamel(data: any): any {
+export function transformKeysToCamel(data: unknown): unknown {
   if (data === null || data === undefined) {
     return data;
   }
@@ -34,8 +34,11 @@ export function transformKeysToCamel(data: any): any {
   if (Array.isArray(data)) {
     return data.map((item) => transformKeysToCamel(item));
   }
-  if (typeof data === 'object' && data.constructor === Object) {
-    const result: Record<string, any> = {};
+  if (
+    typeof data === 'object' &&
+    Object.getPrototypeOf(data) === Object.prototype
+  ) {
+    const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data)) {
       if (SENSITIVE_FIELDS.has(key)) {
         continue;
@@ -128,7 +131,7 @@ function projectToDto(data: unknown, dto: Type<unknown>): unknown {
 export class SerializationInterceptor implements NestInterceptor {
   constructor(private readonly reflector: Reflector = new Reflector()) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const handler = context.getHandler?.();
     const target = handler
       ? this.reflector.get<SerializationTarget>(SERIALIZATION_DTO_KEY, handler)

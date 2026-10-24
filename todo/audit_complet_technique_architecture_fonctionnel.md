@@ -376,12 +376,11 @@ Précisions d'exploitation : la table est append-only du point de vue applicatif
 
 #### PERF-01 — Mesurer et corriger les performances
 
-- [x] Créer un dataset volumétrique représentatif et glissant (`scripts/performance/perf-seed.sql`) : 50 000 personnes, 16 files, 243 600 inscriptions et 60 656 notifications réparties entre une mairie, un hôpital, un cabinet médical et un restaurant à emporter en Tunisie. Il couvre 60 jours d'historique, la charge active du jour et les 14 prochains jours ; toutes les dates dépendent de `CURRENT_DATE`.
-- [x] Fournir un runner isolé : `npm run perf:seed` pour injecter, `npm run perf:seed:clean` pour nettoyer uniquement les données marquées `PERF-01`, et `npm run perf:seed:refresh` pour nettoyer puis réinjecter avec les dates recalées au jour d'exécution.
-- [x] Mesurer p50/p95/p99 et débit des endpoints prioritaires avec `npm run perf:http` sur `https://dori-api.vercel.app/api/v1`. Deuxième passage Vercel sur le dataset ×10 (20 requêtes/scénario, concurrence 4) enregistré dans `reports/performance/http-latest.json`. p95 : health 324 ms, personnes 347 ms, inscriptions 756 ms, notifications 893 ms, supervision live 266 ms, rapports 6 291 ms et sessions 304 ms. Le health présente un p99 à 2 358 ms compatible avec un cold start ponctuel.
-- [x] Exécuter `EXPLAIN (ANALYZE, BUFFERS)` avec `npm run perf:explain`. Plans ×10 enregistrés dans `reports/performance/explain-latest.json` : personnes 7 ms, inscriptions 111 ms, notifications 8 ms, agrégat rapport 63 ms et candidat `callNext` 0,37 ms. L'écart avec les latences HTTP confirme un coût important d'orchestration et d'allers-retours Vercel/Neon.
+- [ ] Créer un dataset volumétrique représentatif.
+- [ ] Mesurer p50/p95/p99 et débit des endpoints prioritaires.
+- [ ] Exécuter `EXPLAIN (ANALYZE, BUFFERS)` sur les requêtes lentes.
 - [ ] Tester contention de `callNext`, sessions, rapports et workers.
-- [x] Définir des budgets initiaux dans `perf:http` : p95 500 ms, p99 1 000 ms, minimum 10 req/s et zéro erreur. Le runner retourne un code non nul en cas de régression et peut être branché en CI/nightly via variables `PERF_*`.
+- [ ] Définir budgets de performance et régression en CI/nightly.
 - [ ] **Checkpoint :** objectifs chiffrés tenus sur la volumétrie cible.
 
 #### OPS-02 — Industrialiser le déploiement
@@ -554,12 +553,4 @@ Ce rapport décrit l'état observé du dépôt à la date indiquée. Les constat
 
 <!-- CHECKPOINT id="ckpt_mvl0c5ox_h825fw" time="2026-10-23T13:30:19.473Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
-<!-- CHECKPOINT id="ckpt_mvlzpp9q_j543d8" time="2026-10-24T06:00:37.934Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
-
-<!-- CHECKPOINT id="ckpt_mvm02k8s_tr17zo" time="2026-10-24T06:10:37.948Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
-
-<!-- CHECKPOINT id="ckpt_mvm0ff80_76szb6" time="2026-10-24T06:20:37.968Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
-
-<!-- CHECKPOINT id="ckpt_mvm0sa6f_vrz0sa" time="2026-10-24T06:30:37.960Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
-
-<!-- CHECKPOINT id="ckpt_mvm1555b_s720wx" time="2026-10-24T06:40:37.967Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+<!-- CHECKPOINT id="ckpt_mvm1i05q_a833xd" time="2026-10-24T06:50:38.030Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

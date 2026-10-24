@@ -5,7 +5,19 @@ import {
   RegistrationFilterDto,
   UpdateRegistrationDto,
 } from './dto/registration.dto';
-import { NotificationTemplateService } from '../../core/notifications/notification-template.service';
+
+interface WelcomeNotificationRenderer {
+  templateKey(
+    channel: 'sms' | 'email',
+    type: 'welcome',
+    includeTrackingLink: boolean,
+  ): string;
+  buildTrackingUrl(token: string): string;
+  render(
+    template: string,
+    parameters: Record<string, string | number | null | undefined>,
+  ): { content: string | null; failureReason: string | null };
+}
 
 export type RegistrationRow = Record<string, unknown> & {
   registration_id: string;
@@ -24,12 +36,35 @@ export type RegistrationRow = Record<string, unknown> & {
   queue_name: string;
 };
 
+const REGISTRATION_COLUMNS = `registration_id, person_id, queue_id, tier_id, business_date,
+  ticket_number, entry_type, scheduled_time, appointment_status, checked_in_at,
+  priority_reference_time, status, called_at, served_at, closed_at, carried_over_from_date,
+  served_by_session_id, served_by_user_id, registration_tracking_token,
+  registration_tracking_token_valid_until, payment_status, payment_amount, payment_currency,
+  payment_method, paid_at, payment_reference, language_preference, is_active, deleted_at,
+  created_by_user_id, updated_by_user_id, created_at, updated_at`;
+const registrationColumns = (alias: string) =>
+  REGISTRATION_COLUMNS.split(',')
+    .map((column) => `${alias}.${column.trim()}`)
+    .join(', ');
+const QUEUE_COLUMNS = `queue_id, queue_code, site_id, queue_name, is_active, deleted_at,
+  average_wait_time, thread_count, currency, locale, appointments_enabled,
+  appointment_slot_duration, slot_capacity, working_days, working_hours_start,
+  working_hours_end, break_start, break_end, late_tolerance_minutes, base_weight_walkin,
+  base_weight_appointment, escalation_rate_walkin, escalation_rate_appointment,
+  carry_over_waiting, daily_reset_mode, daily_reset_time, created_by_user_id,
+  updated_by_user_id, created_at, updated_at`;
+const queueColumns = (alias: string) =>
+  QUEUE_COLUMNS.split(',')
+    .map((column) => `${alias}.${column.trim()}`)
+    .join(', ');
+
 export class RegistrationsTransaction {
   constructor(readonly manager: EntityManager) {}
 
   async findQueueConfig(queueId: string) {
     const rows = await this.manager.query(
-      `SELECT q.*, s.timezone, s.default_currency,
+      `SELECT ${queueColumns('q')}, s.timezone, s.default_currency,
        s.default_appointments_enabled, s.default_appointment_slot_duration, s.default_slot_capacity,
        s.default_working_hours_start, s.default_working_hours_end, s.default_break_start,
        s.default_break_end, s.default_late_tolerance_minutes, s.default_working_days
@@ -121,7 +156,8 @@ export class RegistrationsTransaction {
        entry_type,scheduled_time,checked_in_at,appointment_status,priority_reference_time,status,
        registration_tracking_token_valid_until,language_preference,created_by_user_id,
        updated_by_user_id,created_at,updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$14,$15,$15) RETURNING *`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$14,$15,$15)
+       RETURNING ${REGISTRATION_COLUMNS}`,
       [
         input.personId,
         input.dto.queueId,
@@ -148,7 +184,7 @@ export class RegistrationsTransaction {
     trackingToken: string;
     ticketNumber: string;
     now: Date;
-    templateService: NotificationTemplateService;
+    templateService: WelcomeNotificationRenderer;
   }): Promise<number> {
     const rules: Array<{
       rule_id: string;
@@ -276,7 +312,7 @@ export class RegistrationsTransaction {
     const rows = await this.manager.query(
       `UPDATE dorify.dori_registration SET scheduled_time=$1, priority_reference_time=$1, business_date=$2,
        ticket_number=COALESCE($3, ticket_number), appointment_status='rescheduled', status='booked',
-       checked_in_at=NULL, updated_at=$4 WHERE registration_id=$5 RETURNING *`,
+       checked_in_at=NULL, updated_at=$4 WHERE registration_id=$5 RETURNING ${REGISTRATION_COLUMNS}`,
       [newTime, businessDate, ticketNumber ?? null, now, registrationId],
     );
     return rows[0];
@@ -297,7 +333,7 @@ export class RegistrationsRepository {
 
   async findAvailabilityConfig(queueId: string) {
     const rows = await this.dataSource.query(
-      `SELECT q.*, s.timezone, s.default_appointments_enabled, s.default_appointment_slot_duration,
+      `SELECT ${queueColumns('q')}, s.timezone, s.default_appointments_enabled, s.default_appointment_slot_duration,
        s.default_slot_capacity, s.default_working_hours_start, s.default_working_hours_end,
        s.default_break_start, s.default_break_end, s.default_working_days FROM dorify.dori_queue q
        JOIN dorify.dori_site s ON s.site_id=q.site_id WHERE q.queue_id=$1 AND q.is_active=TRUE`,
@@ -330,7 +366,7 @@ export class RegistrationsRepository {
 
   async findForCheckIn(registrationId: string) {
     const rows = await this.dataSource.query(
-      `SELECT r.*,q.late_tolerance_minutes,s.default_late_tolerance_minutes
+      `SELECT ${registrationColumns('r')},q.late_tolerance_minutes,s.default_late_tolerance_minutes
        FROM dorify.dori_registration r JOIN dorify.dori_queue q ON q.queue_id=r.queue_id
        JOIN dorify.dori_site s ON s.site_id=q.site_id WHERE r.registration_id=$1 AND r.is_active=TRUE`,
       [registrationId],
@@ -349,7 +385,7 @@ export class RegistrationsRepository {
   async checkIn(registrationId: string, now: Date) {
     const rows = await this.dataSource.query(
       `UPDATE dorify.dori_registration SET status='waiting',appointment_status='checked_in',
-       checked_in_at=$1,updated_at=$1 WHERE registration_id=$2 RETURNING *`,
+       checked_in_at=$1,updated_at=$1 WHERE registration_id=$2 RETURNING ${REGISTRATION_COLUMNS}`,
       [now, registrationId],
     );
     return rows[0];
@@ -357,7 +393,7 @@ export class RegistrationsRepository {
 
   async findForReschedule(registrationId: string) {
     const rows = await this.dataSource.query(
-      `SELECT r.*,r.business_date::text AS business_date,q.queue_code,q.slot_capacity,
+      `SELECT ${registrationColumns('r')},r.business_date::text AS business_date,q.queue_code,q.slot_capacity,
        s.default_slot_capacity,s.timezone FROM dorify.dori_registration r
        JOIN dorify.dori_queue q ON q.queue_id=r.queue_id JOIN dorify.dori_site s ON s.site_id=q.site_id
        WHERE r.registration_id=$1 AND r.is_active=TRUE`,
@@ -394,7 +430,7 @@ export class RegistrationsRepository {
       where += ` AND r.scheduled_time=$${params.length}`;
     }
     const rows = await this.dataSource.query(
-      `SELECT r.*,p.first_name,p.last_name,p.phone_number,
+      `SELECT ${registrationColumns('r')},p.first_name,p.last_name,p.phone_number,
        (SELECT COUNT(*)::int FROM dorify.dori_person_note pn
         WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
        FROM dorify.dori_registration r
@@ -420,7 +456,7 @@ export class RegistrationsRepository {
       fromInclusive: Date;
       toExclusive: Date;
     },
-  ) {
+  ): Promise<{ items: RegistrationRow[]; total: number }> {
     const params: unknown[] = [];
     const activeFilter = filter.isActive ?? true;
     params.push(activeFilter);
@@ -472,8 +508,8 @@ export class RegistrationsRepository {
       `SELECT COUNT(*)::int AS total ${from}`,
       params,
     );
-    const items = await this.dataSource.query(
-      `SELECT r.*,p.first_name,p.last_name,p.phone_number,p.email,
+    const items: RegistrationRow[] = await this.dataSource.query(
+      `SELECT ${registrationColumns('r')},p.first_name,p.last_name,p.phone_number,p.email,
       q.queue_name,q.queue_code,q.site_id,q.average_wait_time,t.tier_code,t.tier_name,
       (SELECT COUNT(*)::int FROM dorify.dori_person_note pn
        WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
@@ -486,7 +522,7 @@ export class RegistrationsRepository {
 
   async findById(registrationId: string): Promise<RegistrationRow | null> {
     const rows = await this.dataSource.query(
-      `SELECT r.*,p.first_name,p.last_name,p.phone_number,p.email,
+      `SELECT ${registrationColumns('r')},p.first_name,p.last_name,p.phone_number,p.email,
       q.queue_name,q.queue_code,t.tier_code,t.tier_name,
       (SELECT COUNT(*)::int FROM dorify.dori_person_note pn
        WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
@@ -535,7 +571,8 @@ export class RegistrationsRepository {
     fields.push(`updated_at=$${values.length}`);
     values.push(registrationId);
     const rows = await this.dataSource.query(
-      `UPDATE dorify.dori_registration SET ${fields.join(',')} WHERE registration_id=$${values.length} RETURNING *`,
+      `UPDATE dorify.dori_registration SET ${fields.join(',')} WHERE registration_id=$${values.length}
+       RETURNING ${REGISTRATION_COLUMNS}`,
       values,
     );
     return rows[0];
@@ -552,7 +589,7 @@ export class RegistrationsRepository {
 
   async findByTrackingToken(token: string) {
     const rows = await this.dataSource.query(
-      `SELECT r.*, q.average_wait_time, q.queue_name,
+      `SELECT ${registrationColumns('r')}, q.average_wait_time, q.queue_name,
               q.site_id,
               os.thread_number, os.counter_name
        FROM dorify.dori_registration r

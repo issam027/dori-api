@@ -5,13 +5,13 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 import configuration, {
+  isVercelRuntime,
   validateEnvironment,
 } from './core/config/configuration';
 import { DatabaseModule } from './core/database/database.module';
 import { ClockModule } from './core/clock/clock.module';
 import { RbacModule } from './core/rbac/rbac.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { RealtimeModule } from './core/realtime/realtime.module';
 import { RedisModule } from './core/redis/redis.module';
 
 import { SitesModule } from './modules/sites/sites.module';
@@ -35,6 +35,9 @@ import { SerializationInterceptor } from './core/serialization/serialization.int
 import { GlobalExceptionFilter } from './core/errors/global-exception.filter';
 import { AuditModule } from './core/audit/audit.module';
 import { AuditInterceptor } from './core/audit/audit.interceptor';
+import { CronModule } from './cron-handlers/cron.module';
+
+const isVercel = isVercelRuntime();
 
 @Module({
   imports: [
@@ -42,7 +45,7 @@ import { AuditInterceptor } from './core/audit/audit.interceptor';
       load: [configuration],
       validate: validateEnvironment,
     }),
-    ScheduleModule.forRoot(),
+    ...(!isVercel ? [ScheduleModule.forRoot()] : []),
     RedisModule,
     AuditModule,
     ThrottlerModule.forRootAsync({
@@ -70,7 +73,6 @@ import { AuditInterceptor } from './core/audit/audit.interceptor';
     ClockModule,
     RbacModule,
     AuthModule,
-    RealtimeModule,
     SitesModule,
     QueuesModule,
     ServiceTiersModule,
@@ -80,7 +82,7 @@ import { AuditInterceptor } from './core/audit/audit.interceptor';
     NotificationsModule,
     TranslationsModule,
     UsersModule,
-    WorkersModule,
+    ...(!isVercel ? [WorkersModule] : [CronModule]),
     MonitoringModule,
   ],
   providers: [
