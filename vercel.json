@@ -4,10 +4,16 @@
     "fra1"
   ],
   "functions": {
-    "src/main.ts": {
+    "api/index.ts": {
       "maxDuration": 60
     }
   },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api"
+    }
+  ],
   "crons": [
     {
       "path": "/api/internal/cron/daily-reset",
