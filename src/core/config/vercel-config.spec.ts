@@ -11,8 +11,8 @@ describe('Vercel deployment configuration', () => {
     rewrites?: Array<{ source: string; destination: string }>;
   };
 
-  it('delegates function generation to the native NestJS preset', () => {
-    expect(config.framework).toBe('nestjs');
+  it('lets Vercel auto-detect the NestJS function', () => {
+    expect(config.framework).toBeUndefined();
     expect(config.functions).toBeUndefined();
   });
 
