@@ -406,3 +406,29 @@ Le script `uuid:verify` est intégré à `quality:check`. Il empêche notamment 
 <!-- CHECKPOINT id="ckpt_mvlihh7e_j9hd20" time="2026-10-23T21:58:20.762Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 <!-- CHECKPOINT id="ckpt_mvliuc6c_6hmarx" time="2026-10-23T22:08:20.772Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlj777g_vt1i25" time="2026-10-23T22:18:20.860Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvljk29z_sgqck0" time="2026-10-23T22:28:20.999Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvljwx9d_8iajnh" time="2026-10-23T22:38:21.025Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlk9s85_5k34x5" time="2026-10-23T22:48:21.029Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlkmn6g_wg2fhy" time="2026-10-23T22:58:21.016Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlkzi5x_mrwgon" time="2026-10-23T23:08:21.045Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvllcd4h_c1mohc" time="2026-10-23T23:18:21.041Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlpju0h_onz08a" time="2026-10-24T01:16:07.985Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlt4vqv_4ax8gm" time="2026-10-24T02:56:28.855Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlthqpq_own6pn" time="2026-10-24T03:06:28.862Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvltulpd_y31wvs" time="2026-10-24T03:16:28.897Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlu7gs5_otvutk" time="2026-10-24T03:26:29.045Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlxxefi_wxsgdr" time="2026-10-24T05:10:37.902Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

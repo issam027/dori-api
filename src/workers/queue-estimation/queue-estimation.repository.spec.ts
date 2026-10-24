@@ -21,6 +21,11 @@ describe('QueueEstimationWorkerRepository', () => {
       }),
     ).resolves.toBe(true);
 
+    expect(query.mock.calls[0][0]).toContain('hashtextextended');
+    expect(query.mock.calls[0][1]).toEqual([
+      'queue-estimation',
+      '00000000-0000-4000-8000-000000000004',
+    ]);
     expect(query.mock.calls[1][0]).toContain('/ 60.0');
     expect(query.mock.calls[1][0]).toContain('cycle_p50_minutes');
     expect(query.mock.calls[1][1]).toEqual([

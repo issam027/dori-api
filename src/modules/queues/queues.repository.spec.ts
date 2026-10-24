@@ -215,6 +215,7 @@ describe('QueuesRepository', () => {
 
     expect(query).toHaveBeenCalledTimes(4);
     expect(query.mock.calls[0][0]).toContain('pg_advisory_xact_lock');
+    expect(query.mock.calls[0][0]).toContain('hashtextextended');
     expect(query.mock.calls[2][0]).toContain('business_date <= $3::date');
     expect(query.mock.calls[2][0]).toContain("ticket_number LIKE '!%'");
     expect(query.mock.calls[3][0]).toContain(

@@ -358,10 +358,10 @@ export class QueuesRepository {
     resetMode: 'close_all' | 'carry_over_open';
   }): Promise<void> {
     return this.dataSource.transaction(async (manager) => {
-      await manager.query('SELECT pg_advisory_xact_lock(hashtext($1), $2)', [
-        'daily-reset',
-        input.queueId,
-      ]);
+      await manager.query(
+        "SELECT pg_advisory_xact_lock(hashtextextended($1 || ':' || $2::text, 0))",
+        ['daily-reset', input.queueId],
+      );
       await manager.query(
         `UPDATE dorify.dori_operator_session SET disconnected_at = $1,
          closure_reason = 'daily_reset', closed_by_user_id = $2

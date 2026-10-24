@@ -151,6 +151,7 @@ describe('QueueEngineRepository', () => {
     );
     expect(result?.score).toBe(42.5);
     expect(query.mock.calls[0][0]).toContain('pg_advisory_xact_lock');
+    expect(query.mock.calls[0][0]).toContain('hashtextextended');
     expect(query.mock.calls[1][0]).toContain('disconnected_at IS NULL');
     expect(query.mock.calls[2][0]).toContain('FOR UPDATE SKIP LOCKED');
     expect(query.mock.calls[2][0]).toContain('$6::date');

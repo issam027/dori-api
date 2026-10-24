@@ -349,10 +349,10 @@ export class QueueEngineRepository {
     rateAppointment: number;
   }): Promise<NextCandidateRow | null> {
     return this.dataSource.transaction(async (manager) => {
-      await manager.query('SELECT pg_advisory_xact_lock(hashtext($1), $2)', [
-        'daily-reset',
-        input.queueId,
-      ]);
+      await manager.query(
+        "SELECT pg_advisory_xact_lock(hashtextextended($1 || ':' || $2::text, 0))",
+        ['daily-reset', input.queueId],
+      );
       const activeSession: Array<{ session_id: string }> = await manager.query(
         `SELECT session_id FROM dorify.dori_operator_session
          WHERE session_id = $1 AND queue_id = $2 AND user_id = $3

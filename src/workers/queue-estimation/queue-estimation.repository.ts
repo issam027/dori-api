@@ -30,7 +30,7 @@ export class QueueEstimationWorkerRepository {
     return this.dataSource.transaction(async (manager) => {
       const lock = returningRows<{ acquired: boolean }>(
         await manager.query(
-          'SELECT pg_try_advisory_xact_lock(hashtext($1), $2) AS acquired',
+          "SELECT pg_try_advisory_xact_lock(hashtextextended($1 || ':' || $2::text, 0)) AS acquired",
           ['queue-estimation', input.queueId],
         ),
       );

@@ -27,6 +27,11 @@ describe('DailyResetRepository', () => {
     });
 
     expect(executed).toBe(true);
+    expect(query.mock.calls[0][0]).toContain('hashtextextended');
+    expect(query.mock.calls[0][1]).toEqual([
+      'daily-reset',
+      '00000000-0000-4000-8000-000000000004',
+    ]);
     expect(query.mock.calls[1][0]).toContain('$2::date');
     expect(query.mock.calls[3][0]).toContain('$3::date');
   });
