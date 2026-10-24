@@ -14,15 +14,12 @@ import { DatabaseSeedService } from './database-seed.service';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         driver: pg,
-        host: configService.get<string>('database.host'),
-        port: configService.get<number>('database.port'),
-        username: configService.get<string>('database.username'),
-        password: configService.get<string>('database.password'),
-        database: configService.get<string>('database.name'),
+        url: configService.getOrThrow<string>('database.url'),
         schema: 'dorify',
-        ssl: configService.get<boolean>('database.ssl')
-          ? { rejectUnauthorized: false }
-          : false,
+        ssl: configService.get<false | { rejectUnauthorized: false }>(
+          'database.ssl',
+          false,
+        ),
         entities: ALL_ENTITIES,
         synchronize: false,
         manualInitialization:

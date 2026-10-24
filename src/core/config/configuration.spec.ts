@@ -1,9 +1,22 @@
 import configuration, { validateEnvironment } from './configuration';
 
+const originalDatabaseUrl = process.env.DATABASE_URL;
+
+beforeAll(() => {
+  process.env.DATABASE_URL =
+    originalDatabaseUrl ?? 'postgresql://dori:password@localhost:5432/dori';
+});
+
+afterAll(() => {
+  if (originalDatabaseUrl === undefined) delete process.env.DATABASE_URL;
+  else process.env.DATABASE_URL = originalDatabaseUrl;
+});
+
 describe('validateEnvironment', () => {
   const valid = {
     NODE_ENV: 'production',
     JWT_SECRET: 'a-secure-secret-with-at-least-32-characters',
+    DATABASE_URL: 'postgresql://dori:password@localhost:5432/dori',
   };
 
   it('accepts a secure configuration', () => {
@@ -13,9 +26,9 @@ describe('validateEnvironment', () => {
   it.each([
     [{ ...valid, JWT_SECRET: undefined }, 'JWT_SECRET'],
     [{ ...valid, PORT: 'NaN' }, 'PORT'],
-    [{ ...valid, DB_PORT: '70000' }, 'DB_PORT'],
     [{ ...valid, DB_POOL_MAX: '0' }, 'DB_POOL_MAX'],
     [{ ...valid, DATABASE_URL: 'not-a-url' }, 'DATABASE_URL'],
+    [{ ...valid, DATABASE_URL: 'https://example.com/dori' }, 'protocol'],
     [{ ...valid, PUBLIC_WEB_URL: 'ftp://example.com' }, 'PUBLIC_WEB_URL'],
   ])('rejects an unsafe environment', (environment, message) => {
     expect(() => validateEnvironment(environment)).toThrow(message);

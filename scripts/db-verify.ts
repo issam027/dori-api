@@ -1,32 +1,12 @@
-import { Client, ClientConfig } from 'pg';
+import { Client } from 'pg';
 import * as dotenv from 'dotenv';
 import { AUDIT_EVENT_READ_MODEL } from '../src/core/audit/audit.repository';
+import { postgresClientConfig } from '../src/core/database/postgres-connection';
 
 dotenv.config();
 
-function clientConfig(): ClientConfig {
-  if (process.env.DATABASE_URL) {
-    return {
-      connectionString: process.env.DATABASE_URL,
-      ssl:
-        process.env.DB_SSL === 'true'
-          ? { rejectUnauthorized: false }
-          : undefined,
-    };
-  }
-  return {
-    host: process.env.DB_HOST ?? 'localhost',
-    port: Number(process.env.DB_PORT ?? 5432),
-    user: process.env.DB_USER ?? 'postgres',
-    password: process.env.DB_PASSWORD ?? 'postgres',
-    database: process.env.DB_NAME ?? 'dori',
-    ssl:
-      process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
-  };
-}
-
 async function main(): Promise<void> {
-  const client = new Client(clientConfig());
+  const client = new Client(postgresClientConfig());
   await client.connect();
   await client.query('SET search_path TO dorify, pg_catalog');
   try {

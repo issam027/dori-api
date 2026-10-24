@@ -17,41 +17,20 @@ import * as path from 'path';
 import { Client, ClientConfig } from 'pg';
 import * as dotenv from 'dotenv';
 import { runMigrations } from '../src/core/database/migration-runner';
+import { postgresConnectionSettings } from '../src/core/database/postgres-connection';
 
 // Load .env from project root
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-let DB_HOST = process.env.DB_HOST ?? 'localhost';
-let DB_PORT = parseInt(process.env.DB_PORT ?? '5432', 10);
-let DB_USER = process.env.DB_USER ?? 'postgres';
-let DB_PASSWORD = process.env.DB_PASSWORD ?? 'postgres';
-let DB_NAME = process.env.DB_NAME ?? 'dori';
-let DB_ADMIN_NAME = process.env.DB_ADMIN_NAME ?? 'defaultdb';
-let DB_SSL = process.env.DB_SSL === 'true';
-
-// Parse DATABASE_URL if provided
-if (process.env.DATABASE_URL) {
-  try {
-    const parsed = new URL(process.env.DATABASE_URL);
-    DB_HOST = parsed.hostname;
-    DB_PORT = parseInt(parsed.port || '5432', 10);
-    DB_USER = decodeURIComponent(parsed.username);
-    DB_PASSWORD = decodeURIComponent(parsed.password);
-    const dbPath = parsed.pathname.replace(/^\//, '');
-    if (dbPath) {
-      DB_NAME = dbPath;
-      DB_ADMIN_NAME = dbPath;
-    }
-    if (
-      parsed.searchParams.get('sslmode') === 'require' ||
-      parsed.searchParams.get('ssl') === 'true'
-    ) {
-      DB_SSL = true;
-    }
-  } catch (err: any) {
-    console.warn(`[db-init] Could not parse DATABASE_URL: ${err.message}`);
-  }
-}
+const connection = postgresConnectionSettings();
+const parsedDatabaseUrl = new URL(connection.url);
+const DB_HOST = parsedDatabaseUrl.hostname;
+const DB_PORT = parseInt(parsedDatabaseUrl.port || '5432', 10);
+const DB_USER = decodeURIComponent(parsedDatabaseUrl.username);
+const DB_PASSWORD = decodeURIComponent(parsedDatabaseUrl.password);
+const DB_NAME = parsedDatabaseUrl.pathname.replace(/^\//, '');
+const DB_ADMIN_NAME = DB_NAME;
+const DB_SSL = connection.ssl !== false;
 
 // Managed cloud hosts (e.g. Aiven, Supabase, Neon) don't allow creating databases via script
 const isCloudManaged =

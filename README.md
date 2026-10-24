@@ -110,11 +110,7 @@ Principales variables configurables dans `.env` :
 | ---------------------------- | --------------------------------------------------- | --------------------------------------------- |
 | `PORT`                       | Port d'écoute du serveur HTTP                       | `3000`                                        |
 | `NODE_ENV`                   | Environnement (`development`, `production`, `test`) | `development`                                 |
-| `DB_HOST`                    | Hôte PostgreSQL                                     | `localhost`                                   |
-| `DB_PORT`                    | Port PostgreSQL                                     | `5432`                                        |
-| `DB_USER` / `DB_PASSWORD`    | Identifiants PostgreSQL                             | `dori` / `dori_password`                      |
-| `DB_NAME`                    | Nom de la base de données                           | `dori`                                        |
-| `DB_SSL`                     | Activer SSL pour la DB (`true`/`false`)             | `false`                                       |
+| `DATABASE_URL`               | URL PostgreSQL unique (ajouter `sslmode=require` pour Neon) | `postgresql://dori:dori_password@localhost:5432/dori` |
 | `REDIS_HOST` / `REDIS_PORT`  | Hôte et port Redis                                  | `localhost` / `6379`                          |
 | `REDIS_PASSWORD`             | Mot de passe Redis (optionnel)                      | _vide_                                        |
 | `JWT_SECRET`                 | Clé secrète de signature HMAC (min. 32 caractères)  | _clé aléatoire_                               |

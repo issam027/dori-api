@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Client, ClientConfig } from 'pg';
 import { performance } from 'perf_hooks';
+import { postgresClientConfig } from '../../src/core/database/postgres-connection';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
@@ -28,29 +29,7 @@ const p99BudgetMs = Number(process.env.PERF_P99_BUDGET_MS ?? 1000);
 const minThroughput = Number(process.env.PERF_MIN_RPS ?? 10);
 
 function dbConfig(): ClientConfig {
-  if (process.env.DATABASE_URL) {
-    const url = new URL(process.env.DATABASE_URL);
-    const ssl =
-      url.searchParams.get('sslmode') === 'require' ||
-      url.searchParams.get('ssl') === 'true';
-    return {
-      host: url.hostname,
-      port: Number(url.port || 5432),
-      user: decodeURIComponent(url.username),
-      password: decodeURIComponent(url.password),
-      database: url.pathname.replace(/^\//, ''),
-      ssl: ssl ? { rejectUnauthorized: false } : undefined,
-    };
-  }
-  return {
-    host: process.env.DB_HOST ?? 'localhost',
-    port: Number(process.env.DB_PORT ?? 5432),
-    user: process.env.DB_USER ?? 'postgres',
-    password: process.env.DB_PASSWORD ?? 'postgres',
-    database: process.env.DB_NAME ?? 'dori',
-    ssl:
-      process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
-  };
+  return postgresClientConfig();
 }
 
 function percentile(sorted: number[], ratio: number): number {

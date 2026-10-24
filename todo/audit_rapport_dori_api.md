@@ -111,7 +111,7 @@ Les notes sur 10 restent indicatives : elles ne proviennent pas d'une grille nor
 | #   | Gravité | Fichier(s)                     | Problème                                                                                                                                          | Correctif proposé                                                                          |
 | --- | ------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | CF1 | Traité  | `redis.module.ts`              | `swaggerExport` est lu via `ConfigService`; les accès environnement sont centralisés dans la configuration. | — |
-| CF2 | Bien    | `core/config/configuration.ts` | Config centralisée, validée au démarrage, DATABASE_URL + variables individuelles supportées                                                       | —                                                                                          |
+| CF2 | Traité  | `core/config/configuration.ts`, `core/database/postgres-connection.ts` | La connexion utilise une seule source de vérité `DATABASE_URL`, validée et partagée par NestJS, les scripts DB et les runners de performance. `DB_POOL_MAX` reste un réglage indépendant. | — |
 | CF3 | Traité  | `configuration.ts`, `.env.example` | `appointmentExpiry.intervalMinutes` est configurable par `APPOINTMENT_EXPIRY_INTERVAL_MINUTES` et validé entre 1 et 1440. | — |
 
 ### AXE 8 — Sécurité
@@ -487,3 +487,9 @@ _Audit soldé dans le code le 2026-10-24 : chaque constat est corrigé ou assort
 <!-- CHECKPOINT id="ckpt_mvmehkc1_g1qcla" time="2026-10-24T12:54:12.529Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 <!-- CHECKPOINT id="ckpt_mvmeufb1_uza0rg" time="2026-10-24T13:04:12.541Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvmgr4qd_4v32ii" time="2026-10-24T13:57:38.101Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvmh8lyg_kzmay5" time="2026-10-24T14:11:13.576Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvmhlgxf_kkmge8" time="2026-10-24T14:21:13.587Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

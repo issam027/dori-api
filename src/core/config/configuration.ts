@@ -1,3 +1,5 @@
+import { postgresConnectionSettings } from '../database/postgres-connection';
+
 export const DEFAULT_TIMEZONE = 'Africa/Tunis';
 
 function parseInteger(
@@ -38,7 +40,6 @@ export function validateEnvironment(
 
   for (const [name, min, max] of [
     ['PORT', 1, 65535],
-    ['DB_PORT', 1, 65535],
     ['DB_POOL_MAX', 1, 100],
     ['REDIS_PORT', 1, 65535],
     ['REFRESH_TOKEN_EXPIRES_DAYS', 1, 365],
@@ -62,13 +63,7 @@ export function validateEnvironment(
     }
   }
 
-  if (environment.DATABASE_URL) {
-    try {
-      new URL(String(environment.DATABASE_URL));
-    } catch {
-      throw new Error('DATABASE_URL must be a valid URL');
-    }
-  }
+  postgresConnectionSettings(environment as NodeJS.ProcessEnv);
 
   if (environment.PUBLIC_WEB_URL) {
     try {
@@ -98,31 +93,7 @@ export default () => {
       ]),
   );
 
-  let dbHost = process.env.DB_HOST ?? 'localhost';
-  let dbPort = parseInteger('DB_PORT', process.env.DB_PORT, 5432);
-  let dbUser = process.env.DB_USER ?? 'postgres';
-  let dbPassword = process.env.DB_PASSWORD ?? 'postgres';
-  let dbName = process.env.DB_NAME ?? 'dori';
-  let dbSsl = process.env.DB_SSL === 'true';
-
-  if (process.env.DATABASE_URL) {
-    try {
-      const parsed = new URL(process.env.DATABASE_URL);
-      dbHost = parsed.hostname;
-      dbPort = parseInteger('DATABASE_URL port', parsed.port, 5432);
-      dbUser = decodeURIComponent(parsed.username);
-      dbPassword = decodeURIComponent(parsed.password);
-      dbName = parsed.pathname.replace(/^\//, '') || dbName;
-      if (
-        parsed.searchParams.get('sslmode') === 'require' ||
-        parsed.searchParams.get('ssl') === 'true'
-      ) {
-        dbSsl = true;
-      }
-    } catch (error) {
-      throw new Error(`Invalid DATABASE_URL: ${(error as Error).message}`);
-    }
-  }
+  const databaseConnection = postgresConnectionSettings();
 
   return {
     port: parseInteger('PORT', process.env.PORT, 3000),
@@ -151,12 +122,8 @@ export default () => {
     },
 
     database: {
-      host: dbHost,
-      port: dbPort,
-      username: dbUser,
-      password: dbPassword,
-      name: dbName,
-      ssl: dbSsl,
+      url: databaseConnection.url,
+      ssl: databaseConnection.ssl,
       poolMax: parseInteger('DB_POOL_MAX', process.env.DB_POOL_MAX, 10),
     },
 
