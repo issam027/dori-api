@@ -17,7 +17,9 @@ interface ScenarioResult {
   maxMs: number;
 }
 
-const baseUrl = process.env.PERF_BASE_URL ?? 'http://localhost:3000';
+const apiBaseUrl = (
+  process.env.PERF_BASE_URL ?? 'https://dori-api.vercel.app/api/v1'
+).replace(/\/$/, '');
 const requests = Number(process.env.PERF_REQUESTS ?? 20);
 const concurrency = Number(process.env.PERF_CONCURRENCY ?? 4);
 const requestTimeoutMs = Number(process.env.PERF_REQUEST_TIMEOUT_MS ?? 15000);
@@ -104,7 +106,7 @@ async function benchmark(
 }
 
 async function main(): Promise<void> {
-  const loginResponse = await fetch(`${baseUrl}/api/v1/auth/login`, {
+  const loginResponse = await fetch(`${apiBaseUrl}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -142,35 +144,35 @@ async function main(): Promise<void> {
     new URLSearchParams(values).toString();
 
   const scenarios = [
-    ['health', `${baseUrl}/api/v1/monitoring/health`, false],
+    ['health', `${apiBaseUrl}/monitoring/health`, false],
     [
       'persons-search',
-      `${baseUrl}/api/v1/persons?${query({ siteId, search: 'Perf-', page: '1', pageSize: '50' })}`,
+      `${apiBaseUrl}/persons?${query({ siteId, search: 'Perf-', page: '1', pageSize: '50' })}`,
       true,
     ],
     [
       'registrations-list',
-      `${baseUrl}/api/v1/registrations?${query({ siteId, dateFrom: date(from), dateTo: date(today), page: '1', pageSize: '50' })}`,
+      `${apiBaseUrl}/registrations?${query({ siteId, dateFrom: date(from), dateTo: date(today), page: '1', pageSize: '50' })}`,
       true,
     ],
     [
       'notifications-list',
-      `${baseUrl}/api/v1/notifications?${query({ siteId, dateFrom: date(from), dateTo: date(today), page: '1', pageSize: '50' })}`,
+      `${apiBaseUrl}/notifications?${query({ siteId, dateFrom: date(from), dateTo: date(today), page: '1', pageSize: '50' })}`,
       true,
     ],
     [
       'monitoring-live',
-      `${baseUrl}/api/v1/monitoring/live?${query({ siteId })}`,
+      `${apiBaseUrl}/monitoring/live?${query({ siteId })}`,
       true,
     ],
     [
       'report-series',
-      `${baseUrl}/api/v1/monitoring/series?${query({ siteId, from: `${date(from)}T00:00:00Z`, to: `${date(today)}T23:59:59Z`, bucket: 'day', timezone: 'Europe/Berlin' })}`,
+      `${apiBaseUrl}/monitoring/series?${query({ siteId, from: `${date(from)}T00:00:00Z`, to: `${date(today)}T23:59:59Z`, bucket: 'day', timezone: 'Africa/Tunis' })}`,
       true,
     ],
     [
       'queue-sessions',
-      `${baseUrl}/api/v1/queues/${queueId}/sessions?page=1&pageSize=50`,
+      `${apiBaseUrl}/queues/${queueId}/sessions?page=1&pageSize=50`,
       true,
     ],
   ] as const;
@@ -197,7 +199,7 @@ async function main(): Promise<void> {
   );
   const output = {
     generatedAt: new Date().toISOString(),
-    baseUrl,
+    apiBaseUrl,
     dataset: { siteId, queueId },
     configuration: {
       requests,

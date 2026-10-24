@@ -60,9 +60,9 @@ SELECT v.name, v.location, v.site_type, 'Africa/Tunis', 'TND', TRUE, 15, 8,
 FROM dorify.dori_user manager
 CROSS JOIN (VALUES
   ('PERF-01 - Mairie de Tunis', 'Avenue de Carthage, Tunis', 'public', TIME '08:00', TIME '16:30', TIME '12:30', TIME '13:30'),
-  ('PERF-01 - Hopital de Tunis', 'Bab Saadoun, Tunis', 'hospital', TIME '07:00', TIME '20:00', TIME '12:30', TIME '13:00'),
-  ('PERF-01 - Cabinet medical Tunis', 'El Menzah, Tunis', 'medical_office', TIME '08:00', TIME '19:00', TIME '13:00', TIME '14:00'),
-  ('PERF-01 - Restaurant a emporter Tunis', 'Lac 2, Tunis', 'restaurant', TIME '10:00', TIME '23:00', TIME '15:00', TIME '16:00')
+  ('PERF-01 - Hopital de Tunis', 'Bab Saadoun, Tunis', 'public', TIME '07:00', TIME '20:00', TIME '12:30', TIME '13:00'),
+  ('PERF-01 - Cabinet medical Tunis', 'El Menzah, Tunis', 'private', TIME '08:00', TIME '19:00', TIME '13:00', TIME '14:00'),
+  ('PERF-01 - Restaurant a emporter Tunis', 'Lac 2, Tunis', 'private', TIME '10:00', TIME '23:00', TIME '15:00', TIME '16:00')
 ) v(name, location, site_type, opens_at, closes_at, break_start, break_end)
 WHERE manager.username = 'perf01_manager';
 
@@ -85,7 +85,7 @@ INSERT INTO dorify.dori_queue (
   locale, currency, created_by_user_id, updated_by_user_id
 )
 SELECT v.code, s.site_id, v.name, v.wait_minutes, 4, TRUE, 15, 8,
-       '07:00', '20:00', '12:30', '13:00', 'fr', 'EUR', manager.user_id,
+       '07:00', '20:00', '12:30', '13:00', 'fr', 'TND', manager.user_id,
        manager.user_id
 FROM dorify.dori_site s
 CROSS JOIN dorify.dori_user manager
@@ -146,7 +146,7 @@ WHERE s.site_name LIKE 'PERF-01 - %'
   AND manager.username = 'perf01_manager'
   AND qt.is_default;
 
--- 5,000 reusable people, enough for search, pagination and report queries.
+-- 12,500 reusable people per site (50,000 total) for search, pagination and reports.
 INSERT INTO dorify.dori_person (
   site_id, first_name, last_name, email, phone_number, birth_date,
   language_preference, created_by_user_id, updated_by_user_id,
@@ -299,7 +299,7 @@ SELECT p.person_id, current_load.queue_id, tier.tier_id, CURRENT_DATE,
        CURRENT_DATE + TIME '07:00' + current_load.n * INTERVAL '2 minutes', CURRENT_TIMESTAMP
 FROM current_load
 JOIN dorify.dori_person p ON p.site_id = current_load.site_id
- AND p.last_name = 'Perf-' || LPAD((((current_load.global_n - 1) % 12500) + 1)::text, 6, '0')
+ AND p.last_name = 'Perf-' || LPAD(current_load.n::text, 6, '0')
 JOIN dorify.dori_service_tier tier ON tier.tier_code = CASE
   WHEN current_load.n % 25 = 0 THEN 'premium'
   WHEN current_load.n % 5 = 0 THEN 'standard'
@@ -314,7 +314,8 @@ DO $$ BEGIN RAISE NOTICE 'stage=current-load'; END $$;
 -- Future workload always spans the next two weeks from the execution date.
 WITH future_load AS (
   SELECT q.queue_id, q.queue_code, q.site_id, d.day, n,
-         ROW_NUMBER() OVER (ORDER BY d.day, q.queue_id, n) AS global_n
+         ROW_NUMBER() OVER (ORDER BY d.day, q.queue_id, n) AS global_n,
+         ROW_NUMBER() OVER (PARTITION BY q.queue_id ORDER BY d.day, n) AS queue_n
   FROM dorify.dori_queue q
   JOIN dorify.dori_site s ON s.site_id = q.site_id
   CROSS JOIN LATERAL (
@@ -342,7 +343,7 @@ SELECT p.person_id, future_load.queue_id, tier.tier_id, future_load.day,
        CURRENT_TIMESTAMP - ((future_load.global_n % 20) * INTERVAL '1 hour'), CURRENT_TIMESTAMP
 FROM future_load
 JOIN dorify.dori_person p ON p.site_id = future_load.site_id
- AND p.last_name = 'Perf-' || LPAD((((future_load.global_n - 1) % 12500) + 1)::text, 6, '0')
+ AND p.last_name = 'Perf-' || LPAD((750 + future_load.queue_n)::text, 6, '0')
 JOIN dorify.dori_service_tier tier ON tier.tier_code = CASE
   WHEN future_load.n % 10 = 0 THEN 'premium'
   WHEN future_load.n % 3 = 0 THEN 'standard'

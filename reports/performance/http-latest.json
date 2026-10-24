@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-10-24T06:37:53.944Z",
-  "baseUrl": "http://localhost:3000",
+  "generatedAt": "2026-10-24T07:10:55.269Z",
+  "apiBaseUrl": "https://dori-api.vercel.app/api/v1",
   "dataset": {
-    "siteId": "27663130-d0ca-412f-b438-e0921b80a2cc",
-    "queueId": "10036c25-fddb-4b79-8775-47e037800184"
+    "siteId": "0e9ca23b-de8a-4be0-a0a2-5ef423afd549",
+    "queueId": "7a316b23-fe1d-44ac-92c4-b6b407d4e60b"
   },
   "configuration": {
     "requests": 20,
@@ -18,81 +18,78 @@
       "name": "health",
       "requests": 20,
       "errors": 0,
-      "throughputPerSecond": 21.54,
-      "p50Ms": 109.45,
-      "p95Ms": 747.41,
-      "p99Ms": 755.89,
-      "maxMs": 755.89
+      "throughputPerSecond": 7.37,
+      "p50Ms": 134.54,
+      "p95Ms": 324.18,
+      "p99Ms": 2357.77,
+      "maxMs": 2357.77
     },
     {
       "name": "persons-search",
       "requests": 20,
       "errors": 0,
-      "throughputPerSecond": 5.92,
-      "p50Ms": 538.53,
-      "p95Ms": 1196.91,
-      "p99Ms": 1201.41,
-      "maxMs": 1201.41
+      "throughputPerSecond": 15.94,
+      "p50Ms": 216.03,
+      "p95Ms": 346.66,
+      "p99Ms": 522.7,
+      "maxMs": 522.7
     },
     {
       "name": "registrations-list",
       "requests": 20,
       "errors": 0,
-      "throughputPerSecond": 3.68,
-      "p50Ms": 1028.55,
-      "p95Ms": 1251.98,
-      "p99Ms": 1259.13,
-      "maxMs": 1259.13
+      "throughputPerSecond": 6.66,
+      "p50Ms": 563.96,
+      "p95Ms": 755.62,
+      "p99Ms": 797.55,
+      "maxMs": 797.55
     },
     {
       "name": "notifications-list",
       "requests": 20,
       "errors": 0,
-      "throughputPerSecond": 4.15,
-      "p50Ms": 975.76,
-      "p95Ms": 996.6,
-      "p99Ms": 998.87,
-      "maxMs": 998.87
+      "throughputPerSecond": 4.78,
+      "p50Ms": 823.57,
+      "p95Ms": 892.74,
+      "p99Ms": 906.59,
+      "maxMs": 906.59
     },
     {
       "name": "monitoring-live",
       "requests": 20,
       "errors": 0,
-      "throughputPerSecond": 7.07,
-      "p50Ms": 435.7,
-      "p95Ms": 1088.82,
-      "p99Ms": 1102.55,
-      "maxMs": 1102.55
+      "throughputPerSecond": 18.87,
+      "p50Ms": 179.48,
+      "p95Ms": 265.97,
+      "p99Ms": 290.41,
+      "maxMs": 290.41
     },
     {
       "name": "report-series",
       "requests": 20,
       "errors": 0,
-      "throughputPerSecond": 1.27,
-      "p50Ms": 3382.87,
-      "p95Ms": 3567.29,
-      "p99Ms": 3568.01,
-      "maxMs": 3568.01
+      "throughputPerSecond": 0.96,
+      "p50Ms": 3638.54,
+      "p95Ms": 6291.41,
+      "p99Ms": 6295.64,
+      "maxMs": 6295.64
     },
     {
       "name": "queue-sessions",
       "requests": 20,
       "errors": 0,
-      "throughputPerSecond": 7.3,
-      "p50Ms": 527.53,
-      "p95Ms": 547.54,
-      "p99Ms": 551.57,
-      "maxMs": 551.57
+      "throughputPerSecond": 18.46,
+      "p50Ms": 185.14,
+      "p95Ms": 304.35,
+      "p99Ms": 319.39,
+      "maxMs": 319.39
     }
   ],
   "passed": false,
   "violations": [
     "health",
-    "persons-search",
     "registrations-list",
     "notifications-list",
-    "monitoring-live",
-    "report-series",
-    "queue-sessions"
+    "report-series"
   ]
 }
