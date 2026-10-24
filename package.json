@@ -28,6 +28,11 @@
     "db:schema": "ts-node -r tsconfig-paths/register scripts/db-init.ts",
     "db:seed": "ts-node -r tsconfig-paths/register scripts/db-init.ts --seed",
     "db:verify": "ts-node -r tsconfig-paths/register scripts/db-verify.ts",
+    "perf:seed": "ts-node -r tsconfig-paths/register scripts/performance/perf-seed-runner.ts inject",
+    "perf:seed:clean": "ts-node -r tsconfig-paths/register scripts/performance/perf-seed-runner.ts clean",
+    "perf:seed:refresh": "ts-node -r tsconfig-paths/register scripts/performance/perf-seed-runner.ts refresh",
+    "perf:http": "ts-node -r tsconfig-paths/register scripts/performance/perf-http-runner.ts",
+    "perf:explain": "ts-node -r tsconfig-paths/register scripts/performance/perf-explain-runner.ts",
     "swagger:export": "ts-node -r tsconfig-paths/register scripts/swagger-export.ts",
     "uuid:verify": "ts-node -r tsconfig-paths/register scripts/uuid-verify.ts",
     "db:reset": "ts-node -r tsconfig-paths/register scripts/db-init.ts --seed --force"

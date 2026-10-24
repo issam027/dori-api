@@ -33,6 +33,7 @@ export function validateEnvironment(
   for (const [name, min, max] of [
     ['PORT', 1, 65535],
     ['DB_PORT', 1, 65535],
+    ['DB_POOL_MAX', 1, 100],
     ['REDIS_PORT', 1, 65535],
     ['REFRESH_TOKEN_EXPIRES_DAYS', 1, 365],
     ['SECURITY_MAX_FAILED_ATTEMPTS', 1, 100],
@@ -132,6 +133,7 @@ export default () => {
       password: dbPassword,
       name: dbName,
       ssl: dbSsl,
+      poolMax: parseInteger('DB_POOL_MAX', process.env.DB_POOL_MAX, 10),
     },
 
     redis: {

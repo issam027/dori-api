@@ -14,6 +14,7 @@ describe('validateEnvironment', () => {
     [{ ...valid, JWT_SECRET: undefined }, 'JWT_SECRET'],
     [{ ...valid, PORT: 'NaN' }, 'PORT'],
     [{ ...valid, DB_PORT: '70000' }, 'DB_PORT'],
+    [{ ...valid, DB_POOL_MAX: '0' }, 'DB_POOL_MAX'],
     [{ ...valid, DATABASE_URL: 'not-a-url' }, 'DATABASE_URL'],
     [{ ...valid, PUBLIC_WEB_URL: 'ftp://example.com' }, 'PUBLIC_WEB_URL'],
   ])('rejects an unsafe environment', (environment, message) => {

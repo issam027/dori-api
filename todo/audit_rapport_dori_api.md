@@ -1,5 +1,5 @@
 # Rapport d'Audit — dori-api
-> Généré le 2026-10-24 | Lecture seule — PHASE 1 + PHASE 2 + PHASE 3
+> Généré le 2026-10-24 | Rapport corrigé et vérifié sur le dépôt — PHASE 1 + PHASE 2 + PHASE 3
 
 ---
 
@@ -11,12 +11,12 @@ globaux, intercepteurs de sérialisation, config validée au démarrage, pool DB
 serverless). Les risques principaux sont concentrés sur la **compatibilité serverless** (workers
 `@Cron` + WebSockets incompatibles avec Vercel), quelques fuites de `process.env` hors config, une
 verbosité des fichiers `any` dans les tests, des `SELECT *` répandus, et un couplage entre
-`NotificationsRepository` et la couche de templates.
+`RegistrationsRepository` et la couche de templates.
 
 **5 principaux risques :**
-1. 🔴 **Serverless** – Les 4 workers `@Cron` (DailyReset, AppointmentExpiry, NotificationWorker, QueueEstimation) et le WebSocket gateway tournent dans l'instance NestJS et sont silencieusement ignorés par Vercel (aucun thread persistant), créant une **régression silencieuse en production**.
+1. 🔴 **Serverless** – Les 4 workers `@Cron` (DailyReset, AppointmentExpiry, NotificationWorker, QueueEstimation) et le WebSocket gateway reposent sur une instance NestJS persistante, modèle que Vercel serverless ne garantit pas. Leur exécution est donc absente ou non fiable en production, avec un risque de **régression silencieuse**.
 2. 🔴 **process.env hors config** – `redis.module.ts:29` lit `process.env.SWAGGER_EXPORT` directement au lieu de passer par le `ConfigService` injecté.
-3. 🟠 **SELECT \*** – 19 requêtes SQL `SELECT *` exposent l'application aux colonnes futures (password_hash peut être retournée si un RETURNING * est rajouté ou si une migration ajoute une colonne sensible).
+3. 🟠 **SELECT \* / RETURNING \*** – 36 occurrences textuelles ont été relevées dans `src/`, dont 3 lectures `SELECT *` sur `dori_user`. Le risque prioritaire est la remontée accidentelle de colonnes sensibles ou nouvelles hors du modèle interne ; toutes les occurrences n'ont toutefois pas la même criticité.
 4. 🟠 **Duplication de logique de rang hiérarchique** – La vérification anti-escalade est dupliquée dans `auth.service.ts` (logout force) et `users.service.ts` (création/modification d'utilisateur), avec des constantes magiques (`5`, `3`, `4`) non partagées.
 5. 🟡 **TypeScript strict partiel** – `strict: true` est absent du tsconfig (seuls `strictNullChecks` + `noImplicitAny` sont activés). `transformKeysToCamel` (serialization.interceptor.ts) utilise des signatures `any` explicites.
 
@@ -30,6 +30,19 @@ verbosité des fichiers `any` dans les tests, des `SELECT *` répandus, et un co
 | Tests | 7/10 | Bonne couverture services/repositories, `as any` répandus dans les fixtures de test |
 | Serverless | 5/10 | Point d'entrée et instance cachée sont excellents ; workers Cron = bombe silencieuse |
 | Maintenabilité | 7/10 | Code lisible, duplication modérée, fichiers services très longs (813 lignes) |
+
+### Périmètre de vérification et limites
+
+Les constats les plus critiques ont été revérifiés directement dans le dépôt le 2026-10-24 :
+
+- 4 décorateurs `@Cron` sont présents et `ScheduleModule`, `WorkersModule` et `RealtimeModule` sont importés inconditionnellement dans `AppModule` ;
+- aucun `vercel.json` n'est présent ;
+- hors configuration et tests, le seul accès direct à `process.env` trouvé est dans `redis.module.ts` ;
+- 36 occurrences textuelles de `SELECT *` ou `RETURNING *` sont présentes dans `src/`, dont 3 lectures de `dori_user` ;
+- aucune utilisation de `@nestjs/bullmq` ou `bullmq` n'a été trouvée dans `src/` ;
+- `typeorm@1.1.1` est réellement installé et verrouillé dans `package-lock.json`.
+
+Les notes sur 10 restent indicatives : elles ne proviennent pas d'une grille normalisée. De même, la taille d'un service est un signal de complexité, pas une preuve suffisante qu'un découpage architectural est nécessaire. Les modifications à fort impact doivent être précédées de tests de non-régression.
 
 ---
 
@@ -69,7 +82,7 @@ verbosité des fichiers `any` dans les tests, des `SELECT *` répandus, et un co
 
 | # | Gravité | Fichier(s) | Problème | Correctif proposé |
 |---|---------|-----------|----------|-------------------|
-| T1 | Majeur | `tsconfig.json` | `strict: true` absent. Seuls `strictNullChecks` + `noImplicitAny` sont activés, mais `strictPropertyInitialization`, `strictFunctionTypes`, `noImplicitReturns`, `noUncheckedIndexedAccess` sont désactivés. | Activer `strict: true` et corriger les erreurs en cascade (peu probables vu le niveau actuel) |
+| T1 | Majeur | `tsconfig.json` | `strict: true` absent. `strictNullChecks`, `noImplicitAny` et `strictBindCallApply` sont activés. `strictPropertyInitialization` et `strictFunctionTypes` seraient activés par `strict`, tandis que `noImplicitReturns` et `noUncheckedIndexedAccess` doivent être configurés séparément. | Exécuter d'abord `npx tsc --noEmit --strict` pour mesurer l'écart, puis activer les options progressivement ; ne pas présumer que le changement est non-breaking |
 | T2 | Majeur | `serialization.interceptor.ts:27,38` | `transformKeysToCamel(data: any): any` — signature `any` inutile. TypeScript peut utiliser `unknown` avec des gardes de type. | Remplacer par `(data: unknown): unknown` avec les gardes de type déjà présentes |
 | T3 | Mineur | `dori.exception.ts:44` | `(data as any).message` — assertion `any` pour accéder à `.message`. | Utiliser `(data as Record<string, unknown>).message` |
 | T4 | Mineur | `.eslintrc.js:23` | `'@typescript-eslint/no-explicit-any': 'off'` — la règle `no-explicit-any` est désactivée. Elle ne détecte donc pas les 17 occurrences de `as any` dans les specs. | Passer en `'warn'` pour les fichiers de production (ne pas toucher aux specs) |
@@ -88,7 +101,7 @@ verbosité des fichiers `any` dans les tests, des `SELECT *` répandus, et un co
 | # | Gravité | Fichier(s) | Problème | Correctif proposé |
 |---|---------|-----------|----------|-------------------|
 | E1 | Bien | `core/errors/` | Global exception filter + error catalog + DoriException — architecture exemplaire | — |
-| E2 | Majeur | `error-catalog.ts:117-120` | `QUEUE_EMPTY` a un status HTTP `200`. Une exception avec un status 200 brise la convention : une exception ne doit jamais retourner 200. | Traiter `QUEUE_EMPTY` comme une réponse métier normale dans le service (retourner un objet avec `code: 'QUEUE_EMPTY'`), pas comme une exception |
+| E2 | Majeur | `error-catalog.ts:117-120`, `queue-engine.service.ts:302` | `QUEUE_EMPTY` a un status HTTP `200` mais est levée comme une exception. Le `ResponseInterceptor` sait déjà laisser passer une enveloppe métier. | Retourner une réponse métier normale avec `code: 'QUEUE_EMPTY'`, pas une exception. Ne pas utiliser `204` si une enveloppe JSON doit être retournée, car une réponse 204 ne doit pas avoir de corps |
 | E3 | Mineur | `global-exception.filter.ts:47-64` | Table de correspondance code↔traduction dupliquée dans le filtre alors qu'elle existe déjà dans `ERROR_CATALOG`. | Lire `ERROR_CATALOG[code]` directement |
 
 ### AXE 7 — Configuration
@@ -103,7 +116,7 @@ verbosité des fichiers `any` dans les tests, des `SELECT *` répandus, et un co
 
 | # | Gravité | Fichier(s) | Problème | Correctif proposé |
 |---|---------|-----------|----------|-------------------|
-| S1 | Majeur | `auth.repository.ts:37,48` | `SELECT * FROM dorify.dori_user` retourne `password_hash`, `failed_attempts`, `locked_until`. La sérialisation globale filtre les champs sensibles, mais s'appuie sur la liste `SENSITIVE_FIELDS` du `SerializationInterceptor` — risque si un chemin bypass l'intercepteur. | Projeter explicitement les colonnes nécessaires dans toutes les requêtes (pas de SELECT *) |
+| S1 | Majeur | `auth.repository.ts:37,48,120` | Trois `SELECT * FROM dorify.dori_user` peuvent retourner `password_hash`, `failed_attempts`, `locked_until`. Certaines données sont légitimement nécessaires à l'authentification, mais la sécurité publique repose alors en partie sur `SENSITIVE_FIELDS` et l'intercepteur de sérialisation. | Projeter explicitement les colonnes requises et distinguer le modèle interne d'authentification du DTO public ; conserver `password_hash` uniquement dans les méthodes qui en ont besoin |
 | S2 | Bien | `serialization.interceptor.ts:19-25` | `SENSITIVE_FIELDS` filtre `password_hash`, `refresh_token_hash`, `password` avant sérialisation | — |
 | S3 | Bien | `main.ts:27-47` | Helmet configuré avec CSP explicite | — |
 | S4 | Bien | `auth.service.ts:25-27` | Tokens de rafraîchissement hashés SHA-256 avant stockage | — |
@@ -114,8 +127,8 @@ verbosité des fichiers `any` dans les tests, des `SELECT *` répandus, et un co
 
 | # | Gravité | Fichier(s) | Problème | Correctif proposé |
 |---|---------|-----------|----------|-------------------|
-| DB1 | Majeur | 19 requêtes `SELECT *` (voir liste ci-dessus) | Récupération de toutes les colonnes — coût réseau, risque de colonnes sensibles dans les réponses, fragile aux migrations | Projeter uniquement les colonnes nécessaires |
-| DB2 | Bien | `database.module.ts:34-39` | Pool `max: 1`, `idleTimeoutMillis: 10000`, `connectionTimeoutMillis: 5000` — parfaitement adapté au serverless | — |
+| DB1 | Majeur | 36 occurrences textuelles `SELECT *` / `RETURNING *` dans `src/` | Récupération de toutes les colonnes — coût réseau, risque de colonnes sensibles dans les réponses, fragilité aux migrations. Le comptage inclut des usages internes de criticité variable. | Prioriser les 3 `SELECT *` sur `dori_user`, puis les résultats exposés par l'API et les requêtes fréquentes ; conserver un modèle interne distinct lorsque `password_hash` est nécessaire à l'authentification |
+| DB2 | Bien | `database.module.ts:34-41` | Pool configurable via `DB_POOL_MAX` (défaut 10), avec `idleTimeoutMillis: 10000` et `connectionTimeoutMillis: 5000`. La précédente limite Aiven à une connexion a été retirée pour Neon. | Ajuster `DB_POOL_MAX` selon le nombre d'instances et utiliser l'endpoint poolé Neon |
 | DB3 | Bien | `migration-runner.ts` + `database-seed.service.ts` | Migrations SQL versionnées, exécution idempotente | — |
 | DB4 | Bien | `registrations.repository.ts:80-81` | Advisory lock `pg_advisory_xact_lock` pour la gestion des slots — approche correcte | — |
 | DB5 | Mineur | `database-seed.service.ts:4-5` | Import de `fs` et `path` (Node.js built-ins) dans un service NestJS. La lecture de fichier SQL fonctionne en dev mais peut échouer sur Vercel (bundle serverless, pas de système de fichiers accessible au runtime). | Intégrer les migrations SQL comme chaînes de caractères (`import`) plutôt que `fs.readFileSync` au runtime, ou conditionner à `isVercel === false` |
@@ -125,7 +138,7 @@ verbosité des fichiers `any` dans les tests, des `SELECT *` répandus, et un co
 
 | # | Gravité | Fichier(s) | Problème | Correctif proposé |
 |---|---------|-----------|----------|-------------------|
-| SL1 | **Critique** | `workers/` (4 workers Cron) | `@Cron(EVERY_MINUTE)` ne s'exécute jamais sur Vercel — les invocations serverless sont éphémères et sans thread persistant. La `isRunning` flag en mémoire est réinitialisée à chaque invocation. | Désactiver `WorkersModule` sur Vercel ; migrer vers Vercel Cron (`vercel.json` `crons` section) avec des endpoints HTTP dédiés et sécurisés par une clé secrète |
+| SL1 | **Critique** | `workers/` (4 workers Cron) | `@Cron(EVERY_MINUTE)` ne constitue pas un ordonnanceur fiable sur Vercel : les invocations serverless sont éphémères et sans processus persistant garanti. La `isRunning` flag en mémoire est locale à une instance et ne protège pas contre les exécutions concurrentes distribuées. | Désactiver `WorkersModule` sur Vercel ; migrer vers Vercel Cron (`vercel.json` `crons` section) avec quatre endpoints HTTP dédiés, authentifiés, idempotents et protégés au niveau base de données contre la concurrence |
 | SL2 | **Critique** | `realtime.module.ts` | WebSocket non supporté sur Vercel. `ConfiguredIoAdapter` est conditionné sur `!isVercel` dans `main.ts`, mais `RealtimeModule` est toujours importé (coût de boot, risques d'erreur). | Conditionner l'import de `RealtimeModule` dans `app.module.ts` sur `!isVercel`, ou extraire en service séparé (Socket.IO standalone + Redis adapter) |
 | SL3 | Majeur | `app.module.ts:3,45` | `ScheduleModule.forRoot()` enregistré inconditionnellement. Sur Vercel, il ne fait rien mais charge du code inutile. | Enregistrer `ScheduleModule.forRoot()` uniquement si `!isVercel` |
 | SL4 | Majeur | `database-seed.service.ts:52-55` | `fs.readFileSync(seedPath)` : lit un fichier depuis le disque au runtime. Sur Vercel, les fichiers dans `dist/` sont présents après le build, mais **`__dirname` pointe vers un chemin différent** dans le bundle edge/serverless. | Vérifier le comportement sur Vercel ou conditionner `AUTO_RUN_MIGRATIONS` à `false` (ce qui est déjà le défaut) |
@@ -174,7 +187,7 @@ verbosité des fichiers `any` dans les tests, des `SELECT *` répandus, et un co
 
 | # | Gravité | Fichier(s) | Problème | Correctif proposé |
 |---|---------|-----------|----------|-------------------|
-| DP1 | **Critique** | `package.json:68` | `"typeorm": "^1.1.1"` — TypeORM version 1.x n'existe pas (la version stable est 0.3.x). Probablement une typo pour `^0.3.20`. Vérifier ce qui est réellement installé. | Corriger en `"typeorm": "^0.3.20"` et vérifier `package-lock.json` |
+| DP1 | À vérifier | `package.json:68`, `package-lock.json` | `typeorm@1.1.1` existe bien et est réellement installé. `@nestjs/typeorm@11.0.3` accepte `^0.3.0 || ^1.0.0-dev`. En revanche, l'application semble utiliser directement `pg`, ce qui peut rendre les deux dépendances TypeORM inutiles. | Rechercher leurs usages réels. Si aucun usage n'existe, retirer `typeorm` et `@nestjs/typeorm`. Sinon conserver la version actuelle ou préparer une migration volontaire ; ne pas rétrograder automatiquement vers `0.3.x` |
 | DP2 | Majeur | `package.json:36-37` | `@nestjs/bullmq` et `bullmq` sont en `dependencies` mais **aucun import de `@nestjs/bullmq`** n'a été trouvé dans le code source. Dépendances mortes qui alourdissent le bundle. | Vérifier et supprimer si inutilisées (réduction du cold start Vercel) |
 | DP3 | Majeur | `package.json:43-44` | `@nestjs/platform-socket.io`, `@nestjs/websockets`, `@socket.io/redis-adapter`, `socket.io` sont des dépendances de production. Si les WebSockets sont désactivés sur Vercel, ces librairies alourdiront inutilement le bundle serverless. | Conditionner ou externaliser le bundle WebSocket |
 | DP4 | Mineur | `package.json:50` | `@types/cookie-parser` dans `dependencies` au lieu de `devDependencies` | Déplacer dans `devDependencies` |
@@ -253,6 +266,8 @@ src/
 └── cron-handlers/                   # (NOUVEAU) Endpoints HTTP pour Vercel Cron Jobs
     ├── daily-reset.handler.ts
     ├── appointment-expiry.handler.ts
+    ├── notification-worker.handler.ts
+    ├── queue-estimation.handler.ts
     └── cron.module.ts
 ```
 
@@ -311,27 +326,27 @@ GET /resource?page=1&pageSize=25&sort=createdAt:desc
 ### 🔴 Étape 1 — Correctifs critiques serverless (risque : faible, effort : moyen)
 **Objectif :** Éviter la régression silencieuse en production Vercel.
 
-1. **SL1/SL2/SL3** — Créer `vercel.json` avec les crons et désactiver `WorkersModule` + `RealtimeModule` + `ScheduleModule` lorsque `VERCEL=1`.
-2. **SL1** — Créer les endpoints HTTP Cron (`/api/internal/cron/daily-reset`, etc.) protégés par une clé secrète (`CRON_SECRET` env var), et les déclarer dans `vercel.json`.
+1. **SL1/SL2/SL3** — Créer `vercel.json` avec les crons et désactiver `WorkersModule` + `RealtimeModule` + `ScheduleModule` lorsque la configuration validée indique Vercel. Éviter de disperser des lectures directes de `VERCEL`.
+2. **SL1** — Créer quatre endpoints HTTP Cron (`daily-reset`, `appointment-expiry`, `notification-worker`, `queue-estimation`) protégés par `CRON_SECRET`, idempotents et munis d'un verrou distribué ou transactionnel, puis les déclarer dans `vercel.json`.
 3. **CF1** — Corriger `redis.module.ts:29` : supprimer `process.env.SWAGGER_EXPORT` et utiliser `ConfigService`.
-4. **DP1** — Corriger `"typeorm": "^1.1.1"` → `"^0.3.20"` et relancer `npm install`.
+4. **DP1/DP2** — Auditer les usages de TypeORM et BullMQ. Retirer uniquement les dépendances réellement inutilisées ; ne pas remplacer automatiquement TypeORM 1.1.1 par 0.3.x.
 
 **Risque :** Faible (ajout conditionnel, pas de changement de comportement en dev)
-**Effort :** ~1 jour
+**Effort :** ~1 à 3 jours selon les contraintes d'idempotence, de verrouillage et de validation sur Vercel
 
 ---
 
 ### 🟠 Étape 2 — Fondations (risque : faible, effort : faible-moyen)
 
-5. **E2** — Traiter `QUEUE_EMPTY` comme réponse normale (pas exception), supprimer de `ERROR_CATALOG` ou changer le status en 204/200 explicite dans le service.
-6. **T1** — Activer `"strict": true` dans `tsconfig.json` et corriger les erreurs.
+5. **E2** — Traiter `QUEUE_EMPTY` comme une réponse métier normale en 200, sans lever d'exception. Ne pas utiliser 204 si l'enveloppe JSON doit être conservée.
+6. **T1** — Mesurer d'abord avec `npx tsc --noEmit --strict`, corriger les erreurs par lots, puis activer `"strict": true`. Évaluer séparément `noImplicitReturns` et `noUncheckedIndexedAccess`.
 7. **T2/T4** — Corriger `transformKeysToCamel(data: any)` → `(data: unknown)` ; passer `no-explicit-any` en `warn`.
 8. **Q2** — Ajouter les path aliases `@core/*`, `@modules/*` dans `tsconfig.json` + `tsconfig.build.json` + `jest` config.
 9. **Q4/Q5** — Supprimer `package.json.backup`, `db:schema` redondant, déplacer `@types/cookie-parser` en devDependencies.
 10. **DP2** — Vérifier et supprimer `@nestjs/bullmq`/`bullmq` si inutilisés.
 
-**Risque :** Faible (non-breaking)
-**Effort :** ~1 jour
+**Risque :** Faible à moyen (`strict` et les aliases peuvent révéler ou introduire des incompatibilités de build/test)
+**Effort :** ~1 à 3 jours après mesure du nombre d'erreurs TypeScript
 
 ---
 
@@ -385,7 +400,7 @@ GET /resource?page=1&pageSize=25&sort=createdAt:desc
 - [ ] `vercel.json` présent avec `maxDuration`, `regions`, `crons`
 - [ ] Zéro `SELECT *` sur `dori_user` (colonnes sensibles)
 - [ ] Zéro `process.env` hors `configuration.ts` et `configuration.spec.ts`
-- [ ] `typeorm` en version `^0.3.x` dans `package.json`
+- [ ] Usage de `typeorm` / `@nestjs/typeorm` justifié et testé, ou dépendances supprimées ; aucune rétrogradation automatique de 1.x vers 0.3.x
 - [ ] `@nestjs/bullmq`/`bullmq` retirés ou justifiés
 - [ ] `strict: true` activé dans `tsconfig.json`
 - [ ] Zéro `any` injustifié dans les fichiers de production (hors tests)
@@ -398,4 +413,4 @@ GET /resource?page=1&pageSize=25&sort=createdAt:desc
 
 ---
 
-*⚠️ PHASE 4 en attente de validation. Aucune modification n'a été appliquée.*
+*⚠️ PHASE 4 en attente de validation. Le présent document a été corrigé après vérification du dépôt ; aucune modification applicative n'a été appliquée.*

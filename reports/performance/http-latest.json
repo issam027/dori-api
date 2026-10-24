@@ -1,0 +1,98 @@
+{
+  "generatedAt": "2026-10-24T06:37:53.944Z",
+  "baseUrl": "http://localhost:3000",
+  "dataset": {
+    "siteId": "27663130-d0ca-412f-b438-e0921b80a2cc",
+    "queueId": "10036c25-fddb-4b79-8775-47e037800184"
+  },
+  "configuration": {
+    "requests": 20,
+    "concurrency": 4,
+    "requestTimeoutMs": 15000,
+    "p95BudgetMs": 500,
+    "p99BudgetMs": 1000,
+    "minThroughput": 10
+  },
+  "results": [
+    {
+      "name": "health",
+      "requests": 20,
+      "errors": 0,
+      "throughputPerSecond": 21.54,
+      "p50Ms": 109.45,
+      "p95Ms": 747.41,
+      "p99Ms": 755.89,
+      "maxMs": 755.89
+    },
+    {
+      "name": "persons-search",
+      "requests": 20,
+      "errors": 0,
+      "throughputPerSecond": 5.92,
+      "p50Ms": 538.53,
+      "p95Ms": 1196.91,
+      "p99Ms": 1201.41,
+      "maxMs": 1201.41
+    },
+    {
+      "name": "registrations-list",
+      "requests": 20,
+      "errors": 0,
+      "throughputPerSecond": 3.68,
+      "p50Ms": 1028.55,
+      "p95Ms": 1251.98,
+      "p99Ms": 1259.13,
+      "maxMs": 1259.13
+    },
+    {
+      "name": "notifications-list",
+      "requests": 20,
+      "errors": 0,
+      "throughputPerSecond": 4.15,
+      "p50Ms": 975.76,
+      "p95Ms": 996.6,
+      "p99Ms": 998.87,
+      "maxMs": 998.87
+    },
+    {
+      "name": "monitoring-live",
+      "requests": 20,
+      "errors": 0,
+      "throughputPerSecond": 7.07,
+      "p50Ms": 435.7,
+      "p95Ms": 1088.82,
+      "p99Ms": 1102.55,
+      "maxMs": 1102.55
+    },
+    {
+      "name": "report-series",
+      "requests": 20,
+      "errors": 0,
+      "throughputPerSecond": 1.27,
+      "p50Ms": 3382.87,
+      "p95Ms": 3567.29,
+      "p99Ms": 3568.01,
+      "maxMs": 3568.01
+    },
+    {
+      "name": "queue-sessions",
+      "requests": 20,
+      "errors": 0,
+      "throughputPerSecond": 7.3,
+      "p50Ms": 527.53,
+      "p95Ms": 547.54,
+      "p99Ms": 551.57,
+      "maxMs": 551.57
+    }
+  ],
+  "passed": false,
+  "violations": [
+    "health",
+    "persons-search",
+    "registrations-list",
+    "notifications-list",
+    "monitoring-live",
+    "report-series",
+    "queue-sessions"
+  ]
+}

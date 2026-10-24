@@ -376,11 +376,12 @@ Précisions d'exploitation : la table est append-only du point de vue applicatif
 
 #### PERF-01 — Mesurer et corriger les performances
 
-- [ ] Créer un dataset volumétrique représentatif.
-- [ ] Mesurer p50/p95/p99 et débit des endpoints prioritaires.
-- [ ] Exécuter `EXPLAIN (ANALYZE, BUFFERS)` sur les requêtes lentes.
+- [x] Créer un dataset volumétrique représentatif et glissant (`scripts/performance/perf-seed.sql`) : 5 000 personnes, 4 files, historique sur 60 jours, charge active du jour, rendez-vous sur les 14 prochains jours, notifications et statistiques d'estimation. Toutes les dates dépendent de `CURRENT_DATE`.
+- [x] Fournir un runner isolé : `npm run perf:seed` pour injecter, `npm run perf:seed:clean` pour nettoyer uniquement les données marquées `PERF-01`, et `npm run perf:seed:refresh` pour nettoyer puis réinjecter avec les dates recalées au jour d'exécution.
+- [x] Mesurer p50/p95/p99 et débit des endpoints prioritaires avec `npm run perf:http`. Baseline Neon (20 requêtes/scénario, concurrence 4) enregistrée dans `reports/performance/http-latest.json`.
+- [x] Exécuter `EXPLAIN (ANALYZE, BUFFERS)` avec `npm run perf:explain`. Plans enregistrés dans `reports/performance/explain-latest.json` ; les listes inscriptions et notifications touchaient respectivement environ 70 004 et 56 060 buffers partagés avant optimisation.
 - [ ] Tester contention de `callNext`, sessions, rapports et workers.
-- [ ] Définir budgets de performance et régression en CI/nightly.
+- [x] Définir des budgets initiaux dans `perf:http` : p95 500 ms, p99 1 000 ms, minimum 10 req/s et zéro erreur. Le runner retourne un code non nul en cas de régression et peut être branché en CI/nightly via variables `PERF_*`.
 - [ ] **Checkpoint :** objectifs chiffrés tenus sur la volumétrie cible.
 
 #### OPS-02 — Industrialiser le déploiement
@@ -552,3 +553,13 @@ Ce rapport décrit l'état observé du dépôt à la date indiquée. Les constat
 <!-- CHECKPOINT id="ckpt_mvkzzapt_ifrx04" time="2026-10-23T13:20:19.457Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 <!-- CHECKPOINT id="ckpt_mvl0c5ox_h825fw" time="2026-10-23T13:30:19.473Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvlzpp9q_j543d8" time="2026-10-24T06:00:37.934Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvm02k8s_tr17zo" time="2026-10-24T06:10:37.948Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvm0ff80_76szb6" time="2026-10-24T06:20:37.968Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvm0sa6f_vrz0sa" time="2026-10-24T06:30:37.960Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvm1555b_s720wx" time="2026-10-24T06:40:37.967Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

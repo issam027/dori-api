@@ -31,9 +31,11 @@ import { DatabaseSeedService } from './database-seed.service';
           configService.get<string>('nodeEnv') === 'development'
             ? ['error', 'warn']
             : false,
-        // Pool adapte au serverless : 1 connexion par instance Vercel
+        // Configurable for the database provider and deployment topology.
+        // Neon pooled connections support concurrency; keep the deployment
+        // value explicit when several serverless instances can scale out.
         extra: {
-          max: 1,
+          max: configService.get<number>('database.poolMax') ?? 10,
           idleTimeoutMillis: 10000,
           connectionTimeoutMillis: 5000,
         },
