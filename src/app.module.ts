@@ -23,7 +23,6 @@ import { QueueEngineModule } from './modules/queue-engine/queue-engine.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { TranslationsModule } from './modules/translations/translations.module';
 import { UsersModule } from './modules/users/users.module';
-import { WorkersModule } from './workers/workers.module';
 import { MonitoringModule } from './modules/monitoring/monitoring.module';
 import { RequestMetricsInterceptor } from './modules/monitoring/request-metrics.interceptor';
 
@@ -82,7 +81,7 @@ const isVercel = isVercelRuntime();
     NotificationsModule,
     TranslationsModule,
     UsersModule,
-    ...(!isVercel ? [WorkersModule] : [CronModule]),
+    CronModule,
     MonitoringModule,
   ],
   providers: [

@@ -30,6 +30,10 @@ export function createOpenApiConfig(
       'Monitoring',
       'Santé technique, métriques et indicateurs d’activité',
     )
+    .addTag(
+      'ScheduledTasks',
+      'Déclenchement interne des traitements automatisés par Vercel Cron',
+    )
     .addBearerAuth(
       {
         type: 'http',
@@ -52,6 +56,15 @@ export function createOpenApiConfig(
         description: 'Jeton public de suivi de position',
       },
       'registration-token',
+    )
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        description:
+          'Secret partagé CRON_SECRET envoyé automatiquement par Vercel Cron',
+      },
+      'cron-secret',
     )
     .build();
   config.info.contact = { name: 'Dori Support' };

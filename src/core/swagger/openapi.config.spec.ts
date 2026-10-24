@@ -1,6 +1,20 @@
 import { OpenAPIObject } from '@nestjs/swagger';
 import { ParameterObject } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
-import { normalizeOpenApiDocument } from './openapi.config';
+import {
+  createOpenApiConfig,
+  normalizeOpenApiDocument,
+} from './openapi.config';
+
+describe('createOpenApiConfig', () => {
+  it('documents scheduled tasks and their dedicated cron secret', () => {
+    const config = createOpenApiConfig();
+
+    expect(config.tags).toContainEqual(
+      expect.objectContaining({ name: 'ScheduledTasks' }),
+    );
+    expect(config.components?.securitySchemes).toHaveProperty('cron-secret');
+  });
+});
 
 describe('normalizeOpenApiDocument', () => {
   it('centralizes id, time and endpoint-specific sort metadata', () => {
