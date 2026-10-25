@@ -3,7 +3,6 @@ import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interf
 import { ClockService } from '../../core/clock/clock.service';
 import { DoriException } from '../../core/errors/dori.exception';
 import { PaginatedResult } from '../../core/pagination/pagination.dto';
-import { RealtimeService } from '../../core/realtime/realtime.service';
 import {
   TranslationBundleQueryDto,
   CreateTranslationDto,
@@ -21,7 +20,6 @@ export class TranslationsService {
   constructor(
     private readonly translationsRepository: TranslationsRepository,
     private readonly clockService: ClockService,
-    private readonly realtimeService: RealtimeService,
   ) {}
 
   private toResponseDto(row: TranslationRow): TranslationResponseDto {
@@ -87,7 +85,6 @@ export class TranslationsService {
       user.userId,
       this.clockService.now(),
     );
-    this.emitInvalidation(result.category, result.version);
     return result.item;
   }
 
@@ -116,7 +113,6 @@ export class TranslationsService {
     if (!result) {
       throw new DoriException('TRANSLATION_NOT_FOUND', { translationId });
     }
-    this.emitInvalidation(result.category, result.version);
     return result.item;
   }
 
@@ -129,12 +125,7 @@ export class TranslationsService {
     if (!result) {
       throw new DoriException('TRANSLATION_NOT_FOUND', { translationId });
     }
-    this.emitInvalidation(result.category, result.version);
     return { translationId, deleted: true };
-  }
-
-  private emitInvalidation(category: string, version: number) {
-    this.realtimeService.emitTranslationInvalidation(category, version);
   }
 
   private validateParams(content: string, expectedParams?: string[]) {

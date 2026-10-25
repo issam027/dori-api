@@ -330,19 +330,13 @@ export class QueueEngineService {
         phone: candidate.phone_number,
         hasNotes: candidate.notes_count > 0,
       },
-      trackingToken: candidate.registration_tracking_token,
     };
-    this.realtimeService.emitQueueOps(queueId, 'registration_called', result);
-    this.realtimeService.emitQueueDisplay(queueId, 'registration_called', {
-      ticketNumber: result.ticketNumber,
-      threadNumber: result.threadNumber ?? undefined,
-    });
-    this.realtimeService.emitRegistrationUpdate(result.trackingToken, {
-      ticketNumber: result.ticketNumber,
-      status: result.status,
-    });
-    const { trackingToken: _trackingToken, ...response } = result;
-    return response;
+    this.realtimeService.emitQueueDisplayChanged(
+      queueId,
+      'registration_called',
+    );
+    this.realtimeService.emitQueuePositionChanged(queueId);
+    return result;
   }
 
   // 5. Close Registration Served / No-Show
@@ -368,6 +362,10 @@ export class QueueEngineService {
       registrationId,
       'served',
       now,
+    );
+    this.realtimeService.emitQueueDisplayChanged(
+      reg.queue_id,
+      'registration_served',
     );
 
     return {
@@ -402,6 +400,10 @@ export class QueueEngineService {
       registrationId,
       'no_show',
       now,
+    );
+    this.realtimeService.emitQueueDisplayChanged(
+      reg.queue_id,
+      'registration_no_show',
     );
 
     return {

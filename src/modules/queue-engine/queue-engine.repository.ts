@@ -237,9 +237,10 @@ export class QueueEngineRepository {
   async findInProgressRegistration(registrationId: string): Promise<{
     served_by_session_id: string;
     session_user_id: string;
+    queue_id: string;
   } | null> {
     const rows = await this.dataSource.query(
-      `SELECT c.served_by_session_id, qs.user_id AS session_user_id
+      `SELECT c.served_by_session_id, c.queue_id, qs.user_id AS session_user_id
        FROM dorify.dori_registration c JOIN dorify.dori_operator_session qs ON qs.session_id = c.served_by_session_id
        WHERE c.registration_id = $1 AND c.status = 'in_progress' AND c.is_active = TRUE`,
       [registrationId],

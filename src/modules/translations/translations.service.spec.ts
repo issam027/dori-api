@@ -2,14 +2,12 @@ import { DoriException } from '../../core/errors/dori.exception';
 import { TranslationsService } from './translations.service';
 import { TranslationsRepository } from './translations.repository';
 import { ClockService } from '../../core/clock/clock.service';
-import { RealtimeService } from '../../core/realtime/realtime.service';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 
 describe('TranslationsService', () => {
   let service: TranslationsService;
   let repositoryMock: Partial<jest.Mocked<TranslationsRepository>>;
   let clockMock: Partial<jest.Mocked<ClockService>>;
-  let realtimeMock: Partial<jest.Mocked<RealtimeService>>;
 
   const mockUser: AuthenticatedUser = {
     userId: '00000000-0000-4000-8000-000000000001',
@@ -33,14 +31,9 @@ describe('TranslationsService', () => {
     clockMock = {
       now: jest.fn().mockReturnValue(fixedDate),
     };
-    realtimeMock = {
-      emitTranslationInvalidation: jest.fn(),
-    };
-
     service = new TranslationsService(
       repositoryMock as unknown as TranslationsRepository,
       clockMock as unknown as ClockService,
-      realtimeMock as unknown as RealtimeService,
     );
   });
 
@@ -140,10 +133,6 @@ describe('TranslationsService', () => {
       { content: 'Bonjour {username}' },
       mockUser.userId,
       fixedDate,
-    );
-    expect(realtimeMock.emitTranslationInvalidation).toHaveBeenCalledWith(
-      'ihm',
-      2,
     );
   });
 

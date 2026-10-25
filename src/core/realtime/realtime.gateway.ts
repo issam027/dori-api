@@ -21,8 +21,12 @@ import { WsAuthService } from './ws-auth.service';
 interface AuthenticatedSocket extends Socket {
   user?: AuthenticatedUser;
   trackingToken?: string;
+  trackingQueueId?: string;
   registrationId?: string;
 }
+
+const UUID_PATTERN =
+  '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';
 
 @WebSocketGateway()
 export class RealtimeGateway
@@ -79,9 +83,8 @@ export class RealtimeGateway
           );
           if (validUntil > this.clockService.now() && reg.is_active) {
             client.trackingToken = String(trackingToken);
+            client.trackingQueueId = String(reg.queue_id);
             client.registrationId = String(reg.registration_id);
-            // Automatically join own registration room
-            client.join(`registration:${trackingToken}`);
             this.logger.debug(
               `Tracking token connected for registration ${client.registrationId}`,
             );
@@ -112,46 +115,12 @@ export class RealtimeGateway
     const room = data?.room;
     if (!room) return { error: 'Room required' };
 
-    // 1. Translations room
-    if (room === 'system:translations') {
-      if (!client.user) return { error: 'Authentication required' };
-      client.join(room);
-      return { subscribed: true, room };
-    }
-
-    // 2. Public registration tracking room
-    if (room.startsWith('registration:')) {
-      const token = room.replace('registration:', '');
-      if (client.trackingToken === token) {
-        client.join(room);
-        return { subscribed: true, room };
-      }
-      return { error: 'Access denied' };
-    }
-
-    // 3. Queue channels: queue:{queueId}:ops and queue:{queueId}:display
-    const opsMatch = room.match(/^queue:(\d+):ops$/);
-    const displayMatch = room.match(/^queue:(\d+):display$/);
-
-    if (opsMatch) {
-      if (!client.user) return { error: 'Authentication required' };
-      const queueId = opsMatch[1];
-
-      // Check permission and scope (§7.9)
-      const hasPermission =
-        client.user.roles?.includes('root') ||
-        client.user.permissions?.includes('queue_view');
-
-      if (!hasPermission) return { error: 'Missing permission queue_view' };
-
-      try {
-        await this.scopeService.checkQueueAccess(client.user, queueId);
-        client.join(room);
-        return { subscribed: true, room };
-      } catch {
-        return { error: 'Queue out of scope' };
-      }
-    }
+    const displayMatch = room.match(
+      new RegExp(`^queue:(${UUID_PATTERN}):display$`),
+    );
+    const trackingMatch = room.match(
+      new RegExp(`^queue:(${UUID_PATTERN}):tracking$`),
+    );
 
     if (displayMatch) {
       if (!client.user) return { error: 'Authentication required' };
@@ -164,6 +133,15 @@ export class RealtimeGateway
       } catch {
         return { error: 'Queue out of scope' };
       }
+    }
+
+    if (trackingMatch) {
+      const queueId = trackingMatch[1];
+      if (!client.trackingToken || client.trackingQueueId !== queueId) {
+        return { error: 'Access denied' };
+      }
+      client.join(room);
+      return { subscribed: true, room };
     }
 
     return { error: 'Unknown room' };

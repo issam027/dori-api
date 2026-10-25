@@ -555,6 +555,7 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
           new Date(date.getTime() + minutes * 60_000),
       ),
     };
+    const realtime = { emitQueueDisplayChanged: jest.fn() };
     const service = new RegistrationsService(
       repository as unknown as RegistrationsRepository,
       { checkQueueAccess: jest.fn() } as unknown as ScopeService,
@@ -570,6 +571,8 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
         buildTrackingUrl: jest.fn(),
         render: jest.fn(),
       } as unknown as NotificationTemplateService,
+      undefined,
+      realtime as never,
     );
 
     const response = await service.createRegistration(
@@ -594,6 +597,10 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
         ticketNumber: 'A-001',
         now: new Date('2026-10-14T10:00:00Z'),
       }),
+    );
+    expect(realtime.emitQueueDisplayChanged).toHaveBeenCalledWith(
+      '00000000-0000-4000-8000-000000000002',
+      'registration_created',
     );
   });
 

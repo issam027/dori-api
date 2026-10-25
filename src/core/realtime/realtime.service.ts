@@ -12,66 +12,27 @@ export class RealtimeService {
     this.server = server;
   }
 
-  // queue:{queueId}:ops - full details except notes (§7.9)
-  emitQueueOps(
+  emitQueueDisplayChanged(
     queueId: string,
-    event: string,
-    payload: Record<string, unknown>,
+    reason:
+      | 'registration_created'
+      | 'registration_called'
+      | 'registration_served'
+      | 'registration_no_show',
   ) {
     if (!this.server) return;
-    this.server.to(`queue:${queueId}:ops`).emit(event, payload);
-  }
-
-  // queue:{queueId}:display - ONLY ticket numbers and thread numbers, NO names/phone/notes (§7.9)
-  emitQueueDisplay(
-    queueId: string,
-    event: string,
-    payload: {
-      ticketNumber?: string;
-      threadNumber?: number;
-      calledTickets?: string[];
-      waitingCount?: number;
-      [key: string]: unknown;
-    },
-  ) {
-    if (!this.server) return;
-    // Sanitize payload strictly to strip any personal info
-    const safePayload = {
-      event,
-      ticketNumber: payload.ticketNumber,
-      threadNumber: payload.threadNumber,
-      calledTickets: payload.calledTickets,
-      waitingCount: payload.waitingCount,
+    this.server.to(`queue:${queueId}:display`).emit('queue_display_changed', {
+      queueId,
+      reason,
       timestamp: this.clockService.now().toISOString(),
-    };
-    this.server.to(`queue:${queueId}:display`).emit(event, safePayload);
+    });
   }
 
-  // registration:{registrationTrackingToken} - position, estimatedWaitMinutes, status only
-  emitRegistrationUpdate(
-    trackingToken: string,
-    payload: {
-      ticketNumber: string;
-      status: string;
-      position?: number;
-      estimatedWaitMinutes?: number;
-    },
-  ) {
+  emitQueuePositionChanged(queueId: string) {
     if (!this.server) return;
-    this.server
-      .to(`registration:${trackingToken}`)
-      .emit('position_update', payload);
-  }
-
-  // system:translations - cache invalidation
-  emitTranslationInvalidation(category: string, version: number) {
-    if (!this.server) return;
-    this.server
-      .to('system:translations')
-      .emit('translation_cache_invalidated', {
-        category,
-        version,
-        timestamp: this.clockService.now().toISOString(),
-      });
+    this.server.to(`queue:${queueId}:tracking`).emit('queue_position_changed', {
+      queueId,
+      timestamp: this.clockService.now().toISOString(),
+    });
   }
 }

@@ -9,6 +9,7 @@ import { RegistrationsRepository } from './registrations.repository';
 import { ConfigModule } from '@nestjs/config';
 import { NotificationTemplateModule } from '../../core/notifications/notification-template.module';
 import { QueueEstimationModule } from '../queue-estimation/queue-estimation.module';
+import { RealtimeModule } from '../../core/realtime/realtime.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { QueueEstimationModule } from '../queue-estimation/queue-estimation.modu
     PersonsModule,
     NotificationTemplateModule,
     QueueEstimationModule,
+    RealtimeModule,
   ],
   controllers: [RegistrationsController],
   providers: [RegistrationsService, RegistrationsRepository],

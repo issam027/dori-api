@@ -56,9 +56,8 @@ describe('QueueEngineService ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢
         {
           provide: RealtimeService,
           useValue: {
-            emitQueueOps: jest.fn(),
-            emitQueueDisplay: jest.fn(),
-            emitRegistrationUpdate: jest.fn(),
+            emitQueueDisplayChanged: jest.fn(),
+            emitQueuePositionChanged: jest.fn(),
           },
         },
       ],
