@@ -9967,23 +9967,83 @@
     },
     "/api/v1/realtime/queues/{queueId}/display": {
       "get": {
-        "operationId": "RealtimeController_display",
+        "operationId": "subscribeQueueDisplayEvents",
         "summary": "Suivre les changements de l'écran d'attente",
+        "description": "Ouvre un flux SSE authentifié. À chaque événement `queue_display_changed`, l'IHM doit recharger le snapshot REST de l'écran. Le flux ne transporte aucune donnée métier détaillée.",
         "parameters": [
           {
             "name": "queueId",
             "required": true,
             "in": "path",
+            "description": "Identifiant UUID de la file suivie",
             "schema": {
               "format": "uuid",
               "type": "string"
-            },
-            "description": "Identifiant de la file."
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Flux des invalidations de l'écran d'attente",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "Flux SSE persistant. Chaque événement indique que le client doit rafraîchir les données via REST.",
+                  "example": "event: queue_display_changed\ndata: {\"queueId\":\"550e8400-e29b-41d4-a716-446655440000\",\"reason\":\"registration_called\",\"timestamp\":\"2026-10-25T14:00:00.000Z\"}\n\n"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié — token manquant ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -9998,32 +10058,93 @@
     },
     "/api/v1/realtime/queues/{queueId}/tracking": {
       "get": {
-        "operationId": "RealtimeController_tracking",
+        "operationId": "subscribeQueueTrackingEvents",
         "summary": "Suivre les changements de position d'un ticket",
+        "description": "Ouvre un flux SSE public protégé par le token de suivi. À chaque événement `queue_position_changed`, l'IHM doit rappeler `GET /api/v1/public/registrations/position`.",
         "parameters": [
           {
             "name": "queueId",
             "required": true,
             "in": "path",
+            "description": "Identifiant UUID de la file associée à l'inscription",
             "schema": {
               "format": "uuid",
               "type": "string"
-            },
-            "description": "Identifiant de la file."
+            }
           },
           {
             "name": "X-Registration-Token",
             "required": true,
             "in": "header",
+            "description": "Token opaque de suivi retourné lors de l'inscription",
             "schema": {
-              "type": "string"
-            },
-            "description": "Valeur du paramètre « x-registration-token »."
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Flux des invalidations de position du ticket",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "Flux SSE persistant. Chaque événement indique que le client doit rafraîchir les données via REST.",
+                  "example": "event: queue_position_changed\ndata: {\"queueId\":\"550e8400-e29b-41d4-a716-446655440000\",\"timestamp\":\"2026-10-25T14:00:00.000Z\"}\n\n"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié — token manquant ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Jeton de suivi expiré ou inscription inactive",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [

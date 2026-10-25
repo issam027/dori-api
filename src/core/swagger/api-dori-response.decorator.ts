@@ -71,6 +71,10 @@ function errorSchema() {
   return { $ref: getSchemaPath(ErrorResponseDto) };
 }
 
+function errorContent() {
+  return { 'application/json': { schema: errorSchema() } };
+}
+
 /**
  * @ApiDoriErrorResponses — ajoute les réponses d'erreur standard sur un endpoint authentifié.
  *
@@ -98,7 +102,7 @@ export function ApiDoriErrorResponses(
     ApiResponse({
       status: 400,
       description: 'Données invalides (validation échouée)',
-      schema: errorSchema(),
+      content: errorContent(),
     }),
   );
 
@@ -107,7 +111,7 @@ export function ApiDoriErrorResponses(
       ApiResponse({
         status: 401,
         description: 'Non authentifié — token manquant ou expiré',
-        schema: errorSchema(),
+        content: errorContent(),
       }),
     );
   }
@@ -117,7 +121,7 @@ export function ApiDoriErrorResponses(
       ApiResponse({
         status: 403,
         description: 'Accès interdit — permission insuffisante',
-        schema: errorSchema(),
+        content: errorContent(),
       }),
     );
   }
@@ -127,7 +131,7 @@ export function ApiDoriErrorResponses(
       ApiResponse({
         status: 404,
         description: 'Ressource introuvable',
-        schema: errorSchema(),
+        content: errorContent(),
       }),
     );
   }
@@ -137,7 +141,7 @@ export function ApiDoriErrorResponses(
       ApiResponse({
         status: 409,
         description: 'Conflit métier (doublon, slot plein, compte verrouillé…)',
-        schema: errorSchema(),
+        content: errorContent(),
       }),
     );
   }
@@ -147,7 +151,7 @@ export function ApiDoriErrorResponses(
       ApiResponse({
         status: 422,
         description: 'Entité non traitable — règle métier enfreinte',
-        schema: errorSchema(),
+        content: errorContent(),
       }),
     );
   }
@@ -156,12 +160,12 @@ export function ApiDoriErrorResponses(
     ApiResponse({
       status: 429,
       description: 'Trop de requêtes — limite de débit atteinte',
-      schema: errorSchema(),
+      content: errorContent(),
     }),
     ApiResponse({
       status: 500,
       description: 'Erreur interne sans exposition de détails techniques',
-      schema: errorSchema(),
+      content: errorContent(),
     }),
   );
 
@@ -174,17 +178,52 @@ export function ApiDoriErrorResponses(
 export function ApiDoriPublicErrorResponses(
   opts: {
     include401?: boolean;
+    include410?: boolean;
     omit404?: boolean;
     omit409?: boolean;
     omit422?: boolean;
   } = {},
 ) {
-  return ApiDoriErrorResponses({
-    omit401: !opts.include401,
-    omit403: true,
-    omit404: opts.omit404,
-    omit409: opts.omit409,
-    omit422: opts.omit422,
+  const decorators = [
+    ApiDoriErrorResponses({
+      omit401: !opts.include401,
+      omit403: true,
+      omit404: opts.omit404,
+      omit409: opts.omit409,
+      omit422: opts.omit422,
+    }),
+  ];
+  if (opts.include410) {
+    decorators.push(
+      ApiResponse({
+        status: 410,
+        description: 'Jeton de suivi expiré ou inscription inactive',
+        content: errorContent(),
+      }),
+    );
+  }
+  return applyDecorators(...decorators);
+}
+
+export function ApiDoriSseResponse(
+  description: string,
+  eventName: string,
+  dataExample: Record<string, unknown>,
+) {
+  const example = `event: ${eventName}\ndata: ${JSON.stringify(dataExample)}\n\n`;
+  return ApiResponse({
+    status: 200,
+    description,
+    content: {
+      'text/event-stream': {
+        schema: {
+          type: 'string',
+          description:
+            'Flux SSE persistant. Chaque événement indique que le client doit rafraîchir les données via REST.',
+          example,
+        },
+      },
+    },
   });
 }
 
