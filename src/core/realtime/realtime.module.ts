@@ -1,25 +1,15 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { RealtimeGateway } from './realtime.gateway';
 import { RealtimeService } from './realtime.service';
 import { RbacModule } from '../rbac/rbac.module';
 import { ClockModule } from '../clock/clock.module';
 import { DatabaseModule } from '../database/database.module';
-import { AuthModule } from '../../modules/auth/auth.module';
 import { RealtimeRepository } from './realtime.repository';
-import { isVercelRuntime } from '../config/configuration';
-import { WsAuthService } from './ws-auth.service';
-
-const gatewayProviders = isVercelRuntime() ? [] : [RealtimeGateway];
+import { RealtimeController } from './realtime.controller';
 
 @Module({
-  imports: [ConfigModule, DatabaseModule, RbacModule, ClockModule, AuthModule],
-  providers: [
-    ...gatewayProviders,
-    RealtimeService,
-    RealtimeRepository,
-    WsAuthService,
-  ],
+  imports: [DatabaseModule, RbacModule, ClockModule],
+  controllers: [RealtimeController],
+  providers: [RealtimeService, RealtimeRepository],
   exports: [RealtimeService],
 })
 export class RealtimeModule {}

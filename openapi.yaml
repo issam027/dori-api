@@ -4557,6 +4557,49 @@ paths:
       tags: *ref_66
       security:
         - registration-token: []
+  /api/v1/realtime/queues/{queueId}/display:
+    get:
+      operationId: RealtimeController_display
+      summary: Suivre les changements de l'écran d'attente
+      parameters:
+        - name: queueId
+          required: true
+          in: path
+          schema:
+            format: uuid
+            type: string
+          description: Identifiant de la file.
+      responses:
+        '200':
+          description: ''
+      tags: &ref_68
+        - Realtime
+      security:
+        - bearer: []
+  /api/v1/realtime/queues/{queueId}/tracking:
+    get:
+      operationId: RealtimeController_tracking
+      summary: Suivre les changements de position d'un ticket
+      parameters:
+        - name: queueId
+          required: true
+          in: path
+          schema:
+            format: uuid
+            type: string
+          description: Identifiant de la file.
+        - name: X-Registration-Token
+          required: true
+          in: header
+          schema:
+            type: string
+          description: Valeur du paramètre « x-registration-token ».
+      responses:
+        '200':
+          description: ''
+      tags: *ref_68
+      security:
+        - registration-token: []
   /api/v1/sites/{siteId}/next-preview:
     get:
       operationId: QueueEngineController_nextPreview
@@ -4613,57 +4656,57 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': &ref_68
+        '400': &ref_69
           description: Données invalides (validation échouée)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '401': &ref_69
+        '401': &ref_70
           description: Non authentifié — token manquant ou expiré
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '403': &ref_70
+        '403': &ref_71
           description: Accès interdit — permission insuffisante
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '404': &ref_71
+        '404': &ref_72
           description: Ressource introuvable
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '409': &ref_72
+        '409': &ref_73
           description: Conflit métier (doublon, slot plein, compte verrouillé…)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '422': &ref_73
+        '422': &ref_74
           description: Entité non traitable — règle métier enfreinte
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '429': &ref_74
+        '429': &ref_75
           description: Trop de requêtes — limite de débit atteinte
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '500': &ref_75
+        '500': &ref_76
           description: Erreur interne sans exposition de détails techniques
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-      tags: &ref_76
+      tags: &ref_77
         - QueueEngine
-      security: &ref_77
+      security: &ref_78
         - bearer: []
   /api/v1/queues/{queueId}/threads:
     get:
@@ -4734,16 +4777,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_68
-        '401': *ref_69
-        '403': *ref_70
-        '404': *ref_71
-        '409': *ref_72
-        '422': *ref_73
-        '429': *ref_74
-        '500': *ref_75
-      tags: *ref_76
-      security: *ref_77
+        '400': *ref_69
+        '401': *ref_70
+        '403': *ref_71
+        '404': *ref_72
+        '409': *ref_73
+        '422': *ref_74
+        '429': *ref_75
+        '500': *ref_76
+      tags: *ref_77
+      security: *ref_78
   /api/v1/queues/{queueId}/sessions:
     get:
       operationId: QueueEngineController_getActiveSessions
@@ -4830,16 +4873,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_68
-        '401': *ref_69
-        '403': *ref_70
-        '404': *ref_71
-        '409': *ref_72
-        '422': *ref_73
-        '429': *ref_74
-        '500': *ref_75
-      tags: *ref_76
-      security: *ref_77
+        '400': *ref_69
+        '401': *ref_70
+        '403': *ref_71
+        '404': *ref_72
+        '409': *ref_73
+        '422': *ref_74
+        '429': *ref_75
+        '500': *ref_76
+      tags: *ref_77
+      security: *ref_78
     post:
       operationId: QueueEngineController_openSession
       x-required-permissions:
@@ -4897,16 +4940,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_68
-        '401': *ref_69
-        '403': *ref_70
-        '404': *ref_71
-        '409': *ref_72
-        '422': *ref_73
-        '429': *ref_74
-        '500': *ref_75
-      tags: *ref_76
-      security: *ref_77
+        '400': *ref_69
+        '401': *ref_70
+        '403': *ref_71
+        '404': *ref_72
+        '409': *ref_73
+        '422': *ref_74
+        '429': *ref_75
+        '500': *ref_76
+      tags: *ref_77
+      security: *ref_78
   /api/v1/queues/{queueId}/sessions/{sessionId}:
     delete:
       operationId: QueueEngineController_closeSession
@@ -4966,16 +5009,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_68
-        '401': *ref_69
-        '403': *ref_70
-        '404': *ref_71
-        '409': *ref_72
-        '422': *ref_73
-        '429': *ref_74
-        '500': *ref_75
-      tags: *ref_76
-      security: *ref_77
+        '400': *ref_69
+        '401': *ref_70
+        '403': *ref_71
+        '404': *ref_72
+        '409': *ref_73
+        '422': *ref_74
+        '429': *ref_75
+        '500': *ref_76
+      tags: *ref_77
+      security: *ref_78
   /api/v1/queues/{queueId}/next:
     post:
       operationId: QueueEngineController_callNext
@@ -5028,16 +5071,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_68
-        '401': *ref_69
-        '403': *ref_70
-        '404': *ref_71
-        '409': *ref_72
-        '422': *ref_73
-        '429': *ref_74
-        '500': *ref_75
-      tags: *ref_76
-      security: *ref_77
+        '400': *ref_69
+        '401': *ref_70
+        '403': *ref_71
+        '404': *ref_72
+        '409': *ref_73
+        '422': *ref_74
+        '429': *ref_75
+        '500': *ref_76
+      tags: *ref_77
+      security: *ref_78
   /api/v1/registrations/{registrationId}/served:
     post:
       operationId: QueueEngineController_markServed
@@ -5083,16 +5126,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_68
-        '401': *ref_69
-        '403': *ref_70
-        '404': *ref_71
-        '409': *ref_72
-        '422': *ref_73
-        '429': *ref_74
-        '500': *ref_75
-      tags: *ref_76
-      security: *ref_77
+        '400': *ref_69
+        '401': *ref_70
+        '403': *ref_71
+        '404': *ref_72
+        '409': *ref_73
+        '422': *ref_74
+        '429': *ref_75
+        '500': *ref_76
+      tags: *ref_77
+      security: *ref_78
   /api/v1/registrations/{registrationId}/no-show:
     post:
       operationId: QueueEngineController_markNoShow
@@ -5138,16 +5181,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_68
-        '401': *ref_69
-        '403': *ref_70
-        '404': *ref_71
-        '409': *ref_72
-        '422': *ref_73
-        '429': *ref_74
-        '500': *ref_75
-      tags: *ref_76
-      security: *ref_77
+        '400': *ref_69
+        '401': *ref_70
+        '403': *ref_71
+        '404': *ref_72
+        '409': *ref_73
+        '422': *ref_74
+        '429': *ref_75
+        '500': *ref_76
+      tags: *ref_77
+      security: *ref_78
   /api/v1/notifications:
     get:
       operationId: NotificationsController_findNotifications
@@ -5284,57 +5327,57 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': &ref_78
+        '400': &ref_79
           description: Données invalides (validation échouée)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '401': &ref_79
+        '401': &ref_80
           description: Non authentifié — token manquant ou expiré
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '403': &ref_80
+        '403': &ref_81
           description: Accès interdit — permission insuffisante
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '404': &ref_81
+        '404': &ref_82
           description: Ressource introuvable
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '409': &ref_82
+        '409': &ref_83
           description: Conflit métier (doublon, slot plein, compte verrouillé…)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '422': &ref_83
+        '422': &ref_84
           description: Entité non traitable — règle métier enfreinte
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '429': &ref_84
+        '429': &ref_85
           description: Trop de requêtes — limite de débit atteinte
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '500': &ref_85
+        '500': &ref_86
           description: Erreur interne sans exposition de détails techniques
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-      tags: &ref_86
+      tags: &ref_87
         - Notifications
-      security: &ref_87
+      security: &ref_88
         - bearer: []
     post:
       operationId: NotificationsController_sendManual
@@ -5379,16 +5422,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_78
-        '401': *ref_79
-        '403': *ref_80
-        '404': *ref_81
-        '409': *ref_82
-        '422': *ref_83
-        '429': *ref_84
-        '500': *ref_85
-      tags: *ref_86
-      security: *ref_87
+        '400': *ref_79
+        '401': *ref_80
+        '403': *ref_81
+        '404': *ref_82
+        '409': *ref_83
+        '422': *ref_84
+        '429': *ref_85
+        '500': *ref_86
+      tags: *ref_87
+      security: *ref_88
   /api/v1/notifications/{notificationId}:
     get:
       operationId: NotificationsController_findNotificationById
@@ -5434,16 +5477,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_78
-        '401': *ref_79
-        '403': *ref_80
-        '404': *ref_81
-        '409': *ref_82
-        '422': *ref_83
-        '429': *ref_84
-        '500': *ref_85
-      tags: *ref_86
-      security: *ref_87
+        '400': *ref_79
+        '401': *ref_80
+        '403': *ref_81
+        '404': *ref_82
+        '409': *ref_83
+        '422': *ref_84
+        '429': *ref_85
+        '500': *ref_86
+      tags: *ref_87
+      security: *ref_88
   /api/v1/notifications/{notificationId}/resend:
     post:
       operationId: NotificationsController_resend
@@ -5489,16 +5532,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_78
-        '401': *ref_79
-        '403': *ref_80
-        '404': *ref_81
-        '409': *ref_82
-        '422': *ref_83
-        '429': *ref_84
-        '500': *ref_85
-      tags: *ref_86
-      security: *ref_87
+        '400': *ref_79
+        '401': *ref_80
+        '403': *ref_81
+        '404': *ref_82
+        '409': *ref_83
+        '422': *ref_84
+        '429': *ref_85
+        '500': *ref_86
+      tags: *ref_87
+      security: *ref_88
   /api/v1/webhooks/notifications/{provider}:
     post:
       operationId: NotificationsController_handleWebhook
@@ -5589,7 +5632,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-      tags: *ref_86
+      tags: *ref_87
   /api/v1/translations/bundle:
     get:
       operationId: TranslationsController_getBundle
@@ -5690,7 +5733,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-      tags: &ref_88
+      tags: &ref_89
         - Translations
       security: []
   /api/v1/translations:
@@ -5803,55 +5846,55 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': &ref_89
+        '400': &ref_90
           description: Données invalides (validation échouée)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '401': &ref_90
+        '401': &ref_91
           description: Non authentifié — token manquant ou expiré
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '403': &ref_91
+        '403': &ref_92
           description: Accès interdit — permission insuffisante
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '404': &ref_92
+        '404': &ref_93
           description: Ressource introuvable
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '409': &ref_93
+        '409': &ref_94
           description: Conflit métier (doublon, slot plein, compte verrouillé…)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '422': &ref_94
+        '422': &ref_95
           description: Entité non traitable — règle métier enfreinte
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '429': &ref_95
+        '429': &ref_96
           description: Trop de requêtes — limite de débit atteinte
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '500': &ref_96
+        '500': &ref_97
           description: Erreur interne sans exposition de détails techniques
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-      tags: *ref_88
+      tags: *ref_89
       security:
         - bearer: []
     post:
@@ -5899,15 +5942,15 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_89
-        '401': *ref_90
-        '403': *ref_91
-        '404': *ref_92
-        '409': *ref_93
-        '422': *ref_94
-        '429': *ref_95
-        '500': *ref_96
-      tags: *ref_88
+        '400': *ref_90
+        '401': *ref_91
+        '403': *ref_92
+        '404': *ref_93
+        '409': *ref_94
+        '422': *ref_95
+        '429': *ref_96
+        '500': *ref_97
+      tags: *ref_89
       security:
         - bearer: []
   /api/v1/translations/{translationId}:
@@ -5964,15 +6007,15 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_89
-        '401': *ref_90
-        '403': *ref_91
-        '404': *ref_92
-        '409': *ref_93
-        '422': *ref_94
-        '429': *ref_95
-        '500': *ref_96
-      tags: *ref_88
+        '400': *ref_90
+        '401': *ref_91
+        '403': *ref_92
+        '404': *ref_93
+        '409': *ref_94
+        '422': *ref_95
+        '429': *ref_96
+        '500': *ref_97
+      tags: *ref_89
       security:
         - bearer: []
     delete:
@@ -6021,15 +6064,15 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_89
-        '401': *ref_90
-        '403': *ref_91
-        '404': *ref_92
-        '409': *ref_93
-        '422': *ref_94
-        '429': *ref_95
-        '500': *ref_96
-      tags: *ref_88
+        '400': *ref_90
+        '401': *ref_91
+        '403': *ref_92
+        '404': *ref_93
+        '409': *ref_94
+        '422': *ref_95
+        '429': *ref_96
+        '500': *ref_97
+      tags: *ref_89
       security:
         - bearer: []
   /api/v1/users:
@@ -6148,57 +6191,57 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': &ref_97
+        '400': &ref_98
           description: Données invalides (validation échouée)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '401': &ref_98
+        '401': &ref_99
           description: Non authentifié — token manquant ou expiré
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '403': &ref_99
+        '403': &ref_100
           description: Accès interdit — permission insuffisante
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '404': &ref_100
+        '404': &ref_101
           description: Ressource introuvable
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '409': &ref_101
+        '409': &ref_102
           description: Conflit métier (doublon, slot plein, compte verrouillé…)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '422': &ref_102
+        '422': &ref_103
           description: Entité non traitable — règle métier enfreinte
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '429': &ref_103
+        '429': &ref_104
           description: Trop de requêtes — limite de débit atteinte
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '500': &ref_104
+        '500': &ref_105
           description: Erreur interne sans exposition de détails techniques
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-      tags: &ref_105
+      tags: &ref_106
         - Users
-      security: &ref_106
+      security: &ref_107
         - bearer: []
     post:
       operationId: UsersController_createUser
@@ -6246,16 +6289,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_97
-        '401': *ref_98
-        '403': *ref_99
-        '404': *ref_100
-        '409': *ref_101
-        '422': *ref_102
-        '429': *ref_103
-        '500': *ref_104
-      tags: *ref_105
-      security: *ref_106
+        '400': *ref_98
+        '401': *ref_99
+        '403': *ref_100
+        '404': *ref_101
+        '409': *ref_102
+        '422': *ref_103
+        '429': *ref_104
+        '500': *ref_105
+      tags: *ref_106
+      security: *ref_107
   /api/v1/users/{userId}:
     get:
       operationId: UsersController_findUserById
@@ -6310,16 +6353,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_97
-        '401': *ref_98
-        '403': *ref_99
-        '404': *ref_100
-        '409': *ref_101
-        '422': *ref_102
-        '429': *ref_103
-        '500': *ref_104
-      tags: *ref_105
-      security: *ref_106
+        '400': *ref_98
+        '401': *ref_99
+        '403': *ref_100
+        '404': *ref_101
+        '409': *ref_102
+        '422': *ref_103
+        '429': *ref_104
+        '500': *ref_105
+      tags: *ref_106
+      security: *ref_107
     patch:
       operationId: UsersController_updateUser
       x-required-permissions:
@@ -6376,16 +6419,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_97
-        '401': *ref_98
-        '403': *ref_99
-        '404': *ref_100
-        '409': *ref_101
-        '422': *ref_102
-        '429': *ref_103
-        '500': *ref_104
-      tags: *ref_105
-      security: *ref_106
+        '400': *ref_98
+        '401': *ref_99
+        '403': *ref_100
+        '404': *ref_101
+        '409': *ref_102
+        '422': *ref_103
+        '429': *ref_104
+        '500': *ref_105
+      tags: *ref_106
+      security: *ref_107
     delete:
       operationId: UsersController_deleteUser
       x-required-permissions:
@@ -6436,16 +6479,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_97
-        '401': *ref_98
-        '403': *ref_99
-        '404': *ref_100
-        '409': *ref_101
-        '422': *ref_102
-        '429': *ref_103
-        '500': *ref_104
-      tags: *ref_105
-      security: *ref_106
+        '400': *ref_98
+        '401': *ref_99
+        '403': *ref_100
+        '404': *ref_101
+        '409': *ref_102
+        '422': *ref_103
+        '429': *ref_104
+        '500': *ref_105
+      tags: *ref_106
+      security: *ref_107
   /api/v1/users/{userId}/status:
     patch:
       operationId: UsersController_updateUserStatus
@@ -6500,16 +6543,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_97
-        '401': *ref_98
-        '403': *ref_99
-        '404': *ref_100
-        '409': *ref_101
-        '422': *ref_102
-        '429': *ref_103
-        '500': *ref_104
-      tags: *ref_105
-      security: *ref_106
+        '400': *ref_98
+        '401': *ref_99
+        '403': *ref_100
+        '404': *ref_101
+        '409': *ref_102
+        '422': *ref_103
+        '429': *ref_104
+        '500': *ref_105
+      tags: *ref_106
+      security: *ref_107
   /api/v1/users/{userId}/password:
     patch:
       operationId: UsersController_setUserPassword
@@ -6564,16 +6607,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_97
-        '401': *ref_98
-        '403': *ref_99
-        '404': *ref_100
-        '409': *ref_101
-        '422': *ref_102
-        '429': *ref_103
-        '500': *ref_104
-      tags: *ref_105
-      security: *ref_106
+        '400': *ref_98
+        '401': *ref_99
+        '403': *ref_100
+        '404': *ref_101
+        '409': *ref_102
+        '422': *ref_103
+        '429': *ref_104
+        '500': *ref_105
+      tags: *ref_106
+      security: *ref_107
   /api/v1/users/{userId}/roles:
     post:
       operationId: UsersController_assignUserRole
@@ -6628,16 +6671,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_97
-        '401': *ref_98
-        '403': *ref_99
-        '404': *ref_100
-        '409': *ref_101
-        '422': *ref_102
-        '429': *ref_103
-        '500': *ref_104
-      tags: *ref_105
-      security: *ref_106
+        '400': *ref_98
+        '401': *ref_99
+        '403': *ref_100
+        '404': *ref_101
+        '409': *ref_102
+        '422': *ref_103
+        '429': *ref_104
+        '500': *ref_105
+      tags: *ref_106
+      security: *ref_107
   /api/v1/users/{userId}/roles/{roleId}:
     delete:
       operationId: UsersController_removeUserRole
@@ -6693,16 +6736,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_97
-        '401': *ref_98
-        '403': *ref_99
-        '404': *ref_100
-        '409': *ref_101
-        '422': *ref_102
-        '429': *ref_103
-        '500': *ref_104
-      tags: *ref_105
-      security: *ref_106
+        '400': *ref_98
+        '401': *ref_99
+        '403': *ref_100
+        '404': *ref_101
+        '409': *ref_102
+        '422': *ref_103
+        '429': *ref_104
+        '500': *ref_105
+      tags: *ref_106
+      security: *ref_107
   /api/v1/roles:
     get:
       operationId: UsersController_getRoles
@@ -6762,16 +6805,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_97
-        '401': *ref_98
-        '403': *ref_99
-        '404': *ref_100
-        '409': *ref_101
-        '422': *ref_102
-        '429': *ref_103
-        '500': *ref_104
-      tags: *ref_105
-      security: *ref_106
+        '400': *ref_98
+        '401': *ref_99
+        '403': *ref_100
+        '404': *ref_101
+        '409': *ref_102
+        '422': *ref_103
+        '429': *ref_104
+        '500': *ref_105
+      tags: *ref_106
+      security: *ref_107
   /api/v1/roles/{roleId}/permissions:
     patch:
       operationId: UsersController_updateRolePermissions
@@ -6823,16 +6866,16 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400': *ref_97
-        '401': *ref_98
-        '403': *ref_99
-        '404': *ref_100
-        '409': *ref_101
-        '422': *ref_102
-        '429': *ref_103
-        '500': *ref_104
-      tags: *ref_105
-      security: *ref_106
+        '400': *ref_98
+        '401': *ref_99
+        '403': *ref_100
+        '404': *ref_101
+        '409': *ref_102
+        '422': *ref_103
+        '429': *ref_104
+        '500': *ref_105
+      tags: *ref_106
+      security: *ref_107
   /api/internal/cron/daily-reset:
     get:
       operationId: CronController_dailyResetCron
@@ -6899,9 +6942,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-      tags: &ref_107
+      tags: &ref_108
         - ScheduledTasks
-      security: &ref_108
+      security: &ref_109
         - cron-secret: []
   /api/internal/cron/appointment-expiry:
     get:
@@ -6967,8 +7010,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-      tags: *ref_107
-      security: *ref_108
+      tags: *ref_108
+      security: *ref_109
   /api/internal/cron/notifications:
     get:
       operationId: CronController_notificationCron
@@ -7033,8 +7076,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-      tags: *ref_107
-      security: *ref_108
+      tags: *ref_108
+      security: *ref_109
   /api/internal/cron/queue-estimation:
     get:
       operationId: CronController_queueEstimationCron
@@ -7099,8 +7142,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-      tags: *ref_107
-      security: *ref_108
+      tags: *ref_108
+      security: *ref_109
   /api/v1/monitoring/health:
     get:
       operationId: MonitoringController_health
@@ -7137,7 +7180,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MonitoringHealthResponseDto'
-      tags: &ref_109
+      tags: &ref_110
         - Monitoring
   /api/v1/monitoring/metrics:
     get:
@@ -7176,7 +7219,7 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-      tags: *ref_109
+      tags: *ref_110
       security:
         - bearer: []
   /api/v1/monitoring/activity:
@@ -7220,7 +7263,7 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-      tags: *ref_109
+      tags: *ref_110
       security:
         - bearer: []
   /api/v1/monitoring/live:
@@ -7270,7 +7313,7 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-      tags: *ref_109
+      tags: *ref_110
       security:
         - bearer: []
   /api/v1/monitoring/series:
@@ -7394,7 +7437,7 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-      tags: *ref_109
+      tags: *ref_110
       security:
         - bearer: []
 info:
@@ -7545,7 +7588,7 @@ components:
           description: Valeur du champ « site scope display name ».
         outcome:
           type: string
-          enum: &ref_110
+          enum: &ref_111
             - success
             - failure
           description: Valeur du champ « outcome ».
@@ -7668,7 +7711,7 @@ components:
           description: Valeur du champ « site scope display name ».
         outcome:
           type: string
-          enum: *ref_110
+          enum: *ref_111
           description: Valeur du champ « outcome ».
         correlationId:
           type: string
@@ -7770,19 +7813,19 @@ components:
         userType:
           type: string
           example: human
-          enum: &ref_111
+          enum: &ref_112
             - human
             - kiosk
           description: Type de compte
         roles:
-          example: &ref_112
+          example: &ref_113
             - admin
           description: Rôles attribués
           type: array
           items:
             type: string
         permissions:
-          example: &ref_113
+          example: &ref_114
             - site_view
             - queue_view
             - session_operate
@@ -7927,16 +7970,16 @@ components:
         userType:
           type: string
           example: human
-          enum: *ref_111
+          enum: *ref_112
           description: Type de compte
         roles:
-          example: *ref_112
+          example: *ref_113
           description: Rôles attribués
           type: array
           items:
             type: string
         permissions:
-          example: *ref_113
+          example: *ref_114
           description: Permissions effectives
           type: array
           items:
@@ -8181,7 +8224,7 @@ components:
           description: URL du logo
         siteType:
           type: string
-          enum: &ref_114
+          enum: &ref_115
             - public
             - private
           example: public
@@ -8227,7 +8270,7 @@ components:
           example: 60
           description: Tolérance retard RDV (minutes)
         defaultWorkingDays:
-          example: &ref_115
+          example: &ref_116
             - 1
             - 2
             - 3
@@ -8259,7 +8302,7 @@ components:
           description: Reporter les clients en attente au lendemain
         defaultDailyResetMode:
           type: string
-          enum: &ref_116
+          enum: &ref_117
             - close_all
             - carry_over_open
           example: close_all
@@ -8292,7 +8335,7 @@ components:
           description: URL du logo
         siteType:
           type: string
-          enum: *ref_114
+          enum: *ref_115
           example: public
           description: Valeur du champ « site type ».
         timezone:
@@ -8336,7 +8379,7 @@ components:
           example: 60
           description: Tolérance retard RDV (minutes)
         defaultWorkingDays:
-          example: *ref_115
+          example: *ref_116
           description: Jours ouvrés par défaut du site (1=Lundi ... 7=Dimanche)
           type: array
           items:
@@ -8363,7 +8406,7 @@ components:
           description: Reporter les clients en attente au lendemain
         defaultDailyResetMode:
           type: string
-          enum: *ref_116
+          enum: *ref_117
           example: close_all
           description: Valeur du champ « default daily reset mode ».
         defaultDailyResetTime:
@@ -8884,7 +8927,7 @@ components:
           example: 60
           description: Tolérance retard RDV (minutes)
         workingDays:
-          example: &ref_117
+          example: &ref_118
             - 1
             - 2
             - 3
@@ -8917,7 +8960,7 @@ components:
           description: Valeur du champ « carry over waiting ».
         dailyResetMode:
           type: string
-          enum: &ref_118
+          enum: &ref_119
             - close_all
             - carry_over_open
           example: close_all
@@ -8991,7 +9034,7 @@ components:
           example: 60
           description: Tolérance retard RDV (minutes)
         workingDays:
-          example: *ref_117
+          example: *ref_118
           nullable: true
           description: Surcharge des jours ouvrés de la file (1=Lundi ... 7=Dimanche) ; null ou absence = héritage du site
           type: array
@@ -9019,7 +9062,7 @@ components:
           description: Valeur du champ « carry over waiting ».
         dailyResetMode:
           type: string
-          enum: *ref_118
+          enum: *ref_119
           example: close_all
           description: Valeur du champ « daily reset mode ».
         dailyResetTime:

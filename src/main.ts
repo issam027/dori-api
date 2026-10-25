@@ -9,9 +9,6 @@ import helmet from 'helmet';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import cookieParser = require('cookie-parser');
 import { AppModule } from './app.module';
-import { ConfiguredIoAdapter } from './core/realtime/configured-io.adapter';
-import { REDIS_CLIENT } from './core/redis/redis.module';
-import type Redis from 'ioredis';
 import {
   createOpenApiConfig,
   normalizeOpenApiDocument,
@@ -24,7 +21,6 @@ async function createApp(): Promise<NestExpressApplication> {
   });
 
   const configService = app.get(ConfigService);
-  const isVercel = configService.get<boolean>('platform.isVercel') ?? false;
   app.use(cookieParser());
 
   app.use(
@@ -52,14 +48,6 @@ async function createApp(): Promise<NestExpressApplication> {
   const allowedOrigins = configService.getOrThrow<string[]>(
     'cors.allowedOrigins',
   );
-
-  // WebSockets can't run on serverless functions
-  if (!isVercel) {
-    const redisClient = app.get<Redis | null>(REDIS_CLIENT, { strict: false });
-    app.useWebSocketAdapter(
-      new ConfiguredIoAdapter(app, allowedOrigins, redisClient),
-    );
-  }
 
   app.enableCors({
     origin: allowedOrigins,

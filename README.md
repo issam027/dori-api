@@ -6,7 +6,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-7+-DC382D?logo=redis&logoColor=white)](https://redis.io/)
-[![Socket.IO](https://img.shields.io/badge/Socket.IO-4.x-010101?logo=socketdotio&logoColor=white)](https://socket.io/)
+[![SSE](https://img.shields.io/badge/Realtime-SSE-0A7EA4)](https://html.spec.whatwg.org/multipage/server-sent-events.html)
 
 ---
 
@@ -31,7 +31,7 @@
 
 - **Gestion multi-sites & multi-files** : Organisation hiérarchique par sites, files d'attente, guichets et services.
 - **Prise de rendez-vous & tickets sans contact** : Gestion des créneaux, tickets virtuels avec suivi en temps réel pour l'usager (via lien web public et QR code).
-- **Temps réel & Écrans d'affichage** : WebSockets (Socket.IO) clusterisé avec Redis Adapter pour la mise à jour instantanée des écrans d'appel et des pupitres agents.
+- **Temps réel & Écrans d'affichage** : flux SSE distribués par Redis Pub/Sub pour notifier les IHM, qui actualisent ensuite leurs données via REST.
 - **Sécurité & Contrôle d'accès granulaire (RBAC)** : Permissions hiérarchiques (`root`, `admin`, `manager`, `operator`) avec cache de scope distribué via Redis.
 - **Workers automatiques** : Recalcul prédictif des temps d'attente, purge des RDV expirés, notifications et réinitialisation nocturne.
 
@@ -42,7 +42,7 @@
 - **Framework** : [NestJS 10](https://nestjs.com/) (Node.js runtime / Express)
 - **Langage** : [TypeScript 5](https://www.typescriptlang.org/) (mode strict, typage complet)
 - **Base de données** : PostgreSQL 14+ avec [TypeORM](https://typeorm.io/)
-- **Cache & Distribution** : [Redis](https://redis.io/) (via `ioredis`) pour le cache de scope RBAC, les compteurs de métriques et le scaling WebSocket
+- **Cache & Distribution** : [Redis](https://redis.io/) (via `ioredis`) pour le cache de scope RBAC, les compteurs de métriques et la diffusion des notifications SSE
 - **Tâches planifiées** : workers NestJS hors Vercel et déclencheurs HTTP Vercel Cron en production serverless
 - **Documentation API** : OpenAPI 3.0 via `@nestjs/swagger` + Swagger UI
 - **Tests** : Jest, ts-jest, Supertest
@@ -106,21 +106,21 @@ L'API démarre par défaut sur `http://localhost:3000`.
 
 Principales variables configurables dans `.env` :
 
-| Variable                     | Description                                         | Défaut / Exemple                              |
-| ---------------------------- | --------------------------------------------------- | --------------------------------------------- |
-| `PORT`                       | Port d'écoute du serveur HTTP                       | `3000`                                        |
-| `NODE_ENV`                   | Environnement (`development`, `production`, `test`) | `development`                                 |
-| `DATABASE_URL`               | URL PostgreSQL unique (ajouter `sslmode=require` pour Neon) | `postgresql://dori:dori_password@localhost:5432/dori` |
-| `REDIS_URL`                  | URL de connexion Redis unique                       | `redis://localhost:6379`                      |
-| `JWT_SECRET`                 | Clé secrète de signature HMAC (min. 32 caractères)  | _clé aléatoire_                               |
-| `JWT_ACCESS_EXPIRES_IN`      | Durée de validité de l'Access Token                 | `60m`                                         |
-| `REFRESH_TOKEN_EXPIRES_DAYS` | Durée de validité du Refresh Token                  | `30`                                          |
-| `CORS_ORIGINS`               | Origines autorisées (séparées par virgule)          | `http://localhost:3001,http://localhost:5173` |
-| `PUBLIC_WEB_URL`             | URL de l'application usager pour les liens de suivi | `http://localhost:5173`                       |
-| `CRON_SECRET`                | Secret Bearer des endpoints Vercel Cron             | secret aléatoire long                         |
-| `DEFAULT_TIMEZONE`           | Fuseau horaire IANA utilisé en repli                 | `Africa/Tunis`                                |
-| `APPOINTMENT_EXPIRY_INTERVAL_MINUTES` | Délai avant traitement des rendez-vous expirés | `5`                                    |
-| `SWAGGER_SERVERS`            | URLs OpenAPI séparées par des virgules               | local et production                           |
+| Variable                              | Description                                                 | Défaut / Exemple                                      |
+| ------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------- |
+| `PORT`                                | Port d'écoute du serveur HTTP                               | `3000`                                                |
+| `NODE_ENV`                            | Environnement (`development`, `production`, `test`)         | `development`                                         |
+| `DATABASE_URL`                        | URL PostgreSQL unique (ajouter `sslmode=require` pour Neon) | `postgresql://dori:dori_password@localhost:5432/dori` |
+| `REDIS_URL`                           | URL de connexion Redis unique                               | `redis://localhost:6379`                              |
+| `JWT_SECRET`                          | Clé secrète de signature HMAC (min. 32 caractères)          | _clé aléatoire_                                       |
+| `JWT_ACCESS_EXPIRES_IN`               | Durée de validité de l'Access Token                         | `60m`                                                 |
+| `REFRESH_TOKEN_EXPIRES_DAYS`          | Durée de validité du Refresh Token                          | `30`                                                  |
+| `CORS_ORIGINS`                        | Origines autorisées (séparées par virgule)                  | `http://localhost:3001,http://localhost:5173`         |
+| `PUBLIC_WEB_URL`                      | URL de l'application usager pour les liens de suivi         | `http://localhost:5173`                               |
+| `CRON_SECRET`                         | Secret Bearer des endpoints Vercel Cron                     | secret aléatoire long                                 |
+| `DEFAULT_TIMEZONE`                    | Fuseau horaire IANA utilisé en repli                        | `Africa/Tunis`                                        |
+| `APPOINTMENT_EXPIRY_INTERVAL_MINUTES` | Délai avant traitement des rendez-vous expirés              | `5`                                                   |
+| `SWAGGER_SERVERS`                     | URLs OpenAPI séparées par des virgules                      | local et production                                   |
 
 Consultez [.env.example](file:///.env.example) pour la liste exhaustive et commentée.
 
@@ -153,7 +153,7 @@ src/
 │   ├── errors/                # DoriException et gestionnaire global d'exceptions
 │   ├── monitoring/            # Health check, métriques Redis et supervision
 │   ├── rbac/                  # Guards de permissions et scope distribué
-│   ├── realtime/              # Adaptateur Socket.IO Redis pour multi-instances
+│   ├── realtime/              # Publication Redis et endpoints SSE par file
 │   └── redis/                 # Module Redis global partagé (@Inject(REDIS_CLIENT))
 ├── modules/                   # Domaines métier de la plateforme
 │   ├── appointments/          # Prise et gestion des rendez-vous
@@ -170,8 +170,6 @@ src/
 │   ├── tickets/               # Numérotation, appels et clôture de tickets
 │   ├── tracking/              # Suivi public temps réel pour les usagers
 │   └── users/                 # Gestion des comptes, rôles et assignations
-├── websocket/                 # Passerelle WebSocket en temps réel
-│   └── display.gateway.ts     # Diffusion des appels aux écrans et agents
 └── workers/                   # Tâches périodiques en arrière-plan (CRON)
     ├── appointment-expiry/    # Purge et annulation des RDV non honorés
     ├── daily-reset/           # Remise à zéro quotidienne des compteurs de tickets

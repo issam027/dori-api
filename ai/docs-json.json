@@ -9965,6 +9965,77 @@
         ]
       }
     },
+    "/api/v1/realtime/queues/{queueId}/display": {
+      "get": {
+        "operationId": "RealtimeController_display",
+        "summary": "Suivre les changements de l'écran d'attente",
+        "parameters": [
+          {
+            "name": "queueId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "description": "Identifiant de la file."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Realtime"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/realtime/queues/{queueId}/tracking": {
+      "get": {
+        "operationId": "RealtimeController_tracking",
+        "summary": "Suivre les changements de position d'un ticket",
+        "parameters": [
+          {
+            "name": "queueId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "description": "Identifiant de la file."
+          },
+          {
+            "name": "X-Registration-Token",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Valeur du paramètre « x-registration-token »."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Realtime"
+        ],
+        "security": [
+          {
+            "registration-token": []
+          }
+        ]
+      }
+    },
     "/api/v1/sites/{siteId}/next-preview": {
       "get": {
         "operationId": "QueueEngineController_nextPreview",
