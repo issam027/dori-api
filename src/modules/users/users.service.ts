@@ -260,7 +260,6 @@ export class UsersService {
     await this.usersRepository.setUserPassword(
       userId,
       passwordHash,
-      dto.mustChangePassword ?? false,
       user.userId,
       now,
     );

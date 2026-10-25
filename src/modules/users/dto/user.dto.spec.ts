@@ -62,22 +62,6 @@ describe('User DTOs Password Validation', () => {
     expect(errors[0].constraints).toHaveProperty('maxLength');
   });
 
-  it('accepts only a boolean mustChangePassword flag when provided', async () => {
-    const validDto = plainToInstance(SetUserPasswordDto, {
-      newPassword: 'Root@123456',
-      mustChangePassword: true,
-    });
-    expect(await validate(validDto)).toHaveLength(0);
-
-    const invalidDto = plainToInstance(SetUserPasswordDto, {
-      newPassword: 'Root@123456',
-      mustChangePassword: 'true',
-    });
-    const errors = await validate(invalidDto);
-    expect(
-      errors.find((error) => error.property === 'mustChangePassword'),
-    ).toBeDefined();
-  });
 });
 
 describe('UserFilterDto', () => {
