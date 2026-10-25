@@ -255,3 +255,11 @@ Propriétaire — Tous droits réservés.
 <!-- CHECKPOINT id="ckpt_mvnmqon0_58hwtl" time="2026-10-25T09:33:01.116Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 <!-- CHECKPOINT id="ckpt_mvnn3jlu_fiybrq" time="2026-10-25T09:43:01.122Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvnngekz_sfnkh6" time="2026-10-25T09:53:01.139Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvnnt9jn_g97n3o" time="2026-10-25T10:03:01.139Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvno64ij_0pa639" time="2026-10-25T10:13:01.147Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvnoizh9_nilrzm" time="2026-10-25T10:23:01.149Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

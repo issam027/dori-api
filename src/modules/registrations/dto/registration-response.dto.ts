@@ -1,4 +1,4 @@
-import { IsUUID } from 'class-validator';
+import { IsUUID, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../../core/pagination/pagination.dto';
 
@@ -292,6 +292,16 @@ export class RegistrationPositionResponseDto {
     description: "Date et heure de l'appel du client",
   })
   calledAt?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    format: 'uuid',
+    example: '00000000-0000-4000-8000-000000000001',
+    description: 'Identifiant UUID de la file',
+  })
+  @IsUUID()
+  @IsOptional()
+  queueId?: string;
 
   @ApiPropertyOptional({
     example: 'Consultation Cardiologie',

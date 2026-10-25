@@ -363,6 +363,7 @@ describe('RegistrationsService public position', () => {
         thread_number: 4,
         counter_name: 'Guichet 04',
         called_at: calledAt,
+        queue_id: '00000000-0000-4000-8000-000000000001',
         queue_name: 'Accueil',
       }),
     };
@@ -388,6 +389,7 @@ describe('RegistrationsService public position', () => {
       counterNumber: 4,
       counterName: 'Guichet 04',
       calledAt,
+      queueId: '00000000-0000-4000-8000-000000000001',
       queueName: 'Accueil',
     });
   });

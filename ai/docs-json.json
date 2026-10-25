@@ -14893,6 +14893,426 @@
         ]
       }
     },
+    "/api/internal/cron/daily-reset": {
+      "get": {
+        "operationId": "CronController_dailyResetCron",
+        "summary": "Réinitialiser les files pour la nouvelle journée",
+        "description": "Clôture les inscriptions encore actives de la journée précédente et prépare les files pour la date métier courante.",
+        "parameters": [
+          {
+            "name": "authorization",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Valeur du paramètre « authorization »."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Réinitialisation quotidienne exécutée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "OK",
+                      "description": "Code applicatif du résultat"
+                    },
+                    "translationKey": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": null,
+                      "description": "Clé de traduction du message (null si aucun message)"
+                    },
+                    "translationParams": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "example": {},
+                      "description": "Paramètres de traduction"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CronExecutionResponseDto"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "translationKey",
+                    "translationParams",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié — token manquant ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ScheduledTasks"
+        ],
+        "security": [
+          {
+            "cron-secret": []
+          }
+        ]
+      }
+    },
+    "/api/internal/cron/appointment-expiry": {
+      "get": {
+        "operationId": "CronController_appointmentExpiryCron",
+        "summary": "Traiter les rendez-vous expirés",
+        "description": "Identifie les rendez-vous dont l'heure de passage est dépassée et applique les règles d'expiration configurées.",
+        "parameters": [
+          {
+            "name": "authorization",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Valeur du paramètre « authorization »."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Traitement des rendez-vous expirés exécuté",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "OK",
+                      "description": "Code applicatif du résultat"
+                    },
+                    "translationKey": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": null,
+                      "description": "Clé de traduction du message (null si aucun message)"
+                    },
+                    "translationParams": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "example": {},
+                      "description": "Paramètres de traduction"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CronExecutionResponseDto"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "translationKey",
+                    "translationParams",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié — token manquant ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ScheduledTasks"
+        ],
+        "security": [
+          {
+            "cron-secret": []
+          }
+        ]
+      }
+    },
+    "/api/internal/cron/notifications": {
+      "get": {
+        "operationId": "CronController_notificationCron",
+        "summary": "Envoyer les notifications en attente",
+        "description": "Traite la file des notifications en attente et déclenche leur envoi selon leur canal.",
+        "parameters": [
+          {
+            "name": "authorization",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Valeur du paramètre « authorization »."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Traitement des notifications exécuté",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "OK",
+                      "description": "Code applicatif du résultat"
+                    },
+                    "translationKey": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": null,
+                      "description": "Clé de traduction du message (null si aucun message)"
+                    },
+                    "translationParams": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "example": {},
+                      "description": "Paramètres de traduction"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CronExecutionResponseDto"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "translationKey",
+                    "translationParams",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié — token manquant ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ScheduledTasks"
+        ],
+        "security": [
+          {
+            "cron-secret": []
+          }
+        ]
+      }
+    },
+    "/api/internal/cron/queue-estimation": {
+      "get": {
+        "operationId": "CronController_queueEstimationCron",
+        "summary": "Actualiser les estimations d'attente",
+        "description": "Recalcule les estimations de temps d'attente des files actives à partir de leur état courant.",
+        "parameters": [
+          {
+            "name": "authorization",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Valeur du paramètre « authorization »."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Actualisation des estimations d'attente exécutée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "OK",
+                      "description": "Code applicatif du résultat"
+                    },
+                    "translationKey": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": null,
+                      "description": "Clé de traduction du message (null si aucun message)"
+                    },
+                    "translationParams": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "example": {},
+                      "description": "Paramètres de traduction"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CronExecutionResponseDto"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "translationKey",
+                    "translationParams",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié — token manquant ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ScheduledTasks"
+        ],
+        "security": [
+          {
+            "cron-secret": []
+          }
+        ]
+      }
+    },
     "/api/v1/monitoring/health": {
       "get": {
         "operationId": "MonitoringController_health",
@@ -15378,20 +15798,18 @@
     {
       "name": "Monitoring",
       "description": "Santé technique, métriques et indicateurs d’activité"
+    },
+    {
+      "name": "ScheduledTasks",
+      "description": "Déclenchement interne des traitements automatisés par Vercel Cron"
     }
   ],
   "servers": [
     {
-      "url": "http://localhost:3000",
-      "description": "Environnement local de développement"
+      "url": "http://localhost:3000"
     },
     {
-      "url": "https://dori-api-dev.vercel.app",
-      "description": "Environnement distant de développement"
-    },
-    {
-      "url": "https://dori-api.vercel.app",
-      "description": "Environnement de production"
+      "url": "https://dori-api.vercel.app"
     }
   ],
   "components": {
@@ -15413,6 +15831,12 @@
         "in": "header",
         "name": "X-Registration-Token",
         "description": "Jeton public de suivi de position"
+      },
+      "cron-secret": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "description": "Secret partagé CRON_SECRET envoyé automatiquement par Vercel Cron"
       }
     },
     "schemas": {
@@ -19370,6 +19794,12 @@
             "example": "2026-10-15T09:42:18.000Z",
             "description": "Date et heure de l'appel du client"
           },
+          "queueId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "00000000-0000-4000-8000-000000000001",
+            "description": "Identifiant UUID de la file"
+          },
           "queueName": {
             "type": "string",
             "example": "Consultation Cardiologie",
@@ -19493,7 +19923,7 @@
             "description": "Valeur du champ « username »."
           },
           "connectedAt": {
-            "type": "string",
+            "type": "object",
             "format": "date-time",
             "description": "Valeur du champ « connected at »."
           },
@@ -19638,7 +20068,7 @@
             "description": "Valeur du champ « mode »."
           },
           "connectedAt": {
-            "type": "string",
+            "type": "object",
             "format": "date-time",
             "description": "Valeur du champ « connected at »."
           },
@@ -21153,61 +21583,17 @@
           "permissionNames"
         ]
       },
-      "HealthMemoryUsageDto": {
+      "CronExecutionResponseDto": {
         "type": "object",
         "properties": {
-          "rss": {
-            "type": "number",
-            "description": "Valeur du champ « rss »."
-          },
-          "heapTotal": {
-            "type": "number",
-            "description": "Valeur du champ « heap total »."
-          },
-          "heapUsed": {
-            "type": "number",
-            "description": "Valeur du champ « heap used »."
-          },
-          "external": {
-            "type": "number",
-            "description": "Valeur du champ « external »."
-          },
-          "arrayBuffers": {
-            "type": "number",
-            "description": "Valeur du champ « array buffers »."
+          "accepted": {
+            "type": "boolean",
+            "example": true,
+            "description": "Indique que la tâche planifiée a été exécutée avec succès."
           }
         },
         "required": [
-          "rss",
-          "heapTotal",
-          "heapUsed",
-          "external",
-          "arrayBuffers"
-        ]
-      },
-      "HealthChecksDto": {
-        "type": "object",
-        "properties": {
-          "database": {
-            "type": "string",
-            "enum": [
-              "up",
-              "down"
-            ],
-            "description": "Valeur du champ « database »."
-          },
-          "memoryUsage": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/HealthMemoryUsageDto"
-              }
-            ],
-            "description": "Valeur du champ « memory usage »."
-          }
-        },
-        "required": [
-          "database",
-          "memoryUsage"
+          "accepted"
         ]
       },
       "MonitoringHealthResponseDto": {
@@ -21225,25 +21611,11 @@
             "type": "string",
             "format": "date-time",
             "description": "Valeur du champ « timestamp »."
-          },
-          "uptime": {
-            "type": "number",
-            "description": "Valeur du champ « uptime »."
-          },
-          "checks": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/HealthChecksDto"
-              }
-            ],
-            "description": "Valeur du champ « checks »."
           }
         },
         "required": [
           "status",
-          "timestamp",
-          "uptime",
-          "checks"
+          "timestamp"
         ]
       },
       "MonitoringMetricsResponseDto": {
