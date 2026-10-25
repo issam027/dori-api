@@ -297,7 +297,8 @@ export class RegistrationPositionResponseDto {
     type: String,
     format: 'uuid',
     example: '00000000-0000-4000-8000-000000000001',
-    description: 'Identifiant UUID de la file',
+    description:
+      "Identifiant UUID de la file, retourne uniquement tant que l'inscription est en attente ou en cours de traitement",
   })
   @IsUUID()
   @IsOptional()

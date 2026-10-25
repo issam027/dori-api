@@ -801,7 +801,6 @@ export class RegistrationsService {
       return {
         status: 'closed',
         registrationStatus: reg.status,
-        queueId: reg.queue_id,
       };
     }
 
@@ -855,7 +854,6 @@ export class RegistrationsService {
       counterNumber: reg.thread_number,
       counterName: reg.counter_name,
       calledAt: reg.called_at,
-      queueId: reg.queue_id,
       queueName: reg.queue_name,
     };
   }

@@ -394,6 +394,39 @@ describe('RegistrationsService public position', () => {
     });
   });
 
+  it('returns the queue id while the client is waiting', async () => {
+    const repository = {
+      findByTrackingToken: jest.fn().mockResolvedValue({
+        registration_tracking_token_valid_until: new Date(
+          '2026-10-16T09:42:18.000Z',
+        ),
+        ticket_number: 'A-012',
+        status: 'waiting',
+        queue_id: '00000000-0000-4000-8000-000000000001',
+        queue_name: 'Accueil',
+      }),
+      countWaitingBefore: jest.fn().mockResolvedValue(2),
+    };
+    const service = new RegistrationsService(
+      repository as unknown as RegistrationsRepository,
+      {} as ScopeService,
+      {
+        now: jest.fn(() => new Date('2026-10-15T10:00:00.000Z')),
+        parse: jest.fn((value: Date | string) => new Date(value)),
+      } as unknown as ClockService,
+      {} as PersonsService,
+      { getOrThrow: jest.fn(() => 60) } as unknown as ConfigService,
+      {} as NotificationTemplateService,
+    );
+
+    await expect(
+      service.getPublicPosition('550e8400-e29b-41d4-a716-446655440000'),
+    ).resolves.toMatchObject({
+      status: 'waiting',
+      queueId: '00000000-0000-4000-8000-000000000001',
+    });
+  });
+
   it.each(['served', 'no_show', 'cancelled', 'expired'])(
     'returns the terminal registration status %s',
     async (registrationStatus) => {
@@ -407,6 +440,7 @@ describe('RegistrationsService public position', () => {
           thread_number: 4,
           counter_name: 'Guichet 04',
           called_at: new Date('2026-10-15T09:42:18.000Z'),
+          queue_id: '00000000-0000-4000-8000-000000000001',
           queue_name: 'Accueil',
           closed_at: new Date('2026-10-15T09:50:00.000Z'),
         }),
@@ -423,14 +457,51 @@ describe('RegistrationsService public position', () => {
         {} as NotificationTemplateService,
       );
 
-      await expect(
-        service.getPublicPosition('550e8400-e29b-41d4-a716-446655440000'),
-      ).resolves.toMatchObject({
+      const response = await service.getPublicPosition(
+        '550e8400-e29b-41d4-a716-446655440000',
+      );
+
+      expect(response).toMatchObject({
         status: registrationStatus,
         registrationStatus,
       });
+      expect(response).not.toHaveProperty('queueId');
     },
   );
+
+  it('does not return the queue id in the degraded closed response', async () => {
+    const repository = {
+      findByTrackingToken: jest.fn().mockResolvedValue({
+        registration_tracking_token_valid_until: new Date(
+          '2026-10-16T09:42:18.000Z',
+        ),
+        status: 'served',
+        closed_at: new Date('2026-10-15T08:00:00.000Z'),
+        queue_id: '00000000-0000-4000-8000-000000000001',
+      }),
+    };
+    const service = new RegistrationsService(
+      repository as unknown as RegistrationsRepository,
+      {} as ScopeService,
+      {
+        now: jest.fn(() => new Date('2026-10-15T10:00:00.000Z')),
+        parse: jest.fn((value: Date | string) => new Date(value)),
+      } as unknown as ClockService,
+      {} as PersonsService,
+      { getOrThrow: jest.fn(() => 60) } as unknown as ConfigService,
+      {} as NotificationTemplateService,
+    );
+
+    const response = await service.getPublicPosition(
+      '550e8400-e29b-41d4-a716-446655440000',
+    );
+
+    expect(response).toEqual({
+      status: 'closed',
+      registrationStatus: 'served',
+    });
+    expect(response).not.toHaveProperty('queueId');
+  });
 });
 
 describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â creation response', () => {

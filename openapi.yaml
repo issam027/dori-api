@@ -10534,7 +10534,9 @@ components:
           type: string
           format: uuid
           example: 00000000-0000-4000-8000-000000000001
-          description: Identifiant UUID de la file
+          description: >-
+            Identifiant UUID de la file, retourne uniquement tant que l'inscription est en attente ou en cours de
+            traitement
         queueName:
           type: string
           example: Consultation Cardiologie
