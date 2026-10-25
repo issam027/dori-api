@@ -16,10 +16,10 @@ describe('RealtimeService', () => {
     service.setServer({ to } as never);
   });
 
-  it('publishes display invalidations only on the display room', () => {
+  it('publishes display invalidations only on the display room', async () => {
     const queueId = '00000000-0000-4000-8000-000000000001';
 
-    service.emitQueueDisplayChanged(queueId, 'registration_called');
+    await service.emitQueueDisplayChanged(queueId, 'registration_called');
 
     expect(to).toHaveBeenCalledWith(`queue:${queueId}:display`);
     expect(emit).toHaveBeenCalledWith('queue_display_changed', {
@@ -29,15 +29,42 @@ describe('RealtimeService', () => {
     });
   });
 
-  it('publishes position invalidations only on the tracking room', () => {
+  it('publishes position invalidations only on the tracking room', async () => {
     const queueId = '00000000-0000-4000-8000-000000000001';
 
-    service.emitQueuePositionChanged(queueId);
+    await service.emitQueuePositionChanged(queueId);
 
     expect(to).toHaveBeenCalledWith(`queue:${queueId}:tracking`);
     expect(emit).toHaveBeenCalledWith('queue_position_changed', {
       queueId,
       timestamp: now.toISOString(),
     });
+  });
+
+  it('publishes an awaited JSON event to Redis without a local server', async () => {
+    const queueId = '00000000-0000-4000-8000-000000000001';
+    const redis = {
+      status: 'ready',
+      publish: jest.fn().mockResolvedValue(1),
+    };
+    const redisService = new RealtimeService(
+      { now: jest.fn(() => now) } as unknown as ClockService,
+      redis as never,
+    );
+
+    await redisService.emitQueueDisplayChanged(queueId, 'registration_created');
+
+    expect(redis.publish).toHaveBeenCalledWith(
+      'dori:queue-events',
+      JSON.stringify({
+        room: `queue:${queueId}:display`,
+        event: 'queue_display_changed',
+        payload: {
+          queueId,
+          reason: 'registration_created',
+          timestamp: now.toISOString(),
+        },
+      }),
+    );
   });
 });

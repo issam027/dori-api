@@ -252,7 +252,7 @@ export class RegistrationsService {
         };
       },
     );
-    this.realtimeService?.emitQueueDisplayChanged(
+    await this.realtimeService?.emitQueueDisplayChanged(
       dto.queueId,
       'registration_created',
     );
