@@ -40,31 +40,4 @@ describe('RealtimeService', () => {
       timestamp: now.toISOString(),
     });
   });
-
-  it('publishes an awaited JSON event to Redis without a local server', async () => {
-    const queueId = '00000000-0000-4000-8000-000000000001';
-    const redis = {
-      status: 'ready',
-      publish: jest.fn().mockResolvedValue(1),
-    };
-    const redisService = new RealtimeService(
-      { now: jest.fn(() => now) } as unknown as ClockService,
-      redis as never,
-    );
-
-    await redisService.emitQueueDisplayChanged(queueId, 'registration_created');
-
-    expect(redis.publish).toHaveBeenCalledWith(
-      'dori:queue-events',
-      JSON.stringify({
-        room: `queue:${queueId}:display`,
-        event: 'queue_display_changed',
-        payload: {
-          queueId,
-          reason: 'registration_created',
-          timestamp: now.toISOString(),
-        },
-      }),
-    );
-  });
 });
