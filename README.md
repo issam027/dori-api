@@ -111,8 +111,7 @@ Principales variables configurables dans `.env` :
 | `PORT`                       | Port d'écoute du serveur HTTP                       | `3000`                                        |
 | `NODE_ENV`                   | Environnement (`development`, `production`, `test`) | `development`                                 |
 | `DATABASE_URL`               | URL PostgreSQL unique (ajouter `sslmode=require` pour Neon) | `postgresql://dori:dori_password@localhost:5432/dori` |
-| `REDIS_HOST` / `REDIS_PORT`  | Hôte et port Redis                                  | `localhost` / `6379`                          |
-| `REDIS_PASSWORD`             | Mot de passe Redis (optionnel)                      | _vide_                                        |
+| `REDIS_URL`                  | URL de connexion Redis unique                       | `redis://localhost:6379`                      |
 | `JWT_SECRET`                 | Clé secrète de signature HMAC (min. 32 caractères)  | _clé aléatoire_                               |
 | `JWT_ACCESS_EXPIRES_IN`      | Durée de validité de l'Access Token                 | `60m`                                         |
 | `REFRESH_TOKEN_EXPIRES_DAYS` | Durée de validité du Refresh Token                  | `30`                                          |

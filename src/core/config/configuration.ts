@@ -41,7 +41,7 @@ export function validateEnvironment(
   for (const [name, min, max] of [
     ['PORT', 1, 65535],
     ['DB_POOL_MAX', 1, 100],
-    ['REDIS_PORT', 1, 65535],
+
     ['REFRESH_TOKEN_EXPIRES_DAYS', 1, 365],
     ['SECURITY_MAX_FAILED_ATTEMPTS', 1, 100],
     ['SECURITY_LOCKOUT_MINUTES', 1, 1440],
@@ -55,6 +55,7 @@ export function validateEnvironment(
     ['TRACKING_TOKEN_TTL_MINUTES', 1, 10080],
     ['TRACKING_CLOSED_GRACE_MINUTES', 0, 1440],
     ['APPOINTMENT_EXPIRY_INTERVAL_MINUTES', 1, 1440],
+    ['WEBHOOK_MAX_AGE_SECONDS', 1, 86400],
   ] as const) {
     if (environment[name] === undefined) continue;
     const value = Number(environment[name]);
@@ -128,15 +129,12 @@ export default () => {
     },
 
     redis: {
+      url: process.env.REDIS_URL ?? (process.env.VERCEL ? undefined : 'redis://localhost:6379'),
       enabled:
         process.env.REDIS_ENABLED !== 'false' &&
-        process.env.REDIS_HOST !== 'disabled' &&
-        process.env.REDIS_HOST !== 'none',
-      host:
-        process.env.REDIS_HOST ??
-        (process.env.VERCEL ? undefined : 'localhost'),
-      port: parseInteger('REDIS_PORT', process.env.REDIS_PORT, 6379),
-      password: process.env.REDIS_PASSWORD,
+        process.env.REDIS_URL !== 'disabled' &&
+        process.env.REDIS_URL !== 'none' &&
+        Boolean(process.env.REDIS_URL ?? !process.env.VERCEL),
     },
 
     jwt: {

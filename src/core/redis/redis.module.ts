@@ -14,7 +14,7 @@ export const REDIS_CLIENT = 'REDIS_CLIENT';
  * entre tous les modules (ScopeService, MonitoringService, etc.)
  * Le décorateur @Global() évite de l'importer manuellement dans chaque module.
  *
- * Si Redis n'est pas configuré (REDIS_HOST absent ou désactivé),
+ * Si Redis n'est pas configuré (REDIS_URL absent ou désactivé),
  * le provider retourne null et les services basculent en fallback BDD / mémoire.
  */
 @Global()
@@ -28,14 +28,14 @@ export const REDIS_CLIENT = 'REDIS_CLIENT';
         const logger = new Logger('RedisModule');
         const isExport = config.get<boolean>('swaggerExport') ?? false;
         const enabled = config.get<boolean>('redis.enabled', true);
-        const host = config.get<string | undefined>('redis.host');
+        const redisUrl = config.get<string | undefined>('redis.url');
 
         if (
           !enabled ||
-          !host ||
-          host === '' ||
-          host === 'none' ||
-          host === 'disabled'
+          !redisUrl ||
+          redisUrl === '' ||
+          redisUrl === 'none' ||
+          redisUrl === 'disabled'
         ) {
           logger.log(
             'Redis is disabled or not configured. Running with in-memory / DB fallback.',
@@ -43,13 +43,7 @@ export const REDIS_CLIENT = 'REDIS_CLIENT';
           return null;
         }
 
-        const port = config.get<number>('redis.port') ?? 6379;
-        const password = config.get<string>('redis.password') || undefined;
-
-        const client = new Redis({
-          host,
-          port,
-          password,
+        const client = new Redis(redisUrl, {
           // Pas d'accumulation en file hors-ligne : échoue immédiatement si Redis est inaccessible
           enableOfflineQueue: false,
           maxRetriesPerRequest: 1,
