@@ -2,6 +2,7 @@ import { Module, Global, Logger } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { safeErrorName } from '../logging/safe-error';
+import { RedisThrottlerStorage } from '../throttler/redis-throttler-storage.service';
 
 /**
  * Token d'injection pour le client Redis partagé.
@@ -68,7 +69,8 @@ export const REDIS_CLIENT = 'REDIS_CLIENT';
         return client;
       },
     },
+    RedisThrottlerStorage,
   ],
-  exports: [REDIS_CLIENT],
+  exports: [REDIS_CLIENT, RedisThrottlerStorage],
 })
 export class RedisModule {}

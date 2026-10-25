@@ -251,3 +251,7 @@ L'API fournit plusieurs points de supervision :
 ## 📄 Licence
 
 Propriétaire — Tous droits réservés.
+
+<!-- CHECKPOINT id="ckpt_mvnmqon0_58hwtl" time="2026-10-25T09:33:01.116Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvnn3jlu_fiybrq" time="2026-10-25T09:43:01.122Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

@@ -13,6 +13,7 @@ import { ClockModule } from './core/clock/clock.module';
 import { RbacModule } from './core/rbac/rbac.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { RedisModule } from './core/redis/redis.module';
+import { RedisThrottlerStorage } from './core/throttler/redis-throttler-storage.service';
 
 import { SitesModule } from './modules/sites/sites.module';
 import { QueuesModule } from './modules/queues/queues.module';
@@ -48,25 +49,28 @@ const isVercel = isVercelRuntime();
     RedisModule,
     AuditModule,
     ThrottlerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => [
-        {
-          name: 'default',
-          ttl: config.get<number>('throttle.default.ttl') || 60000,
-          limit: config.get<number>('throttle.default.limit') || 200,
-        },
-        {
-          name: 'strict',
-          ttl: config.get<number>('throttle.strict.ttl') || 60000,
-          limit: config.get<number>('throttle.strict.limit') || 20,
-        },
-        {
-          name: 'auth',
-          ttl: config.get<number>('throttle.auth.ttl') || 60000,
-          limit: config.get<number>('throttle.auth.limit') || 10,
-        },
-      ],
+      imports: [ConfigModule, RedisModule],
+      inject: [ConfigService, RedisThrottlerStorage],
+      useFactory: (config: ConfigService, storage: RedisThrottlerStorage) => ({
+        storage,
+        throttlers: [
+          {
+            name: 'default',
+            ttl: config.get<number>('throttle.default.ttl') || 60000,
+            limit: config.get<number>('throttle.default.limit') || 200,
+          },
+          {
+            name: 'strict',
+            ttl: config.get<number>('throttle.strict.ttl') || 60000,
+            limit: config.get<number>('throttle.strict.limit') || 20,
+          },
+          {
+            name: 'auth',
+            ttl: config.get<number>('throttle.auth.ttl') || 60000,
+            limit: config.get<number>('throttle.auth.limit') || 10,
+          },
+        ],
+      }),
     }),
     DatabaseModule,
     ClockModule,
