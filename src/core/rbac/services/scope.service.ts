@@ -1,4 +1,4 @@
-﻿import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
+import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
 import { AuthenticatedUser } from '../../auth/interfaces/jwt-payload.interface';
 import { DoriException } from '../../errors/dori.exception';
 import { ScopeRepository } from '../repositories/scope.repository';
@@ -12,7 +12,7 @@ export interface UserScope {
 }
 
 /** Préfixe de toutes les clés Redis du cache de scope RBAC */
-const SCOPE_KEY_PREFIX = 'scope:user:';
+const SCOPE_KEY_PREFIX = 'dori:scope:user:';
 /** TTL du cache : 30 secondes (§7.5) */
 const CACHE_TTL_SECONDS = 30;
 
@@ -36,11 +36,7 @@ export class ScopeService {
   }
 
   async getUserScope(user: AuthenticatedUser): Promise<UserScope> {
-    if (user.roles?.includes('root') || user.roles?.includes('admin')) {
-      return { isGlobal: true, siteIds: [], queueIds: [] };
-    }
-
-    // Lecture depuis Redis si disponible
+    // 1. Lecture depuis Redis si disponible
     if (this.isRedisReady() && this.redis) {
       try {
         const cached = await this.redis.get(this.cacheKey(user.userId));
@@ -54,31 +50,32 @@ export class ScopeService {
       }
     }
 
-    let siteIds: string[] = [];
-    let queueIds: string[] = [];
+    // 2. Calcul du périmètre (scope) selon les rôles
+    let scope: UserScope;
 
-    if (user.roles?.includes('manager')) {
+    if (user.roles?.includes('root') || user.roles?.includes('admin')) {
+      scope = { isGlobal: true, siteIds: [], queueIds: [] };
+    } else if (user.roles?.includes('manager')) {
       // Managers have access to their assigned sites and ALL queues of those sites (§4.10)
-      siteIds = await this.scopeRepository.findUserSiteIds(user.userId);
-      queueIds = await this.scopeRepository.findQueueIdsBySites(siteIds);
+      const siteIds = await this.scopeRepository.findUserSiteIds(user.userId);
+      const queueIds = await this.scopeRepository.findQueueIdsBySites(siteIds);
+      scope = { isGlobal: false, siteIds, queueIds };
     } else {
       const queueScope = await this.scopeRepository.findUserQueueScope(
         user.userId,
       );
-      queueIds = queueScope.queueIds;
       const directSiteIds = await this.scopeRepository.findUserSiteIds(
         user.userId,
       );
-      siteIds = Array.from(new Set([...queueScope.siteIds, ...directSiteIds]));
+      const siteIds = Array.from(new Set([...queueScope.siteIds, ...directSiteIds]));
+      scope = {
+        isGlobal: false,
+        siteIds,
+        queueIds: queueScope.queueIds,
+      };
     }
 
-    const scope: UserScope = {
-      isGlobal: false,
-      siteIds,
-      queueIds,
-    };
-
-    // SETEX : écriture avec TTL si Redis est disponible (§7.5)
+    // 3. SETEX : écriture dans Redis avec TTL de 30s (§7.5)
     if (this.isRedisReady() && this.redis) {
       try {
         await this.redis.setex(
