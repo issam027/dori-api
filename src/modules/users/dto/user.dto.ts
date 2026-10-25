@@ -152,6 +152,16 @@ export class SetUserPasswordDto {
   @MinLength(10)
   @MaxLength(20)
   newPassword: string;
+
+  @ApiPropertyOptional({
+    example: true,
+    default: false,
+    description:
+      "Indique si l'utilisateur devra changer ce mot de passe à sa prochaine connexion",
+  })
+  @IsOptional()
+  @IsBoolean()
+  mustChangePassword?: boolean;
 }
 
 export class AssignUserRoleDto {

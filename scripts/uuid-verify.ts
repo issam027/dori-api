@@ -44,6 +44,14 @@ for (const file of tsFiles) {
     failures.push(`${relative}: numeric row ID conversion.`);
   if (/parseInt\([^\n)]*(?:Id|_id)/.test(source))
     failures.push(`${relative}: parseInt on internal ID.`);
+  if (
+    /\b(?:site|user|role|permission|queue|person|note|tier|rule|session|registration|notification|translation|estimation_stats)_id\s+(?:SMALLINT|INT|INTEGER|BIGINT)\b/i.test(
+      source,
+    )
+  )
+    failures.push(`${relative}: numeric internal ID in embedded SQL.`);
+  if (/name:\s*['"][A-Za-z]+Id['"][\s\S]{0,120}?type:\s*Number\b/.test(source))
+    failures.push(`${relative}: numeric OpenAPI path ID.`);
   if (/PrimaryGeneratedColumn\(['"](?:increment|identity)['"]\)/.test(source))
     failures.push(`${relative}: numeric generated primary key.`);
   if (

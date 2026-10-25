@@ -122,7 +122,7 @@ export class UsersController {
   })
   @ApiParam({
     name: 'userId',
-    type: Number,
+    type: String,
     description: "ID de l'utilisateur",
   })
   @ApiDoriOkResponse(UserResponseDto, "Détails de l'utilisateur")
@@ -147,7 +147,7 @@ export class UsersController {
   })
   @ApiParam({
     name: 'userId',
-    type: Number,
+    type: String,
     description: "ID de l'utilisateur",
   })
   @ApiDoriOkResponse(
@@ -181,7 +181,7 @@ export class UsersController {
   })
   @ApiParam({
     name: 'userId',
-    type: Number,
+    type: String,
     description: "ID de l'utilisateur",
   })
   @ApiDoriOkResponse(
@@ -215,7 +215,7 @@ export class UsersController {
   })
   @ApiParam({
     name: 'userId',
-    type: Number,
+    type: String,
     description: "ID de l'utilisateur",
   })
   @ApiDoriOkResponse(DeleteUserResponseDto, 'Utilisateur supprimé avec succès')
@@ -245,7 +245,7 @@ export class UsersController {
   })
   @ApiParam({
     name: 'userId',
-    type: Number,
+    type: String,
     description: "ID de l'utilisateur",
   })
   @ApiDoriOkResponse(
@@ -281,7 +281,7 @@ export class UsersController {
   })
   @ApiParam({
     name: 'userId',
-    type: Number,
+    type: String,
     description: "ID de l'utilisateur",
   })
   @ApiDoriCreatedResponse(AssignUserRoleResponseDto, 'Rôle assigné avec succès')
@@ -312,12 +312,12 @@ export class UsersController {
   })
   @ApiParam({
     name: 'userId',
-    type: Number,
+    type: String,
     description: "ID de l'utilisateur",
   })
   @ApiParam({
     name: 'roleId',
-    type: Number,
+    type: String,
     description: 'ID du rôle à retirer',
   })
   @ApiDoriOkResponse(RemoveUserRoleResponseDto, 'Rôle retiré avec succès')
@@ -362,7 +362,7 @@ export class UsersController {
   })
   @ApiParam({
     name: 'roleId',
-    type: Number,
+    type: String,
     description: 'ID du rôle',
   })
   @ApiDoriOkResponse(

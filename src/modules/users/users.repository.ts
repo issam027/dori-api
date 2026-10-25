@@ -376,16 +376,17 @@ export class UsersRepository {
   async setUserPassword(
     userId: string,
     passwordHash: string,
+    mustChangePassword: boolean,
     updaterUserId: string,
     now: Date,
   ): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
       await manager.query(
         `UPDATE dorify.dori_user
-         SET password_hash = $1, must_change_password = TRUE, password_changed_at = $2,
-             updated_by_user_id = $3, updated_at = $2
-         WHERE user_id = $4`,
-        [passwordHash, now, updaterUserId, userId],
+         SET password_hash = $1, must_change_password = $2, password_changed_at = $3,
+             updated_by_user_id = $4, updated_at = $3
+         WHERE user_id = $5`,
+        [passwordHash, mustChangePassword, now, updaterUserId, userId],
       );
 
       await manager.query(

@@ -236,7 +236,7 @@ export class SitesController {
   })
   @ApiParam({
     name: 'userId',
-    type: Number,
+    type: String,
     description: "ID de l'utilisateur à retirer",
   })
   @ApiDoriOkResponse(

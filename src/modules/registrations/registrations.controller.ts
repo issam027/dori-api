@@ -146,7 +146,7 @@ export class RegistrationsController {
   })
   @ApiParam({
     name: 'registrationId',
-    type: Number,
+    type: String,
     description: "ID de l'inscription",
   })
   @ApiDoriOkResponse(RegistrationResponseDto, "Détails de l'inscription")
@@ -167,7 +167,7 @@ export class RegistrationsController {
   })
   @ApiParam({
     name: 'registrationId',
-    type: Number,
+    type: String,
     description: "ID de l'inscription",
   })
   @ApiDoriOkResponse(RegistrationResponseDto, 'Inscription mise à jour')
@@ -194,7 +194,7 @@ export class RegistrationsController {
   })
   @ApiParam({
     name: 'registrationId',
-    type: Number,
+    type: String,
     description: "ID de l'inscription",
   })
   @ApiDoriOkResponse(
@@ -220,7 +220,7 @@ export class RegistrationsController {
   })
   @ApiParam({
     name: 'registrationId',
-    type: Number,
+    type: String,
     description: "ID de l'inscription",
   })
   @ApiDoriOkResponse(RegistrationResponseDto, 'Arrivée validée')
@@ -240,7 +240,7 @@ export class RegistrationsController {
   })
   @ApiParam({
     name: 'registrationId',
-    type: Number,
+    type: String,
     description: "ID de l'inscription",
   })
   @ApiDoriOkResponse(

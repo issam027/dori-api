@@ -89,7 +89,7 @@ export class PersonsController {
   })
   @ApiParam({
     name: 'personId',
-    type: Number,
+    type: String,
     description: 'ID de la personne',
   })
   @ApiDoriOkResponse(PersonResponseDto, 'Détails de la personne')
@@ -108,7 +108,7 @@ export class PersonsController {
   })
   @ApiParam({
     name: 'personId',
-    type: Number,
+    type: String,
     description: 'ID de la personne',
   })
   @ApiDoriOkResponse(PersonResponseDto, 'Fiche modifiée')
@@ -129,7 +129,7 @@ export class PersonsController {
   })
   @ApiParam({
     name: 'personId',
-    type: Number,
+    type: String,
     description: 'ID de la personne',
   })
   @ApiDoriOkResponse(
@@ -159,7 +159,7 @@ export class PersonsController {
   })
   @ApiParam({
     name: 'personId',
-    type: Number,
+    type: String,
     description: 'ID de la personne',
   })
   @ApiDoriCreatedResponse(PersonNoteResponseDto, 'Note ajoutée')
@@ -185,7 +185,7 @@ export class PersonsController {
   })
   @ApiParam({
     name: 'personId',
-    type: Number,
+    type: String,
     description: 'ID de la personne',
   })
   @ApiParam({
@@ -218,7 +218,7 @@ export class PersonsController {
   })
   @ApiParam({
     name: 'personId',
-    type: Number,
+    type: String,
     description: 'ID de la personne',
   })
   @ApiParam({
@@ -249,7 +249,7 @@ export class PersonsController {
   })
   @ApiParam({
     name: 'personId',
-    type: Number,
+    type: String,
     description: 'ID de la personne',
   })
   @ApiDoriOkResponse(DeleteItemResponseDto, 'Personne supprimée avec succès')

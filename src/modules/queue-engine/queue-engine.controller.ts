@@ -57,7 +57,7 @@ export class QueueEngineController {
   @ApiParam({
     name: 'siteId',
     required: true,
-    type: Number,
+    type: String,
     description: 'ID du site',
   })
   @ApiDoriOkResponse(
@@ -157,7 +157,7 @@ export class QueueEngineController {
   })
   @ApiParam({
     name: 'sessionId',
-    type: Number,
+    type: String,
     description: 'ID de la session à fermer',
   })
   @ApiDoriOkResponse(CloseSessionResponseDto, 'Session fermée avec succès')
@@ -204,7 +204,7 @@ export class QueueEngineController {
   })
   @ApiParam({
     name: 'registrationId',
-    type: Number,
+    type: String,
     description: "ID de l'inscription cliente",
   })
   @ApiDoriOkResponse(UpdateRegistrationStatusResponseDto, 'Client marqué servi')
@@ -225,7 +225,7 @@ export class QueueEngineController {
   })
   @ApiParam({
     name: 'registrationId',
-    type: Number,
+    type: String,
     description: "ID de l'inscription cliente",
   })
   @ApiDoriOkResponse(

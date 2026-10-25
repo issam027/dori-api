@@ -77,7 +77,7 @@ export class NotificationsController {
   })
   @ApiParam({
     name: 'notificationId',
-    type: Number,
+    type: String,
     description: 'ID de la notification',
   })
   @ApiDoriOkResponse(NotificationResponseDto, 'Détails de la notification')
@@ -117,7 +117,7 @@ export class NotificationsController {
   })
   @ApiParam({
     name: 'notificationId',
-    type: Number,
+    type: String,
     description: 'ID de la notification à renvoyer',
   })
   @ApiDoriOkResponse(NotificationResponseDto, 'Notification réémise')

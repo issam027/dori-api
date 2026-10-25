@@ -139,7 +139,7 @@ export class TranslationsController {
   })
   @ApiParam({
     name: 'translationId',
-    type: Number,
+    type: String,
     description: 'ID de la traduction',
   })
   @ApiDoriOkResponse(
@@ -164,7 +164,7 @@ export class TranslationsController {
   })
   @ApiParam({
     name: 'translationId',
-    type: Number,
+    type: String,
     description: 'ID de la traduction',
   })
   @ApiDoriOkResponse(

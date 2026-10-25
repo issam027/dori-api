@@ -67,6 +67,29 @@ describe('UsersRepository', () => {
     expect(rank).toBeNull();
   });
 
+  it('persists the requested must-change-password value', async () => {
+    const now = new Date('2026-10-25T10:00:00Z');
+    await repository.setUserPassword(
+      '00000000-0000-4000-8000-000000000020',
+      'hashed-password',
+      false,
+      '00000000-0000-4000-8000-000000000005',
+      now,
+    );
+
+    expect(dataSourceMock.query).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('must_change_password = $2'),
+      [
+        'hashed-password',
+        false,
+        now,
+        '00000000-0000-4000-8000-000000000005',
+        '00000000-0000-4000-8000-000000000020',
+      ],
+    );
+  });
+
   it('findUsers filters users assigned directly or through a queue to a site', async () => {
     dataSourceMock.query
       .mockResolvedValueOnce([{ total: 1 }])

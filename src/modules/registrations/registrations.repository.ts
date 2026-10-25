@@ -278,7 +278,7 @@ export class RegistrationsTransaction {
          SELECT x.registration_id, x.rule_id, x.channel, 'welcome', x.locale,
                 x.recipient, x.content, x.status, x.failure_reason, 0, $2, $2
          FROM jsonb_to_recordset($1::jsonb) AS x(
-           registration_id int, rule_id int, channel varchar, locale varchar,
+           registration_id uuid, rule_id uuid, channel varchar, locale varchar,
            recipient varchar, content text, status varchar, failure_reason text
          )
          ON CONFLICT (registration_id, notification_type, channel) DO NOTHING

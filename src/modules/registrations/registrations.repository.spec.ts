@@ -62,6 +62,8 @@ describe('RegistrationsTransaction welcome notifications', () => {
       expect(query.mock.calls[1][1]).toEqual([[expectedKey], ['fr']]);
       const inserted = JSON.parse(query.mock.calls[2][1][0]);
       expect(inserted[0].content).toBe(expectedContent);
+      expect(query.mock.calls[2][0]).toContain('registration_id uuid');
+      expect(query.mock.calls[2][0]).toContain('rule_id uuid');
     },
   );
 
