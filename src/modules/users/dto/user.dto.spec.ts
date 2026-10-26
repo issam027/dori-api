@@ -61,9 +61,7 @@ describe('User DTOs Password Validation', () => {
     const errors = await validate(tooLongDto);
     expect(errors[0].constraints).toHaveProperty('maxLength');
   });
-
 });
-
 describe('UserFilterDto', () => {
   it('accepts siteIds as a CSV string', async () => {
     const dto = plainToInstance(UserFilterDto, {

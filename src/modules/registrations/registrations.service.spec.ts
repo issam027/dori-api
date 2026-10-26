@@ -13,6 +13,8 @@ import {
   CreateRegistrationDto,
   RegistrationAvailabilityQueryDto,
 } from './dto/registration.dto';
+import { QueueWaitEstimationService } from '../queue-estimation/queue-wait-estimation.service';
+import { RealtimeService } from '../../core/realtime/realtime.service';
 
 describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ERR-02 PERSON_NOT_FOUND', () => {
   let service: RegistrationsService;
@@ -89,6 +91,11 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
             render: jest.fn(),
           },
         },
+        {
+          provide: QueueWaitEstimationService,
+          useValue: { estimate: jest.fn() },
+        },
+        { provide: RealtimeService, useValue: { dispatchPending: jest.fn() } },
       ],
     }).compile();
 
@@ -217,7 +224,6 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
     );
   });
 });
-
 describe('RegistrationsService reschedule ticket numbering', () => {
   const user: AuthenticatedUser = {
     userId: '00000000-0000-4000-8000-000000000001',
@@ -542,6 +548,7 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
         priority_reference_time: new Date('2026-10-14T10:00:00Z'),
       }),
       createWelcomeNotifications: jest.fn().mockResolvedValue(0),
+      enqueueRealtime: jest.fn().mockResolvedValue(undefined),
     };
     const repository = {
       transaction: jest.fn((work: (value: typeof tx) => unknown) => work(tx)),
@@ -555,7 +562,7 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
           new Date(date.getTime() + minutes * 60_000),
       ),
     };
-    const realtime = { emitQueueDisplayChanged: jest.fn() };
+    const realtime = { dispatchPending: jest.fn() };
     const service = new RegistrationsService(
       repository as unknown as RegistrationsRepository,
       { checkQueueAccess: jest.fn() } as unknown as ScopeService,
@@ -598,10 +605,13 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
         now: new Date('2026-10-14T10:00:00Z'),
       }),
     );
-    expect(realtime.emitQueueDisplayChanged).toHaveBeenCalledWith(
+    expect(tx.enqueueRealtime).toHaveBeenCalledWith(
       '00000000-0000-4000-8000-000000000002',
-      'registration_created',
+      'queue_display_changed',
+      expect.objectContaining({ reason: 'registration_created' }),
+      new Date('2026-10-14T10:00:00Z'),
     );
+    expect(realtime.dispatchPending).toHaveBeenCalled();
   });
 
   describe('getAvailability', () => {
@@ -787,8 +797,7 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
       findById: jest.fn().mockResolvedValue(checkedIn),
     };
     const realtime = {
-      emitQueueDisplayChanged: jest.fn().mockResolvedValue(undefined),
-      emitQueuePositionChanged: jest.fn().mockResolvedValue(undefined),
+      dispatchPending: jest.fn().mockResolvedValue(undefined),
     };
     const user = {
       userId: '00000000-0000-4000-8000-000000000001',
@@ -818,10 +827,6 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
     await service.checkIn(registrationId, user);
 
     expect(repository.checkIn).toHaveBeenCalledWith(registrationId, now);
-    expect(realtime.emitQueueDisplayChanged).toHaveBeenCalledWith(
-      queueId,
-      'appointment_checked_in',
-    );
-    expect(realtime.emitQueuePositionChanged).toHaveBeenCalledWith(queueId);
+    expect(realtime.dispatchPending).toHaveBeenCalled();
   });
 });

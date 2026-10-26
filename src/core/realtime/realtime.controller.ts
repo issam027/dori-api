@@ -70,9 +70,13 @@ export class RealtimeController {
   async display(
     @Param('queueId', ParseUUIDPipe) queueId: string,
     @CurrentUser() user: AuthenticatedUser,
+    @Headers('last-event-id') lastEventId?: string,
   ): Promise<Observable<MessageEvent>> {
     await this.scopeService.checkQueueAccess(user, queueId);
-    return this.realtimeService.streamDisplay(queueId);
+    return this.realtimeService.streamDisplay(
+      queueId,
+      this.validLastEventId(lastEventId),
+    );
   }
 
   @Public()
@@ -116,6 +120,7 @@ export class RealtimeController {
   async tracking(
     @Param('queueId', ParseUUIDPipe) queueId: string,
     @Headers('X-Registration-Token') trackingToken: string,
+    @Headers('last-event-id') lastEventId?: string,
   ): Promise<Observable<MessageEvent>> {
     if (!trackingToken) throw new DoriException('UNAUTHENTICATED');
     const registration =
@@ -132,6 +137,18 @@ export class RealtimeController {
     ) {
       throw new DoriException('TOKEN_EXPIRED');
     }
-    return this.realtimeService.streamTracking(queueId);
+    return this.realtimeService.streamTracking(
+      queueId,
+      this.validLastEventId(lastEventId),
+    );
+  }
+
+  private validLastEventId(value?: string): string | undefined {
+    return value &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        value,
+      )
+      ? value
+      : undefined;
   }
 }

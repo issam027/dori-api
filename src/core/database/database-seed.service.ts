@@ -28,22 +28,31 @@ export class DatabaseSeedService implements OnApplicationBootstrap {
   }
 
   async runMigrationsAndSeed(): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner();
     try {
+      await queryRunner.connect();
       this.logger.log('Executing database migrations and seed...');
       const migrationsPath = path.join(__dirname, 'sql', 'migrations');
       const seedPath = path.join(__dirname, 'sql', 'seed.sql');
       await runMigrations(
         {
-          query: (sql, parameters) => this.dataSource.query(sql, parameters),
-          transaction: (work) =>
-            this.dataSource.transaction((manager) =>
-              work({
-                query: (sql, parameters) => manager.query(sql, parameters),
+          query: (sql, parameters) => queryRunner.query(sql, parameters),
+          transaction: async (work) => {
+            await queryRunner.startTransaction();
+            try {
+              const result = await work({
+                query: (sql, parameters) => queryRunner.query(sql, parameters),
                 transaction: () => {
                   throw new Error('Nested migrations are not supported.');
                 },
-              }),
-            ),
+              });
+              await queryRunner.commitTransaction();
+              return result;
+            } catch (error) {
+              await queryRunner.rollbackTransaction();
+              throw error;
+            }
+          },
         },
         migrationsPath,
         (message) => this.logger.log(message),
@@ -51,12 +60,14 @@ export class DatabaseSeedService implements OnApplicationBootstrap {
 
       if (fs.existsSync(seedPath)) {
         const seedSql = fs.readFileSync(seedPath, 'utf8');
-        await this.dataSource.query(seedSql);
+        await queryRunner.query(seedSql);
         this.logger.log('Database seed executed successfully.');
       }
     } catch (err: unknown) {
       this.logger.error(`Schema/seed failed type=${safeErrorName(err)}`);
       throw err;
+    } finally {
+      await queryRunner.release();
     }
   }
 }

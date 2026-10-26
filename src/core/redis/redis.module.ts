@@ -1,4 +1,11 @@
-import { Module, Global, Logger } from '@nestjs/common';
+import {
+  Module,
+  Global,
+  Inject,
+  Logger,
+  OnApplicationShutdown,
+  Optional,
+} from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { safeErrorName } from '../logging/safe-error';
@@ -73,4 +80,12 @@ export const REDIS_CLIENT = 'REDIS_CLIENT';
   ],
   exports: [REDIS_CLIENT, RedisThrottlerStorage],
 })
-export class RedisModule {}
+export class RedisModule implements OnApplicationShutdown {
+  constructor(
+    @Optional() @Inject(REDIS_CLIENT) private readonly redis?: Redis | null,
+  ) {}
+
+  async onApplicationShutdown(): Promise<void> {
+    if (this.redis && this.redis.status !== 'end') await this.redis.quit();
+  }
+}

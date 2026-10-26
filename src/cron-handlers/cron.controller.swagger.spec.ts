@@ -5,6 +5,7 @@ import { AppointmentExpiryWorker } from '../workers/appointment-expiry/appointme
 import { DailyResetWorker } from '../workers/daily-reset/daily-reset.worker';
 import { NotificationWorker } from '../workers/notification-worker/notification.worker';
 import { QueueEstimationWorker } from '../workers/queue-estimation/queue-estimation.worker';
+import { RealtimeOutboxWorker } from '../workers/realtime-outbox/realtime-outbox.worker';
 import { createOpenApiConfig } from '../core/swagger/openapi.config';
 import { CronController } from './cron.controller';
 
@@ -18,6 +19,7 @@ describe('CronController OpenAPI', () => {
         { provide: AppointmentExpiryWorker, useValue: {} },
         { provide: NotificationWorker, useValue: {} },
         { provide: QueueEstimationWorker, useValue: {} },
+        { provide: RealtimeOutboxWorker, useValue: {} },
       ],
     }).compile();
     const app = module.createNestApplication();
@@ -28,6 +30,7 @@ describe('CronController OpenAPI', () => {
       'appointment-expiry',
       'notifications',
       'queue-estimation',
+      'realtime-outbox',
     ]) {
       const operation = document.paths[`/api/internal/cron/${path}`]?.get;
       expect(operation).toBeDefined();

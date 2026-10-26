@@ -129,7 +129,9 @@ export default () => {
     },
 
     redis: {
-      url: process.env.REDIS_URL ?? (process.env.VERCEL ? undefined : 'redis://localhost:6379'),
+      url:
+        process.env.REDIS_URL ??
+        (process.env.VERCEL ? undefined : 'redis://localhost:6379'),
       enabled:
         process.env.REDIS_ENABLED !== 'false' &&
         process.env.REDIS_URL !== 'disabled' &&

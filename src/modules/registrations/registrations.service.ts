@@ -1,4 +1,4 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   CreateRegistrationDto,
   UpdateRegistrationDto,
@@ -36,7 +36,6 @@ function getIsoDayOfWeek(businessDate: string): number {
   const jsDay = dateObj.getUTCDay();
   return jsDay === 0 ? 7 : jsDay;
 }
-
 @Injectable()
 export class RegistrationsService {
   constructor(
@@ -46,9 +45,7 @@ export class RegistrationsService {
     private readonly personsService: PersonsService,
     private readonly configService: ConfigService,
     private readonly notificationTemplateService: NotificationTemplateService,
-    @Optional()
     private readonly waitEstimationService?: QueueWaitEstimationService,
-    @Optional()
     private readonly realtimeService?: RealtimeService,
   ) {}
 
@@ -232,6 +229,19 @@ export class RegistrationsService {
           templateService: this.notificationTemplateService,
         });
 
+        if (dto.entryType === 'walkin') {
+          await tx.enqueueRealtime?.(
+            dto.queueId,
+            'queue_display_changed',
+            {
+              queueId: dto.queueId,
+              reason: 'registration_created',
+              timestamp: now.toISOString(),
+            },
+            now,
+          );
+        }
+
         return {
           registrationId: created.registration_id,
           ticketNumber: created.ticket_number,
@@ -253,10 +263,7 @@ export class RegistrationsService {
       },
     );
     if (dto.entryType !== 'walkin') return result;
-    await this.realtimeService?.emitQueueDisplayChanged(
-      dto.queueId,
-      'registration_created',
-    );
+    await this.realtimeService?.dispatchPending();
     if (!this.waitEstimationService) return result;
     const registration = await this.registrationsRepository.findById(
       result.registrationId,
@@ -459,11 +466,7 @@ export class RegistrationsService {
     }
 
     await this.registrationsRepository.checkIn(registrationId, now);
-    await this.realtimeService?.emitQueueDisplayChanged(
-      reg.queue_id,
-      'appointment_checked_in',
-    );
-    await this.realtimeService?.emitQueuePositionChanged(reg.queue_id);
+    await this.realtimeService?.dispatchPending();
     const checkedIn =
       await this.registrationsRepository.findById(registrationId);
     if (!checkedIn || !this.waitEstimationService) return checkedIn;

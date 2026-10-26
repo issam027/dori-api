@@ -10,7 +10,6 @@ export interface UserScope {
   siteIds: string[];
   queueIds: string[];
 }
-
 /** Préfixe de toutes les clés Redis du cache de scope RBAC */
 const SCOPE_KEY_PREFIX = 'dori:scope:user:';
 /** TTL du cache : 30 secondes (§7.5) */
@@ -67,7 +66,9 @@ export class ScopeService {
       const directSiteIds = await this.scopeRepository.findUserSiteIds(
         user.userId,
       );
-      const siteIds = Array.from(new Set([...queueScope.siteIds, ...directSiteIds]));
+      const siteIds = Array.from(
+        new Set([...queueScope.siteIds, ...directSiteIds]),
+      );
       scope = {
         isGlobal: false,
         siteIds,

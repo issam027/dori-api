@@ -331,11 +331,7 @@ export class QueueEngineService {
         hasNotes: candidate.notes_count > 0,
       },
     };
-    await this.realtimeService.emitQueueDisplayChanged(
-      queueId,
-      'registration_called',
-    );
-    await this.realtimeService.emitQueuePositionChanged(queueId);
+    await this.realtimeService.dispatchPending();
     return result;
   }
 
@@ -363,10 +359,7 @@ export class QueueEngineService {
       'served',
       now,
     );
-    await this.realtimeService.emitQueueDisplayChanged(
-      reg.queue_id,
-      'registration_served',
-    );
+    await this.realtimeService.dispatchPending();
 
     return {
       registrationId,
@@ -401,10 +394,7 @@ export class QueueEngineService {
       'no_show',
       now,
     );
-    await this.realtimeService.emitQueueDisplayChanged(
-      reg.queue_id,
-      'registration_no_show',
-    );
+    await this.realtimeService.dispatchPending();
 
     return {
       registrationId,

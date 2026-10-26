@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { enqueueRealtimeEvent } from '../../core/realtime/realtime.repository';
 
 export interface ActiveThreadSessionRow {
   session_id: string;
@@ -11,7 +12,6 @@ export interface ActiveThreadSessionRow {
   last_seen_at: Date | string;
   current_registration_id: string | null;
 }
-
 export interface QueueSessionRow extends Record<string, unknown> {
   session_id: string;
   queue_id: string;
@@ -253,19 +253,39 @@ export class QueueEngineRepository {
     status: 'served' | 'no_show',
     now: Date,
   ): Promise<void> {
-    if (status === 'served') {
-      await this.dataSource.query(
-        `UPDATE dorify.dori_registration SET status = 'served', served_at = $1,
+    await this.dataSource.transaction(async (manager) => {
+      if (status === 'served') {
+        await manager.query(
+          `UPDATE dorify.dori_registration SET status = 'served', served_at = $1,
          closed_at = $1, updated_at = $1 WHERE registration_id = $2`,
-        [now, registrationId],
+          [now, registrationId],
+        );
+      } else {
+        await manager.query(
+          `UPDATE dorify.dori_registration SET status = 'no_show', closed_at = $1,
+           updated_at = $1 WHERE registration_id = $2`,
+          [now, registrationId],
+        );
+      }
+      const rows: Array<{ queue_id: string }> = await manager.query(
+        'SELECT queue_id FROM dorify.dori_registration WHERE registration_id = $1',
+        [registrationId],
       );
-      return;
-    }
-    await this.dataSource.query(
-      `UPDATE dorify.dori_registration SET status = 'no_show', closed_at = $1,
-       updated_at = $1 WHERE registration_id = $2`,
-      [now, registrationId],
-    );
+      await enqueueRealtimeEvent(
+        manager,
+        rows[0].queue_id,
+        'queue_display_changed',
+        {
+          queueId: rows[0].queue_id,
+          reason:
+            status === 'served'
+              ? 'registration_served'
+              : 'registration_no_show',
+          timestamp: now.toISOString(),
+        },
+        now,
+      );
+    });
   }
 
   async findSessionPage(input: {
@@ -424,6 +444,27 @@ export class QueueEngineRepository {
          FROM dorify.dori_registration c JOIN dorify.dori_service_tier t ON t.tier_id = c.tier_id
          JOIN dorify.dori_person p ON p.person_id = c.person_id WHERE c.registration_id = $1`,
         [candidate.registration_id],
+      );
+      await enqueueRealtimeEvent(
+        manager,
+        input.queueId,
+        'queue_display_changed',
+        {
+          queueId: input.queueId,
+          reason: 'registration_called',
+          timestamp: input.now.toISOString(),
+        },
+        input.now,
+      );
+      await enqueueRealtimeEvent(
+        manager,
+        input.queueId,
+        'queue_position_changed',
+        {
+          queueId: input.queueId,
+          timestamp: input.now.toISOString(),
+        },
+        input.now,
       );
       return Object.assign(details[0], {
         score: Number(candidate.score || 0),

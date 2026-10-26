@@ -21,6 +21,23 @@ export async function runMigrations(
   directory: string,
   log: MigrationLogger,
 ): Promise<void> {
+  await connection.query(
+    "SELECT pg_advisory_lock(hashtext('dorify:schema-migrations'))",
+  );
+  try {
+    await runMigrationsWithLock(connection, directory, log);
+  } finally {
+    await connection.query(
+      "SELECT pg_advisory_unlock(hashtext('dorify:schema-migrations'))",
+    );
+  }
+}
+
+async function runMigrationsWithLock(
+  connection: MigrationConnection,
+  directory: string,
+  log: MigrationLogger,
+): Promise<void> {
   await connection.query(`
     CREATE SCHEMA IF NOT EXISTS dorify;
     CREATE TABLE IF NOT EXISTS dorify.dori_schema_migration (

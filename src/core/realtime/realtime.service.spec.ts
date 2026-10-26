@@ -8,48 +8,13 @@ describe('RealtimeService', () => {
   const clock = {
     now: jest.fn(() => now),
   } as unknown as ClockService;
-
-  it('publishes a display invalidation to Redis', async () => {
-    const redis = {
-      status: 'ready',
-      publish: jest.fn().mockResolvedValue(1),
-    };
-    const service = new RealtimeService(clock, redis as never);
-
-    await service.emitQueueDisplayChanged(queueId, 'registration_created');
-
-    expect(redis.publish).toHaveBeenCalledWith(
-      'dori:queue-events',
-      JSON.stringify({
-        event: 'queue_display_changed',
-        queueId,
-        payload: {
-          queueId,
-          reason: 'registration_created',
-          timestamp: now.toISOString(),
-        },
-      }),
-    );
-  });
-
-  it('publishes a tracking invalidation to Redis', async () => {
-    const redis = {
-      status: 'ready',
-      publish: jest.fn().mockResolvedValue(1),
-    };
-    const service = new RealtimeService(clock, redis as never);
-
-    await service.emitQueuePositionChanged(queueId);
-
-    expect(redis.publish).toHaveBeenCalledWith(
-      'dori:queue-events',
-      JSON.stringify({
-        event: 'queue_position_changed',
-        queueId,
-        payload: { queueId, timestamp: now.toISOString() },
-      }),
-    );
-  });
+  const repository = {
+    claimPending: jest.fn().mockResolvedValue([]),
+    markPublished: jest.fn(),
+    markFailed: jest.fn(),
+    deletePublishedBefore: jest.fn(),
+    findReplay: jest.fn().mockResolvedValue([]),
+  };
 
   it('delivers only matching Redis events to a display stream', async () => {
     let onMessage: ((channel: string, message: string) => void) | undefined;
@@ -62,13 +27,18 @@ describe('RealtimeService', () => {
       quit: jest.fn().mockResolvedValue('OK'),
     };
     const redis = { duplicate: jest.fn(() => subscriber) };
-    const service = new RealtimeService(clock, redis as never);
+    const service = new RealtimeService(
+      clock,
+      repository as never,
+      redis as never,
+    );
     const stream = await service.streamDisplay(queueId);
     const eventPromise = firstValueFrom(stream);
 
     onMessage?.(
       'dori:queue-events',
       JSON.stringify({
+        id: '00000000-0000-4000-8000-000000000010',
         event: 'queue_position_changed',
         queueId,
         payload: { queueId },
@@ -77,6 +47,7 @@ describe('RealtimeService', () => {
     onMessage?.(
       'dori:queue-events',
       JSON.stringify({
+        id: '00000000-0000-4000-8000-000000000011',
         event: 'queue_display_changed',
         queueId,
         payload: { queueId, reason: 'registration_called' },
@@ -84,7 +55,9 @@ describe('RealtimeService', () => {
     );
 
     await expect(eventPromise).resolves.toEqual({
+      id: '00000000-0000-4000-8000-000000000011',
       type: 'queue_display_changed',
+      retry: 3000,
       data: { queueId, reason: 'registration_called' },
     });
     expect(subscriber.subscribe).toHaveBeenCalledWith('dori:queue-events');
@@ -99,7 +72,11 @@ describe('RealtimeService', () => {
       quit: jest.fn().mockResolvedValue('OK'),
     };
     const redis = { duplicate: jest.fn(() => subscriber) };
-    const service = new RealtimeService(clock, redis as never);
+    const service = new RealtimeService(
+      clock,
+      repository as never,
+      redis as never,
+    );
 
     await Promise.all([
       service.streamDisplay(queueId),
@@ -113,15 +90,84 @@ describe('RealtimeService', () => {
   });
 
   it('falls back to process-local SSE delivery without Redis', async () => {
-    const service = new RealtimeService(clock);
-    const stream = await service.streamTracking(queueId);
-    const eventPromise = firstValueFrom(stream);
+    const localEvent = {
+      event_id: '00000000-0000-4000-8000-000000000012',
+      event_type: 'queue_position_changed',
+      queue_id: queueId,
+      payload: { queueId, timestamp: now.toISOString() },
+    };
+    const repository = {
+      claimPending: jest.fn().mockResolvedValue([localEvent]),
+      markPublished: jest.fn(),
+      markFailed: jest.fn(),
+      deletePublishedBefore: jest.fn(),
+    };
+    const localService = new RealtimeService(
+      clock,
+      repository as never,
+      undefined,
+    );
+    const localStream = await localService.streamTracking(queueId);
+    const localEventPromise = firstValueFrom(localStream);
+    await localService.dispatchPending();
 
-    await service.emitQueuePositionChanged(queueId);
-
-    await expect(eventPromise).resolves.toEqual({
+    await expect(localEventPromise).resolves.toEqual({
+      id: localEvent.event_id,
       type: 'queue_position_changed',
+      retry: 3000,
       data: { queueId, timestamp: now.toISOString() },
     });
+  });
+
+  it('keeps a failed publication pending and resolves the dispatch', async () => {
+    const event = {
+      event_id: '00000000-0000-4000-8000-000000000013',
+      event_type: 'queue_display_changed',
+      queue_id: queueId,
+      payload: { queueId },
+    };
+    const failingRepository = {
+      claimPending: jest.fn().mockResolvedValue([event]),
+      markPublished: jest.fn(),
+      markFailed: jest.fn().mockResolvedValue(undefined),
+      deletePublishedBefore: jest.fn(),
+    };
+    const redis = {
+      status: 'ready',
+      publish: jest.fn().mockRejectedValue(new Error('unavailable')),
+    };
+    const service = new RealtimeService(
+      clock,
+      failingRepository as never,
+      redis as never,
+    );
+
+    await expect(service.dispatchPending()).resolves.toBeUndefined();
+    expect(failingRepository.markFailed).toHaveBeenCalledWith(
+      event.event_id,
+      now,
+    );
+    expect(failingRepository.markPublished).not.toHaveBeenCalled();
+    expect(failingRepository.deletePublishedBefore).not.toHaveBeenCalled();
+  });
+
+  it('purges published events only during maintenance dispatches', async () => {
+    const maintenanceRepository = {
+      claimPending: jest.fn().mockResolvedValue([]),
+      markPublished: jest.fn(),
+      markFailed: jest.fn(),
+      deletePublishedBefore: jest.fn(),
+    };
+    const service = new RealtimeService(
+      clock,
+      maintenanceRepository as never,
+      undefined,
+    );
+
+    await service.dispatchPending(true);
+
+    expect(maintenanceRepository.deletePublishedBefore).toHaveBeenCalledWith(
+      new Date('2026-10-24T14:00:00.000Z'),
+    );
   });
 });

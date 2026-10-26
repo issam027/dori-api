@@ -1,4 +1,4 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateQueueDto } from './dto/create-queue.dto';
 import { UpdateQueueDto, QueueFilterDto } from './dto/update-queue.dto';
 import {
@@ -19,8 +19,7 @@ export class QueuesService {
     private readonly queuesRepository: QueuesRepository,
     private readonly scopeService: ScopeService,
     private readonly clockService: ClockService,
-    @Optional()
-    private readonly waitEstimationService?: QueueWaitEstimationService,
+    private readonly waitEstimationService: QueueWaitEstimationService,
   ) {}
 
   private mapQueueResponse(row: QueueDetailRow): QueueResponseDto {

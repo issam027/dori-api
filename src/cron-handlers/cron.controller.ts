@@ -17,6 +17,7 @@ import { AppointmentExpiryWorker } from '../workers/appointment-expiry/appointme
 import { DailyResetWorker } from '../workers/daily-reset/daily-reset.worker';
 import { NotificationWorker } from '../workers/notification-worker/notification.worker';
 import { QueueEstimationWorker } from '../workers/queue-estimation/queue-estimation.worker';
+import { RealtimeOutboxWorker } from '../workers/realtime-outbox/realtime-outbox.worker';
 import { CronExecutionResponseDto } from './dto/cron-execution-response.dto';
 
 @Public()
@@ -30,6 +31,7 @@ export class CronController {
     private readonly appointmentExpiry: AppointmentExpiryWorker,
     private readonly notificationWorker: NotificationWorker,
     private readonly queueEstimation: QueueEstimationWorker,
+    private readonly realtimeOutbox: RealtimeOutboxWorker,
   ) {}
 
   private async run(
@@ -131,6 +133,22 @@ export class CronController {
   queueEstimationCron(@Headers('authorization') authorization?: string) {
     return this.run(authorization, () =>
       this.queueEstimation.handleQueueEstimation(),
+    );
+  }
+
+  @Get('realtime-outbox')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Publier les événements temps réel en attente' })
+  @ApiDoriOkResponse(CronExecutionResponseDto, 'Outbox temps réel traitée')
+  @ApiDoriPublicErrorResponses({
+    include401: true,
+    omit404: true,
+    omit409: true,
+    omit422: true,
+  })
+  realtimeOutboxCron(@Headers('authorization') authorization?: string) {
+    return this.run(authorization, () =>
+      this.realtimeOutbox.handleRealtimeOutbox(),
     );
   }
 }

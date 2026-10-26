@@ -5,6 +5,7 @@ import {
   RegistrationFilterDto,
   UpdateRegistrationDto,
 } from './dto/registration.dto';
+import { enqueueRealtimeEvent } from '../../core/realtime/realtime.repository';
 
 interface WelcomeNotificationRenderer {
   templateKey(
@@ -18,7 +19,6 @@ interface WelcomeNotificationRenderer {
     parameters: Record<string, string | number | null | undefined>,
   ): { content: string | null; failureReason: string | null };
 }
-
 export type RegistrationRow = Record<string, unknown> & {
   registration_id: string;
   site_id: string;
@@ -61,6 +61,15 @@ const queueColumns = (alias: string) =>
 
 export class RegistrationsTransaction {
   constructor(readonly manager: EntityManager) {}
+
+  enqueueRealtime(
+    queueId: string,
+    eventType: 'queue_display_changed' | 'queue_position_changed',
+    payload: Record<string, unknown>,
+    now: Date,
+  ): Promise<void> {
+    return enqueueRealtimeEvent(this.manager, queueId, eventType, payload, now);
+  }
 
   async findQueueConfig(queueId: string) {
     const rows = await this.manager.query(
@@ -383,12 +392,37 @@ export class RegistrationsRepository {
   }
 
   async checkIn(registrationId: string, now: Date) {
-    const rows = await this.dataSource.query(
-      `UPDATE dorify.dori_registration SET status='waiting',appointment_status='checked_in',
-       checked_in_at=$1,updated_at=$1 WHERE registration_id=$2 RETURNING ${REGISTRATION_COLUMNS}`,
-      [now, registrationId],
-    );
-    return rows[0];
+    return this.dataSource.transaction(async (manager) => {
+      const rows = await manager.query(
+        `UPDATE dorify.dori_registration SET status='waiting',appointment_status='checked_in',
+         checked_in_at=$1,updated_at=$1 WHERE registration_id=$2 RETURNING ${REGISTRATION_COLUMNS}`,
+        [now, registrationId],
+      );
+      const registration = rows[0];
+      if (!registration) return null;
+      await enqueueRealtimeEvent(
+        manager,
+        registration.queue_id,
+        'queue_display_changed',
+        {
+          queueId: registration.queue_id,
+          reason: 'appointment_checked_in',
+          timestamp: now.toISOString(),
+        },
+        now,
+      );
+      await enqueueRealtimeEvent(
+        manager,
+        registration.queue_id,
+        'queue_position_changed',
+        {
+          queueId: registration.queue_id,
+          timestamp: now.toISOString(),
+        },
+        now,
+      );
+      return registration;
+    });
   }
 
   async findForReschedule(registrationId: string) {

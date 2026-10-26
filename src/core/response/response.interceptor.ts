@@ -15,10 +15,24 @@ export interface StandardResponse<T> {
   translationParams: Record<string, unknown>;
   data: T;
 }
-
 export const SKIP_RESPONSE_ENVELOPE_KEY = 'skipResponseEnvelope';
 export const SkipResponseEnvelope = () =>
   SetMetadata(SKIP_RESPONSE_ENVELOPE_KEY, true);
+
+function isStandardResponse(
+  value: unknown,
+): value is StandardResponse<unknown> {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.code === 'string' &&
+    (typeof candidate.translationKey === 'string' ||
+      candidate.translationKey === null) &&
+    typeof candidate.translationParams === 'object' &&
+    candidate.translationParams !== null &&
+    Object.prototype.hasOwnProperty.call(candidate, 'data')
+  );
+}
 
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<
@@ -41,11 +55,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<
     return next.handle().pipe(
       map((data) => {
         // If the service already returned an envelope (e.g. QUEUE_EMPTY), pass it through
-        if (
-          data !== null &&
-          typeof data === 'object' &&
-          'code' in (data as object)
-        ) {
+        if (isStandardResponse(data)) {
           return data as unknown as StandardResponse<T>;
         }
         return {
