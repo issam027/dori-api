@@ -3504,20 +3504,10 @@
           ]
         },
         "summary": "Flux d'affichage pour écran (Display)",
-        "description": "Retourne les tickets en cours d'appel et le journal récent des appels pour les écrans de salle d'attente.",
+        "description": "Retourne l'identifiant et le nom de la file, les tickets actuellement appelés et les prochains tickets à afficher dans la salle d'attente.",
         "parameters": [
           {
             "name": "queueId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "description": "Identifiant de la file."
-          },
-          {
-            "name": "",
             "required": true,
             "in": "path",
             "description": "ID de la file",
@@ -9980,6 +9970,15 @@
               "format": "uuid",
               "type": "string"
             }
+          },
+          {
+            "name": "last-event-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Valeur du paramètre « last-event-id »."
           }
         ],
         "responses": {
@@ -10081,6 +10080,15 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "last-event-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Valeur du paramètre « last-event-id »."
           }
         ],
         "responses": {
@@ -18231,6 +18239,7 @@
         },
         "required": [
           "queueId",
+          "queueName",
           "activeThreads",
           "nextTickets"
         ]

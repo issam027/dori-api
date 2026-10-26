@@ -86,6 +86,11 @@ export class RedisModule implements OnApplicationShutdown {
   ) {}
 
   async onApplicationShutdown(): Promise<void> {
-    if (this.redis && this.redis.status !== 'end') await this.redis.quit();
+    if (!this.redis || this.redis.status === 'end') return;
+    if (this.redis.status === 'ready') {
+      await this.redis.quit();
+      return;
+    }
+    this.redis.disconnect();
   }
 }

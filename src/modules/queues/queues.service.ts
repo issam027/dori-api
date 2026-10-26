@@ -270,10 +270,11 @@ export class QueuesService {
     if (!context) {
       throw new DoriException('QUEUE_NOT_FOUND', { queueId });
     }
-    const { timezone } = context;
+    const { queue_name, timezone } = context;
     const businessDate = this.clockService.todayInTimezone(timezone);
     return {
       queueId,
+      queueName: queue_name,
       ...(await this.queuesRepository.getDisplaySnapshot(
         queueId,
         businessDate,

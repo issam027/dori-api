@@ -325,4 +325,37 @@ describe('QueuesService ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢Ãƒ�
       );
     });
   });
+
+  it('returns the queue name in the display snapshot', async () => {
+    const repository = {
+      findOperationalContext: jest.fn().mockResolvedValue({
+        queue_name: 'Consultation Cardiologie',
+        timezone: 'Europe/Berlin',
+      }),
+      getDisplaySnapshot: jest.fn().mockResolvedValue({
+        activeThreads: [{ threadNumber: 1, currentTicket: 'A001' }],
+        nextTickets: ['A002'],
+      }),
+    };
+    const displayService = new QueuesService(
+      repository as unknown as QueuesRepository,
+      { checkQueueAccess: jest.fn() } as unknown as ScopeService,
+      {
+        todayInTimezone: jest.fn(() => '2026-10-26'),
+      } as unknown as ClockService,
+      {} as QueueWaitEstimationService,
+    );
+
+    await expect(
+      displayService.getQueueDisplay(
+        '00000000-0000-4000-8000-000000000005',
+        managerUser,
+      ),
+    ).resolves.toEqual({
+      queueId: '00000000-0000-4000-8000-000000000005',
+      queueName: 'Consultation Cardiologie',
+      activeThreads: [{ threadNumber: 1, currentTicket: 'A001' }],
+      nextTickets: ['A002'],
+    });
+  });
 });

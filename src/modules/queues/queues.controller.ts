@@ -191,10 +191,10 @@ export class QueuesController {
   @ApiOperation({
     summary: "Flux d'affichage pour écran (Display)",
     description:
-      "Retourne les tickets en cours d'appel et le journal récent des appels pour les écrans de salle d'attente.",
+      "Retourne l'identifiant et le nom de la file, les tickets actuellement appelés et les prochains tickets à afficher dans la salle d'attente.",
   })
   @ApiParam({
-    name: '',
+    name: 'queueId',
     type: String,
     format: 'uuid',
     description: 'ID de la file',

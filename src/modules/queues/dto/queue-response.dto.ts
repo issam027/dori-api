@@ -259,11 +259,11 @@ export class QueueDisplayResponseDto {
   @IsUUID()
   queueId: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     example: 'Consultation Cardiologie',
     description: 'Nom de la file',
   })
-  queueName?: string;
+  queueName: string;
 
   @ApiProperty({
     type: [CallingTicketResponseDto],
