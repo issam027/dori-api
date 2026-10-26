@@ -18,7 +18,7 @@ describe('RealtimeRepository', () => {
     );
   });
 
-  it('schedules a bounded retry after a publication failure', async () => {
+  it('schedules a bounded retry after an acknowledgement failure', async () => {
     const query = jest.fn().mockResolvedValue([]);
     const dataSource = { query } as unknown as DataSource;
     const repository = new RealtimeRepository(dataSource);

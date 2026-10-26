@@ -31,7 +31,7 @@
 
 - **Gestion multi-sites & multi-files** : Organisation hiérarchique par sites, files d'attente, guichets et services.
 - **Prise de rendez-vous & tickets sans contact** : Gestion des créneaux, tickets virtuels avec suivi en temps réel pour l'usager (via lien web public et QR code).
-- **Temps réel & Écrans d'affichage** : flux SSE distribués par Redis Pub/Sub pour notifier les IHM, qui actualisent ensuite leurs données via REST.
+- **Temps réel & Écrans d'affichage** : flux SSE alimentés par un journal transactionnel PostgreSQL pour notifier les IHM, qui actualisent ensuite leurs données via REST.
 - **Sécurité & Contrôle d'accès granulaire (RBAC)** : Permissions hiérarchiques (`root`, `admin`, `manager`, `operator`) avec cache de scope distribué via Redis.
 - **Workers automatiques** : Recalcul prédictif des temps d'attente, purge des RDV expirés, notifications et réinitialisation nocturne.
 
@@ -42,7 +42,7 @@
 - **Framework** : [NestJS 10](https://nestjs.com/) (Node.js runtime / Express)
 - **Langage** : [TypeScript 5](https://www.typescriptlang.org/) (mode strict, typage complet)
 - **Base de données** : PostgreSQL 14+ avec [TypeORM](https://typeorm.io/)
-- **Cache & Distribution** : [Redis](https://redis.io/) (via `ioredis`) pour le cache de scope RBAC, les compteurs de métriques et la diffusion des notifications SSE
+- **Cache distribué** : [Redis](https://redis.io/) (via `ioredis`) pour le cache de scope RBAC et les compteurs de métriques
 - **Tâches planifiées** : workers NestJS hors Vercel et déclencheurs HTTP Vercel Cron en production serverless
 - **Documentation API** : OpenAPI 3.0 via `@nestjs/swagger` + Swagger UI
 - **Tests** : Jest, ts-jest, Supertest
@@ -153,7 +153,7 @@ src/
 │   ├── errors/                # DoriException et gestionnaire global d'exceptions
 │   ├── monitoring/            # Health check, métriques Redis et supervision
 │   ├── rbac/                  # Guards de permissions et scope distribué
-│   ├── realtime/              # Publication Redis et endpoints SSE par file
+│   ├── realtime/              # Outbox PostgreSQL et endpoints SSE par file
 │   └── redis/                 # Module Redis global partagé (@Inject(REDIS_CLIENT))
 ├── modules/                   # Domaines métier de la plateforme
 │   ├── appointments/          # Prise et gestion des rendez-vous

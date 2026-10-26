@@ -86,21 +86,29 @@ export class RealtimeRepository {
     );
   }
 
-  findReplay(
-    eventId: string,
+  findEventsAfter(
     queueId: string,
     eventType: RealtimeOutboxRow['event_type'],
+    eventId: string | undefined,
+    notBefore: Date,
   ): Promise<RealtimeOutboxRow[]> {
     return this.dataSource.query(
-      `SELECT candidate.event_id, candidate.queue_id, candidate.event_type,
+      `WITH anchor AS (
+         SELECT created_at, event_id
+         FROM dorify.dori_realtime_outbox
+         WHERE event_id = $3::uuid
+       )
+       SELECT candidate.event_id, candidate.queue_id, candidate.event_type,
               candidate.payload
-       FROM dorify.dori_realtime_outbox anchor
-       JOIN dorify.dori_realtime_outbox candidate
-         ON (candidate.created_at, candidate.event_id) > (anchor.created_at, anchor.event_id)
-       WHERE anchor.event_id = $1 AND candidate.queue_id = $2
-         AND candidate.event_type = $3 AND candidate.published_at IS NOT NULL
-       ORDER BY candidate.created_at, candidate.event_id LIMIT 100`,
-      [eventId, queueId, eventType],
+       FROM dorify.dori_realtime_outbox candidate
+       LEFT JOIN anchor ON TRUE
+       WHERE candidate.queue_id = $1 AND candidate.event_type = $2
+         AND (($3::uuid IS NOT NULL AND anchor.event_id IS NOT NULL
+               AND (candidate.created_at, candidate.event_id) > (anchor.created_at, anchor.event_id))
+              OR ($3::uuid IS NULL AND candidate.created_at > $4))
+       ORDER BY candidate.created_at, candidate.event_id
+       LIMIT 100`,
+      [queueId, eventType, eventId ?? null, notBefore],
     );
   }
 
