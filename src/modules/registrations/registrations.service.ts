@@ -252,12 +252,12 @@ export class RegistrationsService {
         };
       },
     );
+    if (dto.entryType !== 'walkin') return result;
     await this.realtimeService?.emitQueueDisplayChanged(
       dto.queueId,
       'registration_created',
     );
-    if (dto.entryType !== 'walkin' || !this.waitEstimationService)
-      return result;
+    if (!this.waitEstimationService) return result;
     const registration = await this.registrationsRepository.findById(
       result.registrationId,
     );
@@ -459,6 +459,11 @@ export class RegistrationsService {
     }
 
     await this.registrationsRepository.checkIn(registrationId, now);
+    await this.realtimeService?.emitQueueDisplayChanged(
+      reg.queue_id,
+      'appointment_checked_in',
+    );
+    await this.realtimeService?.emitQueuePositionChanged(reg.queue_id);
     const checkedIn =
       await this.registrationsRepository.findById(registrationId);
     if (!checkedIn || !this.waitEstimationService) return checkedIn;

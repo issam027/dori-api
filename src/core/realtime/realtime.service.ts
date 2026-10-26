@@ -18,6 +18,7 @@ export const QUEUE_POSITION_CHANGED = 'queue_position_changed';
 
 export type QueueDisplayChangeReason =
   | 'registration_created'
+  | 'appointment_checked_in'
   | 'registration_called'
   | 'registration_served'
   | 'registration_no_show';

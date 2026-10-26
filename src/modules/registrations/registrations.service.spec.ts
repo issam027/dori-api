@@ -769,4 +769,59 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
       expect(sunday.slots).toEqual([]);
     });
   });
+
+  it('publishes display and tracking invalidations after appointment check-in', async () => {
+    const queueId = '00000000-0000-4000-8000-000000000002';
+    const registrationId = '00000000-0000-4000-8000-000000000003';
+    const now = new Date('2026-10-26T09:00:00.000Z');
+    const checkedIn = { registration_id: registrationId, status: 'waiting' };
+    const repository = {
+      findForCheckIn: jest.fn().mockResolvedValue({
+        queue_id: queueId,
+        entry_type: 'appointment',
+        status: 'booked',
+        scheduled_time: now,
+        late_tolerance_minutes: 60,
+      }),
+      checkIn: jest.fn().mockResolvedValue(checkedIn),
+      findById: jest.fn().mockResolvedValue(checkedIn),
+    };
+    const realtime = {
+      emitQueueDisplayChanged: jest.fn().mockResolvedValue(undefined),
+      emitQueuePositionChanged: jest.fn().mockResolvedValue(undefined),
+    };
+    const user = {
+      userId: '00000000-0000-4000-8000-000000000001',
+      username: 'admin',
+      roles: ['admin'],
+      permissions: ['appointment_checkin'],
+      userType: 'human',
+    } as AuthenticatedUser;
+    const service = new RegistrationsService(
+      repository as unknown as RegistrationsRepository,
+      { checkQueueAccess: jest.fn() } as unknown as ScopeService,
+      {
+        now: jest.fn(() => now),
+        parse: jest.fn((value: Date | string) => new Date(value)),
+        addMinutes: jest.fn(
+          (date: Date, minutes: number) =>
+            new Date(date.getTime() + minutes * 60_000),
+        ),
+      } as unknown as ClockService,
+      {} as PersonsService,
+      {} as ConfigService,
+      {} as NotificationTemplateService,
+      undefined,
+      realtime as never,
+    );
+
+    await service.checkIn(registrationId, user);
+
+    expect(repository.checkIn).toHaveBeenCalledWith(registrationId, now);
+    expect(realtime.emitQueueDisplayChanged).toHaveBeenCalledWith(
+      queueId,
+      'appointment_checked_in',
+    );
+    expect(realtime.emitQueuePositionChanged).toHaveBeenCalledWith(queueId);
+  });
 });

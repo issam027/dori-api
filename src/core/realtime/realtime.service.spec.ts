@@ -91,6 +91,27 @@ describe('RealtimeService', () => {
     await service.onModuleDestroy();
   });
 
+  it('shares one Redis subscription across all SSE streams', async () => {
+    const subscriber = {
+      status: 'ready',
+      on: jest.fn(),
+      subscribe: jest.fn().mockResolvedValue(1),
+      quit: jest.fn().mockResolvedValue('OK'),
+    };
+    const redis = { duplicate: jest.fn(() => subscriber) };
+    const service = new RealtimeService(clock, redis as never);
+
+    await Promise.all([
+      service.streamDisplay(queueId),
+      service.streamTracking(queueId),
+      service.streamDisplay('00000000-0000-4000-8000-000000000002'),
+    ]);
+
+    expect(redis.duplicate).toHaveBeenCalledTimes(1);
+    expect(subscriber.subscribe).toHaveBeenCalledTimes(1);
+    await service.onModuleDestroy();
+  });
+
   it('falls back to process-local SSE delivery without Redis', async () => {
     const service = new RealtimeService(clock);
     const stream = await service.streamTracking(queueId);
