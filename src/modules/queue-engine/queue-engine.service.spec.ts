@@ -5,7 +5,6 @@ import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { PaginationDto } from '../../core/pagination/pagination.dto';
-import { RealtimeService } from '../../core/realtime/realtime.service';
 import { QueueEngineRepository } from './queue-engine.repository';
 
 describe('QueueEngineService ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â getSessions & getActiveSessions (VAL-04 Manquement A)', () => {
@@ -51,13 +50,6 @@ describe('QueueEngineService ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢
           provide: ClockService,
           useValue: {
             now: jest.fn(() => new Date('2026-09-29T12:00:00Z')),
-          },
-        },
-        {
-          provide: RealtimeService,
-          useValue: {
-            emitQueueDisplayChanged: jest.fn(),
-            emitQueuePositionChanged: jest.fn(),
           },
         },
       ],
@@ -212,7 +204,6 @@ describe('QueueEngineService next preview scope', () => {
       repository as unknown as QueueEngineRepository,
       scope as unknown as ScopeService,
       { now: jest.fn(() => now) } as unknown as ClockService,
-      {} as RealtimeService,
     );
 
     await service.previewNext(user, '00000000-0000-4000-8000-000000000005', 10);

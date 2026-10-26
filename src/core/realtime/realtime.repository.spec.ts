@@ -2,33 +2,25 @@ import { DataSource } from 'typeorm';
 import { RealtimeRepository } from './realtime.repository';
 
 describe('RealtimeRepository', () => {
-  it('claims pending events atomically with skip locked', async () => {
-    const query = jest.fn().mockResolvedValue([]);
-    const dataSource = {
-      transaction: jest.fn((work) => work({ query })),
-    } as unknown as DataSource;
-    const repository = new RealtimeRepository(dataSource);
-    const now = new Date('2026-10-26T10:00:00.000Z');
+  it('reads the current transactional topic state', async () => {
+    const state = {
+      version: '4',
+      event_id: '00000000-0000-4000-8000-000000000001',
+      queue_id: '00000000-0000-4000-8000-000000000002',
+      event_type: 'queue_display_changed',
+      payload: { queueId: '00000000-0000-4000-8000-000000000002' },
+    };
+    const query = jest.fn().mockResolvedValue([state]);
+    const repository = new RealtimeRepository({
+      query,
+    } as unknown as DataSource);
 
-    await repository.claimPending(now, 25);
-
+    await expect(
+      repository.findTopicState(state.queue_id, 'queue_display_changed'),
+    ).resolves.toEqual(state);
     expect(query).toHaveBeenCalledWith(
-      expect.stringContaining('FOR UPDATE SKIP LOCKED'),
-      [now, 25],
-    );
-  });
-
-  it('schedules a bounded retry after an acknowledgement failure', async () => {
-    const query = jest.fn().mockResolvedValue([]);
-    const dataSource = { query } as unknown as DataSource;
-    const repository = new RealtimeRepository(dataSource);
-    const now = new Date('2026-10-26T10:00:00.000Z');
-
-    await repository.markFailed('00000000-0000-4000-8000-000000000001', now);
-
-    expect(query).toHaveBeenCalledWith(
-      expect.stringContaining("INTERVAL '5 minutes'"),
-      [now, '00000000-0000-4000-8000-000000000001'],
+      expect.stringContaining('dorify.dori_realtime_topic_state'),
+      [state.queue_id, state.event_type],
     );
   });
 });

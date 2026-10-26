@@ -25,7 +25,6 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { NotificationTemplateService } from '../../core/notifications/notification-template.service';
 import { QueueWaitEstimationService } from '../queue-estimation/queue-wait-estimation.service';
-import { RealtimeService } from '../../core/realtime/realtime.service';
 
 const TRACKING_TOKEN_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -46,7 +45,6 @@ export class RegistrationsService {
     private readonly configService: ConfigService,
     private readonly notificationTemplateService: NotificationTemplateService,
     private readonly waitEstimationService?: QueueWaitEstimationService,
-    private readonly realtimeService?: RealtimeService,
   ) {}
 
   private formatTicketNumber(queueCode: string, lastNumber: number): string {
@@ -263,7 +261,6 @@ export class RegistrationsService {
       },
     );
     if (dto.entryType !== 'walkin') return result;
-    await this.realtimeService?.dispatchPending();
     if (!this.waitEstimationService) return result;
     const registration = await this.registrationsRepository.findById(
       result.registrationId,
@@ -466,7 +463,6 @@ export class RegistrationsService {
     }
 
     await this.registrationsRepository.checkIn(registrationId, now);
-    await this.realtimeService?.dispatchPending();
     const checkedIn =
       await this.registrationsRepository.findById(registrationId);
     if (!checkedIn || !this.waitEstimationService) return checkedIn;

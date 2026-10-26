@@ -14,6 +14,10 @@ export interface RealtimeOutboxRow {
   payload: Record<string, unknown>;
 }
 
+export interface RealtimeTopicStateRow extends RealtimeOutboxRow {
+  version: string | number;
+}
+
 export async function enqueueRealtimeEvent(
   manager: EntityManager,
   queueId: string,
@@ -22,9 +26,19 @@ export async function enqueueRealtimeEvent(
   now: Date,
 ): Promise<void> {
   await manager.query(
-    `INSERT INTO dorify.dori_realtime_outbox
-       (queue_id, event_type, payload, created_at)
-     VALUES ($1, $2, $3::jsonb, $4)`,
+    `WITH inserted AS (
+       INSERT INTO dorify.dori_realtime_outbox
+         (queue_id, event_type, payload, created_at, published_at)
+       VALUES ($1, $2, $3::jsonb, $4, $4)
+       RETURNING event_id
+     )
+     INSERT INTO dorify.dori_realtime_topic_state
+       (queue_id, event_type, version, event_id, updated_at)
+     SELECT $1, $2, 1, event_id, $4 FROM inserted
+     ON CONFLICT (queue_id, event_type) DO UPDATE
+     SET version = dorify.dori_realtime_topic_state.version + 1,
+         event_id = EXCLUDED.event_id,
+         updated_at = EXCLUDED.updated_at`,
     [queueId, eventType, JSON.stringify(payload), now],
   );
 }
@@ -33,83 +47,20 @@ export async function enqueueRealtimeEvent(
 export class RealtimeRepository {
   constructor(private readonly dataSource: DataSource) {}
 
-  claimPending(now: Date, limit = 100): Promise<RealtimeOutboxRow[]> {
-    return this.dataSource.transaction((manager) =>
-      manager.query(
-        `WITH candidates AS (
-           SELECT event_id
-           FROM dorify.dori_realtime_outbox
-           WHERE published_at IS NULL
-             AND (next_attempt_at IS NULL OR next_attempt_at <= $1)
-             AND (processing_started_at IS NULL OR processing_started_at < $1 - INTERVAL '5 minutes')
-           ORDER BY created_at, event_id
-           FOR UPDATE SKIP LOCKED
-           LIMIT $2
-         )
-         UPDATE dorify.dori_realtime_outbox outbox
-         SET processing_started_at = $1
-         FROM candidates
-         WHERE outbox.event_id = candidates.event_id
-         RETURNING outbox.event_id, outbox.queue_id, outbox.event_type, outbox.payload`,
-        [now, limit],
-      ),
-    );
-  }
-
-  async markPublished(eventId: string, now: Date): Promise<void> {
-    await this.dataSource.query(
-      `UPDATE dorify.dori_realtime_outbox
-       SET published_at = $1, attempt_count = attempt_count + 1,
-           processing_started_at = NULL, next_attempt_at = NULL
-       WHERE event_id = $2 AND published_at IS NULL`,
-      [now, eventId],
-    );
-  }
-
-  async markFailed(eventId: string, now: Date): Promise<void> {
-    await this.dataSource.query(
-      `UPDATE dorify.dori_realtime_outbox
-       SET attempt_count = attempt_count + 1, last_error_at = $1,
-           processing_started_at = NULL,
-           next_attempt_at = $1 + LEAST(INTERVAL '5 minutes',
-             INTERVAL '5 seconds' * POWER(2, LEAST(attempt_count, 6)))
-       WHERE event_id = $2 AND published_at IS NULL`,
-      [now, eventId],
-    );
-  }
-
-  async deletePublishedBefore(cutoff: Date): Promise<void> {
-    await this.dataSource.query(
-      `DELETE FROM dorify.dori_realtime_outbox
-       WHERE published_at IS NOT NULL AND published_at < $1`,
-      [cutoff],
-    );
-  }
-
-  findEventsAfter(
+  async findTopicState(
     queueId: string,
     eventType: RealtimeOutboxRow['event_type'],
-    eventId: string | undefined,
-    notBefore: Date,
-  ): Promise<RealtimeOutboxRow[]> {
-    return this.dataSource.query(
-      `WITH anchor AS (
-         SELECT created_at, event_id
-         FROM dorify.dori_realtime_outbox
-         WHERE event_id = $3::uuid
-       )
-       SELECT candidate.event_id, candidate.queue_id, candidate.event_type,
-              candidate.payload
-       FROM dorify.dori_realtime_outbox candidate
-       LEFT JOIN anchor ON TRUE
-       WHERE candidate.queue_id = $1 AND candidate.event_type = $2
-         AND (($3::uuid IS NOT NULL AND anchor.event_id IS NOT NULL
-               AND (candidate.created_at, candidate.event_id) > (anchor.created_at, anchor.event_id))
-              OR ($3::uuid IS NULL AND candidate.created_at > $4))
-       ORDER BY candidate.created_at, candidate.event_id
-       LIMIT 100`,
-      [queueId, eventType, eventId ?? null, notBefore],
+  ): Promise<RealtimeTopicStateRow | null> {
+    const rows = await this.dataSource.query<RealtimeTopicStateRow[]>(
+      `SELECT state.version, event.event_id, event.queue_id,
+              event.event_type, event.payload
+       FROM dorify.dori_realtime_topic_state state
+       JOIN dorify.dori_realtime_outbox event
+         ON event.event_id = state.event_id
+       WHERE state.queue_id = $1 AND state.event_type = $2`,
+      [queueId, eventType],
     );
+    return rows[0] ?? null;
   }
 
   async findRegistrationByTrackingToken(trackingToken: string) {

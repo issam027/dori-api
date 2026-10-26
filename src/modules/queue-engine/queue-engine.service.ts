@@ -9,7 +9,6 @@ import {
   PaginationDto,
   PaginatedResult,
 } from '../../core/pagination/pagination.dto';
-import { RealtimeService } from '../../core/realtime/realtime.service';
 import {
   ActiveThreadSessionRow,
   QueueEngineRepository,
@@ -21,7 +20,6 @@ export class QueueEngineService {
     private readonly queueEngineRepository: QueueEngineRepository,
     private readonly scopeService: ScopeService,
     private readonly clockService: ClockService,
-    private readonly realtimeService: RealtimeService,
   ) {}
 
   // 1. Threads State (Â§6.1)
@@ -331,7 +329,6 @@ export class QueueEngineService {
         hasNotes: candidate.notes_count > 0,
       },
     };
-    await this.realtimeService.dispatchPending();
     return result;
   }
 
@@ -359,8 +356,6 @@ export class QueueEngineService {
       'served',
       now,
     );
-    await this.realtimeService.dispatchPending();
-
     return {
       registrationId,
       status: 'served',
@@ -394,8 +389,6 @@ export class QueueEngineService {
       'no_show',
       now,
     );
-    await this.realtimeService.dispatchPending();
-
     return {
       registrationId,
       status: 'no_show',

@@ -14,7 +14,6 @@ import {
   RegistrationAvailabilityQueryDto,
 } from './dto/registration.dto';
 import { QueueWaitEstimationService } from '../queue-estimation/queue-wait-estimation.service';
-import { RealtimeService } from '../../core/realtime/realtime.service';
 
 describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ERR-02 PERSON_NOT_FOUND', () => {
   let service: RegistrationsService;
@@ -95,7 +94,6 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
           provide: QueueWaitEstimationService,
           useValue: { estimate: jest.fn() },
         },
-        { provide: RealtimeService, useValue: { dispatchPending: jest.fn() } },
       ],
     }).compile();
 
@@ -562,7 +560,6 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
           new Date(date.getTime() + minutes * 60_000),
       ),
     };
-    const realtime = { dispatchPending: jest.fn() };
     const service = new RegistrationsService(
       repository as unknown as RegistrationsRepository,
       { checkQueueAccess: jest.fn() } as unknown as ScopeService,
@@ -579,7 +576,6 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
         render: jest.fn(),
       } as unknown as NotificationTemplateService,
       undefined,
-      realtime as never,
     );
 
     const response = await service.createRegistration(
@@ -611,7 +607,6 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
       expect.objectContaining({ reason: 'registration_created' }),
       new Date('2026-10-14T10:00:00Z'),
     );
-    expect(realtime.dispatchPending).toHaveBeenCalled();
   });
 
   describe('getAvailability', () => {
@@ -796,9 +791,6 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
       checkIn: jest.fn().mockResolvedValue(checkedIn),
       findById: jest.fn().mockResolvedValue(checkedIn),
     };
-    const realtime = {
-      dispatchPending: jest.fn().mockResolvedValue(undefined),
-    };
     const user = {
       userId: '00000000-0000-4000-8000-000000000001',
       username: 'admin',
@@ -821,12 +813,10 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
       {} as ConfigService,
       {} as NotificationTemplateService,
       undefined,
-      realtime as never,
     );
 
     await service.checkIn(registrationId, user);
 
     expect(repository.checkIn).toHaveBeenCalledWith(registrationId, now);
-    expect(realtime.dispatchPending).toHaveBeenCalled();
   });
 });

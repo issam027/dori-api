@@ -10,11 +10,9 @@ import { AppointmentExpiryRepository } from './appointment-expiry/appointment-ex
 import { DailyResetRepository } from './daily-reset/daily-reset.repository';
 import { QueueEstimationWorker } from './queue-estimation/queue-estimation.worker';
 import { QueueEstimationWorkerRepository } from './queue-estimation/queue-estimation.repository';
-import { RealtimeModule } from '../core/realtime/realtime.module';
-import { RealtimeOutboxWorker } from './realtime-outbox/realtime-outbox.worker';
 
 @Module({
-  imports: [ConfigModule, DatabaseModule, ClockModule, RealtimeModule],
+  imports: [ConfigModule, DatabaseModule, ClockModule],
   providers: [
     AppointmentExpiryWorker,
     DailyResetWorker,
@@ -24,14 +22,12 @@ import { RealtimeOutboxWorker } from './realtime-outbox/realtime-outbox.worker';
     DailyResetRepository,
     QueueEstimationWorker,
     QueueEstimationWorkerRepository,
-    RealtimeOutboxWorker,
   ],
   exports: [
     AppointmentExpiryWorker,
     DailyResetWorker,
     NotificationWorker,
     QueueEstimationWorker,
-    RealtimeOutboxWorker,
   ],
 })
 export class WorkersModule {}
