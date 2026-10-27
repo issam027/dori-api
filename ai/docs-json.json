@@ -20045,6 +20045,7 @@
           "ticketNumber",
           "entryType",
           "status",
+          "scheduledTime",
           "recallCount",
           "businessDate",
           "registrationTrackingToken",
@@ -20576,15 +20577,16 @@
             "type": "string",
             "description": "Valeur du champ « username »."
           },
-          "displayName": {
+          "fullName": {
             "type": "string",
             "nullable": true,
-            "description": "Valeur du champ « display name »."
+            "description": "Valeur du champ « full name »."
           }
         },
         "required": [
           "userId",
-          "username"
+          "username",
+          "fullName"
         ]
       },
       "CockpitSessionItemDto": {
@@ -20617,6 +20619,7 @@
         "required": [
           "sessionId",
           "threadNumber",
+          "counterName",
           "operatorName",
           "ownedByCurrentOperator"
         ]
@@ -20647,6 +20650,7 @@
         "required": [
           "sessionId",
           "threadNumber",
+          "counterName",
           "operatorName"
         ]
       },
@@ -20702,7 +20706,8 @@
           }
         },
         "required": [
-          "eligible"
+          "eligible",
+          "unavailableReason"
         ]
       },
       "CockpitPersonItemDto": {
@@ -20725,7 +20730,9 @@
           }
         },
         "required": [
-          "personId"
+          "personId",
+          "firstName",
+          "lastName"
         ]
       },
       "CallNextTierItemDto": {
@@ -20829,8 +20836,10 @@
           "ticketNumber",
           "status",
           "entryType",
+          "scheduledTime",
           "calledAt",
           "recallCount",
+          "lastRecalledAt",
           "person",
           "tier",
           "notesCount"
@@ -20882,6 +20891,7 @@
         "required": [
           "ticketNumber",
           "entryType",
+          "scheduledTime",
           "priorityReferenceTime",
           "priorityScore",
           "calledEarly",
@@ -20990,12 +21000,15 @@
           "queueName",
           "waitingCount",
           "remainingAppointmentsCount",
+          "estimatedWaitMinutes",
           "threadCount",
           "occupiedThreadsCount",
           "availableThreadNumbers",
           "sessions",
+          "currentOperatorSessionId",
           "sessionOpening",
           "centralizedNext",
+          "activeCall",
           "nextCandidates"
         ]
       },
@@ -21060,6 +21073,8 @@
           "queueName",
           "ticketNumber",
           "personName",
+          "threadNumber",
+          "counterName",
           "calledAt",
           "closedAt",
           "outcome"

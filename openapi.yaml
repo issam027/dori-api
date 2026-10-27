@@ -10525,6 +10525,7 @@ components:
         - ticketNumber
         - entryType
         - status
+        - scheduledTime
         - recallCount
         - businessDate
         - registrationTrackingToken
@@ -10938,13 +10939,14 @@ components:
         username:
           type: string
           description: Valeur du champ « username ».
-        displayName:
+        fullName:
           type: string
           nullable: true
-          description: Valeur du champ « display name ».
+          description: Valeur du champ « full name ».
       required:
         - userId
         - username
+        - fullName
     CockpitSessionItemDto:
       type: object
       properties:
@@ -10969,6 +10971,7 @@ components:
       required:
         - sessionId
         - threadNumber
+        - counterName
         - operatorName
         - ownedByCurrentOperator
     CockpitReplaceableSessionItemDto:
@@ -10992,6 +10995,7 @@ components:
       required:
         - sessionId
         - threadNumber
+        - counterName
         - operatorName
     CockpitSessionOpeningItemDto:
       type: object
@@ -11033,6 +11037,7 @@ components:
           description: Valeur du champ « unavailable reason ».
       required:
         - eligible
+        - unavailableReason
     CockpitPersonItemDto:
       type: object
       properties:
@@ -11050,6 +11055,8 @@ components:
           description: Valeur du champ « last name ».
       required:
         - personId
+        - firstName
+        - lastName
     CallNextTierItemDto:
       type: object
       properties:
@@ -11125,8 +11132,10 @@ components:
         - ticketNumber
         - status
         - entryType
+        - scheduledTime
         - calledAt
         - recallCount
+        - lastRecalledAt
         - person
         - tier
         - notesCount
@@ -11164,6 +11173,7 @@ components:
       required:
         - ticketNumber
         - entryType
+        - scheduledTime
         - priorityReferenceTime
         - priorityScore
         - calledEarly
@@ -11242,12 +11252,15 @@ components:
         - queueName
         - waitingCount
         - remainingAppointmentsCount
+        - estimatedWaitMinutes
         - threadCount
         - occupiedThreadsCount
         - availableThreadNumbers
         - sessions
+        - currentOperatorSessionId
         - sessionOpening
         - centralizedNext
+        - activeCall
         - nextCandidates
     CockpitRecentPassageItemDto:
       type: object
@@ -11298,6 +11311,8 @@ components:
         - queueName
         - ticketNumber
         - personName
+        - threadNumber
+        - counterName
         - calledAt
         - closedAt
         - outcome

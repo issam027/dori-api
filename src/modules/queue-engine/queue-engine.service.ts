@@ -640,7 +640,7 @@ export class QueueEngineService {
       operator: {
         userId: user.userId,
         username: user.username,
-        displayName: data.operator?.full_name
+        fullName: data.operator?.full_name
           ? String(data.operator.full_name)
           : null,
       },
@@ -704,14 +704,17 @@ export class QueueEngineService {
             availableThreadNumbers,
             requiresReplacement:
               canOpenSession && availableThreadNumbers.length === 0,
-            replaceableSessions: sessions.map((session) => ({
-              sessionId: String(session.session_id),
-              threadNumber: Number(session.thread_number),
-              counterName: session.counter_name
-                ? String(session.counter_name)
-                : null,
-              operatorName: String(session.operator_name),
-            })),
+            replaceableSessions:
+              availableThreadNumbers.length === 0
+                ? sessions.map((session) => ({
+                    sessionId: String(session.session_id),
+                    threadNumber: Number(session.thread_number),
+                    counterName: session.counter_name
+                      ? String(session.counter_name)
+                      : null,
+                    operatorName: String(session.operator_name),
+                  }))
+                : [],
           },
           centralizedNext: {
             eligible: Boolean(ownedSession && !activeCall),

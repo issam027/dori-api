@@ -366,6 +366,11 @@ describe('QueueEngineService cockpit', () => {
       user,
     );
 
+    expect(result.operator).toEqual({
+      userId: user.userId,
+      username: user.username,
+      fullName: 'Sophie Martin',
+    });
     expect(result.queues[0]).toMatchObject({
       queueId,
       waitingCount: 3,
@@ -373,7 +378,11 @@ describe('QueueEngineService cockpit', () => {
       estimatedWaitMinutes: 30,
       availableThreadNumbers: [2],
       currentOperatorSessionId: '00000000-0000-4000-8000-000000000003',
-      sessionOpening: { allowed: true, requiresReplacement: false },
+      sessionOpening: {
+        allowed: true,
+        requiresReplacement: false,
+        replaceableSessions: [],
+      },
       centralizedNext: { eligible: true, unavailableReason: null },
     });
   });

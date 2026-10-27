@@ -1,11 +1,11 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { CallNextTierItemDto } from './engine-response.dto';
 
 export class CockpitOperatorItemDto {
   @ApiProperty({ format: 'uuid' }) userId: string;
   @ApiProperty() username: string;
   @ApiProperty({ type: String, nullable: true })
-  displayName: string | null;
+  fullName: string | null;
 }
 
 export class CockpitSessionItemDto {
