@@ -10,4 +10,28 @@ describe('QueueEngineController permissions', () => {
       ),
     ).toEqual(['queue_view', 'registration_call']);
   });
+
+  it('requires session operation permission for recall', () => {
+    expect(
+      Reflect.getMetadata(
+        PERMISSIONS_KEY,
+        QueueEngineController.prototype.recall,
+      ),
+    ).toEqual(['session_operate']);
+  });
+
+  it('requires registration call permission for site next and cockpit', () => {
+    expect(
+      Reflect.getMetadata(
+        PERMISSIONS_KEY,
+        QueueEngineController.prototype.callNextForSite,
+      ),
+    ).toEqual(['registration_call']);
+    expect(
+      Reflect.getMetadata(
+        PERMISSIONS_KEY,
+        QueueEngineController.prototype.getCockpit,
+      ),
+    ).toEqual(['registration_call']);
+  });
 });

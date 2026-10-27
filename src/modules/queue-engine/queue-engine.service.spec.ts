@@ -223,3 +223,158 @@ describe('QueueEngineService next preview scope', () => {
     );
   });
 });
+
+describe('QueueEngineService recall and empty queue', () => {
+  const user: AuthenticatedUser = {
+    userId: '00000000-0000-4000-8000-000000000004',
+    username: 'operator',
+    roles: ['operator'],
+    permissions: ['session_operate', 'registration_call'],
+    userType: 'human',
+  };
+  const now = new Date('2026-10-26T10:00:00Z');
+
+  it('returns the recall count and preserves the assigned counter', async () => {
+    const repository = {
+      recallRegistration: jest.fn().mockResolvedValue({
+        outcome: 'recalled',
+        registration_id: '00000000-0000-4000-8000-000000000001',
+        queue_id: '00000000-0000-4000-8000-000000000002',
+        ticket_number: 'A042',
+        status: 'in_progress',
+        session_id: '00000000-0000-4000-8000-000000000003',
+        thread_number: 3,
+        counter_name: 'Guichet 3',
+        last_recalled_at: now,
+        recall_count: 2,
+      }),
+    };
+    const service = new QueueEngineService(
+      repository as unknown as QueueEngineRepository,
+      {} as ScopeService,
+      { now: jest.fn(() => now) } as unknown as ClockService,
+    );
+
+    await expect(
+      service.recall('00000000-0000-4000-8000-000000000001', user),
+    ).resolves.toMatchObject({
+      ticketNumber: 'A042',
+      threadNumber: 3,
+      counterName: 'Guichet 3',
+      recallCount: 2,
+      lastRecalledAt: now,
+    });
+  });
+
+  it('returns a 409 business error when no next candidate exists', async () => {
+    const repository = {
+      findCallContext: jest.fn().mockResolvedValue({
+        session: {
+          session_id: '00000000-0000-4000-8000-000000000003',
+          thread_number: 3,
+        },
+        config: {
+          timezone: 'Europe/Berlin',
+          baseWalkin: 0,
+          baseAppointment: 60,
+          rateWalkin: 1,
+          rateAppointment: 1,
+        },
+      }),
+      callNext: jest.fn().mockResolvedValue(null),
+    };
+    const service = new QueueEngineService(
+      repository as unknown as QueueEngineRepository,
+      {
+        checkQueueAccess: jest.fn().mockResolvedValue(undefined),
+      } as unknown as ScopeService,
+      {
+        now: jest.fn(() => now),
+        todayInTimezone: jest.fn(() => '2026-10-26'),
+      } as unknown as ClockService,
+    );
+
+    await expect(
+      service.callNext('00000000-0000-4000-8000-000000000002', user),
+    ).rejects.toMatchObject({ code: 'QUEUE_EMPTY', status: 409 });
+  });
+});
+
+describe('QueueEngineService cockpit', () => {
+  it('returns authorized queues with opening and centralized next states', async () => {
+    const queueId = '00000000-0000-4000-8000-000000000002';
+    const user: AuthenticatedUser = {
+      userId: '00000000-0000-4000-8000-000000000004',
+      username: 'operator',
+      roles: ['operator'],
+      permissions: ['registration_call', 'session_operate'],
+      userType: 'human',
+    };
+    const repository = {
+      findQueueIds: jest.fn().mockResolvedValue([queueId]),
+      getCockpitData: jest.fn().mockResolvedValue({
+        site: {
+          site_id: '00000000-0000-4000-8000-000000000001',
+          site_name: 'Centre',
+        },
+        operator: { full_name: 'Sophie Martin' },
+        queues: [
+          {
+            queue_id: queueId,
+            queue_code: 'ACC',
+            queue_name: 'Accueil',
+            thread_count: 2,
+            waiting_count: 3,
+            remaining_appointments_count: 1,
+            occupied_threads_count: 1,
+            average_wait_time: 10,
+          },
+        ],
+        sessions: [
+          {
+            session_id: '00000000-0000-4000-8000-000000000003',
+            queue_id: queueId,
+            user_id: user.userId,
+            thread_number: 1,
+            counter_name: 'Guichet 1',
+            operator_name: 'Sophie Martin',
+          },
+        ],
+        activeCalls: [],
+        candidates: [],
+        recentPassages: [],
+      }),
+    };
+    const scope = {
+      checkSiteAccess: jest.fn().mockResolvedValue(undefined),
+      getUserScope: jest.fn().mockResolvedValue({
+        isGlobal: false,
+        siteIds: ['00000000-0000-4000-8000-000000000001'],
+        queueIds: [queueId],
+      }),
+    };
+    const now = new Date('2026-10-27T10:00:00Z');
+    const service = new QueueEngineService(
+      repository as unknown as QueueEngineRepository,
+      scope as unknown as ScopeService,
+      { now: jest.fn(() => now) } as unknown as ClockService,
+    );
+
+    const result = await service.getCockpit(
+      '00000000-0000-4000-8000-000000000001',
+      { previewLimit: 3, recentLimit: 10 },
+      user,
+    );
+
+    expect(result.queues[0]).toMatchObject({
+      queueId,
+      waitingCount: 3,
+      remainingAppointmentsCount: 1,
+      estimatedWaitMinutes: 30,
+      availableThreadNumbers: [2],
+      currentOperatorSessionId: '00000000-0000-4000-8000-000000000003',
+      sessionOpening: { allowed: true, requiresReplacement: false },
+      centralizedNext: { eligible: true, unavailableReason: null },
+    });
+  });
+});

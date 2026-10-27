@@ -4802,6 +4802,92 @@ paths:
         - QueueEngine
       security: &ref_78
         - bearer: []
+  /api/v1/sites/{siteId}/cockpit:
+    get:
+      operationId: QueueEngineController_getCockpit
+      x-required-permissions:
+        mode: all
+        permissions:
+          - registration_call
+      summary: Obtenir le cockpit opérationnel du site
+      description: >-
+        Retourne les files autorisées, leurs sessions actives, l'appel courant de l'opérateur et les prochains candidats
+        anonymisés.
+      parameters:
+        - name: siteId
+          required: true
+          in: path
+          schema:
+            format: uuid
+            type: string
+          description: Identifiant du site.
+        - name: queueIds
+          required: false
+          in: query
+          description: Files à rafraîchir. Accepte une liste CSV ou plusieurs paramètres queueIds.
+          schema:
+            format: uuid
+            type: string
+            items:
+              type: string
+            pattern: ^[0-9a-fA-F-]{36}(?:\s*,\s*[0-9a-fA-F-]{36})*$
+            example: 11111111-1111-4111-8111-111111111111,22222222-2222-4222-8222-222222222222
+        - name: previewLimit
+          required: false
+          in: query
+          schema:
+            minimum: 0
+            maximum: 10
+            default: 3
+            type: number
+          description: Valeur du paramètre « preview limit ».
+        - name: recentLimit
+          required: false
+          in: query
+          schema:
+            minimum: 0
+            maximum: 20
+            default: 10
+            type: number
+          description: Valeur du paramètre « recent limit ».
+      responses:
+        '200':
+          description: Snapshot opérationnel du cockpit
+          content:
+            application/json:
+              schema:
+                properties:
+                  code:
+                    type: string
+                    example: OK
+                    description: Code applicatif du résultat
+                  translationKey:
+                    type: string
+                    nullable: true
+                    example: null
+                    description: Clé de traduction du message (null si aucun message)
+                  translationParams:
+                    type: object
+                    additionalProperties: true
+                    example: {}
+                    description: Paramètres de traduction
+                  data:
+                    $ref: '#/components/schemas/CockpitResponseDto'
+                required:
+                  - code
+                  - translationKey
+                  - translationParams
+                  - data
+        '400': *ref_69
+        '401': *ref_70
+        '403': *ref_71
+        '404': *ref_72
+        '409': *ref_73
+        '422': *ref_74
+        '429': *ref_75
+        '500': *ref_76
+      tags: *ref_77
+      security: *ref_78
   /api/v1/queues/{queueId}/threads:
     get:
       operationId: QueueEngineController_getThreads
@@ -4815,10 +4901,10 @@ paths:
         - name: queueId
           required: true
           in: path
+          description: ID de la file
           schema:
-            type: string
             format: uuid
-          description: Identifiant de la file.
+            type: string
         - name: page
           required: false
           in: query
@@ -4836,13 +4922,6 @@ paths:
             maximum: 100
             default: 25
             type: number
-        - name: ''
-          required: true
-          in: path
-          description: ID de la file
-          schema:
-            format: uuid
-            type: string
       responses:
         '200':
           description: Liste des guichets
@@ -4894,10 +4973,10 @@ paths:
         - name: queueId
           required: true
           in: path
+          description: ID de la file
           schema:
-            type: string
             format: uuid
-          description: Identifiant de la file.
+            type: string
         - name: page
           required: false
           in: query
@@ -4932,13 +5011,6 @@ paths:
               - mode:desc
               - username:asc
               - username:desc
-        - name: ''
-          required: true
-          in: path
-          description: ID de la file
-          schema:
-            format: uuid
-            type: string
       responses:
         '200':
           description: Liste paginée des sessions actives
@@ -4987,13 +5059,6 @@ paths:
       description: Ouvre un guichet pour l'opérateur connecté et l'active pour recevoir les appels de clients.
       parameters:
         - name: queueId
-          required: true
-          in: path
-          schema:
-            type: string
-            format: uuid
-          description: Identifiant de la file.
-        - name: ''
           required: true
           in: path
           description: ID de la file
@@ -5057,10 +5122,10 @@ paths:
         - name: queueId
           required: true
           in: path
+          description: ID de la file
           schema:
-            type: string
             format: uuid
-          description: Identifiant de la file.
+            type: string
         - name: sessionId
           required: true
           in: path
@@ -5068,13 +5133,6 @@ paths:
           schema:
             type: string
             format: uuid
-        - name: ''
-          required: true
-          in: path
-          description: ID de la file
-          schema:
-            format: uuid
-            type: string
       responses:
         '200':
           description: Session fermée avec succès
@@ -5126,13 +5184,6 @@ paths:
         - name: queueId
           required: true
           in: path
-          schema:
-            type: string
-            format: uuid
-          description: Identifiant de la file.
-        - name: ''
-          required: true
-          in: path
           description: ID de la file
           schema:
             format: uuid
@@ -5160,6 +5211,120 @@ paths:
                     description: Paramètres de traduction
                   data:
                     $ref: '#/components/schemas/CallNextRegistrationResponseDto'
+                required:
+                  - code
+                  - translationKey
+                  - translationParams
+                  - data
+        '400': *ref_69
+        '401': *ref_70
+        '403': *ref_71
+        '404': *ref_72
+        '409': *ref_73
+        '422': *ref_74
+        '429': *ref_75
+        '500': *ref_76
+      tags: *ref_77
+      security: *ref_78
+  /api/v1/sites/{siteId}/next:
+    post:
+      operationId: QueueEngineController_callNextForSite
+      x-required-permissions:
+        mode: all
+        permissions:
+          - registration_call
+      summary: Appeler le meilleur candidat du site
+      description: >-
+        Sélectionne transactionnellement le meilleur candidat parmi les files du site où l'opérateur possède une session
+        active sans appel en cours.
+      parameters:
+        - name: siteId
+          required: true
+          in: path
+          schema:
+            format: uuid
+            type: string
+          description: Identifiant du site.
+      responses:
+        '200':
+          description: Meilleur candidat appelé avec sa file
+          content:
+            application/json:
+              schema:
+                properties:
+                  code:
+                    type: string
+                    example: OK
+                    description: Code applicatif du résultat
+                  translationKey:
+                    type: string
+                    nullable: true
+                    example: null
+                    description: Clé de traduction du message (null si aucun message)
+                  translationParams:
+                    type: object
+                    additionalProperties: true
+                    example: {}
+                    description: Paramètres de traduction
+                  data:
+                    $ref: '#/components/schemas/SiteCallNextResponseDto'
+                required:
+                  - code
+                  - translationKey
+                  - translationParams
+                  - data
+        '400': *ref_69
+        '401': *ref_70
+        '403': *ref_71
+        '404': *ref_72
+        '409': *ref_73
+        '422': *ref_74
+        '429': *ref_75
+        '500': *ref_76
+      tags: *ref_77
+      security: *ref_78
+  /api/v1/queue-engine/registrations/{registrationId}/recall:
+    post:
+      operationId: QueueEngineController_recall
+      x-required-permissions:
+        mode: all
+        permissions:
+          - session_operate
+      summary: Rappeler le client en cours
+      description: >-
+        Rappelle le ticket actuellement pris en charge par la session active de l'opérateur, sans modifier la file ni la
+        position des autres clients.
+      parameters:
+        - name: registrationId
+          required: true
+          in: path
+          description: ID de l'inscription à rappeler
+          schema:
+            format: uuid
+            type: string
+      responses:
+        '200':
+          description: Client rappelé au même guichet
+          content:
+            application/json:
+              schema:
+                properties:
+                  code:
+                    type: string
+                    example: OK
+                    description: Code applicatif du résultat
+                  translationKey:
+                    type: string
+                    nullable: true
+                    example: null
+                    description: Clé de traduction du message (null si aucun message)
+                  translationParams:
+                    type: object
+                    additionalProperties: true
+                    example: {}
+                    description: Paramètres de traduction
+                  data:
+                    $ref: '#/components/schemas/RecallRegistrationResponseDto'
                 required:
                   - code
                   - translationKey
@@ -10276,6 +10441,16 @@ components:
           type: string
           example: confirmed
           description: Statut du RDV
+        recallCount:
+          type: number
+          example: 0
+          minimum: 0
+          description: Nombre de rappels effectués pour cette inscription
+        lastRecalledAt:
+          type: object
+          format: date-time
+          nullable: true
+          description: Date et heure du dernier rappel
         businessDate:
           type: string
           example: '2026-09-27'
@@ -10350,6 +10525,7 @@ components:
         - ticketNumber
         - entryType
         - status
+        - recallCount
         - businessDate
         - registrationTrackingToken
         - tierId
@@ -10752,6 +10928,414 @@ components:
         - priorityScore
         - calledEarly
         - person
+    CockpitOperatorItemDto:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: Valeur du champ « user id ».
+        username:
+          type: string
+          description: Valeur du champ « username ».
+        displayName:
+          type: string
+          nullable: true
+          description: Valeur du champ « display name ».
+      required:
+        - userId
+        - username
+    CockpitSessionItemDto:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          description: Valeur du champ « session id ».
+        threadNumber:
+          type: number
+          minimum: 1
+          description: Valeur du champ « thread number ».
+        counterName:
+          type: string
+          nullable: true
+          description: Valeur du champ « counter name ».
+        operatorName:
+          type: string
+          description: Valeur du champ « operator name ».
+        ownedByCurrentOperator:
+          type: boolean
+          description: Valeur du champ « owned by current operator ».
+      required:
+        - sessionId
+        - threadNumber
+        - operatorName
+        - ownedByCurrentOperator
+    CockpitReplaceableSessionItemDto:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          description: Valeur du champ « session id ».
+        threadNumber:
+          type: number
+          minimum: 1
+          description: Valeur du champ « thread number ».
+        counterName:
+          type: string
+          nullable: true
+          description: Valeur du champ « counter name ».
+        operatorName:
+          type: string
+          description: Valeur du champ « operator name ».
+      required:
+        - sessionId
+        - threadNumber
+        - operatorName
+    CockpitSessionOpeningItemDto:
+      type: object
+      properties:
+        allowed:
+          type: boolean
+          description: Valeur du champ « allowed ».
+        availableThreadNumbers:
+          type: array
+          items:
+            type: number
+            minimum: 1
+          description: Valeur du champ « available thread numbers ».
+        requiresReplacement:
+          type: boolean
+          description: Valeur du champ « requires replacement ».
+        replaceableSessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/CockpitReplaceableSessionItemDto'
+          description: Valeur du champ « replaceable sessions ».
+      required:
+        - allowed
+        - availableThreadNumbers
+        - requiresReplacement
+        - replaceableSessions
+    CockpitCentralizedNextItemDto:
+      type: object
+      properties:
+        eligible:
+          type: boolean
+          description: Valeur du champ « eligible ».
+        unavailableReason:
+          type: string
+          enum:
+            - no_session
+            - active_call_in_progress
+          nullable: true
+          description: Valeur du champ « unavailable reason ».
+      required:
+        - eligible
+    CockpitPersonItemDto:
+      type: object
+      properties:
+        personId:
+          type: string
+          format: uuid
+          description: Valeur du champ « person id ».
+        firstName:
+          type: string
+          nullable: true
+          description: Valeur du champ « first name ».
+        lastName:
+          type: string
+          nullable: true
+          description: Valeur du champ « last name ».
+      required:
+        - personId
+    CallNextTierItemDto:
+      type: object
+      properties:
+        tierId:
+          type: string
+          format: uuid
+          description: ID du niveau de service
+        tierCode:
+          type: string
+          example: STANDARD
+          description: Code du niveau de service
+        tierName:
+          type: string
+          example: Standard
+          description: Nom du niveau de service
+      required:
+        - tierId
+        - tierCode
+        - tierName
+    CockpitActiveCallItemDto:
+      type: object
+      properties:
+        registrationId:
+          type: string
+          format: uuid
+          description: Valeur du champ « registration id ».
+        ticketNumber:
+          type: string
+          description: Valeur du champ « ticket number ».
+        status:
+          type: string
+          enum:
+            - in_progress
+          description: Valeur du champ « status ».
+        entryType:
+          type: string
+          enum:
+            - walkin
+            - appointment
+          description: Valeur du champ « entry type ».
+        scheduledTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: Valeur du champ « scheduled time ».
+        calledAt:
+          type: object
+          format: date-time
+          description: Valeur du champ « called at ».
+        recallCount:
+          type: number
+          minimum: 0
+          description: Valeur du champ « recall count ».
+        lastRecalledAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Valeur du champ « last recalled at ».
+        person:
+          allOf:
+            - $ref: '#/components/schemas/CockpitPersonItemDto'
+          description: Valeur du champ « person ».
+        tier:
+          allOf:
+            - $ref: '#/components/schemas/CallNextTierItemDto'
+          description: Valeur du champ « tier ».
+        notesCount:
+          type: number
+          minimum: 0
+          description: Valeur du champ « notes count ».
+      required:
+        - registrationId
+        - ticketNumber
+        - status
+        - entryType
+        - calledAt
+        - recallCount
+        - person
+        - tier
+        - notesCount
+    CockpitCandidateItemDto:
+      type: object
+      properties:
+        ticketNumber:
+          type: string
+          description: Valeur du champ « ticket number ».
+        entryType:
+          type: string
+          enum:
+            - walkin
+            - appointment
+          description: Valeur du champ « entry type ».
+        scheduledTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: Valeur du champ « scheduled time ».
+        priorityReferenceTime:
+          type: object
+          format: date-time
+          description: Valeur du champ « priority reference time ».
+        priorityScore:
+          type: number
+          description: Valeur du champ « priority score ».
+        calledEarly:
+          type: boolean
+          description: Valeur du champ « called early ».
+        tier:
+          allOf:
+            - $ref: '#/components/schemas/CallNextTierItemDto'
+          description: Valeur du champ « tier ».
+      required:
+        - ticketNumber
+        - entryType
+        - priorityReferenceTime
+        - priorityScore
+        - calledEarly
+        - tier
+    CockpitQueueItemDto:
+      type: object
+      properties:
+        queueId:
+          type: string
+          format: uuid
+          description: Valeur du champ « queue id ».
+        queueCode:
+          type: string
+          description: Valeur du champ « queue code ».
+        queueName:
+          type: string
+          description: Valeur du champ « queue name ».
+        waitingCount:
+          type: number
+          minimum: 0
+          description: Valeur du champ « waiting count ».
+        remainingAppointmentsCount:
+          type: number
+          minimum: 0
+          description: Valeur du champ « remaining appointments count ».
+        estimatedWaitMinutes:
+          type: number
+          minimum: 0
+          nullable: true
+          description: Valeur du champ « estimated wait minutes ».
+        threadCount:
+          type: number
+          minimum: 1
+          description: Valeur du champ « thread count ».
+        occupiedThreadsCount:
+          type: number
+          minimum: 0
+          description: Valeur du champ « occupied threads count ».
+        availableThreadNumbers:
+          type: array
+          items:
+            type: number
+            minimum: 1
+          description: Valeur du champ « available thread numbers ».
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/CockpitSessionItemDto'
+          description: Valeur du champ « sessions ».
+        currentOperatorSessionId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Valeur du champ « current operator session id ».
+        sessionOpening:
+          allOf:
+            - $ref: '#/components/schemas/CockpitSessionOpeningItemDto'
+          description: Valeur du champ « session opening ».
+        centralizedNext:
+          allOf:
+            - $ref: '#/components/schemas/CockpitCentralizedNextItemDto'
+          description: Valeur du champ « centralized next ».
+        activeCall:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/CockpitActiveCallItemDto'
+          description: Valeur du champ « active call ».
+        nextCandidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/CockpitCandidateItemDto'
+          description: Valeur du champ « next candidates ».
+      required:
+        - queueId
+        - queueCode
+        - queueName
+        - waitingCount
+        - remainingAppointmentsCount
+        - threadCount
+        - occupiedThreadsCount
+        - availableThreadNumbers
+        - sessions
+        - sessionOpening
+        - centralizedNext
+        - nextCandidates
+    CockpitRecentPassageItemDto:
+      type: object
+      properties:
+        registrationId:
+          type: string
+          format: uuid
+          description: Valeur du champ « registration id ».
+        queueId:
+          type: string
+          format: uuid
+          description: Valeur du champ « queue id ».
+        queueName:
+          type: string
+          description: Valeur du champ « queue name ».
+        ticketNumber:
+          type: string
+          description: Valeur du champ « ticket number ».
+        personName:
+          type: string
+          description: Valeur du champ « person name ».
+        threadNumber:
+          type: number
+          minimum: 1
+          nullable: true
+          description: Valeur du champ « thread number ».
+        counterName:
+          type: string
+          nullable: true
+          description: Valeur du champ « counter name ».
+        calledAt:
+          type: object
+          format: date-time
+          description: Valeur du champ « called at ».
+        closedAt:
+          type: object
+          format: date-time
+          description: Valeur du champ « closed at ».
+        outcome:
+          type: string
+          enum:
+            - served
+            - no_show
+          description: Valeur du champ « outcome ».
+      required:
+        - registrationId
+        - queueId
+        - queueName
+        - ticketNumber
+        - personName
+        - calledAt
+        - closedAt
+        - outcome
+    CockpitResponseDto:
+      type: object
+      properties:
+        siteId:
+          type: string
+          format: uuid
+          description: Valeur du champ « site id ».
+        siteName:
+          type: string
+          description: Valeur du champ « site name ».
+        serverTime:
+          type: object
+          format: date-time
+          description: Valeur du champ « server time ».
+        operator:
+          allOf:
+            - $ref: '#/components/schemas/CockpitOperatorItemDto'
+          description: Valeur du champ « operator ».
+        queues:
+          type: array
+          items:
+            $ref: '#/components/schemas/CockpitQueueItemDto'
+          description: Valeur du champ « queues ».
+        recentPassages:
+          type: array
+          items:
+            $ref: '#/components/schemas/CockpitRecentPassageItemDto'
+          description: Valeur du champ « recent passages ».
+      required:
+        - siteId
+        - siteName
+        - serverTime
+        - operator
+        - queues
+        - recentPassages
     ThreadSessionItemDto:
       type: object
       properties:
@@ -10958,6 +11542,12 @@ components:
           type: boolean
           default: false
           description: Prendre la main sur un guichet déjà ouvert par un autre opérateur
+        replaceSessionId:
+          type: string
+          format: uuid
+          description: >-
+            Session occupant le thread que le frontend confirme vouloir remplacer. La disponibilité est revérifiée
+            transactionnellement.
     CloseSessionResponseDto:
       type: object
       properties:
@@ -10971,32 +11561,63 @@ components:
       required:
         - sessionId
         - closed
+    CallNextPersonItemDto:
+      type: object
+      properties:
+        personId:
+          type: string
+          format: uuid
+          description: ID de la personne appelée
+        firstName:
+          type: string
+          nullable: true
+          example: Leila
+          description: Prénom de la personne
+        lastName:
+          type: string
+          nullable: true
+          example: Ben Ali
+          description: Nom de la personne
+        phone:
+          type: string
+          nullable: true
+          example: '+491500012261'
+          description: Numéro de téléphone de la personne
+        hasNotes:
+          type: boolean
+          example: false
+          description: Indique si la personne possède au moins une note active
+      required:
+        - personId
+        - hasNotes
     CallNextRegistrationResponseDto:
       type: object
       properties:
         registrationId:
           type: string
-          description: Valeur du champ « registration id ».
           format: uuid
+          description: Valeur du champ « registration id ».
         ticketNumber:
           type: string
           description: Valeur du champ « ticket number ».
         entryType:
           type: string
-          enum:
+          enum: &ref_120
             - walkin
             - appointment
           description: Valeur du champ « entry type ».
         scheduledTime:
-          type: object
+          type: string
           format: date-time
           nullable: true
-          description: Valeur du champ « scheduled time ».
+          example: '2026-10-26T10:30:00.000Z'
+          description: Date et heure planifiées pour un rendez-vous, null pour une arrivée sans rendez-vous
         calledEarly:
           type: boolean
           description: Valeur du champ « called early ».
         tier:
-          type: object
+          allOf:
+            - $ref: '#/components/schemas/CallNextTierItemDto'
           description: Valeur du champ « tier ».
         status:
           type: string
@@ -11004,8 +11625,8 @@ components:
           description: Valeur du champ « status ».
         sessionId:
           type: string
-          description: Valeur du champ « session id ».
           format: uuid
+          description: Valeur du champ « session id ».
         threadNumber:
           type: number
           minimum: 1
@@ -11018,7 +11639,8 @@ components:
           format: date-time
           description: Valeur du champ « called at ».
         person:
-          type: object
+          allOf:
+            - $ref: '#/components/schemas/CallNextPersonItemDto'
           description: Valeur du champ « person ».
       required:
         - registrationId
@@ -11032,6 +11654,135 @@ components:
         - priorityScore
         - calledAt
         - person
+    CallNextQueueItemDto:
+      type: object
+      properties:
+        queueId:
+          type: string
+          format: uuid
+          description: Valeur du champ « queue id ».
+        queueName:
+          type: string
+          description: Valeur du champ « queue name ».
+      required:
+        - queueId
+        - queueName
+    SiteCallNextResponseDto:
+      type: object
+      properties:
+        registrationId:
+          type: string
+          format: uuid
+          description: Valeur du champ « registration id ».
+        ticketNumber:
+          type: string
+          description: Valeur du champ « ticket number ».
+        entryType:
+          type: string
+          enum: *ref_120
+          description: Valeur du champ « entry type ».
+        scheduledTime:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2026-10-26T10:30:00.000Z'
+          description: Date et heure planifiées pour un rendez-vous, null pour une arrivée sans rendez-vous
+        calledEarly:
+          type: boolean
+          description: Valeur du champ « called early ».
+        tier:
+          allOf:
+            - $ref: '#/components/schemas/CallNextTierItemDto'
+          description: Valeur du champ « tier ».
+        status:
+          type: string
+          example: in_progress
+          description: Valeur du champ « status ».
+        sessionId:
+          type: string
+          format: uuid
+          description: Valeur du champ « session id ».
+        threadNumber:
+          type: number
+          minimum: 1
+          description: Valeur du champ « thread number ».
+        priorityScore:
+          type: number
+          description: Valeur du champ « priority score ».
+        calledAt:
+          type: string
+          format: date-time
+          description: Valeur du champ « called at ».
+        person:
+          allOf:
+            - $ref: '#/components/schemas/CallNextPersonItemDto'
+          description: Valeur du champ « person ».
+        queue:
+          allOf:
+            - $ref: '#/components/schemas/CallNextQueueItemDto'
+          description: Valeur du champ « queue ».
+      required:
+        - registrationId
+        - ticketNumber
+        - entryType
+        - calledEarly
+        - tier
+        - status
+        - sessionId
+        - threadNumber
+        - priorityScore
+        - calledAt
+        - person
+        - queue
+    RecallRegistrationResponseDto:
+      type: object
+      properties:
+        registrationId:
+          type: string
+          format: uuid
+          description: Valeur du champ « registration id ».
+        queueId:
+          type: string
+          format: uuid
+          description: Valeur du champ « queue id ».
+        ticketNumber:
+          type: string
+          description: Valeur du champ « ticket number ».
+        status:
+          type: string
+          example: in_progress
+          description: Valeur du champ « status ».
+        sessionId:
+          type: string
+          format: uuid
+          description: Valeur du champ « session id ».
+        threadNumber:
+          type: number
+          minimum: 1
+          description: Valeur du champ « thread number ».
+        counterName:
+          type: string
+          nullable: true
+          example: Guichet 3
+          description: Valeur du champ « counter name ».
+        lastRecalledAt:
+          type: object
+          format: date-time
+          description: Valeur du champ « last recalled at ».
+        recallCount:
+          type: number
+          minimum: 1
+          example: 1
+          description: Valeur du champ « recall count ».
+      required:
+        - registrationId
+        - queueId
+        - ticketNumber
+        - status
+        - sessionId
+        - threadNumber
+        - lastRecalledAt
+        - recallCount
     UpdateRegistrationStatusResponseDto:
       type: object
       properties:

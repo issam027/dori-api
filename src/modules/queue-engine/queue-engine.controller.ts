@@ -31,7 +31,11 @@ import {
   CallNextRegistrationResponseDto,
   CloseSessionResponseDto,
   UpdateRegistrationStatusResponseDto,
+  RecallRegistrationResponseDto,
+  SiteCallNextResponseDto,
 } from './dto/engine-response.dto';
+import { CockpitQueryDto } from './dto/cockpit-query.dto';
+import { CockpitResponseDto } from './dto/cockpit-response.dto';
 import {
   LimitQueryDto,
   PaginationDto,
@@ -72,6 +76,23 @@ export class QueueEngineController {
     return this.engineService.previewNext(user, siteId, query.limit ?? 10);
   }
 
+  @Get('sites/:siteId/cockpit')
+  @RequirePermission('registration_call')
+  @ApiOperation({
+    summary: 'Obtenir le cockpit opérationnel du site',
+    description:
+      "Retourne les files autorisées, leurs sessions actives, l'appel courant de l'opérateur et les prochains candidats anonymisés.",
+  })
+  @ApiParam({ name: 'siteId', type: String, format: 'uuid' })
+  @ApiDoriOkResponse(CockpitResponseDto, 'Snapshot opérationnel du cockpit')
+  async getCockpit(
+    @Param('siteId', ParseUUIDPipe) siteId: string,
+    @Query() query: CockpitQueryDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.engineService.getCockpit(siteId, query, user);
+  }
+
   @Get('queues/:queueId/threads')
   @RequirePermission('session_operate')
   @ApiOperation({
@@ -80,7 +101,7 @@ export class QueueEngineController {
       'Liste les guichets (threads) ouverts et fermés avec leur opérateur respectif.',
   })
   @ApiParam({
-    name: '',
+    name: 'queueId',
     type: String,
     format: 'uuid',
     description: 'ID de la file',
@@ -102,7 +123,7 @@ export class QueueEngineController {
       'Retourne la liste paginée des sessions de guichets actuellement en cours.',
   })
   @ApiParam({
-    name: '',
+    name: 'queueId',
     type: String,
     format: 'uuid',
     description: 'ID de la file',
@@ -128,7 +149,7 @@ export class QueueEngineController {
       "Ouvre un guichet pour l'opérateur connecté et l'active pour recevoir les appels de clients.",
   })
   @ApiParam({
-    name: '',
+    name: 'queueId',
     type: String,
     format: 'uuid',
     description: 'ID de la file',
@@ -150,7 +171,7 @@ export class QueueEngineController {
       "Déconnecte l'opérateur du guichet et clôture la session active.",
   })
   @ApiParam({
-    name: '',
+    name: 'queueId',
     type: String,
     format: 'uuid',
     description: 'ID de la file',
@@ -178,7 +199,7 @@ export class QueueEngineController {
       "Sélectionne le prochain client selon l'algorithme d'escalade et lui assigne le guichet de l'opérateur.",
   })
   @ApiParam({
-    name: '',
+    name: 'queueId',
     type: String,
     format: 'uuid',
     description: 'ID de la file',
@@ -192,6 +213,51 @@ export class QueueEngineController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.engineService.callNext(queueId, user);
+  }
+
+  @Post('sites/:siteId/next')
+  @RequirePermission('registration_call')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Appeler le meilleur candidat du site',
+    description:
+      "Sélectionne transactionnellement le meilleur candidat parmi les files du site où l'opérateur possède une session active sans appel en cours.",
+  })
+  @ApiParam({ name: 'siteId', type: String, format: 'uuid' })
+  @ApiDoriOkResponse(
+    SiteCallNextResponseDto,
+    'Meilleur candidat appelé avec sa file',
+  )
+  async callNextForSite(
+    @Param('siteId', ParseUUIDPipe) siteId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.engineService.nextForSite(siteId, user);
+  }
+
+  @Post('queue-engine/registrations/:registrationId/recall')
+  @RequirePermission('session_operate')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Rappeler le client en cours',
+    description:
+      "Rappelle le ticket actuellement pris en charge par la session active de l'opérateur, sans modifier la file ni la position des autres clients.",
+  })
+  @ApiParam({
+    name: 'registrationId',
+    type: String,
+    format: 'uuid',
+    description: "ID de l'inscription à rappeler",
+  })
+  @ApiDoriOkResponse(
+    RecallRegistrationResponseDto,
+    'Client rappelé au même guichet',
+  )
+  async recall(
+    @Param('registrationId', ParseUUIDPipe) registrationId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.engineService.recall(registrationId, user);
   }
 
   @Post('registrations/:registrationId/served')

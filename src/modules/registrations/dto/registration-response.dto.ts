@@ -39,7 +39,7 @@ export class RegistrationResponseDto {
   })
   status: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     example: '10:30:00',
     description: 'Heure planifiée si RDV',
   })
@@ -47,6 +47,20 @@ export class RegistrationResponseDto {
 
   @ApiPropertyOptional({ example: 'confirmed', description: 'Statut du RDV' })
   appointmentStatus?: string;
+
+  @ApiProperty({
+    example: 0,
+    minimum: 0,
+    description: 'Nombre de rappels effectués pour cette inscription',
+  })
+  recallCount: number;
+
+  @ApiPropertyOptional({
+    format: 'date-time',
+    nullable: true,
+    description: 'Date et heure du dernier rappel',
+  })
+  lastRecalledAt: string | null;
 
   @ApiProperty({ example: '2026-09-27', description: 'Date métier' })
   businessDate: string;

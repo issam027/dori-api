@@ -25,6 +25,7 @@ export type QueueDisplayChangeReason =
   | 'registration_created'
   | 'appointment_checked_in'
   | 'registration_called'
+  | 'registration_recalled'
   | 'registration_served'
   | 'registration_no_show';
 

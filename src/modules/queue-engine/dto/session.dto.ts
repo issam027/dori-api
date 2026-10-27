@@ -4,6 +4,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   Min,
   MinLength,
@@ -54,4 +55,13 @@ export class OpenQueueSessionDto {
   @IsBoolean()
   @IsOptional()
   takeOver?: boolean;
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description:
+      'Session occupant le thread que le frontend confirme vouloir remplacer. La disponibilité est revérifiée transactionnellement.',
+  })
+  @IsUUID('4')
+  @IsOptional()
+  replaceSessionId?: string;
 }

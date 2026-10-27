@@ -221,6 +221,9 @@ async function main() {
 }
 
 main().catch((e) => {
-  err(` position=${e.position ?? 'unknown'}`);
+  const error = e as { message?: string; code?: string; position?: string };
+  err(
+    `${error.message ?? 'Database initialization failed'} code=${error.code ?? 'unknown'} position=${error.position ?? 'unknown'}`,
+  );
   process.exit(1);
 });

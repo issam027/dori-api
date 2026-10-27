@@ -11,8 +11,10 @@ import {
 } from '../../core/pagination/pagination.dto';
 import {
   ActiveThreadSessionRow,
+  NextCandidateRow,
   QueueEngineRepository,
 } from './queue-engine.repository';
+import { CockpitQueryDto } from './dto/cockpit-query.dto';
 
 @Injectable()
 export class QueueEngineService {
@@ -177,7 +179,7 @@ export class QueueEngineService {
     );
 
     if (occupied) {
-      if (!dto.takeOver) {
+      if (!dto.takeOver && !dto.replaceSessionId) {
         const lastSeen = this.clockService.parse(occupied.last_seen_at);
         const inactiveMinutes = Math.max(
           0,
@@ -194,6 +196,14 @@ export class QueueEngineService {
           },
         });
       }
+      if (
+        dto.replaceSessionId &&
+        dto.replaceSessionId !== occupied.session_id
+      ) {
+        throw new DoriException('THREAD_UNAVAILABLE', {
+          threadNumber: dto.threadNumber,
+        });
+      }
 
       // Take over in single transaction (Â§4.6, Â§7.6)
       const takeover = await this.queueEngineRepository.takeOverThread({
@@ -201,6 +211,7 @@ export class QueueEngineService {
         threadNumber: dto.threadNumber,
         counterName: dto.counterName ?? occupied.counter_name ?? null,
         userId: user.userId,
+        expectedPreviousSessionId: dto.replaceSessionId,
         now,
       });
       if (!takeover) throw new DoriException('THREAD_UNAVAILABLE');
@@ -298,14 +309,43 @@ export class QueueEngineService {
       rateAppointment: context.config.rateAppointment,
     });
     if (!candidate) {
-      return {
-        code: 'QUEUE_EMPTY',
-        translationKey: 'queue.next.empty',
-        translationParams: {},
-        data: null,
-      };
+      throw new DoriException('QUEUE_EMPTY', { queueId });
     }
-    const result = {
+    return this.mapCalledCandidate(candidate, context.session);
+  }
+
+  async nextForSite(siteId: string, user: AuthenticatedUser) {
+    await this.scopeService.checkSiteAccess(user, siteId);
+    const scope = await this.scopeService.getUserScope(user);
+    const result = await this.queueEngineRepository.callNextForSite({
+      siteId,
+      userId: user.userId,
+      allowedQueueIds: scope.isGlobal ? null : scope.queueIds,
+      now: this.clockService.now(),
+    });
+    if (result.outcome === 'no_session') {
+      throw new DoriException('THREAD_UNAVAILABLE');
+    }
+    if (result.outcome === 'empty') {
+      throw new DoriException('QUEUE_EMPTY', { siteId });
+    }
+    if (result.outcome !== 'called') {
+      throw new DoriException('INTERNAL_ERROR');
+    }
+    return {
+      ...this.mapCalledCandidate(result.candidate, result.candidate),
+      queue: {
+        queueId: result.candidate.queue_id,
+        queueName: result.candidate.queue_name,
+      },
+    };
+  }
+
+  private mapCalledCandidate(
+    candidate: NextCandidateRow,
+    session: { session_id: string; thread_number: number | null },
+  ) {
+    return {
       registrationId: candidate.registration_id,
       ticketNumber: candidate.ticket_number,
       entryType: candidate.entry_type,
@@ -317,8 +357,8 @@ export class QueueEngineService {
         tierName: candidate.tier_name,
       },
       status: candidate.status,
-      sessionId: context.session.session_id,
-      threadNumber: context.session.thread_number,
+      sessionId: session.session_id,
+      threadNumber: session.thread_number,
       priorityScore: candidate.score,
       calledAt: candidate.called_at,
       person: {
@@ -329,7 +369,6 @@ export class QueueEngineService {
         hasNotes: candidate.notes_count > 0,
       },
     };
-    return result;
   }
 
   // 5. Close Registration Served / No-Show
@@ -396,6 +435,42 @@ export class QueueEngineService {
       closedAt: now,
       handledBySessionId: reg.served_by_session_id,
       handledByUserId: user.userId,
+    };
+  }
+
+  async recall(registrationId: string, user: AuthenticatedUser) {
+    const result = await this.queueEngineRepository.recallRegistration({
+      registrationId,
+      userId: user.userId,
+      now: this.clockService.now(),
+    });
+
+    if (result.outcome === 'not_found') {
+      throw new DoriException('REGISTRATION_NOT_FOUND', { registrationId });
+    }
+    if (result.outcome === 'not_in_progress') {
+      throw new DoriException('REGISTRATION_NOT_IN_PROGRESS');
+    }
+    if (result.outcome === 'session_unavailable') {
+      throw new DoriException('SESSION_NOT_FOUND');
+    }
+    if (result.outcome === 'forbidden') {
+      throw new DoriException('FORBIDDEN_PERMISSION');
+    }
+    if (result.outcome !== 'recalled') {
+      throw new DoriException('INTERNAL_ERROR');
+    }
+
+    return {
+      registrationId: result.registration_id,
+      queueId: result.queue_id,
+      ticketNumber: result.ticket_number,
+      status: result.status,
+      sessionId: result.session_id,
+      threadNumber: result.thread_number,
+      counterName: result.counter_name,
+      lastRecalledAt: result.last_recalled_at,
+      recallCount: result.recall_count,
     };
   }
 
@@ -510,6 +585,196 @@ export class QueueEngineService {
         lastName: candidate.last_name,
       },
     }));
+  }
+
+  async getCockpit(
+    siteId: string,
+    query: CockpitQueryDto,
+    user: AuthenticatedUser,
+  ) {
+    await this.scopeService.checkSiteAccess(user, siteId);
+    const scope = await this.scopeService.getUserScope(user);
+    const siteQueueIds = await this.queueEngineRepository.findQueueIds(siteId);
+    const authorizedQueueIds = scope.isGlobal
+      ? siteQueueIds
+      : siteQueueIds.filter((queueId) => scope.queueIds.includes(queueId));
+    if (
+      query.queueIds?.some((queueId) => !authorizedQueueIds.includes(queueId))
+    ) {
+      throw new DoriException('QUEUE_NOT_FOUND');
+    }
+    const queueIds = query.queueIds ?? authorizedQueueIds;
+    const now = this.clockService.now();
+    const data = await this.queueEngineRepository.getCockpitData({
+      siteId,
+      queueIds,
+      userId: user.userId,
+      now,
+      previewLimit: query.previewLimit,
+      recentLimit: query.recentLimit,
+    });
+    if (!data.site) throw new DoriException('SITE_NOT_FOUND', { siteId });
+
+    const sessionsByQueue = new Map<string, Array<Record<string, unknown>>>();
+    for (const session of data.sessions) {
+      const queueId = String(session.queue_id);
+      const sessions = sessionsByQueue.get(queueId) ?? [];
+      sessions.push(session);
+      sessionsByQueue.set(queueId, sessions);
+    }
+    const activeCallByQueue = new Map(
+      data.activeCalls.map((call) => [String(call.queue_id), call]),
+    );
+    const candidatesByQueue = new Map<string, Array<Record<string, unknown>>>();
+    for (const candidate of data.candidates) {
+      const queueId = String(candidate.queue_id);
+      const candidates = candidatesByQueue.get(queueId) ?? [];
+      candidates.push(candidate);
+      candidatesByQueue.set(queueId, candidates);
+    }
+    const canOpenSession = user.permissions.includes('session_operate');
+    return {
+      siteId: String(data.site.site_id),
+      siteName: String(data.site.site_name),
+      serverTime: now,
+      operator: {
+        userId: user.userId,
+        username: user.username,
+        displayName: data.operator?.full_name
+          ? String(data.operator.full_name)
+          : null,
+      },
+      queues: data.queues.map((queue) => {
+        const queueId = String(queue.queue_id);
+        const sessions = sessionsByQueue.get(queueId) ?? [];
+        const ownedSession = sessions.find(
+          (session) => String(session.user_id) === user.userId,
+        );
+        const activeCall = activeCallByQueue.get(queueId);
+        const threadCount = Number(queue.thread_count);
+        const occupiedThreadNumbers = new Set(
+          sessions.map((session) => Number(session.thread_number)),
+        );
+        const availableThreadNumbers = Array.from(
+          { length: threadCount },
+          (_, index) => index + 1,
+        ).filter((threadNumber) => !occupiedThreadNumbers.has(threadNumber));
+        const waitingCount = Number(queue.waiting_count ?? 0);
+        const activeThreads = Number(queue.occupied_threads_count ?? 0);
+        const cycleMinutes = Number(
+          queue.cycle_p50_minutes ?? queue.average_wait_time ?? 0,
+        );
+        const estimatedWaitMinutes =
+          activeThreads === 0
+            ? null
+            : waitingCount === 0
+              ? 0
+              : Math.max(
+                  1,
+                  Math.round(
+                    (waitingCount * cycleMinutes) / activeThreads / 5,
+                  ) * 5,
+                );
+        return {
+          queueId,
+          queueCode: String(queue.queue_code),
+          queueName: String(queue.queue_name),
+          waitingCount,
+          remainingAppointmentsCount: Number(
+            queue.remaining_appointments_count ?? 0,
+          ),
+          estimatedWaitMinutes,
+          threadCount,
+          occupiedThreadsCount: activeThreads,
+          availableThreadNumbers,
+          sessions: sessions.map((session) => ({
+            sessionId: String(session.session_id),
+            threadNumber: Number(session.thread_number),
+            counterName: session.counter_name
+              ? String(session.counter_name)
+              : null,
+            operatorName: String(session.operator_name),
+            ownedByCurrentOperator: String(session.user_id) === user.userId,
+          })),
+          currentOperatorSessionId: ownedSession
+            ? String(ownedSession.session_id)
+            : null,
+          sessionOpening: {
+            allowed: canOpenSession,
+            availableThreadNumbers,
+            requiresReplacement:
+              canOpenSession && availableThreadNumbers.length === 0,
+            replaceableSessions: sessions.map((session) => ({
+              sessionId: String(session.session_id),
+              threadNumber: Number(session.thread_number),
+              counterName: session.counter_name
+                ? String(session.counter_name)
+                : null,
+              operatorName: String(session.operator_name),
+            })),
+          },
+          centralizedNext: {
+            eligible: Boolean(ownedSession && !activeCall),
+            unavailableReason: !ownedSession
+              ? 'no_session'
+              : activeCall
+                ? 'active_call_in_progress'
+                : null,
+          },
+          activeCall: activeCall
+            ? {
+                registrationId: String(activeCall.registration_id),
+                ticketNumber: String(activeCall.ticket_number),
+                status: 'in_progress',
+                entryType: String(activeCall.entry_type),
+                scheduledTime: activeCall.scheduled_time ?? null,
+                calledAt: activeCall.called_at,
+                recallCount: Number(activeCall.recall_count ?? 0),
+                lastRecalledAt: activeCall.last_recalled_at ?? null,
+                person: {
+                  personId: String(activeCall.person_id),
+                  firstName: activeCall.first_name ?? null,
+                  lastName: activeCall.last_name ?? null,
+                },
+                tier: {
+                  tierId: String(activeCall.tier_id),
+                  tierCode: String(activeCall.tier_code),
+                  tierName: String(activeCall.tier_name),
+                },
+                notesCount: Number(activeCall.notes_count ?? 0),
+              }
+            : null,
+          nextCandidates: (candidatesByQueue.get(queueId) ?? []).map(
+            (candidate) => ({
+              ticketNumber: String(candidate.ticket_number),
+              entryType: String(candidate.entry_type),
+              scheduledTime: candidate.scheduled_time ?? null,
+              priorityReferenceTime: candidate.priority_reference_time,
+              priorityScore: Number(candidate.score ?? 0),
+              calledEarly: Boolean(candidate.called_early),
+              tier: {
+                tierId: String(candidate.tier_id),
+                tierCode: String(candidate.tier_code),
+                tierName: String(candidate.tier_name),
+              },
+            }),
+          ),
+        };
+      }),
+      recentPassages: data.recentPassages.map((passage) => ({
+        registrationId: String(passage.registration_id),
+        queueId: String(passage.queue_id),
+        queueName: String(passage.queue_name),
+        ticketNumber: String(passage.ticket_number),
+        personName: String(passage.person_name),
+        threadNumber:
+          passage.thread_number == null ? null : Number(passage.thread_number),
+        counterName: passage.counter_name ? String(passage.counter_name) : null,
+        calledAt: passage.called_at,
+        closedAt: passage.closed_at,
+        outcome: String(passage.outcome),
+      })),
+    };
   }
 
   async previewNext(

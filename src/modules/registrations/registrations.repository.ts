@@ -38,7 +38,7 @@ export type RegistrationRow = Record<string, unknown> & {
 
 const REGISTRATION_COLUMNS = `registration_id, person_id, queue_id, tier_id, business_date,
   ticket_number, entry_type, scheduled_time, appointment_status, checked_in_at,
-  priority_reference_time, status, called_at, served_at, closed_at, carried_over_from_date,
+  priority_reference_time, status, called_at, last_recalled_at, recall_count, served_at, closed_at, carried_over_from_date,
   served_by_session_id, served_by_user_id, registration_tracking_token,
   registration_tracking_token_valid_until, payment_status, payment_amount, payment_currency,
   payment_method, paid_at, payment_reference, language_preference, is_active, deleted_at,

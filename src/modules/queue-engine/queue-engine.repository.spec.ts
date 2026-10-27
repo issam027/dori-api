@@ -2,6 +2,148 @@ import { DataSource } from 'typeorm';
 import { QueueEngineRepository } from './queue-engine.repository';
 
 describe('QueueEngineRepository', () => {
+  it('calls the best candidate across the operator active site sessions', async () => {
+    const now = new Date('2026-10-27T10:00:00Z');
+    const queueId = '00000000-0000-4000-8000-000000000002';
+    const sessionId = '00000000-0000-4000-8000-000000000003';
+    const registrationId = '00000000-0000-4000-8000-000000000004';
+    const query = jest
+      .fn()
+      .mockResolvedValueOnce([{ session_id: sessionId, queue_id: queueId }])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          registration_id: registrationId,
+          queue_id: queueId,
+          session_id: sessionId,
+          score: '72.5',
+        },
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          registration_id: registrationId,
+          queue_id: queueId,
+          queue_name: 'Accueil',
+          session_id: sessionId,
+          thread_number: 2,
+          ticket_number: 'A042',
+          status: 'in_progress',
+          notes_count: 0,
+        },
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+    const repository = new QueueEngineRepository({
+      transaction: jest.fn((callback) => callback({ query })),
+    } as unknown as DataSource);
+
+    await expect(
+      repository.callNextForSite({
+        siteId: '00000000-0000-4000-8000-000000000001',
+        userId: '00000000-0000-4000-8000-000000000005',
+        allowedQueueIds: [queueId],
+        now,
+      }),
+    ).resolves.toMatchObject({
+      outcome: 'called',
+      candidate: {
+        registration_id: registrationId,
+        queue_id: queueId,
+        score: 72.5,
+      },
+    });
+
+    expect(query.mock.calls[0][0]).toContain("status = 'in_progress'");
+    expect(query.mock.calls[2][0]).toContain('ORDER BY score DESC');
+    expect(query.mock.calls[2][0]).toContain('FOR UPDATE OF c SKIP LOCKED');
+    expect(query.mock.calls[5][1][1]).toBe('queue_display_changed');
+    expect(query.mock.calls[6][1][1]).toBe('queue_position_changed');
+  });
+
+  it('recalls the current registration and publishes display only', async () => {
+    const now = new Date('2026-10-26T10:00:00Z');
+    const registrationId = '00000000-0000-4000-8000-000000000001';
+    const queueId = '00000000-0000-4000-8000-000000000002';
+    const sessionId = '00000000-0000-4000-8000-000000000003';
+    const userId = '00000000-0000-4000-8000-000000000004';
+    const query = jest
+      .fn()
+      .mockResolvedValueOnce([
+        {
+          registration_id: registrationId,
+          queue_id: queueId,
+          ticket_number: 'A042',
+          status: 'in_progress',
+          served_by_session_id: sessionId,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          session_id: sessionId,
+          user_id: userId,
+          thread_number: 3,
+          counter_name: 'Guichet 3',
+        },
+      ])
+      .mockResolvedValueOnce([{ last_recalled_at: now, recall_count: 2 }])
+      .mockResolvedValueOnce([]);
+    const repository = new QueueEngineRepository({
+      transaction: jest.fn((callback) => callback({ query })),
+    } as unknown as DataSource);
+
+    await expect(
+      repository.recallRegistration({ registrationId, userId, now }),
+    ).resolves.toMatchObject({
+      outcome: 'recalled',
+      registration_id: registrationId,
+      queue_id: queueId,
+      session_id: sessionId,
+      recall_count: 2,
+    });
+
+    expect(query.mock.calls[0][0]).toContain('FOR UPDATE');
+    expect(query.mock.calls[1][0]).toContain('disconnected_at IS NULL');
+    expect(query.mock.calls[2][0]).toContain('recall_count = recall_count + 1');
+    expect(query.mock.calls[3][1][1]).toBe('queue_display_changed');
+    expect(query.mock.calls[3][1][2]).toContain('registration_recalled');
+    expect(query.mock.calls[3][1][2]).not.toContain('queue_position_changed');
+  });
+
+  it('rejects recall when the active session belongs to another user', async () => {
+    const query = jest
+      .fn()
+      .mockResolvedValueOnce([
+        {
+          registration_id: '00000000-0000-4000-8000-000000000001',
+          queue_id: '00000000-0000-4000-8000-000000000002',
+          ticket_number: 'A042',
+          status: 'in_progress',
+          served_by_session_id: '00000000-0000-4000-8000-000000000003',
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          session_id: '00000000-0000-4000-8000-000000000003',
+          user_id: '00000000-0000-4000-8000-000000000099',
+          thread_number: 3,
+          counter_name: 'Guichet 3',
+        },
+      ]);
+    const repository = new QueueEngineRepository({
+      transaction: jest.fn((callback) => callback({ query })),
+    } as unknown as DataSource);
+
+    await expect(
+      repository.recallRegistration({
+        registrationId: '00000000-0000-4000-8000-000000000001',
+        userId: '00000000-0000-4000-8000-000000000004',
+        now: new Date('2026-10-26T10:00:00Z'),
+      }),
+    ).resolves.toEqual({ outcome: 'forbidden' });
+    expect(query).toHaveBeenCalledTimes(2);
+  });
+
   it('returns the configured threads and active sessions', async () => {
     const query = jest
       .fn()

@@ -680,6 +680,10 @@ export class RegistrationsService {
         appointmentStatus: registration.appointment_status
           ? String(registration.appointment_status)
           : undefined,
+        recallCount: Number(registration.recall_count ?? 0),
+        lastRecalledAt: registration.last_recalled_at
+          ? String(registration.last_recalled_at)
+          : null,
         businessDate: String(registration.business_date),
         registrationTrackingToken: String(
           registration.registration_tracking_token,

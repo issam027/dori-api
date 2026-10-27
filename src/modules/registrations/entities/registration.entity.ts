@@ -62,6 +62,12 @@ export class DoriRegistration {
   called_at: Date | null;
 
   @Column({ type: 'timestamptz', nullable: true })
+  last_recalled_at: Date | null;
+
+  @Column({ type: 'integer', default: 0 })
+  recall_count: number;
+
+  @Column({ type: 'timestamptz', nullable: true })
   served_at: Date | null;
 
   @Column({ type: 'timestamptz', nullable: true })
