@@ -1,8 +1,8 @@
-name: dorify-backend
+name: dorify
 
 services:
-  api:
-    image: dorify/api:dev
+  engine:
+    image: dorify/engine:dev
     build:
       context: .
       target: runtime
