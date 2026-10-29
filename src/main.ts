@@ -21,6 +21,7 @@ async function createApp(): Promise<NestExpressApplication> {
   });
 
   const configService = app.get(ConfigService);
+  app.enableShutdownHooks();
   app.use(cookieParser());
 
   app.use(
@@ -133,7 +134,7 @@ void getApp().then(async (app) => {
   if (!isVercel) {
     const logger = new Logger('DoriApi');
     const port = configService.get<number>('port') || 3000;
-    await app.listen(port);
+    await app.listen(port, '0.0.0.0');
     logger.log(
       `OpenAPI documentation available at http://localhost:${port}/api/docs`,
     );
