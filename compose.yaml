@@ -1,7 +1,8 @@
-name: dori
+name: dorify-backend
 
 services:
   api:
+    image: dorify/api:dev
     build:
       context: .
       target: runtime
@@ -48,7 +49,7 @@ services:
     ports:
       - '127.0.0.1:5432:5432'
     volumes:
-      - dori_postgres_data:/var/lib/postgresql/data
+      - dorify_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U dori -d dori']
       interval: 5s
@@ -63,7 +64,7 @@ services:
     ports:
       - '127.0.0.1:6379:6379'
     volumes:
-      - dori_redis_data:/data
+      - dorify_redis_data:/data
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
@@ -72,9 +73,11 @@ services:
       start_period: 5s
 
 volumes:
-  dori_postgres_data:
-  dori_redis_data:
+  dorify_postgres_data:
+    name: dorify-postgres-data
+  dorify_redis_data:
+    name: dorify-redis-data
 
 networks:
   default:
-    name: dori-network
+    name: dorify-network
