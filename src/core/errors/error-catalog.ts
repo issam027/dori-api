@@ -18,6 +18,10 @@ export const ERROR_CATALOG: Record<
     status: 403,
     translationKey: 'errors.forbidden_permission',
   },
+  INSTALLATION_REVOKED: {
+    status: 403,
+    translationKey: 'errors.installation_revoked',
+  },
   FORBIDDEN_ROLE_ESCALATION: {
     status: 403,
     translationKey: 'errors.forbidden_role_escalation',

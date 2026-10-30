@@ -68,14 +68,14 @@ describe('EdgeControlService', () => {
 
   it('returns the administrative status checked by the agent', async () => {
     repository.findInstallation.mockResolvedValue([
-      { deployment_status: 'inactive' },
+      { deployment_status: 'revoked' },
     ]);
 
     await expect(
       service.agentInstallationStatus('00000000-0000-4000-8000-000000000001'),
     ).resolves.toEqual({
       installationId: '00000000-0000-4000-8000-000000000001',
-      deploymentStatus: 'inactive',
+      deploymentStatus: 'revoked',
       checkedAt: '2026-10-30T08:00:00.000Z',
     });
   });

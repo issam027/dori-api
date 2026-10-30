@@ -124,10 +124,6 @@ export default () => {
       mode: process.env.DORIFY_DEPLOYMENT_MODE ?? 'intra',
     },
 
-    edge: {
-      agentUrl: process.env.DORIFY_AGENT_URL ?? 'http://agent:3100',
-    },
-
     defaults: {
       timezone: process.env.DEFAULT_TIMEZONE ?? DEFAULT_TIMEZONE,
     },

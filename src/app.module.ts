@@ -37,6 +37,7 @@ import { AuditModule } from './core/audit/audit.module';
 import { AuditInterceptor } from './core/audit/audit.interceptor';
 import { CronModule } from './cron-handlers/cron.module';
 import { EdgeControlModule } from './modules/edge-control/edge-control.module';
+import { EdgeDeploymentGuard } from './modules/edge-control/edge-deployment.guard';
 
 const isVercel = isVercelRuntime();
 
@@ -98,6 +99,10 @@ const isVercel = isVercelRuntime();
     {
       provide: APP_GUARD,
       useClass: PermissionsGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: EdgeDeploymentGuard,
     },
     {
       provide: APP_GUARD,

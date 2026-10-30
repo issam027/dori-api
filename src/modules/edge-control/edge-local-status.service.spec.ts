@@ -1,45 +1,46 @@
-import { ConfigService } from '@nestjs/config';
+import { DataSource } from 'typeorm';
 import { EdgeLocalStatusService } from './edge-local-status.service';
 
 describe('EdgeLocalStatusService', () => {
-  const config = {
-    get: jest.fn(() => 'http://agent:3100'),
-  } as unknown as ConfigService;
-  const service = new EdgeLocalStatusService(config);
+  const database = { query: jest.fn() };
+  const service = new EdgeLocalStatusService(database as unknown as DataSource);
 
-  afterEach(() => jest.restoreAllMocks());
+  beforeEach(() => jest.clearAllMocks());
 
-  it('reports cloud unavailability without throwing', async () => {
-    jest.spyOn(global, 'fetch').mockRejectedValue(new Error('offline'));
+  it('preserves a revoked last-known status during a cloud outage', async () => {
+    database.query.mockResolvedValue([
+      {
+        state_value: JSON.stringify({
+          deploymentStatus: 'revoked',
+          lastCloudSuccessAt: '2026-10-30T08:00:00.000Z',
+          lastCloudError: 'offline',
+        }),
+      },
+    ]);
 
     await expect(service.getStatus()).resolves.toEqual({
       configured: true,
-      deploymentStatus: 'unknown',
+      deploymentStatus: 'revoked',
       cloudReachability: 'unreachable',
-      lastCloudSuccessAt: null,
+      lastCloudSuccessAt: '2026-10-30T08:00:00.000Z',
       lastCloudError: 'offline',
     });
   });
 
-  it('forwards the inactive state reported by the agent', async () => {
-    jest.spyOn(global, 'fetch').mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          agent: {
-            enabled: true,
-            deploymentStatus: 'inactive',
-            lastCloudSuccessAt: '2026-10-30T08:00:00.000Z',
-            lastCloudError: null,
-          },
+  it('allows an active last-known status while reporting cloud unavailability', async () => {
+    database.query.mockResolvedValue([
+      {
+        state_value: JSON.stringify({
+          deploymentStatus: 'active',
+          lastCloudSuccessAt: '2026-10-30T08:00:00.000Z',
+          lastCloudError: 'offline',
         }),
-        { status: 200 },
-      ),
-    );
+      },
+    ]);
 
     await expect(service.getStatus()).resolves.toMatchObject({
-      configured: true,
-      deploymentStatus: 'inactive',
-      cloudReachability: 'connected',
+      deploymentStatus: 'active',
+      cloudReachability: 'unreachable',
     });
   });
 });

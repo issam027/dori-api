@@ -26,7 +26,7 @@ export enum EdgeCommandResultStatus {
 
 export enum EdgeDeploymentStatus {
   Active = 'active',
-  Inactive = 'inactive',
+  Revoked = 'revoked',
 }
 
 class EdgeVersionsDto {
@@ -116,8 +116,8 @@ export class EdgeAgentInstallationStatusResponseDto {
 
 export class EdgeLocalStatusResponseDto {
   @ApiProperty() configured!: boolean;
-  @ApiProperty({ enum: ['active', 'inactive', 'unknown'] })
-  deploymentStatus!: 'active' | 'inactive' | 'unknown';
+  @ApiProperty({ enum: ['active', 'revoked', 'unknown'] })
+  deploymentStatus!: 'active' | 'revoked' | 'unknown';
   @ApiProperty({ enum: ['connected', 'unreachable', 'not_configured'] })
   cloudReachability!: 'connected' | 'unreachable' | 'not_configured';
   @ApiPropertyOptional({ nullable: true, format: 'date-time', type: String })

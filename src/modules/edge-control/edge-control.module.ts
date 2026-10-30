@@ -8,6 +8,7 @@ import { EdgeControlRepository } from './edge-control.repository';
 import { EdgeControlService } from './edge-control.service';
 import { EdgeLocalController } from './edge-local.controller';
 import { EdgeLocalStatusService } from './edge-local-status.service';
+import { EdgeDeploymentGuard } from './edge-deployment.guard';
 
 @Module({
   imports: [ConfigModule, DatabaseModule, ClockModule],
@@ -16,6 +17,8 @@ import { EdgeLocalStatusService } from './edge-local-status.service';
     EdgeControlRepository,
     EdgeControlService,
     EdgeLocalStatusService,
+    EdgeDeploymentGuard,
   ],
+  exports: [EdgeDeploymentGuard, EdgeLocalStatusService],
 })
 export class EdgeControlModule {}

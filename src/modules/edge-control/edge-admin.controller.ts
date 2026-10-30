@@ -52,7 +52,7 @@ export class EdgeAdminController {
   }
 
   @Patch(':installationId/status')
-  @ApiOperation({ summary: 'Activate or deactivate an intra installation' })
+  @ApiOperation({ summary: 'Activate or revoke an intra installation' })
   @ApiDoriOkResponse(EdgeInstallationResponseDto)
   updateStatus(
     @Param('installationId', ParseUUIDPipe) installationId: string,

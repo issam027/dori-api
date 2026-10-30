@@ -16869,7 +16869,7 @@
     "/api/v1/edge/installations/{installationId}/status": {
       "patch": {
         "operationId": "EdgeAdminController_updateStatus",
-        "summary": "Activate or deactivate an intra installation",
+        "summary": "Activate or revoke an intra installation",
         "parameters": [
           {
             "name": "installationId",
@@ -24901,7 +24901,7 @@
             "type": "string",
             "enum": [
               "active",
-              "inactive"
+              "revoked"
             ],
             "description": "Valeur du champ « deployment status »."
           },
@@ -24963,7 +24963,7 @@
             "type": "string",
             "enum": [
               "active",
-              "inactive"
+              "revoked"
             ],
             "description": "Valeur du champ « deployment status »."
           },
@@ -25027,7 +25027,7 @@
             "type": "string",
             "enum": [
               "active",
-              "inactive"
+              "revoked"
             ],
             "description": "Valeur du champ « deployment status »."
           }
@@ -25117,7 +25117,7 @@
             "type": "string",
             "enum": [
               "active",
-              "inactive"
+              "revoked"
             ],
             "description": "Valeur du champ « deployment status »."
           },
@@ -25195,7 +25195,7 @@
             "type": "string",
             "enum": [
               "active",
-              "inactive",
+              "revoked",
               "unknown"
             ],
             "description": "Valeur du champ « deployment status »."
