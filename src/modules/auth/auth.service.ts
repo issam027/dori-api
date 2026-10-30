@@ -15,14 +15,13 @@ import { RankService } from '../../core/rbac/services/rank.service';
 
 @Injectable()
 export class AuthService {
-  private readonly rankService = new RankService();
-
   constructor(
     private readonly authRepository: AuthRepository,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly clockService: ClockService,
     private readonly scopeService: ScopeService,
+    private readonly rankService: RankService,
   ) {}
 
   private hashToken(token: string): string {
@@ -54,22 +53,13 @@ export class AuthService {
     );
 
     if (!passwordMatches) {
-      const failedAttempts = (user.failed_attempts || 0) + 1;
-      let lockedUntil: Date | null = null;
       const maxFailedAttempts = this.configService.getOrThrow<number>(
         'security.maxFailedAttempts',
       );
-      if (failedAttempts >= maxFailedAttempts) {
-        lockedUntil = this.clockService.addMinutes(
-          now,
-          this.configService.getOrThrow<number>('security.lockoutMinutes'),
-        );
-      }
-
       await this.authRepository.recordFailedLogin(
         user.user_id,
-        failedAttempts,
-        lockedUntil,
+        maxFailedAttempts,
+        this.configService.getOrThrow<number>('security.lockoutMinutes'),
         now,
       );
 
@@ -216,6 +206,8 @@ export class AuthService {
     if (!(await this.authRepository.activeUserExists(targetUserId))) {
       throw new DoriException('USER_NOT_FOUND', { userId: targetUserId });
     }
+
+    await this.scopeService.checkUserAccess(caller, targetUserId);
 
     // Force-disconnect : révoquer toutes les sessions actives de l'utilisateur cible
     await this.authRepository.revokeAllSessions(

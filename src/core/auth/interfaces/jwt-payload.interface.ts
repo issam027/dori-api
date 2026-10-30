@@ -21,4 +21,6 @@ export interface AuthenticatedUser {
   userType: 'human' | 'kiosk';
   /** UUID de la session liÃ©e au JWT courant â€” SEC-02 */
   sessionId?: SessionId;
+  /** Expiration of the access token, in UNIX seconds. */
+  accessTokenExpiresAt?: number;
 }

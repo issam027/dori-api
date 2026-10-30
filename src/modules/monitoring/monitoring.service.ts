@@ -73,8 +73,12 @@ export class MonitoringService {
       counters = Object.fromEntries(this.counters);
     }
 
-    const requests = counters.http_requests_total ?? 0;
-    const totalDuration = counters.http_request_duration_ms_total ?? 0;
+    const requests =
+      counters.http_rest_requests_total ?? counters.http_requests_total ?? 0;
+    const totalDuration =
+      counters.http_rest_requests_total === undefined
+        ? (counters.http_request_duration_ms_total ?? 0)
+        : (counters.http_rest_request_duration_ms_total ?? 0);
     return {
       counters,
       derived: {

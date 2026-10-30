@@ -68,15 +68,21 @@ export class AuthRepository {
 
   recordFailedLogin(
     userId: string,
-    failedAttempts: number,
-    lockedUntil: Date | null,
+    maxFailedAttempts: number,
+    lockoutMinutes: number,
     now: Date,
   ) {
     return this.dataSource.query(
       `UPDATE dorify.dori_user
-       SET failed_attempts = $1, locked_until = $2, updated_at = $3
-       WHERE user_id = $4`,
-      [failedAttempts, lockedUntil, now, userId],
+       SET failed_attempts = failed_attempts + 1,
+           locked_until = CASE
+             WHEN failed_attempts + 1 >= $1
+               THEN GREATEST(locked_until, $3::timestamptz + $2 * INTERVAL '1 minute')
+             ELSE locked_until
+           END,
+           updated_at = $3
+       WHERE user_id = $4 AND is_active = TRUE AND deleted_at IS NULL`,
+      [maxFailedAttempts, lockoutMinutes, now, userId],
     );
   }
 
@@ -198,7 +204,7 @@ export class AuthRepository {
     >(
       `SELECT MAX(r.rank) as max_rank
        FROM dorify.dori_user_role ur
-       JOIN dorify.dori_role r ON r.role_id = ur.role_id
+       JOIN dorify.dori_role r ON r.role_id = ur.role_id AND r.is_active = TRUE
        WHERE ur.user_id = $1`,
       [userId],
     );
@@ -231,6 +237,7 @@ export class AuthRepository {
       : await this.dataSource.query<Array<{ permission_name: string }>>(
           `SELECT DISTINCT p.permission_name
            FROM dorify.dori_user_role ur
+           JOIN dorify.dori_role r ON r.role_id = ur.role_id AND r.is_active = TRUE
            JOIN dorify.dori_role_permission rp ON rp.role_id = ur.role_id
            JOIN dorify.dori_permission p ON p.permission_id = rp.permission_id
            WHERE ur.user_id = $1 AND p.is_active = TRUE`,

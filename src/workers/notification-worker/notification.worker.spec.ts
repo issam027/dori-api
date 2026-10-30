@@ -16,7 +16,7 @@ describe('NotificationWorker', () => {
           attempt_count: 1,
         },
       ]),
-      markDelivered: jest.fn().mockResolvedValue(undefined),
+      markDelivered: jest.fn().mockResolvedValue(true),
       markAttemptFailed: jest.fn(),
     } as unknown as NotificationWorkerRepository;
     const clock = {
@@ -32,6 +32,7 @@ describe('NotificationWorker', () => {
       '00000000-0000-4000-8000-000000000042',
       expect.stringMatching(/^msg_[a-f0-9]{16}$/),
       now,
+      1,
     );
   });
 });

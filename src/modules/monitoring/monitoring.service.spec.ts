@@ -119,6 +119,18 @@ describe('MonitoringService', () => {
     });
   });
 
+  it('excludes old global counters and SSE lifetimes from the REST average', async () => {
+    const { service } = createService();
+    service.increment('http_requests_total', 100);
+    service.increment('http_request_duration_ms_total', 100000);
+    service.increment('http_rest_requests_total', 2);
+    service.increment('http_rest_request_duration_ms_total', 30);
+    service.increment('http_sse_duration_ms_total', 60000);
+    expect((await service.metrics()).derived.averageHttpRequestDurationMs).toBe(
+      15,
+    );
+  });
+
   it('loads business activity only from the activity operation', async () => {
     const { service } = createService();
     await expect(service.activity()).resolves.toEqual({

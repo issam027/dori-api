@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { UpdateUserDto, UserFilterDto } from './dto/user.dto';
 import {
   PaginationDto,
   PaginatedResult,
 } from '../../core/pagination/pagination.dto';
 import { UserSummaryItemDto, RoleResponseDto } from './dto/user-response.dto';
+import { returningRows } from '../../core/database/returning-rows';
 
 export interface UserDetailsResult {
   user_id: string;
@@ -72,7 +73,7 @@ export class UsersRepository {
     const rolesRes = await this.dataSource.query(
       `SELECT MAX(r.rank) as max_rank
        FROM dorify.dori_user_role ur
-       JOIN dorify.dori_role r ON r.role_id = ur.role_id
+       JOIN dorify.dori_role r ON r.role_id = ur.role_id AND r.is_active = TRUE
        WHERE ur.user_id = $1`,
       [userId],
     );
@@ -93,7 +94,7 @@ export class UsersRepository {
     const rolesRes = await this.dataSource.query(
       `SELECT MAX(r.rank) as max_rank
        FROM dorify.dori_user_role ur
-       JOIN dorify.dori_role r ON r.role_id = ur.role_id
+       JOIN dorify.dori_role r ON r.role_id = ur.role_id AND r.is_active = TRUE
        WHERE ur.user_id = $1`,
       [userId],
     );
@@ -110,6 +111,7 @@ export class UsersRepository {
     const permsRes = await this.dataSource.query<PermissionNameRow[]>(
       `SELECT DISTINCT p.permission_name
        FROM dorify.dori_user_role ur
+       JOIN dorify.dori_role r ON r.role_id = ur.role_id AND r.is_active = TRUE
        JOIN dorify.dori_role_permission rp ON rp.role_id = ur.role_id
        JOIN dorify.dori_permission p ON p.permission_id = rp.permission_id
        WHERE ur.user_id = $1 AND p.is_active = TRUE`,
@@ -324,6 +326,13 @@ export class UsersRepository {
       values.push(dto.languagePreference);
     }
 
+    if (dto.isActive !== undefined) {
+      fields.push(`is_active = $${idx++}`);
+      values.push(dto.isActive);
+      fields.push(`deleted_at = $${idx++}`);
+      values.push(dto.isActive ? null : now);
+    }
+
     fields.push(`updated_by_user_id = $${idx++}`);
     values.push(updaterUserId);
     fields.push(`updated_at = $${idx++}`);
@@ -331,13 +340,18 @@ export class UsersRepository {
 
     values.push(userId);
 
-    const res = await this.dataSource.query<UserMutationRow[]>(
-      `UPDATE dorify.dori_user SET ${fields.join(', ')} WHERE user_id = $${idx}
+    return this.dataSource.transaction(async (manager) => {
+      const raw: unknown = await manager.query(
+        `UPDATE dorify.dori_user SET ${fields.join(', ')} WHERE user_id = $${idx}
        RETURNING user_id, username, full_name, email, user_type, is_active, language_preference, updated_at`,
-      values,
-    );
+        values,
+      );
 
-    return res[0]!;
+      if (dto.isActive === false) {
+        await this.disconnectDisabledUser(manager, userId, updaterUserId, now);
+      }
+      return returningRows<UserMutationRow>(raw)[0]!;
+    });
   }
 
   async updateUserStatus(
@@ -356,21 +370,30 @@ export class UsersRepository {
       );
 
       if (!isActive) {
-        await manager.query(
-          `UPDATE dorify.dori_user_session
-           SET revoked_at = $1, revoked_reason = 'account_disabled'
-           WHERE user_id = $2 AND revoked_at IS NULL`,
-          [now, userId],
-        );
-
-        await manager.query(
-          `UPDATE dorify.dori_operator_session
-           SET disconnected_at = $1, closure_reason = 'forced', closed_by_user_id = $2
-           WHERE user_id = $3 AND disconnected_at IS NULL`,
-          [now, updaterUserId, userId],
-        );
+        await this.disconnectDisabledUser(manager, userId, updaterUserId, now);
       }
     });
+  }
+
+  private async disconnectDisabledUser(
+    manager: EntityManager,
+    userId: string,
+    updaterUserId: string,
+    now: Date,
+  ): Promise<void> {
+    await manager.query(
+      `UPDATE dorify.dori_user_session
+           SET revoked_at = $1, revoked_reason = 'account_disabled'
+           WHERE user_id = $2 AND revoked_at IS NULL`,
+      [now, userId],
+    );
+
+    await manager.query(
+      `UPDATE dorify.dori_operator_session
+           SET disconnected_at = $1, closure_reason = 'forced', closed_by_user_id = $2
+           WHERE user_id = $3 AND disconnected_at IS NULL`,
+      [now, updaterUserId, userId],
+    );
   }
 
   async setUserPassword(
@@ -442,10 +465,11 @@ export class UsersRepository {
     now: Date,
   ): Promise<boolean> {
     return this.dataSource.transaction(async (manager) => {
-      const rows = await manager.query(
+      const raw: unknown = await manager.query(
         `DELETE FROM dorify.dori_user_role WHERE user_id = $1 AND role_id = $2 RETURNING role_id`,
         [userId, roleId],
       );
+      const rows = returningRows<{ role_id: string }>(raw);
       if (rows.length > 0) {
         await manager.query(
           `UPDATE dorify.dori_user_session SET revoked_at = $1, revoked_reason = 'admin'

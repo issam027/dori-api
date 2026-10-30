@@ -6,6 +6,33 @@ import {
 import { NotificationTemplateService } from '../../core/notifications/notification-template.service';
 import { ConfigService } from '@nestjs/config';
 
+describe('RegistrationsTransaction reschedule result', () => {
+  it('normalizes the installed TypeORM UPDATE result and updates tracking in the same statement', async () => {
+    const row = { registration_id: 'registration', ticket_number: 'A002' };
+    const query = jest.fn().mockResolvedValue([[row], 1]);
+    const tx = new RegistrationsTransaction({
+      query,
+    } as unknown as EntityManager);
+    const now = new Date('2026-10-30T12:00:00Z');
+    const scheduledTime = new Date('2026-11-02T09:00:00Z');
+    const expiry = new Date('2026-11-02T22:59:59.999Z');
+    await expect(
+      tx.reschedule(
+        'registration',
+        scheduledTime,
+        '2026-11-02',
+        'A002',
+        now,
+        expiry,
+      ),
+    ).resolves.toEqual(row);
+    expect(query.mock.calls[0][0]).toContain(
+      'registration_tracking_token_valid_until=$6',
+    );
+    expect(query.mock.calls[0][1][5]).toEqual(expiry);
+  });
+});
+
 describe('RegistrationsTransaction welcome notifications', () => {
   it.each([
     [false, 'sms.welcome', 'Bienvenue. Ticket A-001.', false],

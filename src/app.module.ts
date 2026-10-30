@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -25,7 +25,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { TranslationsModule } from './modules/translations/translations.module';
 import { UsersModule } from './modules/users/users.module';
 import { MonitoringModule } from './modules/monitoring/monitoring.module';
-import { RequestMetricsInterceptor } from './modules/monitoring/request-metrics.interceptor';
+import { RequestMetricsMiddleware } from './modules/monitoring/request-metrics.middleware';
 
 import { JwtAuthGuard } from './core/auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from './core/rbac/guards/permissions.guard';
@@ -111,10 +111,6 @@ const isVercel = isVercelRuntime();
     },
     {
       provide: APP_INTERCEPTOR,
-      useClass: RequestMetricsInterceptor,
-    },
-    {
-      provide: APP_INTERCEPTOR,
       useClass: ResponseInterceptor,
     },
     {
@@ -127,4 +123,8 @@ const isVercel = isVercelRuntime();
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(RequestMetricsMiddleware).forRoutes('*');
+  }
+}

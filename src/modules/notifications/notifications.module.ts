@@ -7,6 +7,7 @@ import { RbacModule } from '../../core/rbac/rbac.module';
 import { ConfigModule } from '@nestjs/config';
 import { NotificationsRepository } from './notifications.repository';
 import { NotificationTemplateModule } from '../../core/notifications/notification-template.module';
+import { QueueEstimationModule } from '../queue-estimation/queue-estimation.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { NotificationTemplateModule } from '../../core/notifications/notificatio
     ClockModule,
     RbacModule,
     NotificationTemplateModule,
+    QueueEstimationModule,
   ],
   controllers: [NotificationsController],
   providers: [NotificationsService, NotificationsRepository],

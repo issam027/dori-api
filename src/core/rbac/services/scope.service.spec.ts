@@ -55,6 +55,7 @@ describe('ScopeService', () => {
         queueIds: ['queue-1'],
         siteIds: ['site-1'],
       }),
+      userBelongsToSites: jest.fn().mockResolvedValue(false),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -80,6 +81,35 @@ describe('ScopeService', () => {
       30,
       JSON.stringify(scope),
     );
+  });
+
+  it('checks a target against fresh site assignments rather than cached global access', async () => {
+    redisMock.get.mockResolvedValue(
+      JSON.stringify({ isGlobal: true, siteIds: [], queueIds: [] }),
+    );
+    await expect(
+      service.checkUserAccess(managerUser, operatorUser.userId),
+    ).rejects.toMatchObject({ code: 'USER_NOT_FOUND' });
+    expect(redisMock.get).not.toHaveBeenCalled();
+    expect(redisMock.setex).not.toHaveBeenCalled();
+    expect(repository.userBelongsToSites).toHaveBeenCalledWith(
+      operatorUser.userId,
+      ['site-1'],
+    );
+  });
+
+  it('allows a user assigned directly or through a queue to a managed site', async () => {
+    repository.userBelongsToSites.mockResolvedValue(true);
+    await expect(
+      service.checkUserAccess(managerUser, operatorUser.userId),
+    ).resolves.toBeUndefined();
+  });
+
+  it('allows root to manage an unassigned target', async () => {
+    await expect(
+      service.checkUserAccess(rootUser, operatorUser.userId),
+    ).resolves.toBeUndefined();
+    expect(repository.userBelongsToSites).not.toHaveBeenCalled();
   });
 
   it('serves from Redis cache when key exists', async () => {

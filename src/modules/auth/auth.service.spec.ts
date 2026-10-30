@@ -1,3 +1,4 @@
+import { RankService } from '../../core/rbac/services/rank.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -8,10 +9,12 @@ import { ClockService } from '../../core/clock/clock.service';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { AuthRepository } from './auth.repository';
+import { DoriException } from '../../core/errors/dori.exception';
 
 describe('AuthService Ã¢â‚¬â€ SEC-03 Logout Specific Session', () => {
   let service: AuthService;
   let dataSourceMock: { query: jest.Mock };
+  let scope: ScopeService;
 
   beforeEach(async () => {
     dataSourceMock = {
@@ -20,6 +23,7 @@ describe('AuthService Ã¢â‚¬â€ SEC-03 Logout Specific Session', () => 
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        RankService,
         AuthService,
         {
           provide: AuthRepository,
@@ -57,6 +61,7 @@ describe('AuthService Ã¢â‚¬â€ SEC-03 Logout Specific Session', () => 
           provide: ScopeService,
           useValue: {
             getUserScope: jest.fn(),
+            checkUserAccess: jest.fn().mockResolvedValue(undefined),
             invalidateUserScope: jest.fn(),
             clearAllScopeCache: jest.fn(),
           },
@@ -65,6 +70,7 @@ describe('AuthService Ã¢â‚¬â€ SEC-03 Logout Specific Session', () => 
     }).compile();
 
     service = module.get<AuthService>(AuthService);
+    scope = module.get(ScopeService);
   });
 
   it('CAS 1 Ã¢â‚¬â€ should revoke only the caller current session when no userId provided', async () => {
@@ -89,6 +95,27 @@ describe('AuthService Ã¢â‚¬â€ SEC-03 Logout Specific Session', () => 
       expect.stringContaining('WHERE user_id = $3 AND revoked_at IS NULL'),
       expect.anything(),
     );
+  });
+
+  it('does not force logout a lower-ranked user outside the manager site', async () => {
+    const caller: AuthenticatedUser = {
+      userId: 'manager',
+      username: 'manager',
+      roles: ['manager'],
+      permissions: [],
+      userType: 'human',
+    };
+    dataSourceMock.query
+      .mockResolvedValueOnce([{ max_rank: 3 }])
+      .mockResolvedValueOnce([{ max_rank: 2 }])
+      .mockResolvedValueOnce([{ user_id: 'foreign-user' }]);
+    jest
+      .mocked(scope.checkUserAccess)
+      .mockRejectedValue(new DoriException('USER_NOT_FOUND'));
+    await expect(
+      service.logout(caller, { userId: 'foreign-user' }),
+    ).rejects.toMatchObject({ code: 'USER_NOT_FOUND' });
+    expect(dataSourceMock.query).toHaveBeenCalledTimes(3);
   });
 
   it('CAS 2 Ã¢â‚¬â€ should revoke all caller sessions (global_logout) when userId == caller.userId', async () => {

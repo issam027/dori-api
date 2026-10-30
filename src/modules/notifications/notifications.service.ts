@@ -1,3 +1,4 @@
+import { prepareNotification } from '../../core/notifications/notification-batch';
 import { Injectable, Logger } from '@nestjs/common';
 import * as crypto from 'crypto';
 import {
@@ -17,6 +18,7 @@ import {
   ThresholdRuleRow,
 } from './notifications.repository';
 import { NotificationTemplateService } from '../../core/notifications/notification-template.service';
+import { QueueWaitEstimationService } from '../queue-estimation/queue-wait-estimation.service';
 
 @Injectable()
 export class NotificationsService {
@@ -28,6 +30,7 @@ export class NotificationsService {
     private readonly clockService: ClockService,
     private readonly configService: ConfigService,
     private readonly notificationTemplateService: NotificationTemplateService,
+    private readonly waitEstimationService: QueueWaitEstimationService,
   ) {}
 
   private toResponseDto(
@@ -227,10 +230,9 @@ export class NotificationsService {
 
     if (!waitingClients || waitingClients.length === 0) return;
 
-    // Count active threads
-    const activeThreads = Math.max(
-      1,
-      await this.notificationsRepository.countActiveThreads(queueId),
+    const estimates = await this.waitEstimationService.estimateMany(
+      waitingClients,
+      now,
     );
 
     // 2. Fetch threshold rules for this queue
@@ -248,20 +250,20 @@ export class NotificationsService {
       rule: ThresholdRuleRow;
       locale: string;
     }> = [];
-    for (let i = 0; i < waitingClients.length; i++) {
-      const client = waitingClients[i];
-      const position = i + 1;
-      const estimatedMinutes = Math.round(
-        (position * client.average_wait_time) / activeThreads,
-      );
+    for (const client of waitingClients) {
+      const estimate = estimates.get(client.registration_id);
+      const position = estimate?.position;
+      const estimatedMinutes = estimate?.estimatedWaitMinutes;
 
       const tierRules = rulesByTier.get(client.tier_id) || [];
       for (const rule of tierRules) {
         const thresholdPosSatisfied =
           rule.threshold_position != null &&
+          position != null &&
           position <= rule.threshold_position;
         const thresholdMinSatisfied =
           rule.threshold_minutes != null &&
+          estimatedMinutes != null &&
           estimatedMinutes <= rule.threshold_minutes;
 
         if (thresholdPosSatisfied || thresholdMinSatisfied)
@@ -298,39 +300,25 @@ export class NotificationsService {
         template.content,
       ]),
     );
-    const notifications = matches.map(({ client, rule, locale }) => {
-      const key = this.notificationTemplateService.templateKey(
-        rule.channel,
-        'threshold',
-        rule.include_tracking_link,
-      );
-      const template =
-        templateMap.get(`${key}:${locale}`) ?? templateMap.get(`${key}:fr`);
-      const recipient =
-        rule.channel === 'sms' ? client.phone_number : client.email;
-      const rendered = template
-        ? this.notificationTemplateService.render(template, {
-            firstName: client.first_name ?? '',
-            ticket: client.ticket_number,
-            trackingUrl: this.notificationTemplateService.buildTrackingUrl(
-              client.registration_tracking_token,
-            ),
-          })
-        : { content: null, failureReason: `TEMPLATE_NOT_FOUND:${key}` };
-      const failureReason =
-        (!recipient ? `RECIPIENT_MISSING:${rule.channel}` : null) ??
-        rendered.failureReason;
-      return {
-        registrationId: client.registration_id,
-        ruleId: rule.rule_id,
-        channel: rule.channel,
-        locale,
-        recipient,
-        content: rendered.content,
-        status: failureReason ? ('failed' as const) : ('pending' as const),
-        failureReason,
-      };
-    });
+    const notifications = matches.map(({ client, rule, locale }) =>
+      prepareNotification(
+        {
+          registrationId: client.registration_id,
+          ruleId: rule.rule_id,
+          channel: rule.channel,
+          type: 'threshold',
+          includeTrackingLink: rule.include_tracking_link,
+          locale,
+          phoneNumber: client.phone_number,
+          email: client.email,
+          firstName: client.first_name,
+          ticketNumber: client.ticket_number,
+          trackingToken: client.registration_tracking_token,
+        },
+        templateMap,
+        this.notificationTemplateService,
+      ),
+    );
     await this.notificationsRepository.createThresholdNotifications(
       notifications,
       now,

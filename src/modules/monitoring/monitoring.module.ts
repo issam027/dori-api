@@ -6,7 +6,7 @@ import { MonitoringRepository } from './monitoring.repository';
 import { MonitoringService } from './monitoring.service';
 import { ReportsService } from './reports.service';
 import { ReportsRepository } from './reports.repository';
-import { RequestMetricsInterceptor } from './request-metrics.interceptor';
+import { RequestMetricsMiddleware } from './request-metrics.middleware';
 import { RbacModule } from '../../core/rbac/rbac.module';
 import { RedisModule } from '../../core/redis/redis.module';
 
@@ -19,8 +19,8 @@ import { RedisModule } from '../../core/redis/redis.module';
     MonitoringService,
     ReportsRepository,
     ReportsService,
-    RequestMetricsInterceptor,
+    RequestMetricsMiddleware,
   ],
-  exports: [MonitoringService, ReportsService, RequestMetricsInterceptor],
+  exports: [MonitoringService, ReportsService, RequestMetricsMiddleware],
 })
 export class MonitoringModule {}

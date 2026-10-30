@@ -59,6 +59,29 @@ export class RegistrationsService {
     return `${queueCode}${String(lastNumber).padStart(3, '0')}`;
   }
 
+  private trackingTokenExpiry(
+    businessDate: string,
+    timezone: string,
+    now: Date,
+    scheduledTime: Date | null,
+  ): Date {
+    // A future appointment must remain trackable on its business day. Its TTL
+    // starts at the appointment; walk-ins and past appointments use issuance time.
+    const reference =
+      scheduledTime && scheduledTime > now ? scheduledTime : now;
+    return new Date(
+      Math.min(
+        this.clockService.endOfDayInTimezone(businessDate, timezone).getTime(),
+        this.clockService
+          .addMinutes(
+            reference,
+            this.configService.getOrThrow<number>('tracking.tokenTtlMinutes'),
+          )
+          .getTime(),
+      ),
+    );
+  }
+
   async createRegistration(
     dto: CreateRegistrationDto,
     user: AuthenticatedUser,
@@ -189,19 +212,11 @@ export class RegistrationsService {
         const ticketNumber = this.formatTicketNumber(q.queue_code, lastNumber);
 
         // End of business date for tracking token
-        const endOfBusinessDay = this.clockService.endOfDayInTimezone(
+        const tokenValidUntil = this.trackingTokenExpiry(
           businessDate,
           timezone,
-        );
-        const tokenTtlMinutes = this.configService.getOrThrow<number>(
-          'tracking.tokenTtlMinutes',
-        );
-        const configuredExpiry = this.clockService.addMinutes(
           now,
-          tokenTtlMinutes,
-        );
-        const tokenValidUntil = new Date(
-          Math.min(endOfBusinessDay.getTime(), configuredExpiry.getTime()),
+          scheduledTime,
         );
 
         // 7. Insert dorify.dori_registration
@@ -540,6 +555,7 @@ export class RegistrationsService {
         newBusinessDate,
         ticketNumber,
         now,
+        this.trackingTokenExpiry(newBusinessDate, timezone, now, newTime),
       );
       return {
         registrationId: updated.registration_id,

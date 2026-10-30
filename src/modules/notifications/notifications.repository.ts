@@ -1,3 +1,7 @@
+import {
+  PreparedNotification,
+  insertPreparedNotifications,
+} from '../../core/notifications/notification-batch';
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import {
@@ -46,6 +50,8 @@ export interface NotificationRegistrationRow extends Record<string, unknown> {
 }
 
 export interface WaitingRegistrationRow extends NotificationRegistrationRow {
+  site_id: string;
+  business_date: string;
   ticket_number: string;
   tier_id: string;
   first_name?: string;
@@ -213,7 +219,8 @@ export class NotificationsRepository {
     queueId: string,
   ): Promise<WaitingRegistrationRow[]> {
     return this.dataSource.query(
-      `SELECT c.registration_id, c.ticket_number, c.tier_id, c.language_preference,
+      `SELECT c.registration_id, c.queue_id, q.site_id, c.business_date::text AS business_date,
+              c.ticket_number, c.tier_id, c.language_preference,
               c.registration_tracking_token,
               p.first_name, p.last_name, p.phone_number, p.email, p.language_preference AS p_lang,
               q.average_wait_time, s.timezone, s.default_locale
@@ -225,15 +232,6 @@ export class NotificationsRepository {
        ORDER BY c.priority_reference_time ASC`,
       [queueId],
     );
-  }
-
-  async countActiveThreads(queueId: string): Promise<number> {
-    const rows: Array<{ count: number }> = await this.dataSource.query(
-      `SELECT COUNT(*)::int AS count FROM dorify.dori_operator_session
-       WHERE queue_id = $1 AND disconnected_at IS NULL AND mode = 'active'`,
-      [queueId],
-    );
-    return rows[0]?.count ?? 0;
   }
 
   async findThresholdRules(queueId: string): Promise<ThresholdRuleRow[]> {
@@ -259,51 +257,15 @@ export class NotificationsRepository {
     );
   }
 
-  async createThresholdNotifications(
-    notifications: Array<{
-      registrationId: string;
-      ruleId: string;
-      channel: string;
-      locale: string;
-      recipient: string | null | undefined;
-      content: string | null;
-      status: 'pending' | 'failed';
-      failureReason: string | null;
-    }>,
+  createThresholdNotifications(
+    notifications: PreparedNotification[],
     now: Date,
   ): Promise<number> {
-    if (!notifications.length) return 0;
-    const rows: Array<{ notification_id: string }> =
-      await this.dataSource.query(
-        `INSERT INTO dorify.dori_notification (
-         registration_id, rule_id, channel, notification_type, locale, recipient,
-         notification_content, notification_status, failure_reason,
-         attempt_count, created_at, updated_at
-       )
-       SELECT x.registration_id, x.rule_id, x.channel, 'threshold', x.locale,
-              x.recipient, x.content, x.status, x.failure_reason, 0, $2, $2
-       FROM jsonb_to_recordset($1::jsonb) AS x(
-         registration_id uuid, rule_id uuid, channel varchar, locale varchar,
-         recipient varchar, content text, status varchar, failure_reason text
-       )
-       ON CONFLICT (registration_id, notification_type, channel) DO NOTHING
-       RETURNING notification_id`,
-        [
-          JSON.stringify(
-            notifications.map((notification) => ({
-              registration_id: notification.registrationId,
-              rule_id: notification.ruleId,
-              channel: notification.channel,
-              locale: notification.locale,
-              recipient: notification.recipient ?? null,
-              content: notification.content,
-              status: notification.status,
-              failure_reason: notification.failureReason,
-            })),
-          ),
-          now,
-        ],
-      );
-    return rows.length;
+    return insertPreparedNotifications(
+      this.dataSource,
+      'threshold',
+      notifications,
+      now,
+    );
   }
 }

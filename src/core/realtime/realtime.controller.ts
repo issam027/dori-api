@@ -30,6 +30,7 @@ import {
 } from '../swagger/api-dori-response.decorator';
 import { RealtimeRepository } from './realtime.repository';
 import { RealtimeService } from './realtime.service';
+import { JwtSessionRepository } from '../auth/repositories/jwt-session.repository';
 
 @ApiTags('Realtime')
 @Controller('api/v1/realtime/queues')
@@ -39,6 +40,7 @@ export class RealtimeController {
     private readonly realtimeRepository: RealtimeRepository,
     private readonly scopeService: ScopeService,
     private readonly clockService: ClockService,
+    private readonly jwtSessionRepository: JwtSessionRepository,
   ) {}
 
   @Sse(':queueId/display')
@@ -72,10 +74,27 @@ export class RealtimeController {
     @CurrentUser() user: AuthenticatedUser,
     @Headers('last-event-id') lastEventId?: string,
   ): Promise<Observable<MessageEvent>> {
-    await this.scopeService.checkQueueAccess(user, queueId);
+    const authorize = async () => {
+      if (
+        !user.sessionId ||
+        !user.accessTokenExpiresAt ||
+        user.accessTokenExpiresAt * 1000 <= this.clockService.now().getTime()
+      ) {
+        throw new DoriException('UNAUTHENTICATED');
+      }
+      const session = await this.jwtSessionRepository.findValidSessionId(
+        user.sessionId,
+        user.userId,
+        this.clockService.now(),
+      );
+      if (!session) throw new DoriException('UNAUTHENTICATED');
+      await this.scopeService.checkQueueAccess(user, queueId, { fresh: true });
+    };
+    await authorize();
     return this.realtimeService.streamDisplay(
       queueId,
       this.validLastEventId(lastEventId),
+      { authorize, expiresAt: new Date(user.accessTokenExpiresAt! * 1000) },
     );
   }
 
@@ -123,23 +142,35 @@ export class RealtimeController {
     @Headers('last-event-id') lastEventId?: string,
   ): Promise<Observable<MessageEvent>> {
     if (!trackingToken) throw new DoriException('UNAUTHENTICATED');
-    const registration =
-      await this.realtimeRepository.findRegistrationByTrackingToken(
-        trackingToken,
-      );
-    if (
-      !registration ||
-      !registration.is_active ||
-      registration.queue_id !== queueId ||
-      this.clockService.parse(
-        registration.registration_tracking_token_valid_until,
-      ) <= this.clockService.now()
-    ) {
-      throw new DoriException('TOKEN_EXPIRED');
-    }
+    const authorize = async () => {
+      const current =
+        await this.realtimeRepository.findRegistrationByTrackingToken(
+          trackingToken,
+        );
+      if (
+        !current ||
+        !current.is_active ||
+        current.queue_id !== queueId ||
+        this.clockService.parse(
+          current.registration_tracking_token_valid_until,
+        ) <= this.clockService.now()
+      ) {
+        throw new DoriException('TOKEN_EXPIRED');
+      }
+      return current;
+    };
+    const registration = await authorize();
     return this.realtimeService.streamTracking(
       queueId,
       this.validLastEventId(lastEventId),
+      {
+        authorize: async () => {
+          await authorize();
+        },
+        expiresAt: this.clockService.parse(
+          registration.registration_tracking_token_valid_until,
+        ),
+      },
     );
   }
 

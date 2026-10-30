@@ -25,25 +25,41 @@ export class QueueWaitEstimationRepository {
     registrationId: string,
     now: Date,
   ): Promise<number | null> {
-    const rows: Array<{ position: number }> = await this.dataSource.query(
+    const positions = await this.findOperationalPositions(
+      [registrationId],
+      now,
+    );
+    return positions.get(registrationId) ?? null;
+  }
+
+  async findOperationalPositions(
+    registrationIds: string[],
+    now: Date,
+  ): Promise<Map<string, number>> {
+    if (!registrationIds.length) return new Map();
+    const rows = await this.dataSource.query<
+      Array<{ registration_id: string; position: number }>
+    >(
       `WITH context AS (
-         SELECT target.queue_id, target.business_date
-         FROM dorify.dori_registration target WHERE target.registration_id = $1
+         SELECT DISTINCT target.queue_id, target.business_date
+         FROM dorify.dori_registration target WHERE target.registration_id = ANY($1::uuid[])
        ), ranked AS (
          SELECT r.registration_id,
-           ROW_NUMBER() OVER (ORDER BY
+           ROW_NUMBER() OVER (PARTITION BY r.queue_id, r.business_date ORDER BY
              CASE WHEN r.entry_type = 'walkin'
                     OR (r.appointment_status = 'checked_in' AND r.scheduled_time <= $2)
                THEN 0 ELSE 1 END ASC,
-             CASE WHEN r.entry_type = 'appointment'
+             CASE WHEN r.entry_type = 'walkin' OR r.scheduled_time <= $2 THEN
+             ROUND((CASE WHEN r.entry_type = 'appointment'
                THEN COALESCE(q.base_weight_appointment, s.default_base_weight_appointment, 60)
                  + EXTRACT(EPOCH FROM ($2 - r.priority_reference_time))/60
                    * COALESCE(q.escalation_rate_appointment, s.default_escalation_rate_appointment, 1)
                ELSE COALESCE(q.base_weight_walkin, s.default_base_weight_walkin, 0)
                  + EXTRACT(EPOCH FROM ($2 - r.priority_reference_time))/60
                    * COALESCE(q.escalation_rate_walkin, s.default_escalation_rate_walkin, 1)
-             END DESC,
-             r.scheduled_time ASC NULLS FIRST,
+             END)::numeric, 2) ELSE NULL END DESC NULLS LAST,
+             CASE WHEN r.entry_type = 'walkin' OR r.scheduled_time <= $2
+               THEN r.priority_reference_time ELSE r.scheduled_time END ASC,
              r.registration_id ASC
            )::int AS position
          FROM dorify.dori_registration r
@@ -52,10 +68,12 @@ export class QueueWaitEstimationRepository {
          JOIN dorify.dori_site s ON s.site_id = q.site_id
          WHERE r.status = 'waiting' AND r.is_active = TRUE
            AND (r.entry_type = 'walkin' OR r.appointment_status = 'checked_in')
-       ) SELECT position FROM ranked WHERE registration_id = $1`,
-      [registrationId, now],
+       ) SELECT registration_id, position FROM ranked WHERE registration_id = ANY($1::uuid[])`,
+      [registrationIds, now],
     );
-    return rows[0]?.position == null ? null : Number(rows[0].position);
+    return new Map(
+      rows.map((row) => [row.registration_id, Number(row.position)]),
+    );
   }
 
   async countActiveThreads(queueId: string): Promise<number> {

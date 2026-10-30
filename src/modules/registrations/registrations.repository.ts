@@ -6,19 +6,13 @@ import {
   UpdateRegistrationDto,
 } from './dto/registration.dto';
 import { enqueueRealtimeEvent } from '../../core/realtime/realtime.repository';
+import { returningRows } from '../../core/database/returning-rows';
 
-interface WelcomeNotificationRenderer {
-  templateKey(
-    channel: 'sms' | 'email',
-    type: 'welcome',
-    includeTrackingLink: boolean,
-  ): string;
-  buildTrackingUrl(token: string): string;
-  render(
-    template: string,
-    parameters: Record<string, string | number | null | undefined>,
-  ): { content: string | null; failureReason: string | null };
-}
+import {
+  NotificationRenderer,
+  prepareNotification,
+  insertPreparedNotifications,
+} from '../../core/notifications/notification-batch';
 export type RegistrationRow = Record<string, unknown> & {
   registration_id: string;
   site_id: string;
@@ -193,7 +187,7 @@ export class RegistrationsTransaction {
     trackingToken: string;
     ticketNumber: string;
     now: Date;
-    templateService: WelcomeNotificationRenderer;
+    templateService: NotificationRenderer;
   }): Promise<number> {
     const rules: Array<{
       rule_id: string;
@@ -243,72 +237,31 @@ export class RegistrationsTransaction {
         row.content,
       ]),
     );
-    const trackingUrl = input.templateService.buildTrackingUrl(
-      input.trackingToken,
+    const notifications = rules.map((rule) =>
+      prepareNotification(
+        {
+          registrationId: input.registrationId,
+          ruleId: rule.rule_id,
+          channel: rule.channel,
+          type: 'welcome',
+          includeTrackingLink: rule.include_tracking_link,
+          locale: rule.locale,
+          phoneNumber: rule.phone_number,
+          email: rule.email,
+          firstName: rule.first_name,
+          ticketNumber: input.ticketNumber,
+          trackingToken: input.trackingToken,
+        },
+        translationMap,
+        input.templateService,
+      ),
     );
-    const notifications = rules.map((rule) => {
-      const templateKey = input.templateService.templateKey(
-        rule.channel,
-        'welcome',
-        rule.include_tracking_link,
-      );
-      const template =
-        translationMap.get(`${templateKey}:${rule.locale}`) ??
-        translationMap.get(`${templateKey}:fr`);
-      const recipient = rule.channel === 'sms' ? rule.phone_number : rule.email;
-      const rendered = template
-        ? input.templateService.render(template, {
-            ticket: input.ticketNumber,
-            firstName: rule.first_name ?? '',
-            trackingUrl,
-          })
-        : { content: null, failureReason: `TEMPLATE_NOT_FOUND:${templateKey}` };
-      const failureReason =
-        (!recipient ? `RECIPIENT_MISSING:${rule.channel}` : null) ??
-        rendered.failureReason;
-      return {
-        registrationId: input.registrationId,
-        ruleId: rule.rule_id,
-        channel: rule.channel,
-        locale: rule.locale,
-        recipient,
-        content: rendered.content,
-        status: failureReason ? 'failed' : 'pending',
-        failureReason,
-      };
-    });
-    const inserted: Array<{ notification_id: string }> =
-      await this.manager.query(
-        `INSERT INTO dorify.dori_notification (
-           registration_id, rule_id, channel, notification_type, locale, recipient,
-           notification_content, notification_status, failure_reason,
-           attempt_count, created_at, updated_at
-         )
-         SELECT x.registration_id, x.rule_id, x.channel, 'welcome', x.locale,
-                x.recipient, x.content, x.status, x.failure_reason, 0, $2, $2
-         FROM jsonb_to_recordset($1::jsonb) AS x(
-           registration_id uuid, rule_id uuid, channel varchar, locale varchar,
-           recipient varchar, content text, status varchar, failure_reason text
-         )
-         ON CONFLICT (registration_id, notification_type, channel) DO NOTHING
-         RETURNING notification_id`,
-        [
-          JSON.stringify(
-            notifications.map((notification) => ({
-              registration_id: notification.registrationId,
-              rule_id: notification.ruleId,
-              channel: notification.channel,
-              locale: notification.locale,
-              recipient: notification.recipient,
-              content: notification.content,
-              status: notification.status,
-              failure_reason: notification.failureReason,
-            })),
-          ),
-          input.now,
-        ],
-      );
-    return inserted.length;
+    return insertPreparedNotifications(
+      this.manager,
+      'welcome',
+      notifications,
+      input.now,
+    );
   }
 
   async reschedule(
@@ -317,14 +270,23 @@ export class RegistrationsTransaction {
     businessDate: string,
     ticketNumber: string | undefined,
     now: Date,
+    tokenValidUntil: Date,
   ) {
-    const rows = await this.manager.query(
+    const raw: unknown = await this.manager.query(
       `UPDATE dorify.dori_registration SET scheduled_time=$1, priority_reference_time=$1, business_date=$2,
        ticket_number=COALESCE($3, ticket_number), appointment_status='rescheduled', status='booked',
-       checked_in_at=NULL, updated_at=$4 WHERE registration_id=$5 RETURNING ${REGISTRATION_COLUMNS}`,
-      [newTime, businessDate, ticketNumber ?? null, now, registrationId],
+       checked_in_at=NULL, updated_at=$4, registration_tracking_token_valid_until=$6
+       WHERE registration_id=$5 RETURNING ${REGISTRATION_COLUMNS}`,
+      [
+        newTime,
+        businessDate,
+        ticketNumber ?? null,
+        now,
+        registrationId,
+        tokenValidUntil,
+      ],
     );
-    return rows[0];
+    return returningRows<RegistrationRow>(raw)[0];
   }
 }
 

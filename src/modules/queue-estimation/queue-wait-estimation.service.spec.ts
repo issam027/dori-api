@@ -11,6 +11,33 @@ describe('QueueWaitEstimationService', () => {
   };
   const now = new Date('2026-10-20T10:00:00Z');
 
+  it('uses identical estimates for a batch and individual lookups without per-client SQL', async () => {
+    const second = { ...registration, registration_id: 'second' };
+    const repository = {
+      findOperationalPositions: jest.fn().mockResolvedValue(
+        new Map([
+          [registration.registration_id, 3],
+          ['second', 1],
+        ]),
+      ),
+      findOperationalPosition: jest.fn().mockResolvedValue(3),
+      countActiveThreads: jest.fn().mockResolvedValue(2),
+      findBestStat: jest.fn().mockResolvedValue(null),
+    };
+    const service = new QueueWaitEstimationService(repository as never);
+    const estimates = await service.estimateMany([registration, second], now);
+    expect(repository.findOperationalPositions).toHaveBeenCalledTimes(1);
+    expect(repository.countActiveThreads).toHaveBeenCalledTimes(1);
+    expect(repository.findBestStat).toHaveBeenCalledTimes(1);
+    expect(estimates.get('second')).toMatchObject({
+      position: 1,
+      estimatedWaitMinutes: 0,
+    });
+    expect(estimates.get(registration.registration_id)).toEqual(
+      await service.estimate(registration, now),
+    );
+  });
+
   it('uses the daily P50 in minutes and the operational position', async () => {
     const repository = {
       findOperationalPosition: jest.fn().mockResolvedValue(5),

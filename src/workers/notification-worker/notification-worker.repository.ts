@@ -21,8 +21,7 @@ export class NotificationWorkerRepository {
         `WITH candidates AS (
            SELECT notification_id
            FROM dorify.dori_notification
-           WHERE attempt_count < 3
-             AND (
+           WHERE (
                notification_status = 'pending'
                OR (
                  notification_status = 'processing'
@@ -33,15 +32,18 @@ export class NotificationWorkerRepository {
            FOR UPDATE SKIP LOCKED
            LIMIT 50
          )
+         , updated AS (
          UPDATE dorify.dori_notification n
-         SET notification_status = 'processing',
-             processing_started_at = $1,
-             attempt_count = n.attempt_count + 1,
+         SET notification_status = CASE WHEN n.attempt_count >= 3 THEN 'failed' ELSE 'processing' END,
+             failure_reason = CASE WHEN n.attempt_count >= 3 THEN 'PROCESSING_LEASE_EXPIRED' ELSE n.failure_reason END,
+             processing_started_at = CASE WHEN n.attempt_count >= 3 THEN NULL ELSE $1 END,
+             attempt_count = CASE WHEN n.attempt_count >= 3 THEN n.attempt_count ELSE n.attempt_count + 1 END,
              updated_at = $1
          FROM candidates
          WHERE n.notification_id = candidates.notification_id
          RETURNING n.notification_id, n.channel, n.notification_type,
-                   n.recipient, n.notification_content, n.attempt_count`,
+                   n.recipient, n.notification_content, n.attempt_count, n.notification_status
+         ) SELECT * FROM updated WHERE notification_status = 'processing'`,
         [claimTime],
       ),
     );
@@ -55,15 +57,18 @@ export class NotificationWorkerRepository {
     notificationId: string,
     providerMessageId: string,
     now: Date,
-  ): Promise<void> {
-    await this.dataSource.query(
+    attemptCount: number,
+  ): Promise<boolean> {
+    const result: unknown = await this.dataSource.query(
       `UPDATE dorify.dori_notification
        SET notification_status = 'delivered', provider = 'simulation',
            provider_message_id = $1, sent_at = $2, delivered_at = $2,
            processing_started_at = NULL, updated_at = $2
-       WHERE notification_id = $3`,
-      [providerMessageId, now, notificationId],
+       WHERE notification_id = $3 AND notification_status = 'processing' AND attempt_count = $4
+       RETURNING notification_id`,
+      [providerMessageId, now, notificationId, attemptCount],
     );
+    return returningRows(result).length > 0;
   }
 
   async markAttemptFailed(
@@ -71,13 +76,22 @@ export class NotificationWorkerRepository {
     finalAttempt: boolean,
     reason: string,
     now: Date,
-  ): Promise<void> {
-    await this.dataSource.query(
+    attemptCount: number,
+  ): Promise<boolean> {
+    const result: unknown = await this.dataSource.query(
       `UPDATE dorify.dori_notification
        SET notification_status = $1, failure_reason = $2,
            processing_started_at = NULL, updated_at = $3
-       WHERE notification_id = $4`,
-      [finalAttempt ? 'failed' : 'pending', reason, now, notificationId],
+       WHERE notification_id = $4 AND notification_status = 'processing' AND attempt_count = $5
+       RETURNING notification_id`,
+      [
+        finalAttempt ? 'failed' : 'pending',
+        reason,
+        now,
+        notificationId,
+        attemptCount,
+      ],
     );
+    return returningRows(result).length > 0;
   }
 }

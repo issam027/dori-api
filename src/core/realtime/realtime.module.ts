@@ -5,11 +5,12 @@ import { ClockModule } from '../clock/clock.module';
 import { DatabaseModule } from '../database/database.module';
 import { RealtimeRepository } from './realtime.repository';
 import { RealtimeController } from './realtime.controller';
+import { JwtSessionRepository } from '../auth/repositories/jwt-session.repository';
 
 @Module({
   imports: [DatabaseModule, RbacModule, ClockModule],
   controllers: [RealtimeController],
-  providers: [RealtimeService, RealtimeRepository],
+  providers: [RealtimeService, RealtimeRepository, JwtSessionRepository],
   exports: [RealtimeService],
 })
 export class RealtimeModule {}

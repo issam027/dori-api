@@ -34,9 +34,12 @@ export class ScopeService {
     return `${SCOPE_KEY_PREFIX}${userId}`;
   }
 
-  async getUserScope(user: AuthenticatedUser): Promise<UserScope> {
+  async getUserScope(
+    user: AuthenticatedUser,
+    options: { fresh?: boolean } = {},
+  ): Promise<UserScope> {
     // 1. Lecture depuis Redis si disponible
-    if (this.isRedisReady() && this.redis) {
+    if (!options.fresh && this.isRedisReady() && this.redis) {
       try {
         const cached = await this.redis.get(this.cacheKey(user.userId));
         if (cached) {
@@ -77,7 +80,7 @@ export class ScopeService {
     }
 
     // 3. SETEX : écriture dans Redis avec TTL de 30s (§7.5)
-    if (this.isRedisReady() && this.redis) {
+    if (!options.fresh && this.isRedisReady() && this.redis) {
       try {
         await this.redis.setex(
           this.cacheKey(user.userId),
@@ -110,13 +113,30 @@ export class ScopeService {
   async checkQueueAccess(
     user: AuthenticatedUser,
     queueId: string,
+    options: { fresh?: boolean } = {},
   ): Promise<void> {
-    const scope = await this.getUserScope(user);
+    const scope = await this.getUserScope(user, options);
     if (scope.isGlobal) return;
 
     if (!scope.queueIds.includes(queueId)) {
       // Return 404 QUEUE_NOT_FOUND per §4.11 & §6.2
       throw new DoriException('QUEUE_NOT_FOUND', { queueId });
+    }
+  }
+
+  async checkUserAccess(
+    user: AuthenticatedUser,
+    targetUserId: string,
+  ): Promise<void> {
+    const scope = await this.getUserScope(user, { fresh: true });
+    if (scope.isGlobal || user.userId === targetUserId) return;
+    if (
+      !(await this.scopeRepository.userBelongsToSites(
+        targetUserId,
+        scope.siteIds,
+      ))
+    ) {
+      throw new DoriException('USER_NOT_FOUND', { userId: targetUserId });
     }
   }
 

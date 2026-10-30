@@ -43,6 +43,76 @@ describe('UsersRepository', () => {
     expect(result).toEqual({ exists: true, maxRank: 4, userType: 'human' });
   });
 
+  it('updates profile and status in the same transaction as session revocation', async () => {
+    dataSourceMock.query
+      .mockResolvedValueOnce([{ user_id: 'user', is_active: false }])
+      .mockResolvedValue([]);
+    const now = new Date('2026-10-30T12:00:00Z');
+    await repository.updateUser(
+      'user',
+      { email: 'new@example.com', isActive: false },
+      'admin',
+      now,
+    );
+    expect(dataSourceMock.transaction).toHaveBeenCalledTimes(1);
+    const [sql, parameters] = dataSourceMock.query.mock.calls[0];
+    expect(sql).toContain('email = $1');
+    expect(sql).toContain('is_active = $2');
+    expect(parameters).toEqual([
+      'new@example.com',
+      false,
+      now,
+      'admin',
+      now,
+      'user',
+    ]);
+    expect(dataSourceMock.query.mock.calls[1][0]).toContain(
+      "revoked_reason = 'account_disabled'",
+    );
+    expect(dataSourceMock.query.mock.calls[2][0]).toContain(
+      'UPDATE dorify.dori_operator_session',
+    );
+  });
+
+  it('does not apply a status change separately when the combined profile update fails', async () => {
+    dataSourceMock.query.mockRejectedValue(new Error('duplicate email'));
+    await expect(
+      repository.updateUser(
+        'user',
+        { email: 'used@example.com', isActive: false },
+        'admin',
+        new Date('2026-10-30T12:00:00Z'),
+      ),
+    ).rejects.toThrow('duplicate email');
+    expect(dataSourceMock.query).toHaveBeenCalledTimes(1);
+    expect(dataSourceMock.transaction).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns the updated profile with the installed TypeORM UPDATE result format', async () => {
+    const row = { user_id: 'user', email: 'new@example.com' };
+    dataSourceMock.query.mockResolvedValue([[row], 1]);
+    await expect(
+      repository.updateUser(
+        'user',
+        { email: row.email },
+        'admin',
+        new Date('2026-10-30T12:00:00Z'),
+      ),
+    ).resolves.toEqual(row);
+  });
+
+  it('does not report a missing role as removed or revoke sessions for an empty TypeORM DELETE result', async () => {
+    dataSourceMock.query.mockResolvedValue([[], 0]);
+    await expect(
+      repository.removeUserRole(
+        'user',
+        'unassigned-role',
+        new Date('2026-10-30T12:00:00Z'),
+      ),
+    ).resolves.toBe(false);
+    expect(dataSourceMock.query).toHaveBeenCalledTimes(1);
+  });
+
   it('getUserMaxRank returns exists: false when user not found', async () => {
     dataSourceMock.query.mockResolvedValue([]);
     const result = await repository.getUserMaxRank(

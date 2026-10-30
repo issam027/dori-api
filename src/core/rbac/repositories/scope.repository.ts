@@ -12,6 +12,30 @@ interface QueueScopeRow extends SiteIdRow {
 export class ScopeRepository {
   constructor(private readonly dataSource: DataSource) {}
 
+  async userBelongsToSites(
+    userId: string,
+    siteIds: string[],
+  ): Promise<boolean> {
+    if (siteIds.length === 0) return false;
+    const rows = await this.dataSource.query<Array<{ allowed: boolean }>>(
+      `SELECT EXISTS (
+         SELECT 1 FROM dorify.dori_user u
+         WHERE u.user_id = $1 AND u.deleted_at IS NULL
+           AND (
+             EXISTS (SELECT 1 FROM dorify.dori_user_site_assignment us
+                     WHERE us.user_id = u.user_id AND us.site_id = ANY($2::uuid[]))
+             OR EXISTS (
+               SELECT 1 FROM dorify.dori_user_queue_assignment uq
+               JOIN dorify.dori_queue q ON q.queue_id = uq.queue_id
+               WHERE uq.user_id = u.user_id AND q.site_id = ANY($2::uuid[])
+             )
+           )
+       ) AS allowed`,
+      [userId, siteIds],
+    );
+    return rows[0]?.allowed === true;
+  }
+
   async findUserSiteIds(userId: string): Promise<string[]> {
     const rows: SiteIdRow[] = await this.dataSource.query(
       `SELECT site_id FROM dorify.dori_user_site_assignment WHERE user_id = $1`,

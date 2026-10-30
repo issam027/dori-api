@@ -1,3 +1,4 @@
+import { RankService } from '../../core/rbac/services/rank.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
@@ -42,6 +43,7 @@ describe('AuthService refresh rotation', () => {
       config as unknown as ConfigService,
       clock as unknown as ClockService,
       {} as ScopeService,
+      new RankService(),
     );
     return { service, repository, jwt };
   };

@@ -51,6 +51,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       permissions: payload.permissions || [],
       userType: payload.userType || 'human',
       sessionId,
+      accessTokenExpiresAt: payload.exp,
     };
   }
 }

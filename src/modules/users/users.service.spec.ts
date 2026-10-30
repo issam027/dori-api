@@ -1,3 +1,4 @@
+import { RankService } from '../../core/rbac/services/rank.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import { UsersService } from './users.service';
@@ -22,6 +23,7 @@ describe('UsersService ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ�
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        RankService,
         UsersService,
         {
           provide: DataSource,
@@ -35,6 +37,7 @@ describe('UsersService ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ�
               siteIds: ['00000000-0000-4000-8000-000000000001'],
               queueIds: ['00000000-0000-4000-8000-000000000001'],
             }),
+            checkUserAccess: jest.fn().mockResolvedValue(undefined),
             invalidateUserScope: jest.fn(),
             clearAllScopeCache: jest.fn(),
           },

@@ -91,6 +91,32 @@ describe('AuthRepository refresh rotation', () => {
 });
 
 describe('AuthRepository login identifier', () => {
+  it('increments login failures atomically instead of rewriting a stale counter', async () => {
+    const query = jest.fn().mockResolvedValue([]);
+    const repository = new AuthRepository({ query } as unknown as DataSource);
+    const now = new Date('2026-10-30T12:00:00Z');
+    await repository.recordFailedLogin('user', 5, 15, now);
+    const [sql, parameters] = query.mock.calls[0];
+    expect(sql).toContain('failed_attempts = failed_attempts + 1');
+    expect(sql).toContain('WHEN failed_attempts + 1 >= $1');
+    expect(sql).toContain('GREATEST(locked_until,');
+    expect(parameters).toEqual([5, 15, now, 'user']);
+  });
+
+  it('only emits permissions inherited from active roles', async () => {
+    const query = jest
+      .fn()
+      .mockResolvedValueOnce([{ role_name: 'operator' }])
+      .mockResolvedValueOnce([{ permission_name: 'queue_view' }]);
+    const repository = new AuthRepository({ query } as unknown as DataSource);
+    await expect(repository.getRolesAndPermissions('user')).resolves.toEqual({
+      roles: ['operator'],
+      permissions: ['queue_view'],
+    });
+    expect(query.mock.calls[1][0]).toContain(
+      'r.role_id = ur.role_id AND r.is_active = TRUE',
+    );
+  });
   it('looks up an active user by username or case-insensitive email', async () => {
     const query = jest
       .fn()

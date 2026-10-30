@@ -2,6 +2,7 @@
 import {
   QueueWaitEstimationRepository,
   WaitEstimationRegistration,
+  EstimationStatRow,
 } from './queue-wait-estimation.repository';
 
 export interface WaitEstimate {
@@ -35,6 +36,59 @@ export class QueueWaitEstimationService {
         registration.business_date,
       ),
     ]);
+    return this.buildEstimate(registration, now, position, activeThreads, stat);
+  }
+
+  async estimateMany(
+    registrations: WaitEstimationRegistration[],
+    now: Date,
+  ): Promise<Map<string, WaitEstimate>> {
+    if (!registrations.length) return new Map();
+    const positions = await this.repository.findOperationalPositions(
+      registrations.map((registration) => registration.registration_id),
+      now,
+    );
+    const groups = new Map<string, WaitEstimationRegistration[]>();
+    for (const registration of registrations) {
+      const key = `${registration.queue_id}:${registration.business_date}`;
+      const group = groups.get(key) ?? [];
+      group.push(registration);
+      groups.set(key, group);
+    }
+    const estimates = new Map<string, WaitEstimate>();
+    for (const group of groups.values()) {
+      const first = group[0];
+      const [threads, stat] = await Promise.all([
+        this.repository.countActiveThreads(first.queue_id),
+        this.repository.findBestStat(
+          first.site_id,
+          first.queue_id,
+          first.business_date,
+        ),
+      ]);
+      for (const registration of group) {
+        estimates.set(
+          registration.registration_id,
+          this.buildEstimate(
+            registration,
+            now,
+            positions.get(registration.registration_id) ?? null,
+            threads,
+            stat,
+          ),
+        );
+      }
+    }
+    return estimates;
+  }
+
+  private buildEstimate(
+    registration: WaitEstimationRegistration,
+    now: Date,
+    position: number | null,
+    activeThreads: number,
+    stat: EstimationStatRow | null,
+  ): WaitEstimate {
     if (position == null || activeThreads === 0) {
       return {
         estimatedWaitMinutes: null,

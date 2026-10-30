@@ -42,11 +42,13 @@ export class NotificationWorker extends BaseWorker {
           try {
             // In production, an external SMS provider (e.g. Twilio, Infobip) or SMTP is called here.
             // In this operational environment, we simulate immediate successful dispatch:
-            await this.repository.markDelivered(
+            const delivered = await this.repository.markDelivered(
               notif.notification_id,
               providerMessageId,
               now,
+              notif.attempt_count,
             );
+            if (!delivered) continue;
             this.metricsService.increment('notifications_delivered_total');
 
             this.logger.log(
@@ -59,6 +61,7 @@ export class NotificationWorker extends BaseWorker {
               isFinal,
               safeErrorName(err),
               now,
+              notif.attempt_count,
             );
             this.metricsService.increment(
               'notification_delivery_failures_total',

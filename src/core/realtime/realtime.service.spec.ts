@@ -85,4 +85,72 @@ describe('RealtimeService', () => {
       data: { timestamp: now.toISOString() },
     });
   });
+
+  it.each(['streamDisplay', 'streamTracking'] as const)(
+    'closes %s at credential expiration even without business events',
+    async (method) => {
+      const repository = { findTopicState: jest.fn().mockResolvedValue(null) };
+      const authorize = jest.fn().mockResolvedValue(undefined);
+      const stream = await new RealtimeService(clock, repository as never)[
+        method
+      ](queueId, undefined, {
+        authorize,
+        expiresAt: new Date(now.getTime() + 3500),
+      });
+      const complete = jest.fn();
+      const next = jest.fn();
+      stream.subscribe({ next, complete });
+      await jest.advanceTimersByTimeAsync(3500);
+      expect(complete).toHaveBeenCalledTimes(1);
+      expect(next).not.toHaveBeenCalled();
+      expect(authorize).toHaveBeenCalledTimes(1);
+      await jest.advanceTimersByTimeAsync(20000);
+      expect(repository.findTopicState).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it.each(['streamDisplay', 'streamTracking'] as const)(
+    'closes %s on revocation and cancels polling and heartbeats',
+    async (method) => {
+      const repository = { findTopicState: jest.fn().mockResolvedValue(null) };
+      const authorize = jest
+        .fn()
+        .mockResolvedValueOnce(undefined)
+        .mockRejectedValue(new Error('revoked'));
+      const stream = await new RealtimeService(clock, repository as never)[
+        method
+      ](queueId, undefined, {
+        authorize,
+        expiresAt: new Date(now.getTime() + 60000),
+      });
+      const complete = jest.fn();
+      const next = jest.fn();
+      const error = jest.fn();
+      stream.subscribe({ next, complete, error });
+      await jest.advanceTimersByTimeAsync(20000);
+      expect(complete).toHaveBeenCalledTimes(1);
+      expect(error).not.toHaveBeenCalled();
+      expect(next).not.toHaveBeenCalled();
+      expect(authorize).toHaveBeenCalledTimes(2);
+      expect(repository.findTopicState).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it('stops all checks when the client disconnects', async () => {
+    const repository = { findTopicState: jest.fn().mockResolvedValue(null) };
+    const authorize = jest.fn().mockResolvedValue(undefined);
+    const stream = await new RealtimeService(
+      clock,
+      repository as never,
+    ).streamDisplay(queueId, undefined, {
+      authorize,
+      expiresAt: new Date(now.getTime() + 60000),
+    });
+    const subscription = stream.subscribe();
+    await jest.advanceTimersByTimeAsync(2000);
+    subscription.unsubscribe();
+    await jest.advanceTimersByTimeAsync(20000);
+    expect(authorize).toHaveBeenCalledTimes(1);
+    expect(repository.findTopicState).toHaveBeenCalledTimes(2);
+  });
 });

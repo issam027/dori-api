@@ -19,13 +19,12 @@ import { RankService, ROLE_RANK } from '../../core/rbac/services/rank.service';
 
 @Injectable()
 export class UsersService {
-  private readonly rankService = new RankService();
-
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly scopeService: ScopeService,
     private readonly clockService: ClockService,
     private readonly configService: ConfigService,
+    private readonly rankService: RankService,
   ) {}
 
   private async getCallerMaxRank(user: AuthenticatedUser): Promise<number> {
@@ -103,11 +102,7 @@ export class UsersService {
       callerMaxManagePerm,
     );
 
-    if (targetUserId) {
-      if (caller.userId === targetUserId) {
-        return;
-      }
-
+    if (targetUserId && caller.userId !== targetUserId) {
       const targetRank = await this.getUserMaxRank(targetUserId);
 
       if (targetRank > maxManageRank) {
@@ -212,15 +207,16 @@ export class UsersService {
     await this.findUserById(userId, user);
 
     const now = this.clockService.now();
+    const updated = await this.usersRepository.updateUser(
+      userId,
+      dto,
+      user.userId,
+      now,
+    );
     if (dto.isActive !== undefined) {
-      await this.usersRepository.updateUserStatus(
-        userId,
-        dto.isActive,
-        user.userId,
-        now,
-      );
+      this.scopeService.invalidateUserScope(userId);
     }
-    return this.usersRepository.updateUser(userId, dto, user.userId, now);
+    return updated;
   }
 
   async updateUserStatus(
@@ -273,6 +269,7 @@ export class UsersService {
     user: AuthenticatedUser,
   ) {
     await this.checkAntiEscalation(user, userId, roleId);
+    await this.scopeService.checkUserAccess(user, userId);
     const now = this.clockService.now();
 
     const result = await this.usersRepository.assignUserRole(
@@ -299,6 +296,7 @@ export class UsersService {
     user: AuthenticatedUser,
   ) {
     await this.checkAntiEscalation(user, userId, roleId);
+    await this.scopeService.checkUserAccess(user, userId);
 
     const now = this.clockService.now();
     const removed = await this.usersRepository.removeUserRole(
