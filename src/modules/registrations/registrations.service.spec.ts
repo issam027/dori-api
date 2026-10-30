@@ -231,6 +231,67 @@ describe('RegistrationsService reschedule ticket numbering', () => {
     userType: 'human',
   };
 
+  it('keeps a newly booked future appointment trackable on the appointment date', async () => {
+    const now = new Date('2026-10-30T12:00:00Z');
+    const scheduledTime = new Date('2026-11-02T09:00:00Z');
+    const clock = new ClockService();
+    jest.spyOn(clock, 'now').mockReturnValue(now);
+    const tx = {
+      findQueueConfig: jest.fn().mockResolvedValue({
+        queue_code: 'A000',
+        site_id: 'site',
+        timezone: 'Europe/Berlin',
+        appointments_enabled: true,
+        slot_capacity: 1,
+      }),
+      personExistsInSite: jest.fn().mockResolvedValue(true),
+      findOfferedTier: jest.fn().mockResolvedValue({
+        tier_code: 'standard',
+        price: 0,
+        currency: 'EUR',
+      }),
+      hasOpenRegistration: jest.fn().mockResolvedValue(false),
+      lockAndCountSlot: jest.fn().mockResolvedValue(0),
+      nextTicketNumber: jest.fn().mockResolvedValue(1),
+      create: jest.fn().mockResolvedValue({
+        registration_id: 'registration',
+        ticket_number: 'A001',
+      }),
+      createWelcomeNotifications: jest.fn(),
+    };
+    const service = new RegistrationsService(
+      {
+        transaction: async (work: (transaction: unknown) => Promise<unknown>) =>
+          work(tx),
+      } as never,
+      { checkQueueAccess: jest.fn() } as never,
+      clock,
+      {} as PersonsService,
+      {
+        getOrThrow: jest.fn().mockReturnValue(1440),
+      } as unknown as ConfigService,
+      {} as NotificationTemplateService,
+    );
+    const result = await service.createRegistration(
+      {
+        queueId: 'queue',
+        personId: 'person',
+        tierId: 'tier',
+        entryType: 'appointment',
+        scheduledTime: scheduledTime.toISOString(),
+      },
+      user,
+    );
+    expect(result.registrationTrackingTokenValidUntil).toEqual(
+      new Date('2026-11-02T22:59:59.999Z'),
+    );
+    expect(tx.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tokenValidUntil: result.registrationTrackingTokenValidUntil,
+      }),
+    );
+  });
+
   it('allocates a new daily ticket while preserving registrationId when the business day changes', async () => {
     const now = new Date('2026-10-17T10:00:00Z');
     const newTime = new Date('2026-10-19T09:00:00Z');
@@ -266,9 +327,15 @@ describe('RegistrationsService reschedule ticket numbering', () => {
         now: jest.fn(() => now),
         parseInTimezone: jest.fn(() => newTime),
         dateInTimezone: jest.fn(() => '2026-10-19'),
+        endOfDayInTimezone: new ClockService().endOfDayInTimezone.bind(
+          new ClockService(),
+        ),
+        addMinutes: new ClockService().addMinutes.bind(new ClockService()),
       } as unknown as ClockService,
       {} as PersonsService,
-      {} as ConfigService,
+      {
+        getOrThrow: jest.fn().mockReturnValue(1440),
+      } as unknown as ConfigService,
       {} as NotificationTemplateService,
     );
 
@@ -293,6 +360,7 @@ describe('RegistrationsService reschedule ticket numbering', () => {
       '2026-10-19',
       'H0007',
       now,
+      new Date('2026-10-19T21:59:59.999Z'),
     );
   });
 
@@ -331,9 +399,15 @@ describe('RegistrationsService reschedule ticket numbering', () => {
         now: jest.fn(() => now),
         parseInTimezone: jest.fn(() => newTime),
         dateInTimezone: jest.fn(() => '2026-10-18'),
+        endOfDayInTimezone: new ClockService().endOfDayInTimezone.bind(
+          new ClockService(),
+        ),
+        addMinutes: new ClockService().addMinutes.bind(new ClockService()),
       } as unknown as ClockService,
       {} as PersonsService,
-      {} as ConfigService,
+      {
+        getOrThrow: jest.fn().mockReturnValue(1440),
+      } as unknown as ConfigService,
       {} as NotificationTemplateService,
     );
 
@@ -350,6 +424,7 @@ describe('RegistrationsService reschedule ticket numbering', () => {
       '2026-10-18',
       undefined,
       now,
+      new Date('2026-10-18T21:59:59.999Z'),
     );
   });
 });
@@ -810,7 +885,9 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
         ),
       } as unknown as ClockService,
       {} as PersonsService,
-      {} as ConfigService,
+      {
+        getOrThrow: jest.fn().mockReturnValue(1440),
+      } as unknown as ConfigService,
       {} as NotificationTemplateService,
       undefined,
     );
