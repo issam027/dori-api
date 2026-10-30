@@ -90,7 +90,7 @@ INSERT INTO seed_permission (permission_id, permission_name, description, roles)
 ('a781c107-52e0-43fa-8e67-9da5a1def864', 'system_manage',        'Ajuster les permissions associÃ©es Ã  un rÃ´le et contourner tout filtrage de pÃ©rimÃ¨tre (root uniquement)', '{}');
 
 INSERT INTO seed_permission (permission_id, permission_name, description, roles) VALUES
-('deed2cb1-026b-4201-a8ef-a626b87aee34', 'edge_installation_manage', 'Enregistrer et superviser les installations Dorify intra connectées', '{}');
+('deed2cb1-026b-4201-a8ef-a626b87aee34', 'edge_installation_manage', 'Enregistrer et superviser les installations Dorify intra connectées', '{admin}');
 
 INSERT INTO dorify.dori_permission (permission_id, permission_name, description)
 SELECT permission_id, permission_name, description FROM seed_permission
