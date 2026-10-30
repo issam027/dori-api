@@ -28,7 +28,7 @@ import { EdgeControlService } from './edge-control.service';
 @ApiTags('Edge administration')
 @ApiBearerAuth('bearer')
 @ApiDoriErrorResponses()
-@RequirePermission('system_manage')
+@RequirePermission('edge_installation_manage')
 @Controller('api/v1/edge/installations')
 export class EdgeAdminController {
   constructor(private readonly service: EdgeControlService) {}
