@@ -17,6 +17,8 @@ services:
       JWT_SECRET: docker-local-development-secret-change-me
       CORS_ORIGINS: http://localhost:3001,http://localhost:5173
       PUBLIC_WEB_URL: http://localhost:5173
+      DORIFY_DEPLOYMENT_MODE: ${DORIFY_DEPLOYMENT_MODE:-intra}
+      DORIFY_AGENT_URL: ${DORIFY_AGENT_URL:-http://agent:3100}
       SWAGGER_SERVERS: http://localhost:3000
       AUTO_RUN_MIGRATIONS: 'false'
     ports:

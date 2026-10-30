@@ -16387,6 +16387,36 @@
         ]
       }
     },
+    "/api/edge/v1/status": {
+      "get": {
+        "operationId": "EdgeAgentController_status",
+        "summary": "Return the administrative deployment status",
+        "parameters": [
+          {
+            "name": "x-dorify-installation-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Valeur du paramètre « x-dorify-installation-id »."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Edge agent"
+        ],
+        "security": [
+          {
+            "edge-installation-token": []
+          }
+        ]
+      }
+    },
     "/api/edge/v1/heartbeat": {
       "post": {
         "operationId": "EdgeAgentController_heartbeat",
@@ -16836,6 +16866,161 @@
         ]
       }
     },
+    "/api/v1/edge/installations/{installationId}/status": {
+      "patch": {
+        "operationId": "EdgeAdminController_updateStatus",
+        "summary": "Activate or deactivate an intra installation",
+        "parameters": [
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Valeur du paramètre « installation id »."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEdgeInstallationStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "OK",
+                      "description": "Code applicatif du résultat"
+                    },
+                    "translationKey": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": null,
+                      "description": "Clé de traduction du message (null si aucun message)"
+                    },
+                    "translationParams": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "example": {},
+                      "description": "Paramètres de traduction"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/EdgeInstallationResponseDto"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "translationKey",
+                    "translationParams",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié — token manquant ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Accès interdit — permission insuffisante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (doublon, slot plein, compte verrouillé…)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entité non traitable — règle métier enfreinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Edge administration"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/edge/installations/{installationId}": {
       "get": {
         "operationId": "EdgeAdminController_detail",
@@ -17128,6 +17313,120 @@
         },
         "tags": [
           "Edge administration"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/edge/local-status": {
+      "get": {
+        "operationId": "EdgeLocalController_status",
+        "summary": "Read the non-blocking cloud status reported by the local agent",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "OK",
+                      "description": "Code applicatif du résultat"
+                    },
+                    "translationKey": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": null,
+                      "description": "Clé de traduction du message (null si aucun message)"
+                    },
+                    "translationParams": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "example": {},
+                      "description": "Paramètres de traduction"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/EdgeLocalStatusResponseDto"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "translationKey",
+                    "translationParams",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié — token manquant ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (doublon, slot plein, compte verrouillé…)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entité non traitable — règle métier enfreinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Edge local status"
         ],
         "security": [
           {
@@ -24591,6 +24890,21 @@
             "type": "string",
             "description": "Valeur du champ « name »."
           },
+          "deploymentType": {
+            "type": "string",
+            "enum": [
+              "intra"
+            ],
+            "description": "Valeur du champ « deployment type »."
+          },
+          "deploymentStatus": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "description": "Valeur du champ « deployment status »."
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -24619,6 +24933,8 @@
         "required": [
           "installationId",
           "name",
+          "deploymentType",
+          "deploymentStatus",
           "status",
           "lastSeenAt",
           "createdAt"
@@ -24635,6 +24951,21 @@
           "name": {
             "type": "string",
             "description": "Valeur du champ « name »."
+          },
+          "deploymentType": {
+            "type": "string",
+            "enum": [
+              "intra"
+            ],
+            "description": "Valeur du champ « deployment type »."
+          },
+          "deploymentStatus": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "description": "Valeur du champ « deployment status »."
           },
           "status": {
             "type": "string",
@@ -24668,6 +24999,8 @@
         "required": [
           "installationId",
           "name",
+          "deploymentType",
+          "deploymentStatus",
           "status",
           "lastSeenAt",
           "createdAt",
@@ -24685,6 +25018,22 @@
         },
         "required": [
           "name"
+        ]
+      },
+      "UpdateEdgeInstallationStatusDto": {
+        "type": "object",
+        "properties": {
+          "deploymentStatus": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "description": "Valeur du champ « deployment status »."
+          }
+        },
+        "required": [
+          "deploymentStatus"
         ]
       },
       "EdgeCommandResponseDto": {
@@ -24757,6 +25106,21 @@
             "type": "string",
             "description": "Valeur du champ « name »."
           },
+          "deploymentType": {
+            "type": "string",
+            "enum": [
+              "intra"
+            ],
+            "description": "Valeur du champ « deployment type »."
+          },
+          "deploymentStatus": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "description": "Valeur du champ « deployment status »."
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -24792,6 +25156,8 @@
         "required": [
           "installationId",
           "name",
+          "deploymentType",
+          "deploymentStatus",
           "status",
           "lastSeenAt",
           "createdAt",
@@ -24816,6 +25182,49 @@
         },
         "required": [
           "type"
+        ]
+      },
+      "EdgeLocalStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "configured": {
+            "type": "boolean",
+            "description": "Valeur du champ « configured »."
+          },
+          "deploymentStatus": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "unknown"
+            ],
+            "description": "Valeur du champ « deployment status »."
+          },
+          "cloudReachability": {
+            "type": "string",
+            "enum": [
+              "connected",
+              "unreachable",
+              "not_configured"
+            ],
+            "description": "Valeur du champ « cloud reachability »."
+          },
+          "lastCloudSuccessAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Valeur du champ « last cloud success at »."
+          },
+          "lastCloudError": {
+            "type": "string",
+            "nullable": true,
+            "description": "Valeur du champ « last cloud error »."
+          }
+        },
+        "required": [
+          "configured",
+          "deploymentStatus",
+          "cloudReachability"
         ]
       }
     }

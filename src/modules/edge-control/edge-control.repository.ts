@@ -9,6 +9,7 @@ export class EdgeControlRepository {
   findInstallation(installationId: string) {
     return this.database.query(
       `SELECT installation_id, installation_name, token_hash, credential_status,
+              deployment_type, deployment_status,
               last_seen_at, last_heartbeat, created_at
        FROM dorify.dori_edge_installation WHERE installation_id=$1`,
       [installationId],
@@ -17,7 +18,8 @@ export class EdgeControlRepository {
 
   listInstallations() {
     return this.database.query(
-      `SELECT installation_id, installation_name, last_seen_at, last_heartbeat, created_at
+      `SELECT installation_id, installation_name, deployment_type, deployment_status,
+              last_seen_at, last_heartbeat, created_at
        FROM dorify.dori_edge_installation
        WHERE credential_status='active' ORDER BY installation_name`,
     );
@@ -27,10 +29,26 @@ export class EdgeControlRepository {
     const rows = await this.database.query(
       `INSERT INTO dorify.dori_edge_installation (installation_name, token_hash)
        VALUES ($1,$2)
-       RETURNING installation_id, installation_name, last_seen_at, last_heartbeat, created_at`,
+       RETURNING installation_id, installation_name, deployment_type, deployment_status,
+                 last_seen_at, last_heartbeat, created_at`,
       [name, tokenHash],
     );
     return rows[0];
+  }
+
+  async updateDeploymentStatus(
+    installationId: string,
+    deploymentStatus: string,
+  ) {
+    const rows = await this.database.query(
+      `UPDATE dorify.dori_edge_installation
+       SET deployment_status=$2, updated_at=CURRENT_TIMESTAMP
+       WHERE installation_id=$1
+       RETURNING installation_id, installation_name, deployment_type, deployment_status,
+                 last_seen_at, last_heartbeat, created_at`,
+      [installationId, deploymentStatus],
+    );
+    return rows[0] as Record<string, unknown> | undefined;
   }
 
   updateHeartbeat(installationId: string, heartbeat: object) {

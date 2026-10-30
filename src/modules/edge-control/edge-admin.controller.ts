@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -22,6 +23,7 @@ import {
   EdgeInstallationCredentialResponseDto,
   EdgeInstallationDetailResponseDto,
   EdgeInstallationResponseDto,
+  UpdateEdgeInstallationStatusDto,
 } from './dto/edge-control.dto';
 import { EdgeControlService } from './edge-control.service';
 
@@ -47,6 +49,19 @@ export class EdgeAdminController {
   @ApiDoriCreatedResponse(EdgeInstallationCredentialResponseDto)
   create(@Body() body: CreateEdgeInstallationDto) {
     return this.service.createInstallation(body.name);
+  }
+
+  @Patch(':installationId/status')
+  @ApiOperation({ summary: 'Activate or deactivate an intra installation' })
+  @ApiDoriOkResponse(EdgeInstallationResponseDto)
+  updateStatus(
+    @Param('installationId', ParseUUIDPipe) installationId: string,
+    @Body() body: UpdateEdgeInstallationStatusDto,
+  ) {
+    return this.service.updateDeploymentStatus(
+      installationId,
+      body.deploymentStatus,
+    );
   }
 
   @Get(':installationId')

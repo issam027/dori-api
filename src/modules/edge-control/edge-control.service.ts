@@ -5,6 +5,7 @@ import { ClockService } from '../../core/clock/clock.service';
 import { DoriException } from '../../core/errors/dori.exception';
 import {
   CreateEdgeCommandDto,
+  EdgeDeploymentStatus,
   EdgeCommandResultDto,
   EdgeHeartbeatDto,
 } from './dto/edge-control.dto';
@@ -47,6 +48,17 @@ export class EdgeControlService {
     if (body.installationId !== installationId)
       throw new DoriException('CONFLICT');
     await this.repository.updateHeartbeat(installationId, body);
+  }
+
+  async agentInstallationStatus(installationId: string) {
+    const row = (await this.repository.findInstallation(installationId))[0] as
+      Row | undefined;
+    if (!row) throw new DoriException('RESOURCE_NOT_FOUND');
+    return {
+      installationId,
+      deploymentStatus: row.deployment_status as EdgeDeploymentStatus,
+      checkedAt: this.clock.now().toISOString(),
+    };
   }
 
   async commands(installationId: string, after: string | null) {
@@ -101,6 +113,18 @@ export class EdgeControlService {
     };
   }
 
+  async updateDeploymentStatus(
+    installationId: string,
+    deploymentStatus: EdgeDeploymentStatus,
+  ) {
+    const row = await this.repository.updateDeploymentStatus(
+      installationId,
+      deploymentStatus,
+    );
+    if (!row) throw new DoriException('RESOURCE_NOT_FOUND');
+    return this.installation(row);
+  }
+
   async createCommand(
     installationId: string,
     body: CreateEdgeCommandDto,
@@ -132,6 +156,8 @@ export class EdgeControlService {
     return {
       installationId: row.installation_id,
       name: row.installation_name,
+      deploymentType: row.deployment_type,
+      deploymentStatus: row.deployment_status as EdgeDeploymentStatus,
       status:
         age === null
           ? 'never_connected'

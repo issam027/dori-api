@@ -14,6 +14,7 @@ import { ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../core/auth/decorators/public.decorator';
 import { SkipResponseEnvelope } from '../../core/response/response.interceptor';
 import {
+  EdgeAgentInstallationStatusResponseDto,
   EdgeCommandCursorQueryDto,
   EdgeCommandResultDto,
   EdgeHeartbeatDto,
@@ -27,6 +28,16 @@ import { EdgeControlService } from './edge-control.service';
 @Controller('api/edge/v1')
 export class EdgeAgentController {
   constructor(private readonly service: EdgeControlService) {}
+
+  @Get('status')
+  @ApiOperation({ summary: 'Return the administrative deployment status' })
+  async status(
+    @Headers('x-dorify-installation-id') installationId: string,
+    @Headers('authorization') authorization: string | undefined,
+  ): Promise<EdgeAgentInstallationStatusResponseDto> {
+    await this.service.authenticate(installationId, authorization);
+    return this.service.agentInstallationStatus(installationId);
+  }
 
   @Post('heartbeat')
   @HttpCode(HttpStatus.NO_CONTENT)

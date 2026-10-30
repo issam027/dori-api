@@ -13,6 +13,7 @@ describe('EdgeControlService', () => {
     createCommand: jest.fn(),
     acknowledgeCommand: jest.fn(),
     completeCommand: jest.fn(),
+    updateDeploymentStatus: jest.fn(),
   };
   const clock = { now: jest.fn(() => new Date('2026-10-30T08:00:00.000Z')) };
   const service = new EdgeControlService(
@@ -63,5 +64,19 @@ describe('EdgeControlService', () => {
         health: { agent: 'up', engine: 'ok' },
       }),
     ).rejects.toMatchObject({ status: 409 });
+  });
+
+  it('returns the administrative status checked by the agent', async () => {
+    repository.findInstallation.mockResolvedValue([
+      { deployment_status: 'inactive' },
+    ]);
+
+    await expect(
+      service.agentInstallationStatus('00000000-0000-4000-8000-000000000001'),
+    ).resolves.toEqual({
+      installationId: '00000000-0000-4000-8000-000000000001',
+      deploymentStatus: 'inactive',
+      checkedAt: '2026-10-30T08:00:00.000Z',
+    });
   });
 });

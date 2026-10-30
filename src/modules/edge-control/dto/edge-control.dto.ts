@@ -24,6 +24,11 @@ export enum EdgeCommandResultStatus {
   Expired = 'EXPIRED',
 }
 
+export enum EdgeDeploymentStatus {
+  Active = 'active',
+  Inactive = 'inactive',
+}
+
 class EdgeVersionsDto {
   @IsString() @IsNotEmpty() engine!: string;
   @IsString() @IsNotEmpty() app!: string;
@@ -69,6 +74,12 @@ export class CreateEdgeInstallationDto {
   name!: string;
 }
 
+export class UpdateEdgeInstallationStatusDto {
+  @ApiProperty({ enum: EdgeDeploymentStatus })
+  @IsEnum(EdgeDeploymentStatus)
+  deploymentStatus!: EdgeDeploymentStatus;
+}
+
 export class CreateEdgeCommandDto {
   @ApiProperty({ enum: EdgeCommandType })
   @IsEnum(EdgeCommandType)
@@ -82,6 +93,9 @@ export class CreateEdgeCommandDto {
 export class EdgeInstallationResponseDto {
   @ApiProperty({ format: 'uuid' }) installationId!: string;
   @ApiProperty() name!: string;
+  @ApiProperty({ enum: ['intra'] }) deploymentType!: 'intra';
+  @ApiProperty({ enum: EdgeDeploymentStatus })
+  deploymentStatus!: EdgeDeploymentStatus;
   @ApiProperty({ enum: ['online', 'offline', 'never_connected'] })
   status!: string;
   @ApiProperty({ nullable: true, format: 'date-time' }) lastSeenAt!:
@@ -91,6 +105,25 @@ export class EdgeInstallationResponseDto {
     unknown
   > | null;
   @ApiProperty({ format: 'date-time' }) createdAt!: string;
+}
+
+export class EdgeAgentInstallationStatusResponseDto {
+  @ApiProperty({ format: 'uuid' }) installationId!: string;
+  @ApiProperty({ enum: EdgeDeploymentStatus })
+  deploymentStatus!: EdgeDeploymentStatus;
+  @ApiProperty({ format: 'date-time' }) checkedAt!: string;
+}
+
+export class EdgeLocalStatusResponseDto {
+  @ApiProperty() configured!: boolean;
+  @ApiProperty({ enum: ['active', 'inactive', 'unknown'] })
+  deploymentStatus!: 'active' | 'inactive' | 'unknown';
+  @ApiProperty({ enum: ['connected', 'unreachable', 'not_configured'] })
+  cloudReachability!: 'connected' | 'unreachable' | 'not_configured';
+  @ApiPropertyOptional({ nullable: true, format: 'date-time', type: String })
+  lastCloudSuccessAt!: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  lastCloudError!: string | null;
 }
 
 export class EdgeInstallationCredentialResponseDto extends EdgeInstallationResponseDto {
