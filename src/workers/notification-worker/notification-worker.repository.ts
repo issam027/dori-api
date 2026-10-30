@@ -28,6 +28,7 @@ export class NotificationWorkerRepository {
                  AND processing_started_at < $1::timestamptz - INTERVAL '5 minutes'
                )
              )
+             AND dispatch_route = 'direct'
            ORDER BY created_at ASC
            FOR UPDATE SKIP LOCKED
            LIMIT 50

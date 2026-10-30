@@ -25,6 +25,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { NotificationTemplateService } from '../../core/notifications/notification-template.service';
 import { QueueWaitEstimationService } from '../queue-estimation/queue-wait-estimation.service';
+import { createHash } from 'crypto';
 
 const TRACKING_TOKEN_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -240,6 +241,10 @@ export class RegistrationsService {
           ticketNumber: created.ticket_number,
           now,
           templateService: this.notificationTemplateService,
+          dispatchRoute:
+            this.configService.get?.<string>('deployment.mode') === 'intra'
+              ? 'cloud_relay'
+              : 'direct',
         });
 
         if (dto.entryType === 'walkin') {
@@ -812,7 +817,23 @@ export class RegistrationsService {
     const reg =
       await this.registrationsRepository.findByTrackingToken(trackingToken);
     if (!reg) {
-      throw new DoriException('TOKEN_EXPIRED');
+      const projection = await this.registrationsRepository.findPublicTrackingState(
+        createHash('sha256').update(trackingToken).digest('hex'),
+      );
+      if (!projection || this.clockService.parse(projection.expires_at) < now) {
+        throw new DoriException('TOKEN_EXPIRED');
+      }
+      return {
+        ticketNumber: projection.ticket_number,
+        status: projection.registration_status,
+        registrationStatus: projection.registration_status,
+        position: projection.position,
+        estimatedWaitMinutes: projection.estimated_wait_minutes,
+        counterName: projection.counter_name,
+        queueName: projection.queue_public_name,
+        observedAt: new Date(projection.observed_at).toISOString(),
+        sourceConnectivity: projection.source_connectivity,
+      };
     }
 
     // Check token expiration date (§4.14)

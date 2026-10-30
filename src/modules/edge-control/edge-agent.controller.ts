@@ -18,6 +18,8 @@ import {
   EdgeCommandCursorQueryDto,
   EdgeCommandResultDto,
   EdgeHeartbeatDto,
+  EdgeRelayNotificationDto,
+  EdgeTrackingBatchDto,
 } from './dto/edge-control.dto';
 import { EdgeControlService } from './edge-control.service';
 
@@ -49,6 +51,28 @@ export class EdgeAgentController {
   ): Promise<void> {
     await this.service.authenticate(installationId, authorization);
     await this.service.heartbeat(installationId, body);
+  }
+
+  @Post('notifications')
+  @ApiOperation({ summary: 'Relay one idempotent intra notification to Cloud' })
+  async relayNotification(
+    @Headers('x-dorify-installation-id') installationId: string,
+    @Headers('authorization') authorization: string | undefined,
+    @Body() body: EdgeRelayNotificationDto,
+  ) {
+    await this.service.authenticate(installationId, authorization);
+    return this.service.relayNotification(installationId, body);
+  }
+
+  @Post('tracking')
+  @ApiOperation({ summary: 'Synchronize minimal public tracking projections' })
+  async syncTracking(
+    @Headers('x-dorify-installation-id') installationId: string,
+    @Headers('authorization') authorization: string | undefined,
+    @Body() body: EdgeTrackingBatchDto,
+  ) {
+    await this.service.authenticate(installationId, authorization);
+    return this.service.syncTracking(installationId, body.items);
   }
 
   @Get('commands')

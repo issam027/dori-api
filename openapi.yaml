@@ -7739,6 +7739,50 @@ paths:
           description: ''
       tags: *ref_111
       security: *ref_112
+  /api/edge/v1/notifications:
+    post:
+      operationId: EdgeAgentController_relayNotification
+      summary: Relay one idempotent intra notification to Cloud
+      parameters:
+        - name: x-dorify-installation-id
+          required: true
+          in: header
+          schema:
+            type: string
+          description: Valeur du paramètre « x-dorify-installation-id ».
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EdgeRelayNotificationDto'
+      responses:
+        '201':
+          description: ''
+      tags: *ref_111
+      security: *ref_112
+  /api/edge/v1/tracking:
+    post:
+      operationId: EdgeAgentController_syncTracking
+      summary: Synchronize minimal public tracking projections
+      parameters:
+        - name: x-dorify-installation-id
+          required: true
+          in: header
+          schema:
+            type: string
+          description: Valeur du paramètre « x-dorify-installation-id ».
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EdgeTrackingBatchDto'
+      responses:
+        '201':
+          description: ''
+      tags: *ref_111
+      security: *ref_112
   /api/edge/v1/commands:
     get:
       operationId: EdgeAgentController_commands
@@ -11346,6 +11390,17 @@ components:
           type: string
           example: Consultation Cardiologie
           description: Nom de la file
+        observedAt:
+          type: string
+          format: date-time
+          description: Valeur du champ « observed at ».
+        sourceConnectivity:
+          type: string
+          enum:
+            - online
+            - offline
+            - native
+          description: Valeur du champ « source connectivity ».
       required:
         - status
         - registrationStatus
@@ -13900,6 +13955,12 @@ components:
         - series
         - breakdowns
     EdgeHeartbeatDto:
+      type: object
+      properties: {}
+    EdgeRelayNotificationDto:
+      type: object
+      properties: {}
+    EdgeTrackingBatchDto:
       type: object
       properties: {}
     EdgeCommandResultDto:

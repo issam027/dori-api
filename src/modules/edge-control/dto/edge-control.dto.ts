@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsDateString,
+  IsArray,
   IsEnum,
   IsIn,
   IsNotEmpty,
@@ -9,6 +10,9 @@ import {
   IsString,
   IsUUID,
   MaxLength,
+  Matches,
+  IsInt,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -46,6 +50,39 @@ export class EdgeHeartbeatDto {
   @IsDateString() sentAt!: string;
   @ValidateNested() @Type(() => EdgeVersionsDto) versions!: EdgeVersionsDto;
   @ValidateNested() @Type(() => EdgeHealthDto) health!: EdgeHealthDto;
+}
+
+export class EdgeRelayNotificationDto {
+  @IsUUID() notificationId!: string;
+  @IsUUID() registrationId!: string;
+  @IsIn(['sms', 'email']) channel!: 'sms' | 'email';
+  @IsIn(['welcome', 'threshold']) notificationType!: 'welcome' | 'threshold';
+  @IsString() @MaxLength(10) locale!: string;
+  @IsString() @IsNotEmpty() @MaxLength(255) recipient!: string;
+  @IsString() @IsNotEmpty() content!: string;
+  @IsDateString() createdAt!: string;
+}
+
+export class EdgeTrackingProjectionDto {
+  @Matches(/^[0-9a-f]{64}$/i) tokenHash!: string;
+  @IsUUID() registrationId!: string;
+  @IsInt() @Min(1) sequence!: number;
+  @IsString() @MaxLength(14) ticketNumber!: string;
+  @IsIn(['booked', 'waiting', 'in_progress', 'served', 'closed', 'cancelled'])
+  registrationStatus!: string;
+  @IsOptional() @IsInt() @Min(0) position?: number;
+  @IsOptional() @IsInt() @Min(0) estimatedWaitMinutes?: number;
+  @IsOptional() @IsString() @MaxLength(100) counterName?: string;
+  @IsString() @MaxLength(200) queueName!: string;
+  @IsDateString() observedAt!: string;
+  @IsDateString() expiresAt!: string;
+}
+
+export class EdgeTrackingBatchDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EdgeTrackingProjectionDto)
+  items!: EdgeTrackingProjectionDto[];
 }
 
 export class EdgeCommandResultDto {

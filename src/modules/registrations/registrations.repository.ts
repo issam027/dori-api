@@ -188,6 +188,7 @@ export class RegistrationsTransaction {
     ticketNumber: string;
     now: Date;
     templateService: NotificationRenderer;
+    dispatchRoute?: 'direct' | 'cloud_relay';
   }): Promise<number> {
     const rules: Array<{
       rule_id: string;
@@ -261,6 +262,7 @@ export class RegistrationsTransaction {
       'welcome',
       notifications,
       input.now,
+      input.dispatchRoute ?? 'direct',
     );
   }
 
@@ -594,6 +596,20 @@ export class RegistrationsRepository {
          ON os.session_id = r.served_by_session_id
        WHERE r.registration_tracking_token = $1`,
       [token],
+    );
+    return rows[0] ?? null;
+  }
+
+  async findPublicTrackingState(tokenHash: string) {
+    const rows = await this.dataSource.query(
+      `SELECT t.*,
+              CASE WHEN e.last_seen_at >= CURRENT_TIMESTAMP - INTERVAL '2 minutes'
+                   THEN 'online' ELSE 'offline' END AS source_connectivity
+       FROM dorify.dori_public_tracking_state t
+       LEFT JOIN dorify.dori_edge_installation e
+         ON e.installation_id=t.source_installation_id
+       WHERE t.tracking_token_hash=$1`,
+      [tokenHash],
     );
     return rows[0] ?? null;
   }

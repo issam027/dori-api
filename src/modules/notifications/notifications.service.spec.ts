@@ -84,6 +84,7 @@ describe('Notification threshold consistency', () => {
         }),
       ],
       now,
+      'direct',
     );
   });
 });

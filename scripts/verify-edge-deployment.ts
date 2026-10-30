@@ -17,7 +17,8 @@ async function main(): Promise<void> {
         '010_edge_installation_permission.sql',
         '011_grant_edge_permission_to_admin.sql',
         '012_edge_installation_deployment_status.sql',
-        '013_edge_installation_revocation.sql'
+        '013_edge_installation_revocation.sql',
+        '014_unified_notification_tracking.sql'
       )
       ORDER BY filename
     `);
@@ -37,6 +38,8 @@ async function main(): Promise<void> {
       agent_state: boolean;
       status_constraint: string | null;
       invalid_statuses: number;
+      tracking_state: boolean;
+      notification_dispatch_route: boolean;
     }>(`
       SELECT
         EXISTS (
@@ -50,6 +53,10 @@ async function main(): Promise<void> {
             AND column_name='deployment_status'
         ) AS deployment_status,
         to_regclass('dorify_agent.agent_state') IS NOT NULL AS agent_state,
+        to_regclass('dorify.dori_public_tracking_state') IS NOT NULL AS tracking_state,
+        EXISTS (SELECT 1 FROM information_schema.columns
+          WHERE table_schema='dorify' AND table_name='dori_notification'
+            AND column_name='dispatch_route') AS notification_dispatch_route,
         (
           SELECT pg_get_constraintdef(oid)
           FROM pg_constraint
@@ -69,12 +76,14 @@ async function main(): Promise<void> {
       schema: schema.rows[0],
     };
     const valid =
-      result.migrations.length === 6 &&
+      result.migrations.length === 7 &&
       result.permissionRoles.includes('root') &&
       result.permissionRoles.includes('admin') &&
       result.schema.deployment_type &&
       result.schema.deployment_status &&
       result.schema.agent_state &&
+      result.schema.tracking_state &&
+      result.schema.notification_dispatch_route &&
       (result.schema.status_constraint ?? '').includes("'active'") &&
       (result.schema.status_constraint ?? '').includes("'revoked'") &&
       result.schema.invalid_statuses === 0;

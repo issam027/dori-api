@@ -150,6 +150,9 @@ export class NotificationsService {
       locale,
       recipient,
       now,
+      this.configService.get?.<string>('deployment.mode') === 'intra'
+        ? 'cloud_relay'
+        : 'direct',
     );
   }
 
@@ -322,6 +325,9 @@ export class NotificationsService {
     await this.notificationsRepository.createThresholdNotifications(
       notifications,
       now,
+      this.configService.get?.<string>('deployment.mode') === 'intra'
+        ? 'cloud_relay'
+        : 'direct',
     );
   }
 }

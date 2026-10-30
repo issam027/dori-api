@@ -79,16 +79,39 @@ export async function insertPreparedNotifications(
   type: NotificationType,
   notifications: PreparedNotification[],
   now: Date,
+  dispatchRoute: 'direct' | 'cloud_relay' = 'direct',
 ): Promise<number> {
   if (!notifications.length) return 0;
   const result: unknown = await database.query(
     `INSERT INTO dorify.dori_notification (
        registration_id, rule_id, channel, notification_type, locale, recipient,
-       notification_content, notification_status, failure_reason,
+       notification_content, notification_status, failure_reason, dispatch_route,
        attempt_count, created_at, updated_at
      )
      SELECT x.registration_id, x.rule_id, x.channel, $3, x.locale,
-            x.recipient, x.content, x.status, x.failure_reason, 0, $2, $2
+            x.recipient, x.content,
+            CASE WHEN x.status='pending' AND $4='cloud_relay' AND NOT EXISTS (
+              SELECT 1 FROM dorify_agent.agent_state s
+              WHERE s.state_key='deployment_control'
+                AND s.state_value::jsonb->>'deploymentStatus'='active'
+                AND NULLIF(s.state_value::jsonb->>'lastCloudError','') IS NULL
+                AND (s.state_value::jsonb->>'lastCloudSuccessAt')::timestamptz >= $2::timestamptz - INTERVAL '90 seconds'
+            ) THEN 'skipped_offline' ELSE x.status END,
+            CASE WHEN x.status='pending' AND $4='cloud_relay' AND NOT EXISTS (
+              SELECT 1 FROM dorify_agent.agent_state s
+              WHERE s.state_key='deployment_control'
+                AND s.state_value::jsonb->>'deploymentStatus'='active'
+                AND NULLIF(s.state_value::jsonb->>'lastCloudError','') IS NULL
+                AND (s.state_value::jsonb->>'lastCloudSuccessAt')::timestamptz >= $2::timestamptz - INTERVAL '90 seconds'
+            ) THEN 'CLOUD_UNAVAILABLE' ELSE x.failure_reason END,
+            CASE WHEN x.status='pending' AND $4='cloud_relay' AND NOT EXISTS (
+              SELECT 1 FROM dorify_agent.agent_state s
+              WHERE s.state_key='deployment_control'
+                AND s.state_value::jsonb->>'deploymentStatus'='active'
+                AND NULLIF(s.state_value::jsonb->>'lastCloudError','') IS NULL
+                AND (s.state_value::jsonb->>'lastCloudSuccessAt')::timestamptz >= $2::timestamptz - INTERVAL '90 seconds'
+            ) THEN 'disabled_offline' ELSE $4 END,
+            0, $2, $2
      FROM jsonb_to_recordset($1::jsonb) AS x(
        registration_id uuid, rule_id uuid, channel varchar, locale varchar,
        recipient varchar, content text, status varchar, failure_reason text
@@ -110,6 +133,7 @@ export async function insertPreparedNotifications(
       ),
       now,
       type,
+      dispatchRoute,
     ],
   );
   return returningRows(result).length;

@@ -323,6 +323,12 @@ export class RegistrationPositionResponseDto {
     description: 'Nom de la file',
   })
   queueName?: string;
+
+  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  observedAt?: string;
+
+  @ApiPropertyOptional({ enum: ['online', 'offline', 'native'] })
+  sourceConnectivity?: string;
 }
 
 export class DeleteRegistrationResponseDto {

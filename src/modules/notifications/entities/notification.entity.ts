@@ -11,8 +11,17 @@ export class DoriNotification {
   @PrimaryGeneratedColumn('uuid')
   notification_id: string;
 
-  @Column({ type: 'uuid' })
-  registration_id: string;
+  @Column({ type: 'uuid', nullable: true })
+  registration_id: string | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  source_installation_id: string | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  source_registration_id: string | null;
+
+  @Column({ type: 'varchar', length: 20, default: 'direct' })
+  dispatch_route: 'direct' | 'cloud_relay' | 'disabled_offline';
 
   @Column({ type: 'uuid', nullable: true })
   rule_id: string | null;
@@ -34,7 +43,7 @@ export class DoriNotification {
 
   @Column({ type: 'varchar', length: 20, default: 'pending' })
   notification_status:
-    'pending' | 'processing' | 'sent' | 'delivered' | 'failed';
+    | 'pending' | 'processing' | 'sent' | 'delivered' | 'failed' | 'skipped_offline';
 
   @Column({ type: 'timestamptz', nullable: true })
   processing_started_at: Date | null;

@@ -163,14 +163,33 @@ export class NotificationsRepository {
     locale: string,
     recipient: string,
     now: Date,
+    dispatchRoute: 'direct' | 'cloud_relay',
   ): Promise<NotificationRow> {
     const rows: NotificationRow[] = await this.dataSource.query(
       `INSERT INTO dorify.dori_notification (
         registration_id, channel, notification_type, locale, recipient, notification_content,
-        notification_status, attempt_count, created_at, updated_at
-      ) VALUES ($1, $2, 'welcome', $3, $4, $5, 'pending', 0, $6, $6)
+        notification_status, failure_reason, dispatch_route, attempt_count, created_at, updated_at
+      ) VALUES ($1, $2, 'welcome', $3, $4, $5,
+        CASE WHEN $7='cloud_relay' AND NOT EXISTS (
+          SELECT 1 FROM dorify_agent.agent_state s WHERE s.state_key='deployment_control'
+          AND s.state_value::jsonb->>'deploymentStatus'='active'
+          AND NULLIF(s.state_value::jsonb->>'lastCloudError','') IS NULL
+          AND (s.state_value::jsonb->>'lastCloudSuccessAt')::timestamptz >= $6::timestamptz - INTERVAL '90 seconds'
+        ) THEN 'skipped_offline' ELSE 'pending' END,
+        CASE WHEN $7='cloud_relay' AND NOT EXISTS (
+          SELECT 1 FROM dorify_agent.agent_state s WHERE s.state_key='deployment_control'
+          AND s.state_value::jsonb->>'deploymentStatus'='active'
+          AND NULLIF(s.state_value::jsonb->>'lastCloudError','') IS NULL
+          AND (s.state_value::jsonb->>'lastCloudSuccessAt')::timestamptz >= $6::timestamptz - INTERVAL '90 seconds'
+        ) THEN 'CLOUD_UNAVAILABLE' ELSE NULL END,
+        CASE WHEN $7='cloud_relay' AND NOT EXISTS (
+          SELECT 1 FROM dorify_agent.agent_state s WHERE s.state_key='deployment_control'
+          AND s.state_value::jsonb->>'deploymentStatus'='active'
+          AND NULLIF(s.state_value::jsonb->>'lastCloudError','') IS NULL
+          AND (s.state_value::jsonb->>'lastCloudSuccessAt')::timestamptz >= $6::timestamptz - INTERVAL '90 seconds'
+        ) THEN 'disabled_offline' ELSE $7 END, 0, $6, $6)
         RETURNING ${NOTIFICATION_COLUMNS}`,
-      [dto.registrationId, dto.channel, locale, recipient, dto.content, now],
+      [dto.registrationId, dto.channel, locale, recipient, dto.content, now, dispatchRoute],
     );
     return rows[0];
   }
@@ -260,12 +279,14 @@ export class NotificationsRepository {
   createThresholdNotifications(
     notifications: PreparedNotification[],
     now: Date,
+    dispatchRoute: 'direct' | 'cloud_relay',
   ): Promise<number> {
     return insertPreparedNotifications(
       this.dataSource,
       'threshold',
       notifications,
       now,
+      dispatchRoute,
     );
   }
 }
