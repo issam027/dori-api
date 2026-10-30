@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { isUUID } from 'class-validator';
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'crypto';
 import { ClockService } from '../../core/clock/clock.service';
@@ -17,21 +16,13 @@ type Row = Record<string, unknown>;
 export class EdgeControlService {
   constructor(
     private readonly repository: EdgeControlRepository,
-    private readonly config: ConfigService,
     private readonly clock: ClockService,
   ) {}
-
-  assertCloudMode(): void {
-    if (this.config.get<string>('deployment.mode') !== 'cloud') {
-      throw new DoriException('RESOURCE_NOT_FOUND');
-    }
-  }
 
   async authenticate(
     installationId: string,
     authorization?: string,
   ): Promise<void> {
-    this.assertCloudMode();
     const token = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
     if (!isUUID(installationId)) throw new DoriException('UNAUTHENTICATED');
     const row = (await this.repository.findInstallation(installationId))[0] as
@@ -85,7 +76,6 @@ export class EdgeControlService {
   }
 
   async createInstallation(name: string) {
-    this.assertCloudMode();
     const token = `${randomUUID()}-${randomBytes(32).toString('hex')}`;
     const row = await this.repository.createInstallation(
       name,
@@ -95,14 +85,12 @@ export class EdgeControlService {
   }
 
   async listInstallations() {
-    this.assertCloudMode();
     return (await this.repository.listInstallations()).map((row: Row) =>
       this.installation(row),
     );
   }
 
   async installationDetail(installationId: string) {
-    this.assertCloudMode();
     const row = (await this.repository.findInstallation(installationId))[0] as
       Row | undefined;
     if (!row) throw new DoriException('RESOURCE_NOT_FOUND');
@@ -118,7 +106,6 @@ export class EdgeControlService {
     body: CreateEdgeCommandDto,
     userId: string,
   ) {
-    this.assertCloudMode();
     const installation = await this.repository.findInstallation(installationId);
     if (!installation[0]) throw new DoriException('RESOURCE_NOT_FOUND');
     return this.adminCommand(

@@ -1,4 +1,3 @@
-import { ConfigService } from '@nestjs/config';
 import { ClockService } from '../../core/clock/clock.service';
 import { EdgeControlRepository } from './edge-control.repository';
 import { EdgeControlService } from './edge-control.service';
@@ -15,21 +14,17 @@ describe('EdgeControlService', () => {
     acknowledgeCommand: jest.fn(),
     completeCommand: jest.fn(),
   };
-  const config = { get: jest.fn().mockReturnValue('cloud') };
   const clock = { now: jest.fn(() => new Date('2026-10-30T08:00:00.000Z')) };
   const service = new EdgeControlService(
     repository as unknown as EdgeControlRepository,
-    config as unknown as ConfigService,
     clock as unknown as ClockService,
   );
 
   beforeEach(() => jest.clearAllMocks());
 
-  it('hides the control plane outside cloud deployments', async () => {
-    config.get.mockReturnValueOnce('intra');
-    await expect(service.listInstallations()).rejects.toMatchObject({
-      status: 404,
-    });
+  it('returns an empty list when no installation is registered', async () => {
+    repository.listInstallations.mockResolvedValue([]);
+    await expect(service.listInstallations()).resolves.toEqual([]);
   });
 
   it('never stores the issued installation token in clear text', async () => {
