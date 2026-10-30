@@ -30,6 +30,7 @@ describe('validateEnvironment', () => {
     [{ ...valid, DATABASE_URL: 'not-a-url' }, 'DATABASE_URL'],
     [{ ...valid, DATABASE_URL: 'https://example.com/dori' }, 'protocol'],
     [{ ...valid, PUBLIC_WEB_URL: 'ftp://example.com' }, 'PUBLIC_WEB_URL'],
+    [{ ...valid, DORIFY_DEPLOYMENT_MODE: 'hybrid' }, 'DORIFY_DEPLOYMENT_MODE'],
   ])('rejects an unsafe environment', (environment, message) => {
     expect(() => validateEnvironment(environment)).toThrow(message);
   });

@@ -22,6 +22,12 @@ export function validateEnvironment(
   environment: Record<string, unknown>,
 ): Record<string, unknown> {
   const jwtSecret = String(environment.JWT_SECRET ?? '');
+  if (
+    environment.DORIFY_DEPLOYMENT_MODE !== undefined &&
+    !['intra', 'cloud'].includes(String(environment.DORIFY_DEPLOYMENT_MODE))
+  ) {
+    throw new Error('DORIFY_DEPLOYMENT_MODE must be intra or cloud');
+  }
   const hasRsaPair = Boolean(
     environment.JWT_PRIVATE_KEY && environment.JWT_PUBLIC_KEY,
   );
@@ -112,6 +118,10 @@ export default () => {
 
     platform: {
       isVercel: isVercelRuntime(),
+    },
+
+    deployment: {
+      mode: process.env.DORIFY_DEPLOYMENT_MODE ?? 'intra',
     },
 
     defaults: {

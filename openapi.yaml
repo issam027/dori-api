@@ -7699,6 +7699,346 @@ paths:
       tags: *ref_110
       security:
         - bearer: []
+  /api/edge/v1/heartbeat:
+    post:
+      operationId: EdgeAgentController_heartbeat
+      summary: Accept an installation heartbeat
+      parameters:
+        - name: x-dorify-installation-id
+          required: true
+          in: header
+          schema:
+            type: string
+          description: Valeur du paramètre « x-dorify-installation-id ».
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EdgeHeartbeatDto'
+      responses:
+        '204':
+          description: ''
+      tags: &ref_111
+        - Edge agent
+      security: &ref_112
+        - edge-installation-token: []
+  /api/edge/v1/commands:
+    get:
+      operationId: EdgeAgentController_commands
+      summary: Pull allow-listed operational commands
+      parameters:
+        - name: x-dorify-installation-id
+          required: true
+          in: header
+          schema:
+            type: string
+          description: Valeur du paramètre « x-dorify-installation-id ».
+        - name: after
+          required: false
+          in: query
+          description: Opaque cursor returned previously
+          schema:
+            format: uuid
+            type: string
+      responses:
+        '200':
+          description: ''
+      tags: *ref_111
+      security: *ref_112
+  /api/edge/v1/commands/{commandId}/ack:
+    post:
+      operationId: EdgeAgentController_acknowledge
+      summary: Acknowledge durable local command receipt
+      parameters:
+        - name: x-dorify-installation-id
+          required: true
+          in: header
+          schema:
+            type: string
+          description: Valeur du paramètre « x-dorify-installation-id ».
+        - name: commandId
+          required: true
+          in: path
+          schema:
+            type: string
+            format: uuid
+          description: Valeur du paramètre « command id ».
+      responses:
+        '204':
+          description: ''
+      tags: *ref_111
+      security: *ref_112
+  /api/edge/v1/commands/{commandId}/result:
+    post:
+      operationId: EdgeAgentController_complete
+      summary: Accept an idempotent command result
+      parameters:
+        - name: x-dorify-installation-id
+          required: true
+          in: header
+          schema:
+            type: string
+          description: Valeur du paramètre « x-dorify-installation-id ».
+        - name: commandId
+          required: true
+          in: path
+          schema:
+            type: string
+            format: uuid
+          description: Valeur du paramètre « command id ».
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EdgeCommandResultDto'
+      responses:
+        '204':
+          description: ''
+      tags: *ref_111
+      security: *ref_112
+  /api/v1/edge/installations:
+    get:
+      operationId: EdgeAdminController_list
+      summary: List registered intra installations
+      parameters: []
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                properties:
+                  code:
+                    type: string
+                    example: OK
+                    description: Code applicatif du résultat
+                  translationKey:
+                    type: string
+                    nullable: true
+                    example: null
+                    description: Clé de traduction du message (null si aucun message)
+                  translationParams:
+                    type: object
+                    additionalProperties: true
+                    example: {}
+                    description: Paramètres de traduction
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EdgeInstallationResponseDto'
+                required:
+                  - code
+                  - translationKey
+                  - translationParams
+                  - data
+        '400': &ref_113
+          description: Données invalides (validation échouée)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '401': &ref_114
+          description: Non authentifié — token manquant ou expiré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '403': &ref_115
+          description: Accès interdit — permission insuffisante
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '404': &ref_116
+          description: Ressource introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '409': &ref_117
+          description: Conflit métier (doublon, slot plein, compte verrouillé…)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '422': &ref_118
+          description: Entité non traitable — règle métier enfreinte
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '429': &ref_119
+          description: Trop de requêtes — limite de débit atteinte
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '500': &ref_120
+          description: Erreur interne sans exposition de détails techniques
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+      tags: &ref_121
+        - Edge administration
+      security: &ref_122
+        - bearer: []
+    post:
+      operationId: EdgeAdminController_create
+      summary: Register an intra installation and issue its one-time token
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEdgeInstallationDto'
+      responses:
+        '201':
+          description: Créé avec succès
+          content:
+            application/json:
+              schema:
+                properties:
+                  code:
+                    type: string
+                    example: OK
+                    description: Code applicatif du résultat
+                  translationKey:
+                    type: string
+                    nullable: true
+                    example: null
+                    description: Clé de traduction du message (null si aucun message)
+                  translationParams:
+                    type: object
+                    additionalProperties: true
+                    example: {}
+                    description: Paramètres de traduction
+                  data:
+                    $ref: '#/components/schemas/EdgeInstallationCredentialResponseDto'
+                required:
+                  - code
+                  - translationKey
+                  - translationParams
+                  - data
+        '400': *ref_113
+        '401': *ref_114
+        '403': *ref_115
+        '404': *ref_116
+        '409': *ref_117
+        '422': *ref_118
+        '429': *ref_119
+        '500': *ref_120
+      tags: *ref_121
+      security: *ref_122
+  /api/v1/edge/installations/{installationId}:
+    get:
+      operationId: EdgeAdminController_detail
+      summary: Get installation health and recent command history
+      parameters:
+        - name: installationId
+          required: true
+          in: path
+          schema:
+            type: string
+            format: uuid
+          description: Valeur du paramètre « installation id ».
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                properties:
+                  code:
+                    type: string
+                    example: OK
+                    description: Code applicatif du résultat
+                  translationKey:
+                    type: string
+                    nullable: true
+                    example: null
+                    description: Clé de traduction du message (null si aucun message)
+                  translationParams:
+                    type: object
+                    additionalProperties: true
+                    example: {}
+                    description: Paramètres de traduction
+                  data:
+                    $ref: '#/components/schemas/EdgeInstallationDetailResponseDto'
+                required:
+                  - code
+                  - translationKey
+                  - translationParams
+                  - data
+        '400': *ref_113
+        '401': *ref_114
+        '403': *ref_115
+        '404': *ref_116
+        '409': *ref_117
+        '422': *ref_118
+        '429': *ref_119
+        '500': *ref_120
+      tags: *ref_121
+      security: *ref_122
+  /api/v1/edge/installations/{installationId}/commands:
+    post:
+      operationId: EdgeAdminController_command
+      summary: Queue an allow-listed operational command
+      parameters:
+        - name: installationId
+          required: true
+          in: path
+          schema:
+            type: string
+            format: uuid
+          description: Valeur du paramètre « installation id ».
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEdgeCommandDto'
+      responses:
+        '201':
+          description: Créé avec succès
+          content:
+            application/json:
+              schema:
+                properties:
+                  code:
+                    type: string
+                    example: OK
+                    description: Code applicatif du résultat
+                  translationKey:
+                    type: string
+                    nullable: true
+                    example: null
+                    description: Clé de traduction du message (null si aucun message)
+                  translationParams:
+                    type: object
+                    additionalProperties: true
+                    example: {}
+                    description: Paramètres de traduction
+                  data:
+                    $ref: '#/components/schemas/EdgeCommandResponseDto'
+                required:
+                  - code
+                  - translationKey
+                  - translationParams
+                  - data
+        '400': *ref_113
+        '401': *ref_114
+        '403': *ref_115
+        '404': *ref_116
+        '409': *ref_117
+        '422': *ref_118
+        '429': *ref_119
+        '500': *ref_120
+      tags: *ref_121
+      security: *ref_122
 info:
   title: Dori API
   description: Spécification de référence de la plateforme de gestion de files d'attente et de rendez-vous Dori
@@ -7742,6 +8082,11 @@ components:
       bearerFormat: JWT
       type: http
       description: Token JWT d'accès
+    edge-installation-token:
+      scheme: bearer
+      bearerFormat: installation-token
+      type: http
+      description: Jeton propre à une installation Dorify intra
     refresh-cookie:
       type: apiKey
       in: cookie
@@ -7847,7 +8192,7 @@ components:
           description: Valeur du champ « site scope display name ».
         outcome:
           type: string
-          enum: &ref_111
+          enum: &ref_123
             - success
             - failure
           description: Valeur du champ « outcome ».
@@ -7970,7 +8315,7 @@ components:
           description: Valeur du champ « site scope display name ».
         outcome:
           type: string
-          enum: *ref_111
+          enum: *ref_123
           description: Valeur du champ « outcome ».
         correlationId:
           type: string
@@ -8072,19 +8417,19 @@ components:
         userType:
           type: string
           example: human
-          enum: &ref_112
+          enum: &ref_124
             - human
             - kiosk
           description: Type de compte
         roles:
-          example: &ref_113
+          example: &ref_125
             - admin
           description: Rôles attribués
           type: array
           items:
             type: string
         permissions:
-          example: &ref_114
+          example: &ref_126
             - site_view
             - queue_view
             - session_operate
@@ -8229,16 +8574,16 @@ components:
         userType:
           type: string
           example: human
-          enum: *ref_112
+          enum: *ref_124
           description: Type de compte
         roles:
-          example: *ref_113
+          example: *ref_125
           description: Rôles attribués
           type: array
           items:
             type: string
         permissions:
-          example: *ref_114
+          example: *ref_126
           description: Permissions effectives
           type: array
           items:
@@ -8483,7 +8828,7 @@ components:
           description: URL du logo
         siteType:
           type: string
-          enum: &ref_115
+          enum: &ref_127
             - public
             - private
           example: public
@@ -8529,7 +8874,7 @@ components:
           example: 60
           description: Tolérance retard RDV (minutes)
         defaultWorkingDays:
-          example: &ref_116
+          example: &ref_128
             - 1
             - 2
             - 3
@@ -8561,7 +8906,7 @@ components:
           description: Reporter les clients en attente au lendemain
         defaultDailyResetMode:
           type: string
-          enum: &ref_117
+          enum: &ref_129
             - close_all
             - carry_over_open
           example: close_all
@@ -8594,7 +8939,7 @@ components:
           description: URL du logo
         siteType:
           type: string
-          enum: *ref_115
+          enum: *ref_127
           example: public
           description: Valeur du champ « site type ».
         timezone:
@@ -8638,7 +8983,7 @@ components:
           example: 60
           description: Tolérance retard RDV (minutes)
         defaultWorkingDays:
-          example: *ref_116
+          example: *ref_128
           description: Jours ouvrés par défaut du site (1=Lundi ... 7=Dimanche)
           type: array
           items:
@@ -8665,7 +9010,7 @@ components:
           description: Reporter les clients en attente au lendemain
         defaultDailyResetMode:
           type: string
-          enum: *ref_117
+          enum: *ref_129
           example: close_all
           description: Valeur du champ « default daily reset mode ».
         defaultDailyResetTime:
@@ -9186,7 +9531,7 @@ components:
           example: 60
           description: Tolérance retard RDV (minutes)
         workingDays:
-          example: &ref_118
+          example: &ref_130
             - 1
             - 2
             - 3
@@ -9219,7 +9564,7 @@ components:
           description: Valeur du champ « carry over waiting ».
         dailyResetMode:
           type: string
-          enum: &ref_119
+          enum: &ref_131
             - close_all
             - carry_over_open
           example: close_all
@@ -9293,7 +9638,7 @@ components:
           example: 60
           description: Tolérance retard RDV (minutes)
         workingDays:
-          example: *ref_118
+          example: *ref_130
           nullable: true
           description: Surcharge des jours ouvrés de la file (1=Lundi ... 7=Dimanche) ; null ou absence = héritage du site
           type: array
@@ -9321,7 +9666,7 @@ components:
           description: Valeur du champ « carry over waiting ».
         dailyResetMode:
           type: string
-          enum: *ref_119
+          enum: *ref_131
           example: close_all
           description: Valeur du champ « daily reset mode ».
         dailyResetTime:
@@ -11617,7 +11962,7 @@ components:
           description: Valeur du champ « ticket number ».
         entryType:
           type: string
-          enum: &ref_120
+          enum: &ref_132
             - walkin
             - appointment
           description: Valeur du champ « entry type ».
@@ -11694,7 +12039,7 @@ components:
           description: Valeur du champ « ticket number ».
         entryType:
           type: string
-          enum: *ref_120
+          enum: *ref_132
           description: Valeur du champ « entry type ».
         scheduledTime:
           type: string
@@ -13409,3 +13754,186 @@ components:
         - totals
         - series
         - breakdowns
+    EdgeHeartbeatDto:
+      type: object
+      properties: {}
+    EdgeCommandResultDto:
+      type: object
+      properties: {}
+    EdgeInstallationResponseDto:
+      type: object
+      properties:
+        installationId:
+          type: string
+          format: uuid
+          description: Valeur du champ « installation id ».
+        name:
+          type: string
+          description: Valeur du champ « name ».
+        status:
+          type: string
+          enum: &ref_133
+            - online
+            - offline
+            - never_connected
+          description: Valeur du champ « status ».
+        lastSeenAt:
+          type: object
+          nullable: true
+          format: date-time
+          description: Valeur du champ « last seen at ».
+        lastHeartbeat:
+          type: object
+          description: Valeur du champ « last heartbeat ».
+        createdAt:
+          type: string
+          format: date-time
+          description: Date de création.
+      required:
+        - installationId
+        - name
+        - status
+        - lastSeenAt
+        - createdAt
+    EdgeInstallationCredentialResponseDto:
+      type: object
+      properties:
+        installationId:
+          type: string
+          format: uuid
+          description: Valeur du champ « installation id ».
+        name:
+          type: string
+          description: Valeur du champ « name ».
+        status:
+          type: string
+          enum: *ref_133
+          description: Valeur du champ « status ».
+        lastSeenAt:
+          type: object
+          nullable: true
+          format: date-time
+          description: Valeur du champ « last seen at ».
+        lastHeartbeat:
+          type: object
+          description: Valeur du champ « last heartbeat ».
+        createdAt:
+          type: string
+          format: date-time
+          description: Date de création.
+        token:
+          type: string
+          description: Displayed once; store it in the intra agent environment.
+      required:
+        - installationId
+        - name
+        - status
+        - lastSeenAt
+        - createdAt
+        - token
+    CreateEdgeInstallationDto:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Agence Tunis Centre
+          description: Valeur du champ « name ».
+      required:
+        - name
+    EdgeCommandResponseDto:
+      type: object
+      properties:
+        commandId:
+          type: string
+          format: uuid
+          description: Valeur du champ « command id ».
+        installationId:
+          type: string
+          format: uuid
+          description: Valeur du champ « installation id ».
+        type:
+          type: string
+          enum:
+            - RUN_HEALTH_CHECK
+            - SYNC_NOW
+          description: Valeur du champ « type ».
+        payload:
+          type: object
+          description: Valeur du champ « payload ».
+        status:
+          type: string
+          description: Valeur du champ « status ».
+        createdAt:
+          type: string
+          format: date-time
+          description: Date de création.
+        expiresAt:
+          type: string
+          format: date-time
+          description: Valeur du champ « expires at ».
+        result:
+          type: object
+          description: Valeur du champ « result ».
+        error:
+          type: object
+          description: Valeur du champ « error ».
+      required:
+        - commandId
+        - installationId
+        - type
+        - payload
+        - status
+        - createdAt
+        - expiresAt
+    EdgeInstallationDetailResponseDto:
+      type: object
+      properties:
+        installationId:
+          type: string
+          format: uuid
+          description: Valeur du champ « installation id ».
+        name:
+          type: string
+          description: Valeur du champ « name ».
+        status:
+          type: string
+          enum: *ref_133
+          description: Valeur du champ « status ».
+        lastSeenAt:
+          type: object
+          nullable: true
+          format: date-time
+          description: Valeur du champ « last seen at ».
+        lastHeartbeat:
+          type: object
+          description: Valeur du champ « last heartbeat ».
+        createdAt:
+          type: string
+          format: date-time
+          description: Date de création.
+        commands:
+          type: array
+          items:
+            $ref: '#/components/schemas/EdgeCommandResponseDto'
+          description: Valeur du champ « commands ».
+      required:
+        - installationId
+        - name
+        - status
+        - lastSeenAt
+        - createdAt
+        - commands
+    CreateEdgeCommandDto:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - RUN_HEALTH_CHECK
+            - SYNC_NOW
+          description: Valeur du champ « type ».
+        payload:
+          type: object
+          description: Valeur du champ « payload ».
+      required:
+        - type

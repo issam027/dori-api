@@ -36,6 +36,7 @@ import { GlobalExceptionFilter } from './core/errors/global-exception.filter';
 import { AuditModule } from './core/audit/audit.module';
 import { AuditInterceptor } from './core/audit/audit.interceptor';
 import { CronModule } from './cron-handlers/cron.module';
+import { EdgeControlModule } from './modules/edge-control/edge-control.module';
 
 const isVercel = isVercelRuntime();
 
@@ -87,6 +88,7 @@ const isVercel = isVercelRuntime();
     UsersModule,
     CronModule,
     MonitoringModule,
+    EdgeControlModule,
   ],
   providers: [
     {

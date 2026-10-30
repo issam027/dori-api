@@ -58,6 +58,7 @@ async function createApp(): Promise<NestExpressApplication> {
       'Authorization',
       'X-Correlation-Id',
       'X-Registration-Token',
+      'X-Dorify-Installation-Id',
       'If-None-Match',
     ],
     exposedHeaders: ['X-Correlation-Id', 'ETag'],

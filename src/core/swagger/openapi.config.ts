@@ -43,6 +43,15 @@ export function createOpenApiConfig(
       },
       'bearer',
     )
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'installation-token',
+        description: 'Jeton propre à une installation Dorify intra',
+      },
+      'edge-installation-token',
+    )
     .addCookieAuth(
       'refreshToken',
       { type: 'apiKey', in: 'cookie', description: 'Refresh token HttpOnly' },

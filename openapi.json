@@ -16386,6 +16386,755 @@
           }
         ]
       }
+    },
+    "/api/edge/v1/heartbeat": {
+      "post": {
+        "operationId": "EdgeAgentController_heartbeat",
+        "summary": "Accept an installation heartbeat",
+        "parameters": [
+          {
+            "name": "x-dorify-installation-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Valeur du paramètre « x-dorify-installation-id »."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EdgeHeartbeatDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Edge agent"
+        ],
+        "security": [
+          {
+            "edge-installation-token": []
+          }
+        ]
+      }
+    },
+    "/api/edge/v1/commands": {
+      "get": {
+        "operationId": "EdgeAgentController_commands",
+        "summary": "Pull allow-listed operational commands",
+        "parameters": [
+          {
+            "name": "x-dorify-installation-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Valeur du paramètre « x-dorify-installation-id »."
+          },
+          {
+            "name": "after",
+            "required": false,
+            "in": "query",
+            "description": "Opaque cursor returned previously",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Edge agent"
+        ],
+        "security": [
+          {
+            "edge-installation-token": []
+          }
+        ]
+      }
+    },
+    "/api/edge/v1/commands/{commandId}/ack": {
+      "post": {
+        "operationId": "EdgeAgentController_acknowledge",
+        "summary": "Acknowledge durable local command receipt",
+        "parameters": [
+          {
+            "name": "x-dorify-installation-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Valeur du paramètre « x-dorify-installation-id »."
+          },
+          {
+            "name": "commandId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Valeur du paramètre « command id »."
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Edge agent"
+        ],
+        "security": [
+          {
+            "edge-installation-token": []
+          }
+        ]
+      }
+    },
+    "/api/edge/v1/commands/{commandId}/result": {
+      "post": {
+        "operationId": "EdgeAgentController_complete",
+        "summary": "Accept an idempotent command result",
+        "parameters": [
+          {
+            "name": "x-dorify-installation-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Valeur du paramètre « x-dorify-installation-id »."
+          },
+          {
+            "name": "commandId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Valeur du paramètre « command id »."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EdgeCommandResultDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Edge agent"
+        ],
+        "security": [
+          {
+            "edge-installation-token": []
+          }
+        ]
+      }
+    },
+    "/api/v1/edge/installations": {
+      "get": {
+        "operationId": "EdgeAdminController_list",
+        "summary": "List registered intra installations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "OK",
+                      "description": "Code applicatif du résultat"
+                    },
+                    "translationKey": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": null,
+                      "description": "Clé de traduction du message (null si aucun message)"
+                    },
+                    "translationParams": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "example": {},
+                      "description": "Paramètres de traduction"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/EdgeInstallationResponseDto"
+                      }
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "translationKey",
+                    "translationParams",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié — token manquant ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Accès interdit — permission insuffisante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (doublon, slot plein, compte verrouillé…)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entité non traitable — règle métier enfreinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Edge administration"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "EdgeAdminController_create",
+        "summary": "Register an intra installation and issue its one-time token",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEdgeInstallationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "OK",
+                      "description": "Code applicatif du résultat"
+                    },
+                    "translationKey": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": null,
+                      "description": "Clé de traduction du message (null si aucun message)"
+                    },
+                    "translationParams": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "example": {},
+                      "description": "Paramètres de traduction"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/EdgeInstallationCredentialResponseDto"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "translationKey",
+                    "translationParams",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié — token manquant ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Accès interdit — permission insuffisante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (doublon, slot plein, compte verrouillé…)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entité non traitable — règle métier enfreinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Edge administration"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/edge/installations/{installationId}": {
+      "get": {
+        "operationId": "EdgeAdminController_detail",
+        "summary": "Get installation health and recent command history",
+        "parameters": [
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Valeur du paramètre « installation id »."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "OK",
+                      "description": "Code applicatif du résultat"
+                    },
+                    "translationKey": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": null,
+                      "description": "Clé de traduction du message (null si aucun message)"
+                    },
+                    "translationParams": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "example": {},
+                      "description": "Paramètres de traduction"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/EdgeInstallationDetailResponseDto"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "translationKey",
+                    "translationParams",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié — token manquant ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Accès interdit — permission insuffisante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (doublon, slot plein, compte verrouillé…)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entité non traitable — règle métier enfreinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Edge administration"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/edge/installations/{installationId}/commands": {
+      "post": {
+        "operationId": "EdgeAdminController_command",
+        "summary": "Queue an allow-listed operational command",
+        "parameters": [
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Valeur du paramètre « installation id »."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEdgeCommandDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "OK",
+                      "description": "Code applicatif du résultat"
+                    },
+                    "translationKey": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": null,
+                      "description": "Clé de traduction du message (null si aucun message)"
+                    },
+                    "translationParams": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "example": {},
+                      "description": "Paramètres de traduction"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/EdgeCommandResponseDto"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "translationKey",
+                    "translationParams",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié — token manquant ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Accès interdit — permission insuffisante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (doublon, slot plein, compte verrouillé…)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entité non traitable — règle métier enfreinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Edge administration"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
     }
   },
   "info": {
@@ -16464,6 +17213,12 @@
         "bearerFormat": "JWT",
         "type": "http",
         "description": "Token JWT d'accès"
+      },
+      "edge-installation-token": {
+        "scheme": "bearer",
+        "bearerFormat": "installation-token",
+        "type": "http",
+        "description": "Jeton propre à une installation Dorify intra"
       },
       "refresh-cookie": {
         "type": "apiKey",
@@ -23814,6 +24569,253 @@
           "totals",
           "series",
           "breakdowns"
+        ]
+      },
+      "EdgeHeartbeatDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "EdgeCommandResultDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "EdgeInstallationResponseDto": {
+        "type": "object",
+        "properties": {
+          "installationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Valeur du champ « installation id »."
+          },
+          "name": {
+            "type": "string",
+            "description": "Valeur du champ « name »."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "online",
+              "offline",
+              "never_connected"
+            ],
+            "description": "Valeur du champ « status »."
+          },
+          "lastSeenAt": {
+            "type": "object",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Valeur du champ « last seen at »."
+          },
+          "lastHeartbeat": {
+            "type": "object",
+            "description": "Valeur du champ « last heartbeat »."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de création."
+          }
+        },
+        "required": [
+          "installationId",
+          "name",
+          "status",
+          "lastSeenAt",
+          "createdAt"
+        ]
+      },
+      "EdgeInstallationCredentialResponseDto": {
+        "type": "object",
+        "properties": {
+          "installationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Valeur du champ « installation id »."
+          },
+          "name": {
+            "type": "string",
+            "description": "Valeur du champ « name »."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "online",
+              "offline",
+              "never_connected"
+            ],
+            "description": "Valeur du champ « status »."
+          },
+          "lastSeenAt": {
+            "type": "object",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Valeur du champ « last seen at »."
+          },
+          "lastHeartbeat": {
+            "type": "object",
+            "description": "Valeur du champ « last heartbeat »."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de création."
+          },
+          "token": {
+            "type": "string",
+            "description": "Displayed once; store it in the intra agent environment."
+          }
+        },
+        "required": [
+          "installationId",
+          "name",
+          "status",
+          "lastSeenAt",
+          "createdAt",
+          "token"
+        ]
+      },
+      "CreateEdgeInstallationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Agence Tunis Centre",
+            "description": "Valeur du champ « name »."
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "EdgeCommandResponseDto": {
+        "type": "object",
+        "properties": {
+          "commandId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Valeur du champ « command id »."
+          },
+          "installationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Valeur du champ « installation id »."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "RUN_HEALTH_CHECK",
+              "SYNC_NOW"
+            ],
+            "description": "Valeur du champ « type »."
+          },
+          "payload": {
+            "type": "object",
+            "description": "Valeur du champ « payload »."
+          },
+          "status": {
+            "type": "string",
+            "description": "Valeur du champ « status »."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de création."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Valeur du champ « expires at »."
+          },
+          "result": {
+            "type": "object",
+            "description": "Valeur du champ « result »."
+          },
+          "error": {
+            "type": "object",
+            "description": "Valeur du champ « error »."
+          }
+        },
+        "required": [
+          "commandId",
+          "installationId",
+          "type",
+          "payload",
+          "status",
+          "createdAt",
+          "expiresAt"
+        ]
+      },
+      "EdgeInstallationDetailResponseDto": {
+        "type": "object",
+        "properties": {
+          "installationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Valeur du champ « installation id »."
+          },
+          "name": {
+            "type": "string",
+            "description": "Valeur du champ « name »."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "online",
+              "offline",
+              "never_connected"
+            ],
+            "description": "Valeur du champ « status »."
+          },
+          "lastSeenAt": {
+            "type": "object",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Valeur du champ « last seen at »."
+          },
+          "lastHeartbeat": {
+            "type": "object",
+            "description": "Valeur du champ « last heartbeat »."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de création."
+          },
+          "commands": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EdgeCommandResponseDto"
+            },
+            "description": "Valeur du champ « commands »."
+          }
+        },
+        "required": [
+          "installationId",
+          "name",
+          "status",
+          "lastSeenAt",
+          "createdAt",
+          "commands"
+        ]
+      },
+      "CreateEdgeCommandDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "RUN_HEALTH_CHECK",
+              "SYNC_NOW"
+            ],
+            "description": "Valeur du champ « type »."
+          },
+          "payload": {
+            "type": "object",
+            "description": "Valeur du champ « payload »."
+          }
+        },
+        "required": [
+          "type"
         ]
       }
     }
