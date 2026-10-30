@@ -29,6 +29,7 @@
     "db:seed": "ts-node -r tsconfig-paths/register scripts/db-init.ts --seed",
     "db:seed:daily-activity": "ts-node -r tsconfig-paths/register scripts/seed-daily-activity.ts",
     "db:verify": "ts-node -r tsconfig-paths/register scripts/db-verify.ts",
+    "db:verify:edge": "ts-node -r tsconfig-paths/register scripts/verify-edge-deployment.ts",
     "perf:seed": "ts-node -r tsconfig-paths/register scripts/performance/perf-seed-runner.ts inject",
     "perf:seed:clean": "ts-node -r tsconfig-paths/register scripts/performance/perf-seed-runner.ts clean",
     "perf:seed:refresh": "ts-node -r tsconfig-paths/register scripts/performance/perf-seed-runner.ts refresh",
