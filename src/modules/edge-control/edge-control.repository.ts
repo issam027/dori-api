@@ -26,6 +26,29 @@ export class EdgeControlRepository {
     );
   }
 
+  async installationRoomSignature(): Promise<string> {
+    const rows = await this.database.query<{ signature: string }[]>(
+      `SELECT md5(
+         COALESCE((
+           SELECT string_agg(
+             installation_id::text || ':' || deployment_status || ':' ||
+             CASE WHEN last_seen_at IS NULL THEN 'never_connected'
+                  WHEN last_seen_at >= CURRENT_TIMESTAMP - INTERVAL '2 minutes' THEN 'online'
+                  ELSE 'offline' END || ':' || updated_at::text,
+             '|' ORDER BY installation_id)
+           FROM dorify.dori_edge_installation WHERE credential_status='active'
+         ), '') || '#' || COALESCE((
+           SELECT string_agg(
+             command_id::text || ':' || command_status || ':' ||
+             COALESCE(completed_at, acknowledged_at, created_at)::text,
+             '|' ORDER BY command_id)
+           FROM dorify.dori_edge_command
+         ), '')
+       ) AS signature`,
+    );
+    return rows[0]?.signature ?? '';
+  }
+
   async createInstallation(name: string, tokenHash: string) {
     const rows = await this.database.query(
       `INSERT INTO dorify.dori_edge_installation (installation_name, token_hash)

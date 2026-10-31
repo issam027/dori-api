@@ -16,7 +16,7 @@ services:
       REDIS_ENABLED: 'true'
       JWT_SECRET: change-me-cloud-secret-long-and-random
       CORS_ORIGINS: http://localhost:3001,http://localhost:5173
-      PUBLIC_WEB_URL: http://localhost:5173
+      PUBLIC_WEB_URL: ${PUBLIC_TRACKING_URL:-http://localhost:58080}
       DORIFY_DEPLOYMENT_MODE: cloud
       SWAGGER_SERVERS: http://localhost:53000
       AUTO_RUN_MIGRATIONS: 'false'

@@ -17514,6 +17514,45 @@
           }
         ]
       }
+    },
+    "/api/v1/edge/installations/realtime/events": {
+      "get": {
+        "operationId": "subscribeEdgeInstallationEvents",
+        "summary": "Subscribe to installation inventory and status changes",
+        "parameters": [
+          {
+            "name": "last-event-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Valeur du paramètre « last-event-id »."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Installation room invalidations",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "Flux SSE persistant. Chaque événement indique que le client doit rafraîchir les données via REST.",
+                  "example": "event: edge_installations_changed\ndata: {\"room\":\"edge-installations\",\"timestamp\":\"2026-10-31T10:00:00.000Z\"}\n\n"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Edge administration"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
     }
   },
   "info": {

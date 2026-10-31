@@ -9,15 +9,20 @@ import { EdgeControlService } from './edge-control.service';
 import { EdgeLocalController } from './edge-local.controller';
 import { EdgeLocalStatusService } from './edge-local-status.service';
 import { EdgeDeploymentGuard } from './edge-deployment.guard';
+import { EdgeInstallationsRealtimeController } from './edge-installations-realtime.controller';
+import { EdgeInstallationsRealtimeService } from './edge-installations-realtime.service';
+import { JwtSessionRepository } from '../../core/auth/repositories/jwt-session.repository';
 
 @Module({
   imports: [ConfigModule, DatabaseModule, ClockModule],
-  controllers: [EdgeAgentController, EdgeAdminController, EdgeLocalController],
+  controllers: [EdgeAgentController, EdgeAdminController, EdgeLocalController, EdgeInstallationsRealtimeController],
   providers: [
     EdgeControlRepository,
     EdgeControlService,
     EdgeLocalStatusService,
     EdgeDeploymentGuard,
+    EdgeInstallationsRealtimeService,
+    JwtSessionRepository,
   ],
   exports: [EdgeDeploymentGuard, EdgeLocalStatusService],
 })

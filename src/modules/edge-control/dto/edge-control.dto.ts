@@ -68,7 +68,7 @@ export class EdgeTrackingProjectionDto {
   @IsUUID() registrationId!: string;
   @IsInt() @Min(1) sequence!: number;
   @IsString() @MaxLength(14) ticketNumber!: string;
-  @IsIn(['booked', 'waiting', 'in_progress', 'served', 'closed', 'cancelled'])
+  @IsIn(['booked', 'waiting', 'in_progress', 'served', 'no_show', 'cancelled', 'expired'])
   registrationStatus!: string;
   @IsOptional() @IsInt() @Min(0) position?: number;
   @IsOptional() @IsInt() @Min(0) estimatedWaitMinutes?: number;
