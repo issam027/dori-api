@@ -52,21 +52,28 @@ export class EdgeControlService {
     await this.repository.updateHeartbeat(installationId, body);
   }
 
-  async relayNotification(installationId: string, body: EdgeRelayNotificationDto) {
+  async relayNotification(
+    installationId: string,
+    body: EdgeRelayNotificationDto,
+  ) {
     await this.assertActive(installationId);
     return this.repository.relayNotification(installationId, body);
   }
 
-  async syncTracking(installationId: string, items: EdgeTrackingProjectionDto[]) {
+  async syncTracking(
+    installationId: string,
+    items: EdgeTrackingProjectionDto[],
+  ) {
     await this.assertActive(installationId);
     const accepted = await this.repository.syncTracking(installationId, items);
     return { accepted };
   }
 
   private async assertActive(installationId: string): Promise<void> {
-    const row = (await this.repository.findInstallation(installationId))[0] as Row | undefined;
+    const row = (await this.repository.findInstallation(installationId))[0] as
+      Row | undefined;
     if (!row || row.deployment_status !== EdgeDeploymentStatus.Active) {
-      throw new DoriException('FORBIDDEN');
+      throw new DoriException('FORBIDDEN_PERMISSION');
     }
   }
 

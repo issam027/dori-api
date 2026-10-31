@@ -9,7 +9,7 @@ import {
 import { Request, Response } from 'express';
 import { DoriException } from './dori.exception';
 import { safeErrorName } from '../logging/safe-error';
-import { ERROR_CATALOG } from './error-catalog';
+import { ERROR_CATALOG, type ErrorCode } from './error-catalog';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -45,7 +45,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         });
       }
 
-      const codeByStatus: Record<number, string> = {
+      const codeByStatus: Partial<Record<number, ErrorCode>> = {
         400: 'VALIDATION_ERROR',
         401: 'UNAUTHENTICATED',
         403: 'FORBIDDEN_PERMISSION',

@@ -817,9 +817,10 @@ export class RegistrationsService {
     const reg =
       await this.registrationsRepository.findByTrackingToken(trackingToken);
     if (!reg) {
-      const projection = await this.registrationsRepository.findPublicTrackingState(
-        createHash('sha256').update(trackingToken).digest('hex'),
-      );
+      const projection =
+        await this.registrationsRepository.findPublicTrackingState(
+          createHash('sha256').update(trackingToken).digest('hex'),
+        );
       if (!projection || this.clockService.parse(projection.expires_at) < now) {
         throw new DoriException('TOKEN_EXPIRED');
       }

@@ -43,7 +43,12 @@ export class DoriNotification {
 
   @Column({ type: 'varchar', length: 20, default: 'pending' })
   notification_status:
-    | 'pending' | 'processing' | 'sent' | 'delivered' | 'failed' | 'skipped_offline';
+    | 'pending'
+    | 'processing'
+    | 'sent'
+    | 'delivered'
+    | 'failed'
+    | 'skipped_offline';
 
   @Column({ type: 'timestamptz', nullable: true })
   processing_started_at: Date | null;

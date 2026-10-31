@@ -142,16 +142,17 @@ export class UpdateUserStatusDto {
 }
 
 export class SetUserPasswordDto {
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: '••••••••••••',
     description: 'Nouveau mot de passe (entre 10 et 20 caractères)',
     minLength: 10,
     maxLength: 20,
   })
+  @IsOptional()
   @IsString()
   @MinLength(10)
   @MaxLength(20)
-  newPassword: string;
+  newPassword?: string;
 }
 
 export class AssignUserRoleDto {

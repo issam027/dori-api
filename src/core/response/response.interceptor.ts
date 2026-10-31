@@ -54,7 +54,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<
     }
     return next.handle().pipe(
       map((data) => {
-        // If the service already returned an envelope (e.g. QUEUE_EMPTY), pass it through
+        // If the service already returned an envelope, pass it through unchanged.
         if (isStandardResponse(data)) {
           return data as unknown as StandardResponse<T>;
         }

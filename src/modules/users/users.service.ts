@@ -16,6 +16,7 @@ import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ClockService } from '../../core/clock/clock.service';
 import { DoriException } from '../../core/errors/dori.exception';
 import { RankService, ROLE_RANK } from '../../core/rbac/services/rank.service';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class UsersService {
@@ -250,7 +251,13 @@ export class UsersService {
 
     const saltRounds =
       this.configService.get<number>('security.bcryptRounds') || 12;
-    const passwordHash = await bcrypt.hash(dto.newPassword, saltRounds);
+    const temporaryPassword = dto.newPassword
+      ? undefined
+      : `D!${randomBytes(9).toString('base64url')}a1`;
+    const passwordHash = await bcrypt.hash(
+      dto.newPassword ?? temporaryPassword!,
+      saltRounds,
+    );
     const now = this.clockService.now();
 
     await this.usersRepository.setUserPassword(
@@ -260,7 +267,7 @@ export class UsersService {
       now,
     );
 
-    return { userId, passwordUpdated: true };
+    return { userId, passwordUpdated: true, temporaryPassword };
   }
 
   async assignUserRole(

@@ -189,7 +189,15 @@ export class NotificationsRepository {
           AND (s.state_value::jsonb->>'lastCloudSuccessAt')::timestamptz >= $6::timestamptz - INTERVAL '90 seconds'
         ) THEN 'disabled_offline' ELSE $7 END, 0, $6, $6)
         RETURNING ${NOTIFICATION_COLUMNS}`,
-      [dto.registrationId, dto.channel, locale, recipient, dto.content, now, dispatchRoute],
+      [
+        dto.registrationId,
+        dto.channel,
+        locale,
+        recipient,
+        dto.content,
+        now,
+        dispatchRoute,
+      ],
     );
     return rows[0];
   }

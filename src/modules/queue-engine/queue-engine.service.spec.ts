@@ -296,7 +296,7 @@ describe('QueueEngineService recall and empty queue', () => {
 
     await expect(
       service.callNext('00000000-0000-4000-8000-000000000002', user),
-    ).rejects.toMatchObject({ code: 'QUEUE_EMPTY', status: 409 });
+    ).rejects.toMatchObject({ code: 'NO_CALLABLE_REGISTRATION', status: 404 });
   });
 });
 

@@ -26,8 +26,8 @@ describe('ResponseInterceptor', () => {
   it('preserves a complete standard response', async () => {
     const interceptor = new ResponseInterceptor();
     const envelope = {
-      code: 'QUEUE_EMPTY',
-      translationKey: 'queue.next.empty',
+      code: 'NO_CALLABLE_REGISTRATION',
+      translationKey: 'queue.next.no_callable_registration',
       translationParams: {},
       data: null,
     };

@@ -239,9 +239,9 @@ export class UsersController {
     'user_manage_admin',
   )
   @ApiOperation({
-    summary: 'Définir le mot de passe d’un utilisateur',
+    summary: 'Définir ou générer le mot de passe temporaire d’un utilisateur',
     description:
-      'Réinitialise le mot de passe d’un utilisateur et révoque l’ensemble de ses sessions actives existantes.',
+      'Réinitialise le mot de passe et révoque les sessions actives. Sans newPassword, un mot de passe temporaire aléatoire est généré et retourné une seule fois.',
   })
   @ApiParam({
     name: 'userId',

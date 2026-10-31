@@ -38,6 +38,9 @@ describe('EdgeControlService', () => {
     });
     const result = await service.createInstallation('Agence');
     const storedHash = repository.createInstallation.mock.calls[0][1] as string;
+    expect(result.installationId).toBe(
+      '00000000-0000-4000-8000-000000000001',
+    );
     expect(result.token).toHaveLength(101);
     expect(storedHash).toMatch(/^[a-f0-9]{64}$/);
     expect(storedHash).not.toContain(result.token);

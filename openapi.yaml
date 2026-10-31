@@ -6822,8 +6822,10 @@ paths:
           - user_manage_operator
           - user_manage_manager
           - user_manage_admin
-      summary: Définir le mot de passe d’un utilisateur
-      description: Réinitialise le mot de passe d’un utilisateur et révoque l’ensemble de ses sessions actives existantes.
+      summary: Définir ou générer le mot de passe temporaire d’un utilisateur
+      description: >-
+        Réinitialise le mot de passe et révoque les sessions actives. Sans newPassword, un mot de passe temporaire
+        aléatoire est généré et retourné une seule fois.
       parameters:
         - name: userId
           required: true
@@ -8319,13 +8321,55 @@ components:
       type: http
       description: Secret partagé CRON_SECRET envoyé automatiquement par Vercel Cron
   schemas:
+    ErrorCode:
+      type: string
+      description: Code applicatif de l'erreur (voir catalogue des erreurs)
+      enum:
+        - VALIDATION_ERROR
+        - UNAUTHENTICATED
+        - FORBIDDEN_PERMISSION
+        - INSTALLATION_REVOKED
+        - FORBIDDEN_ROLE_ESCALATION
+        - QUEUE_NOT_FOUND
+        - SITE_NOT_FOUND
+        - REGISTRATION_NOT_FOUND
+        - PERSON_NOT_FOUND
+        - USER_NOT_FOUND
+        - ROLE_NOT_FOUND
+        - PERMISSION_NOT_FOUND
+        - TIER_NOT_FOUND
+        - NOTIFICATION_NOT_FOUND
+        - SESSION_NOT_FOUND
+        - NOTE_NOT_FOUND
+        - TRANSLATION_NOT_FOUND
+        - THREAD_OCCUPIED
+        - THREAD_UNAVAILABLE
+        - SESSION_ALREADY_OPEN
+        - TIER_NOT_OFFERED_BY_QUEUE
+        - TIER_IS_SYSTEM
+        - DUPLICATE_ACTIVE_REGISTRATION
+        - APPOINTMENT_SLOT_FULL
+        - APPOINTMENT_EXPIRED
+        - REGISTRATION_NOT_IN_PROGRESS
+        - REGISTRATION_CLOSED
+        - ACCOUNT_LOCKED
+        - APPOINTMENTS_DISABLED
+        - QUEUE_CLOSED
+        - NO_CALLABLE_REGISTRATION
+        - TRANSLATION_PARAM_MISMATCH
+        - TOKEN_EXPIRED
+        - RATE_LIMITED
+        - RESOURCE_NOT_FOUND
+        - CONFLICT
+        - INTERNAL_ERROR
     ErrorResponseDto:
       type: object
       properties:
         code:
-          type: string
-          example: USER_NOT_FOUND
-          description: Code applicatif de l'erreur (voir catalogue des erreurs)
+          allOf:
+            - example: USER_NOT_FOUND
+              $ref: '#/components/schemas/ErrorCode'
+          description: Valeur du champ « code ».
         translationKey:
           type: object
           example: errors.user_not_found
@@ -13219,6 +13263,13 @@ components:
           type: boolean
           example: true
           description: Indique si le mot de passe a été mis à jour
+        temporaryPassword:
+          type: string
+          description: >-
+            Mot de passe temporaire généré par le serveur lorsque le corps ne fournit pas de mot de passe. Affiché une
+            seule fois.
+          minLength: 10
+          maxLength: 20
       required:
         - userId
         - passwordUpdated
@@ -13231,8 +13282,6 @@ components:
           description: Nouveau mot de passe (entre 10 et 20 caractères)
           minLength: 10
           maxLength: 20
-      required:
-        - newPassword
     AssignUserRoleResponseDto:
       type: object
       properties:
@@ -13999,7 +14048,7 @@ components:
         installationId:
           type: string
           format: uuid
-          description: Valeur du champ « installation id ».
+          description: Stable installation identifier required as DORIFY_INSTALLATION_ID by the intra agent.
         name:
           type: string
           description: Valeur du champ « name ».
@@ -14047,7 +14096,7 @@ components:
         installationId:
           type: string
           format: uuid
-          description: Valeur du champ « installation id ».
+          description: Stable installation identifier required as DORIFY_INSTALLATION_ID by the intra agent.
         name:
           type: string
           description: Valeur du champ « name ».
@@ -14077,7 +14126,9 @@ components:
           description: Date de création.
         token:
           type: string
-          description: Displayed once; store it in the intra agent environment.
+          description: >-
+            One-time installation credential required as DORIFY_CLOUD_TOKEN by the intra agent. It cannot be retrieved
+            again.
       required:
         - installationId
         - name
@@ -14158,7 +14209,7 @@ components:
         installationId:
           type: string
           format: uuid
-          description: Valeur du champ « installation id ».
+          description: Stable installation identifier required as DORIFY_INSTALLATION_ID by the intra agent.
         name:
           type: string
           description: Valeur du champ « name ».

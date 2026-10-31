@@ -50,6 +50,9 @@ describe('User DTOs Password Validation', () => {
   });
 
   it('validates SetUserPasswordDto with 10 to 20 characters', async () => {
+    const generatedPasswordDto = plainToInstance(SetUserPasswordDto, {});
+    expect(await validate(generatedPasswordDto)).toHaveLength(0);
+
     const validDto = plainToInstance(SetUserPasswordDto, {
       newPassword: 'Root@123456',
     });

@@ -1,5 +1,10 @@
 import { Controller, Headers, MessageEvent, Sse } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiProduces, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiProduces,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Observable } from 'rxjs';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
@@ -29,19 +34,31 @@ export class EdgeInstallationsRealtimeController {
     operationId: 'subscribeEdgeInstallationEvents',
     summary: 'Subscribe to installation inventory and status changes',
   })
-  @ApiDoriSseResponse('Installation room invalidations', 'edge_installations_changed', {
-    room: 'edge-installations',
-    timestamp: '2026-10-31T10:00:00.000Z',
-  })
+  @ApiDoriSseResponse(
+    'Installation room invalidations',
+    'edge_installations_changed',
+    {
+      room: 'edge-installations',
+      timestamp: '2026-10-31T10:00:00.000Z',
+    },
+  )
   async events(
     @CurrentUser() user: AuthenticatedUser,
     @Headers('last-event-id') _lastEventId?: string,
   ): Promise<Observable<MessageEvent>> {
     const authorize = async () => {
-      if (!user.sessionId || !user.accessTokenExpiresAt || user.accessTokenExpiresAt * 1000 <= this.clock.now().getTime()) {
+      if (
+        !user.sessionId ||
+        !user.accessTokenExpiresAt ||
+        user.accessTokenExpiresAt * 1000 <= this.clock.now().getTime()
+      ) {
         throw new DoriException('UNAUTHENTICATED');
       }
-      const session = await this.sessions.findValidSessionId(user.sessionId, user.userId, this.clock.now());
+      const session = await this.sessions.findValidSessionId(
+        user.sessionId,
+        user.userId,
+        this.clock.now(),
+      );
       if (!session) throw new DoriException('UNAUTHENTICATED');
     };
     await authorize();

@@ -8,6 +8,7 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
+import { ERROR_CATALOG, type ErrorCode } from '../errors/error-catalog';
 
 export const SERIALIZATION_DTO_KEY = 'dori:serialization-dto';
 
@@ -36,9 +37,11 @@ export function assertPublicResponseDtoName(dto: Type<unknown>): void {
 export class ErrorResponseDto {
   @ApiProperty({
     example: 'USER_NOT_FOUND',
+    enum: Object.keys(ERROR_CATALOG),
+    enumName: 'ErrorCode',
     description: "Code applicatif de l'erreur (voir catalogue des erreurs)",
   })
-  code: string;
+  code: ErrorCode;
 
   @ApiProperty({
     example: 'errors.user_not_found',

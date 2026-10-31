@@ -69,6 +69,43 @@ describe('UsersService ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ�
     service = module.get<UsersService>(UsersService);
   });
 
+  it('generates and persists a one-time temporary password when none is supplied', async () => {
+    const targetUserId = '00000000-0000-4000-8000-000000000020';
+    const caller: AuthenticatedUser = {
+      userId: '00000000-0000-4000-8000-000000000001',
+      username: 'root',
+      roles: ['root'],
+      permissions: [],
+      userType: 'human',
+    };
+
+    dataSourceMock.query.mockImplementation(async (sql: string) => {
+      if (sql.includes('SELECT user_id, username, email')) {
+        return [
+          {
+            user_id: targetUserId,
+            username: 'operator1',
+            email: 'operator@dori.local',
+            roles: [],
+            sites: [],
+            queues: [],
+          },
+        ];
+      }
+      return [];
+    });
+
+    const result = await service.setUserPassword(targetUserId, {}, caller);
+
+    expect(result.temporaryPassword).toMatch(/^D![A-Za-z0-9_-]{12}a1$/);
+    expect(result.temporaryPassword).toHaveLength(16);
+    expect(dataSourceMock.transaction).toHaveBeenCalledTimes(1);
+    expect(dataSourceMock.query).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE dorify.dori_user'),
+      expect.arrayContaining([targetUserId]),
+    );
+  });
+
   it('should prevent an operator/user with user_manage_operator from updating a manager (higher profile)', async () => {
     const caller: AuthenticatedUser = {
       userId: '00000000-0000-4000-8000-000000000010',

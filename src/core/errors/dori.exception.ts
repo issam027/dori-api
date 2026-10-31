@@ -1,14 +1,14 @@
 import { HttpException } from '@nestjs/common';
-import { ERROR_CATALOG } from './error-catalog';
+import { ERROR_CATALOG, type ErrorCode } from './error-catalog';
 
 export class DoriException extends HttpException {
-  public readonly code: string;
+  public readonly code: ErrorCode;
   public readonly translationKey: string;
   public readonly translationParams: Record<string, unknown>;
   public readonly payload: unknown;
 
   constructor(
-    code: string,
+    code: ErrorCode,
     translationParams: Record<string, unknown> = {},
     payload: unknown = null,
   ) {

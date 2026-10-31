@@ -268,6 +268,14 @@ export class SetUserPasswordResponseDto {
     description: 'Indique si le mot de passe a été mis à jour',
   })
   passwordUpdated: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Mot de passe temporaire généré par le serveur lorsque le corps ne fournit pas de mot de passe. Affiché une seule fois.',
+    minLength: 10,
+    maxLength: 20,
+  })
+  temporaryPassword?: string;
 }
 
 export class AssignUserRoleResponseDto {

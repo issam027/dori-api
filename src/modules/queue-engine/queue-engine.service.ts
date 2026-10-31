@@ -309,7 +309,7 @@ export class QueueEngineService {
       rateAppointment: context.config.rateAppointment,
     });
     if (!candidate) {
-      throw new DoriException('QUEUE_EMPTY', { queueId });
+      throw new DoriException('NO_CALLABLE_REGISTRATION', { queueId });
     }
     return this.mapCalledCandidate(candidate, context.session);
   }
@@ -327,7 +327,7 @@ export class QueueEngineService {
       throw new DoriException('THREAD_UNAVAILABLE');
     }
     if (result.outcome === 'empty') {
-      throw new DoriException('QUEUE_EMPTY', { siteId });
+      throw new DoriException('NO_CALLABLE_REGISTRATION', { siteId });
     }
     if (result.outcome !== 'called') {
       throw new DoriException('INTERNAL_ERROR');

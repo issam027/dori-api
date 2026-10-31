@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { EdgeCommandType } from './dto/edge-control.dto';
-import { EdgeRelayNotificationDto, EdgeTrackingProjectionDto } from './dto/edge-control.dto';
+import {
+  EdgeRelayNotificationDto,
+  EdgeTrackingProjectionDto,
+} from './dto/edge-control.dto';
 
 @Injectable()
 export class EdgeControlRepository {
@@ -84,7 +87,10 @@ export class EdgeControlRepository {
     );
   }
 
-  async relayNotification(installationId: string, body: EdgeRelayNotificationDto) {
+  async relayNotification(
+    installationId: string,
+    body: EdgeRelayNotificationDto,
+  ) {
     const rows = await this.database.query(
       `INSERT INTO dorify.dori_notification
        (notification_id, registration_id, source_installation_id, source_registration_id,
@@ -93,13 +99,29 @@ export class EdgeControlRepository {
        VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, 'pending', 'direct', 0, $9, CURRENT_TIMESTAMP)
        ON CONFLICT (notification_id) DO UPDATE SET notification_id=EXCLUDED.notification_id
        RETURNING notification_id, notification_status`,
-      [body.notificationId, installationId, body.registrationId, body.channel,
-       body.notificationType, body.locale, body.recipient, body.content, body.createdAt],
+      [
+        body.notificationId,
+        installationId,
+        body.registrationId,
+        body.channel,
+        body.notificationType,
+        body.locale,
+        body.recipient,
+        body.content,
+        body.createdAt,
+      ],
     );
-    return { accepted: true, notificationId: rows[0].notification_id, status: rows[0].notification_status };
+    return {
+      accepted: true,
+      notificationId: rows[0].notification_id,
+      status: rows[0].notification_status,
+    };
   }
 
-  async syncTracking(installationId: string, items: EdgeTrackingProjectionDto[]): Promise<number> {
+  async syncTracking(
+    installationId: string,
+    items: EdgeTrackingProjectionDto[],
+  ): Promise<number> {
     if (!items.length) return 0;
     const rows = await this.database.query(
       `INSERT INTO dorify.dori_public_tracking_state
@@ -123,13 +145,24 @@ export class EdgeControlRepository {
          observed_at=EXCLUDED.observed_at, expires_at=EXCLUDED.expires_at, updated_at=CURRENT_TIMESTAMP
        WHERE EXCLUDED.sequence > dorify.dori_public_tracking_state.sequence
        RETURNING tracking_token_hash`,
-      [JSON.stringify(items.map((item) => ({
-        token_hash: item.tokenHash, registration_id: item.registrationId, sequence: item.sequence,
-        ticket_number: item.ticketNumber, registration_status: item.registrationStatus,
-        position: item.position ?? null, estimated_wait_minutes: item.estimatedWaitMinutes ?? null,
-        counter_name: item.counterName ?? null, queue_name: item.queueName,
-        observed_at: item.observedAt, expires_at: item.expiresAt,
-      }))), installationId],
+      [
+        JSON.stringify(
+          items.map((item) => ({
+            token_hash: item.tokenHash,
+            registration_id: item.registrationId,
+            sequence: item.sequence,
+            ticket_number: item.ticketNumber,
+            registration_status: item.registrationStatus,
+            position: item.position ?? null,
+            estimated_wait_minutes: item.estimatedWaitMinutes ?? null,
+            counter_name: item.counterName ?? null,
+            queue_name: item.queueName,
+            observed_at: item.observedAt,
+            expires_at: item.expiresAt,
+          })),
+        ),
+        installationId,
+      ],
     );
     return rows.length;
   }

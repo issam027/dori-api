@@ -2,10 +2,7 @@
  * All API error codes, mapped to HTTP status and translationKey.
  * § 6.9 of the spec.
  */
-export const ERROR_CATALOG: Record<
-  string,
-  { status: number; translationKey: string }
-> = {
+export const ERROR_CATALOG = {
   VALIDATION_ERROR: {
     status: 400,
     translationKey: 'errors.validation_error',
@@ -126,9 +123,9 @@ export const ERROR_CATALOG: Record<
     status: 409,
     translationKey: 'errors.queue_closed',
   },
-  QUEUE_EMPTY: {
-    status: 409,
-    translationKey: 'queue.next.empty',
+  NO_CALLABLE_REGISTRATION: {
+    status: 404,
+    translationKey: 'queue.next.no_callable_registration',
   },
   TRANSLATION_PARAM_MISMATCH: {
     status: 422,
@@ -154,4 +151,6 @@ export const ERROR_CATALOG: Record<
     status: 500,
     translationKey: 'errors.internal_error',
   },
-};
+} as const satisfies Record<string, { status: number; translationKey: string }>;
+
+export type ErrorCode = keyof typeof ERROR_CATALOG;

@@ -68,7 +68,15 @@ export class EdgeTrackingProjectionDto {
   @IsUUID() registrationId!: string;
   @IsInt() @Min(1) sequence!: number;
   @IsString() @MaxLength(14) ticketNumber!: string;
-  @IsIn(['booked', 'waiting', 'in_progress', 'served', 'no_show', 'cancelled', 'expired'])
+  @IsIn([
+    'booked',
+    'waiting',
+    'in_progress',
+    'served',
+    'no_show',
+    'cancelled',
+    'expired',
+  ])
   registrationStatus!: string;
   @IsOptional() @IsInt() @Min(0) position?: number;
   @IsOptional() @IsInt() @Min(0) estimatedWaitMinutes?: number;
@@ -128,7 +136,12 @@ export class CreateEdgeCommandDto {
 }
 
 export class EdgeInstallationResponseDto {
-  @ApiProperty({ format: 'uuid' }) installationId!: string;
+  @ApiProperty({
+    format: 'uuid',
+    description:
+      'Stable installation identifier required as DORIFY_INSTALLATION_ID by the intra agent.',
+  })
+  installationId!: string;
   @ApiProperty() name!: string;
   @ApiProperty({ enum: ['intra'] }) deploymentType!: 'intra';
   @ApiProperty({ enum: EdgeDeploymentStatus })
@@ -165,7 +178,8 @@ export class EdgeLocalStatusResponseDto {
 
 export class EdgeInstallationCredentialResponseDto extends EdgeInstallationResponseDto {
   @ApiProperty({
-    description: 'Displayed once; store it in the intra agent environment.',
+    description:
+      'One-time installation credential required as DORIFY_CLOUD_TOKEN by the intra agent. It cannot be retrieved again.',
   })
   token!: string;
 }

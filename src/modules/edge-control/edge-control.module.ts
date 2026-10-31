@@ -15,7 +15,12 @@ import { JwtSessionRepository } from '../../core/auth/repositories/jwt-session.r
 
 @Module({
   imports: [ConfigModule, DatabaseModule, ClockModule],
-  controllers: [EdgeAgentController, EdgeAdminController, EdgeLocalController, EdgeInstallationsRealtimeController],
+  controllers: [
+    EdgeAgentController,
+    EdgeAdminController,
+    EdgeLocalController,
+    EdgeInstallationsRealtimeController,
+  ],
   providers: [
     EdgeControlRepository,
     EdgeControlService,
