@@ -228,6 +228,9 @@ export class ReportsRepository {
           `${scoped} SELECT ${metrics} FROM scoped r`,
           scopedParams,
         ),
+        // Optimisé : les moyennes par période sont calculées en un seul
+        // passage (GROUP BY) au lieu d'un LEFT JOIN LATERAL qui rescannait
+        // tout "scoped" pour chaque période (coût = périodes x lignes).
         this.dataSource.query(
           `${scoped}, events AS (
             SELECT created_at AS event_at, 'registered' AS event_type, registration_id FROM scoped
@@ -238,21 +241,33 @@ export class ReportsRepository {
             SELECT generate_series(date_trunc('${input.bucket}', $2::timestamptz AT TIME ZONE $8),
               date_trunc('${input.bucket}', ($3::timestamptz - interval '1 microsecond') AT TIME ZONE $8),
               interval '1 ${input.bucket}') AS period_start
+          ), counts AS (
+            SELECT ${bucketExpression} AS period_start,
+              COUNT(*) FILTER (WHERE event_type='registered')::int AS registered,
+              COUNT(*) FILTER (WHERE event_type='served')::int AS served,
+              COUNT(*) FILTER (WHERE event_type='no_show')::int AS no_show,
+              COUNT(*) FILTER (WHERE event_type='cancelled')::int AS cancelled
+            FROM events
+            WHERE event_at >= $2::timestamptz AND event_at < $3::timestamptz
+            GROUP BY 1
+          ), averages AS (
+            SELECT date_trunc('${input.bucket}', COALESCE(r.served_at, r.called_at) AT TIME ZONE $8) AS period_start,
+              ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at - r.checked_in_at))/60)::numeric, 2) AS average_wait_minutes,
+              ROUND(AVG(EXTRACT(EPOCH FROM (r.served_at - r.called_at))/60)::numeric, 2) AS average_service_minutes
+            FROM scoped r
+            WHERE r.called_at IS NOT NULL
+            GROUP BY 1
           )
           SELECT p.period_start,
-            COUNT(e.registration_id) FILTER (WHERE e.event_type='registered')::int AS registered,
-            COUNT(e.registration_id) FILTER (WHERE e.event_type='served')::int AS served,
-            COUNT(e.registration_id) FILTER (WHERE e.event_type='no_show')::int AS no_show,
-            COUNT(e.registration_id) FILTER (WHERE e.event_type='cancelled')::int AS cancelled,
-            m.average_wait_minutes, m.average_service_minutes
-          FROM periods p LEFT JOIN events e ON ${bucketExpression}=p.period_start
-            AND e.event_at >= $2::timestamptz AND e.event_at < $3::timestamptz
-          LEFT JOIN LATERAL (
-            SELECT ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at-r.checked_in_at))/60)::numeric,2) AS average_wait_minutes,
-              ROUND(AVG(EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60)::numeric,2) AS average_service_minutes
-            FROM scoped r WHERE date_trunc('${input.bucket}', COALESCE(r.served_at,r.called_at) AT TIME ZONE $8)=p.period_start
-              AND r.called_at IS NOT NULL
-          ) m ON TRUE GROUP BY p.period_start,m.average_wait_minutes,m.average_service_minutes ORDER BY p.period_start`,
+            COALESCE(c.registered, 0) AS registered,
+            COALESCE(c.served, 0) AS served,
+            COALESCE(c.no_show, 0) AS no_show,
+            COALESCE(c.cancelled, 0) AS cancelled,
+            a.average_wait_minutes, a.average_service_minutes
+          FROM periods p
+          LEFT JOIN counts c ON c.period_start = p.period_start
+          LEFT JOIN averages a ON a.period_start = p.period_start
+          ORDER BY p.period_start`,
           seriesParams,
         ),
         this.dataSource.query(
