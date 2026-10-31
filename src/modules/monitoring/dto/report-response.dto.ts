@@ -8,8 +8,16 @@ export class MonitoringSeriesMetricsDto {
   @ApiProperty({ example: 8 }) cancelled: number;
   @ApiProperty({ example: 12.4, nullable: true })
   averageWaitMinutes: number | null;
+  @ApiProperty({ type: Number, example: 9.2, nullable: true })
+  medianWaitMinutes: number | null;
+  @ApiProperty({ type: Number, example: 24.7, nullable: true })
+  p90WaitMinutes: number | null;
   @ApiProperty({ example: 7.8, nullable: true })
   averageServiceMinutes: number | null;
+  @ApiProperty({ type: Number, example: 6.5, nullable: true })
+  medianServiceMinutes: number | null;
+  @ApiProperty({ type: Number, example: 14.3, nullable: true })
+  p90ServiceMinutes: number | null;
 }
 
 export class MonitoringSeriesBucketDto extends MonitoringSeriesMetricsDto {
@@ -19,6 +27,8 @@ export class MonitoringSeriesBucketDto extends MonitoringSeriesMetricsDto {
 export class MonitoringQueueBreakdownDto extends MonitoringSeriesMetricsDto {
   @ApiProperty() queueId: string;
   @ApiProperty() queueName: string;
+  @ApiProperty({ type: [MonitoringSeriesBucketDto] })
+  series: MonitoringSeriesBucketDto[];
 }
 
 export class MonitoringUserBreakdownDto {

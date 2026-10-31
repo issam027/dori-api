@@ -115,10 +115,24 @@ export class ReportsService {
         row.average_wait_minutes == null
           ? null
           : Number(row.average_wait_minutes),
+      medianWaitMinutes:
+        row.median_wait_minutes == null
+          ? null
+          : Number(row.median_wait_minutes),
+      p90WaitMinutes:
+        row.p90_wait_minutes == null ? null : Number(row.p90_wait_minutes),
       averageServiceMinutes:
         row.average_service_minutes == null
           ? null
           : Number(row.average_service_minutes),
+      medianServiceMinutes:
+        row.median_service_minutes == null
+          ? null
+          : Number(row.median_service_minutes),
+      p90ServiceMinutes:
+        row.p90_service_minutes == null
+          ? null
+          : Number(row.p90_service_minutes),
     });
     return {
       generatedAt: new Date().toISOString(),
@@ -144,6 +158,14 @@ export class ReportsService {
           queueId: String(row.queue_id),
           queueName: row.queue_name,
           ...metric(row),
+          series: data.byQueueSeries
+            .filter(
+              (bucket) => String(bucket.queue_id) === String(row.queue_id),
+            )
+            .map((bucket) => ({
+              periodStart: bucket.period_start,
+              ...metric(bucket),
+            })),
         })),
         byUser: data.byUser.map((row) => ({
           userId: String(row.user_id),

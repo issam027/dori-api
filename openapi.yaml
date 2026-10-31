@@ -13775,18 +13775,42 @@ components:
           example: 12.4
           nullable: true
           description: Valeur du champ « average wait minutes ».
+        medianWaitMinutes:
+          type: number
+          example: 9.2
+          nullable: true
+          description: Valeur du champ « median wait minutes ».
+        p90WaitMinutes:
+          type: number
+          example: 24.7
+          nullable: true
+          description: Valeur du champ « p90 wait minutes ».
         averageServiceMinutes:
           type: object
           example: 7.8
           nullable: true
           description: Valeur du champ « average service minutes ».
+        medianServiceMinutes:
+          type: number
+          example: 6.5
+          nullable: true
+          description: Valeur du champ « median service minutes ».
+        p90ServiceMinutes:
+          type: number
+          example: 14.3
+          nullable: true
+          description: Valeur du champ « p90 service minutes ».
       required:
         - registered
         - served
         - noShow
         - cancelled
         - averageWaitMinutes
+        - medianWaitMinutes
+        - p90WaitMinutes
         - averageServiceMinutes
+        - medianServiceMinutes
+        - p90ServiceMinutes
     MonitoringSeriesBucketDto:
       type: object
       properties:
@@ -13811,11 +13835,31 @@ components:
           example: 12.4
           nullable: true
           description: Valeur du champ « average wait minutes ».
+        medianWaitMinutes:
+          type: number
+          example: 9.2
+          nullable: true
+          description: Valeur du champ « median wait minutes ».
+        p90WaitMinutes:
+          type: number
+          example: 24.7
+          nullable: true
+          description: Valeur du champ « p90 wait minutes ».
         averageServiceMinutes:
           type: object
           example: 7.8
           nullable: true
           description: Valeur du champ « average service minutes ».
+        medianServiceMinutes:
+          type: number
+          example: 6.5
+          nullable: true
+          description: Valeur du champ « median service minutes ».
+        p90ServiceMinutes:
+          type: number
+          example: 14.3
+          nullable: true
+          description: Valeur du champ « p90 service minutes ».
         periodStart:
           type: string
           format: date-time
@@ -13826,7 +13870,11 @@ components:
         - noShow
         - cancelled
         - averageWaitMinutes
+        - medianWaitMinutes
+        - p90WaitMinutes
         - averageServiceMinutes
+        - medianServiceMinutes
+        - p90ServiceMinutes
         - periodStart
     MonitoringQueueBreakdownDto:
       type: object
@@ -13852,11 +13900,31 @@ components:
           example: 12.4
           nullable: true
           description: Valeur du champ « average wait minutes ».
+        medianWaitMinutes:
+          type: number
+          example: 9.2
+          nullable: true
+          description: Valeur du champ « median wait minutes ».
+        p90WaitMinutes:
+          type: number
+          example: 24.7
+          nullable: true
+          description: Valeur du champ « p90 wait minutes ».
         averageServiceMinutes:
           type: object
           example: 7.8
           nullable: true
           description: Valeur du champ « average service minutes ».
+        medianServiceMinutes:
+          type: number
+          example: 6.5
+          nullable: true
+          description: Valeur du champ « median service minutes ».
+        p90ServiceMinutes:
+          type: number
+          example: 14.3
+          nullable: true
+          description: Valeur du champ « p90 service minutes ».
         queueId:
           type: string
           description: Valeur du champ « queue id ».
@@ -13864,15 +13932,25 @@ components:
         queueName:
           type: string
           description: Valeur du champ « queue name ».
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/MonitoringSeriesBucketDto'
+          description: Valeur du champ « series ».
       required:
         - registered
         - served
         - noShow
         - cancelled
         - averageWaitMinutes
+        - medianWaitMinutes
+        - p90WaitMinutes
         - averageServiceMinutes
+        - medianServiceMinutes
+        - p90ServiceMinutes
         - queueId
         - queueName
+        - series
     MonitoringUserBreakdownDto:
       type: object
       properties:

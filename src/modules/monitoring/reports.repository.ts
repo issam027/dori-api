@@ -35,6 +35,7 @@ export interface MonitoringSeriesData {
   totals: Record<string, unknown>;
   series: Array<Record<string, unknown>>;
   byQueue: Array<Record<string, unknown>>;
+  byQueueSeries: Array<Record<string, unknown>>;
   byUser: Array<Record<string, unknown>>;
   byTier: Array<Record<string, unknown>>;
   byEntryType: Array<Record<string, unknown>>;
@@ -218,21 +219,41 @@ export class ReportsRepository {
       ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at - r.checked_in_at))/60)
         FILTER (WHERE r.called_at >= $2::timestamptz AND r.called_at < $3::timestamptz
           AND r.checked_in_at IS NOT NULL)::numeric, 2) AS average_wait_minutes,
+      ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (r.called_at-r.checked_in_at))/60)
+        FILTER (WHERE r.called_at >= $2::timestamptz AND r.called_at < $3::timestamptz
+          AND r.checked_in_at IS NOT NULL)::numeric, 2) AS median_wait_minutes,
+      ROUND(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (r.called_at-r.checked_in_at))/60)
+        FILTER (WHERE r.called_at >= $2::timestamptz AND r.called_at < $3::timestamptz
+          AND r.checked_in_at IS NOT NULL)::numeric, 2) AS p90_wait_minutes,
       ROUND(AVG(EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60)
         FILTER (WHERE r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz
-          AND r.called_at IS NOT NULL)::numeric, 2) AS average_service_minutes`;
+          AND r.called_at IS NOT NULL)::numeric, 2) AS average_service_minutes,
+      ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60)
+        FILTER (WHERE r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz
+          AND r.called_at IS NOT NULL)::numeric, 2) AS median_service_minutes,
+      ROUND(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60)
+        FILTER (WHERE r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz
+          AND r.called_at IS NOT NULL)::numeric, 2) AS p90_service_minutes`;
     const bucketExpression = `date_trunc('${input.bucket}', event_at AT TIME ZONE $8)`;
-    const [totalsRows, series, byQueue, byUser, byTier, byEntryType, byStatus] =
-      await Promise.all([
-        this.dataSource.query(
-          `${scoped} SELECT ${metrics} FROM scoped r`,
-          scopedParams,
-        ),
-        // Optimisé : les moyennes par période sont calculées en un seul
-        // passage (GROUP BY) au lieu d'un LEFT JOIN LATERAL qui rescannait
-        // tout "scoped" pour chaque période (coût = périodes x lignes).
-        this.dataSource.query(
-          `${scoped}, events AS (
+    const [
+      totalsRows,
+      series,
+      byQueue,
+      byQueueSeries,
+      byUser,
+      byTier,
+      byEntryType,
+      byStatus,
+    ] = await Promise.all([
+      this.dataSource.query(
+        `${scoped} SELECT ${metrics} FROM scoped r`,
+        scopedParams,
+      ),
+      // Optimisé : les moyennes par période sont calculées en un seul
+      // passage (GROUP BY) au lieu d'un LEFT JOIN LATERAL qui rescannait
+      // tout "scoped" pour chaque période (coût = périodes x lignes).
+      this.dataSource.query(
+        `${scoped}, events AS (
             SELECT created_at AS event_at, 'registered' AS event_type, registration_id FROM scoped
             UNION ALL SELECT served_at, 'served', registration_id FROM scoped WHERE status='served' AND served_at IS NOT NULL
             UNION ALL SELECT closed_at, 'no_show', registration_id FROM scoped WHERE status='no_show' AND closed_at IS NOT NULL
@@ -253,7 +274,11 @@ export class ReportsRepository {
           ), averages AS (
             SELECT date_trunc('${input.bucket}', COALESCE(r.served_at, r.called_at) AT TIME ZONE $8) AS period_start,
               ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at - r.checked_in_at))/60)::numeric, 2) AS average_wait_minutes,
-              ROUND(AVG(EXTRACT(EPOCH FROM (r.served_at - r.called_at))/60)::numeric, 2) AS average_service_minutes
+              ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (r.called_at-r.checked_in_at))/60)::numeric, 2) AS median_wait_minutes,
+              ROUND(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (r.called_at-r.checked_in_at))/60)::numeric, 2) AS p90_wait_minutes,
+              ROUND(AVG(EXTRACT(EPOCH FROM (r.served_at - r.called_at))/60)::numeric, 2) AS average_service_minutes,
+              ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60)::numeric, 2) AS median_service_minutes,
+              ROUND(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60)::numeric, 2) AS p90_service_minutes
             FROM scoped r
             WHERE r.called_at IS NOT NULL
             GROUP BY 1
@@ -263,45 +288,82 @@ export class ReportsRepository {
             COALESCE(c.served, 0) AS served,
             COALESCE(c.no_show, 0) AS no_show,
             COALESCE(c.cancelled, 0) AS cancelled,
-            a.average_wait_minutes, a.average_service_minutes
+            a.average_wait_minutes, a.median_wait_minutes, a.p90_wait_minutes,
+            a.average_service_minutes, a.median_service_minutes, a.p90_service_minutes
           FROM periods p
           LEFT JOIN counts c ON c.period_start = p.period_start
           LEFT JOIN averages a ON a.period_start = p.period_start
           ORDER BY p.period_start`,
-          seriesParams,
-        ),
-        this.dataSource.query(
-          `${scoped} SELECT q.queue_id, q.queue_name, ${metrics} FROM scoped r
+        seriesParams,
+      ),
+      this.dataSource.query(
+        `${scoped} SELECT q.queue_id, q.queue_name, ${metrics} FROM scoped r
            JOIN dorify.dori_queue q ON q.queue_id=r.queue_id GROUP BY q.queue_id,q.queue_name ORDER BY q.queue_id`,
-          scopedParams,
-        ),
-        this.dataSource.query(
-          `${scoped} SELECT u.user_id, COALESCE(u.full_name,u.username) AS display_name,
+        scopedParams,
+      ),
+      this.dataSource.query(
+        `${scoped}, events AS (
+            SELECT queue_id, created_at AS event_at, 'registered' AS event_type FROM scoped
+            UNION ALL SELECT queue_id, served_at, 'served' FROM scoped WHERE status='served' AND served_at IS NOT NULL
+            UNION ALL SELECT queue_id, closed_at, 'no_show' FROM scoped WHERE status='no_show' AND closed_at IS NOT NULL
+            UNION ALL SELECT queue_id, closed_at, 'cancelled' FROM scoped WHERE status='cancelled' AND closed_at IS NOT NULL
+          ), counts AS (
+            SELECT queue_id, ${bucketExpression} AS period_start,
+              COUNT(*) FILTER (WHERE event_type='registered')::int AS registered,
+              COUNT(*) FILTER (WHERE event_type='served')::int AS served,
+              COUNT(*) FILTER (WHERE event_type='no_show')::int AS no_show,
+              COUNT(*) FILTER (WHERE event_type='cancelled')::int AS cancelled
+            FROM events
+            WHERE event_at >= $2::timestamptz AND event_at < $3::timestamptz
+            GROUP BY queue_id, period_start
+          ), averages AS (
+            SELECT queue_id,
+              date_trunc('${input.bucket}', COALESCE(served_at, called_at) AT TIME ZONE $8) AS period_start,
+              ROUND(AVG(EXTRACT(EPOCH FROM (called_at - checked_in_at))/60)::numeric, 2) AS average_wait_minutes,
+              ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (called_at-checked_in_at))/60)::numeric, 2) AS median_wait_minutes,
+              ROUND(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (called_at-checked_in_at))/60)::numeric, 2) AS p90_wait_minutes,
+              ROUND(AVG(EXTRACT(EPOCH FROM (served_at - called_at))/60)::numeric, 2) AS average_service_minutes,
+              ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (served_at-called_at))/60)::numeric, 2) AS median_service_minutes,
+              ROUND(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (served_at-called_at))/60)::numeric, 2) AS p90_service_minutes
+            FROM scoped
+            WHERE called_at IS NOT NULL
+            GROUP BY queue_id, period_start
+          )
+          SELECT c.queue_id, c.period_start, c.registered, c.served, c.no_show, c.cancelled,
+            a.average_wait_minutes, a.median_wait_minutes, a.p90_wait_minutes,
+            a.average_service_minutes, a.median_service_minutes, a.p90_service_minutes
+          FROM counts c
+          LEFT JOIN averages a ON a.queue_id=c.queue_id AND a.period_start=c.period_start
+          ORDER BY c.queue_id, c.period_start`,
+        seriesParams,
+      ),
+      this.dataSource.query(
+        `${scoped} SELECT u.user_id, COALESCE(u.full_name,u.username) AS display_name,
            COUNT(*) FILTER (WHERE r.created_at >= $2::timestamptz AND r.created_at < $3::timestamptz)::int AS registered,
            COUNT(*) FILTER (WHERE r.status='served' AND r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz)::int AS served,
            COUNT(*) FILTER (WHERE r.status='no_show' AND r.closed_at >= $2::timestamptz AND r.closed_at < $3::timestamptz)::int AS no_show,
            ROUND(AVG(EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60) FILTER (WHERE r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz AND r.called_at IS NOT NULL)::numeric,2) AS average_service_minutes
            FROM scoped r JOIN dorify.dori_user u ON u.user_id=r.served_by_user_id
            GROUP BY u.user_id,u.full_name,u.username ORDER BY u.user_id`,
-          scopedParams,
-        ),
-        this.dataSource.query(
-          `${scoped} SELECT t.tier_id,t.tier_code,t.tier_name,
+        scopedParams,
+      ),
+      this.dataSource.query(
+        `${scoped} SELECT t.tier_id,t.tier_code,t.tier_name,
            COUNT(*) FILTER (WHERE r.created_at >= $2::timestamptz AND r.created_at < $3::timestamptz)::int AS registered,
            COUNT(*) FILTER (WHERE r.status='served' AND r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz)::int AS served,
            COUNT(*) FILTER (WHERE r.status='no_show' AND r.closed_at >= $2::timestamptz AND r.closed_at < $3::timestamptz)::int AS no_show,
            ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at-r.checked_in_at))/60) FILTER (WHERE r.called_at >= $2::timestamptz AND r.called_at < $3::timestamptz)::numeric,2) AS average_wait_minutes
            FROM scoped r JOIN dorify.dori_service_tier t ON t.tier_id=r.tier_id
            GROUP BY t.tier_id,t.tier_code,t.tier_name ORDER BY t.tier_id`,
-          scopedParams,
-        ),
-        this.dataSource.query(
-          `${scoped} SELECT entry_type,COUNT(*)::int AS count FROM scoped
+        scopedParams,
+      ),
+      this.dataSource.query(
+        `${scoped} SELECT entry_type,COUNT(*)::int AS count FROM scoped
            WHERE created_at >= $2::timestamptz AND created_at < $3::timestamptz GROUP BY entry_type ORDER BY entry_type`,
-          scopedParams,
-        ),
-        this.dataSource.query(
-          `${scoped} SELECT status,COUNT(*)::int AS count FROM scoped
+        scopedParams,
+      ),
+      this.dataSource.query(
+        `${scoped} SELECT status,COUNT(*)::int AS count FROM scoped
            WHERE CASE
              WHEN status='served' THEN served_at
              WHEN status IN ('no_show','cancelled','expired') THEN closed_at
@@ -313,13 +375,14 @@ export class ReportsRepository {
              ELSE created_at
            END < $3::timestamptz
            GROUP BY status ORDER BY status`,
-          scopedParams,
-        ),
-      ]);
+        scopedParams,
+      ),
+    ]);
     return {
       totals: totalsRows[0] ?? {},
       series,
       byQueue,
+      byQueueSeries,
       byUser,
       byTier,
       byEntryType,
