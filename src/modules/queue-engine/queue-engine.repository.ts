@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { enqueueRealtimeEvent } from '../../core/realtime/realtime.repository';
 
@@ -88,17 +88,17 @@ export type RecallRegistrationResult =
   | { outcome: 'session_unavailable' }
   | { outcome: 'forbidden' }
   | {
-      outcome: 'recalled';
-      registration_id: string;
-      queue_id: string;
-      ticket_number: string;
-      status: 'in_progress';
-      session_id: string;
-      thread_number: number;
-      counter_name: string | null;
-      last_recalled_at: Date | string;
-      recall_count: number;
-    };
+    outcome: 'recalled';
+    registration_id: string;
+    queue_id: string;
+    ticket_number: string;
+    status: 'in_progress';
+    session_id: string;
+    thread_number: number;
+    counter_name: string | null;
+    last_recalled_at: Date | string;
+    recall_count: number;
+  };
 
 const SESSION_COLUMNS = `session_id, queue_id, user_id, thread_number, counter_name, mode,
   connected_at, last_seen_at, disconnected_at, closure_reason, closed_by_user_id`;
@@ -107,9 +107,13 @@ const sessionColumns = (alias: string) =>
     .map((column) => `${alias}.${column.trim()}`)
     .join(', ');
 
+// Garde-fou pour les valeurs insérées directement dans un ORDER BY
+// (un identifiant SQL optionnellement préfixé par un alias, ex. "qs.thread_number").
+const SAFE_SORT_FIELD = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?$/;
+
 @Injectable()
 export class QueueEngineRepository {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(private readonly dataSource: DataSource) { }
 
   async findThreadState(queueId: string): Promise<{
     threadCount: number;
@@ -306,29 +310,33 @@ export class QueueEngineRepository {
     now: Date,
   ): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
-      if (status === 'served') {
-        await manager.query(
-          `UPDATE dorify.dori_registration SET status = 'served', served_at = $1,
-         closed_at = $1, updated_at = $1 WHERE registration_id = $2`,
-          [now, registrationId],
-        );
-      } else {
-        await manager.query(
-          `UPDATE dorify.dori_registration SET status = 'no_show', closed_at = $1,
-           updated_at = $1 WHERE registration_id = $2`,
-          [now, registrationId],
-        );
-      }
-      const rows: Array<{ queue_id: string }> = await manager.query(
-        'SELECT queue_id FROM dorify.dori_registration WHERE registration_id = $1',
-        [registrationId],
-      );
+      // UPDATE ... RETURNING évite le SELECT séparé du queue_id.
+      // Résultat de manager.query pour un UPDATE ... RETURNING avec TypeORM/pg :
+      // [rows, affectedCount]. On normalise pour rester robuste.
+      const raw: unknown =
+        status === 'served'
+          ? await manager.query(
+            `UPDATE dorify.dori_registration SET status = 'served', served_at = $1,
+               closed_at = $1, updated_at = $1 WHERE registration_id = $2
+               RETURNING queue_id`,
+            [now, registrationId],
+          )
+          : await manager.query(
+            `UPDATE dorify.dori_registration SET status = 'no_show', closed_at = $1,
+               updated_at = $1 WHERE registration_id = $2
+               RETURNING queue_id`,
+            [now, registrationId],
+          );
+      const rows = (
+        Array.isArray(raw) && Array.isArray(raw[0]) ? raw[0] : raw
+      ) as Array<{ queue_id: string }>;
+      const queueId = rows[0].queue_id;
       await enqueueRealtimeEvent(
         manager,
-        rows[0].queue_id,
+        queueId,
         'queue_display_changed',
         {
-          queueId: rows[0].queue_id,
+          queueId,
           reason:
             status === 'served'
               ? 'registration_served'
@@ -432,18 +440,26 @@ export class QueueEngineRepository {
     pageSize: number;
     offset: number;
   }): Promise<{ items: QueueSessionRow[]; total: number }> {
+    // sortField / sortOrder sont insérés tels quels dans le SQL : on les
+    // contraint à un identifiant simple et à ASC/DESC pour exclure toute injection.
+    if (!SAFE_SORT_FIELD.test(input.sortField)) {
+      throw new BadRequestException('Invalid sort field');
+    }
+    const sortOrder = input.sortOrder === 'DESC' ? 'DESC' : 'ASC';
     const from = `FROM dorify.dori_operator_session qs JOIN dorify.dori_user u ON u.user_id = qs.user_id
       WHERE qs.queue_id = $1 AND qs.disconnected_at IS NULL`;
-    const counts: Array<{ total: number }> = await this.dataSource.query(
-      `SELECT COUNT(*)::int as total ${from}`,
-      [input.queueId],
-    );
-    const items: QueueSessionRow[] = await this.dataSource.query(
-      `SELECT qs.session_id, qs.queue_id, qs.thread_number, qs.counter_name, qs.user_id,
-              u.username, qs.mode, qs.connected_at, qs.disconnected_at ${from}
-       ORDER BY ${input.sortField} ${input.sortOrder} LIMIT $2 OFFSET $3`,
-      [input.queueId, input.pageSize, input.offset],
-    );
+    const [counts, items]: [Array<{ total: number }>, QueueSessionRow[]] =
+      await Promise.all([
+        this.dataSource.query(`SELECT COUNT(*)::int as total ${from}`, [
+          input.queueId,
+        ]),
+        this.dataSource.query(
+          `SELECT qs.session_id, qs.queue_id, qs.thread_number, qs.counter_name, qs.user_id,
+                  u.username, qs.mode, qs.connected_at, qs.disconnected_at ${from}
+           ORDER BY ${input.sortField} ${sortOrder} LIMIT $2 OFFSET $3`,
+          [input.queueId, input.pageSize, input.offset],
+        ),
+      ]);
     return { items, total: counts[0]?.total ?? 0 };
   }
 
@@ -460,45 +476,51 @@ export class QueueEngineRepository {
       timezone: string;
     } | null;
   }> {
-    const sessions: QueueSessionRow[] = await this.dataSource.query(
-      `SELECT ${SESSION_COLUMNS} FROM dorify.dori_operator_session WHERE queue_id = $1 AND user_id = $2
-       AND disconnected_at IS NULL AND mode = 'active'`,
-      [queueId, userId],
-    );
-    const configs = await this.dataSource.query(
-      `SELECT q.base_weight_walkin, q.base_weight_appointment,
-              q.escalation_rate_walkin, q.escalation_rate_appointment,
-              s.default_base_weight_walkin, s.default_base_weight_appointment,
-              s.default_escalation_rate_walkin, s.default_escalation_rate_appointment,
-              s.timezone FROM dorify.dori_queue q
-       JOIN dorify.dori_site s ON s.site_id = q.site_id WHERE q.queue_id = $1`,
-      [queueId],
-    );
+    // Les deux requêtes sont indépendantes : on les lance en parallèle.
+    const [sessions, configs]: [
+      QueueSessionRow[],
+      Array<Record<string, unknown>>,
+    ] = await Promise.all([
+      this.dataSource.query(
+        `SELECT ${SESSION_COLUMNS} FROM dorify.dori_operator_session WHERE queue_id = $1 AND user_id = $2
+         AND disconnected_at IS NULL AND mode = 'active'`,
+        [queueId, userId],
+      ),
+      this.dataSource.query(
+        `SELECT q.base_weight_walkin, q.base_weight_appointment,
+                q.escalation_rate_walkin, q.escalation_rate_appointment,
+                s.default_base_weight_walkin, s.default_base_weight_appointment,
+                s.default_escalation_rate_walkin, s.default_escalation_rate_appointment,
+                s.timezone FROM dorify.dori_queue q
+         JOIN dorify.dori_site s ON s.site_id = q.site_id WHERE q.queue_id = $1`,
+        [queueId],
+      ),
+    ]);
     const cfg = configs[0];
     return {
       session: sessions[0] ?? null,
       config: cfg
         ? {
-            baseWalkin: Number(
-              cfg.base_weight_walkin ?? cfg.default_base_weight_walkin ?? 0,
-            ),
-            baseAppointment: Number(
-              cfg.base_weight_appointment ??
-                cfg.default_base_weight_appointment ??
-                60,
-            ),
-            rateWalkin: Number(
-              cfg.escalation_rate_walkin ??
-                cfg.default_escalation_rate_walkin ??
-                1,
-            ),
-            rateAppointment: Number(
-              cfg.escalation_rate_appointment ??
-                cfg.default_escalation_rate_appointment ??
-                1,
-            ),
-            timezone: cfg.timezone || 'Africa/Tunis',
-          }
+          baseWalkin: Number(
+            cfg.base_weight_walkin ?? cfg.default_base_weight_walkin ?? 0,
+          ),
+          baseAppointment: Number(
+            cfg.base_weight_appointment ??
+            cfg.default_base_weight_appointment ??
+            60,
+          ),
+          rateWalkin: Number(
+            cfg.escalation_rate_walkin ??
+            cfg.default_escalation_rate_walkin ??
+            1,
+          ),
+          rateAppointment: Number(
+            cfg.escalation_rate_appointment ??
+            cfg.default_escalation_rate_appointment ??
+            1,
+          ),
+          timezone: String(cfg.timezone || 'Africa/Tunis'),
+        }
         : null,
     };
   }
@@ -803,27 +825,38 @@ export class QueueEngineRepository {
         };
       }
 
+      // Optimisé : les inscriptions et les sessions sont agrégées séparément
+      // (LATERAL) au lieu d'être jointes ensemble. L'ancienne version
+      // multipliait chaque inscription par le nombre de sessions actives
+      // puis dédoublonnait avec COUNT(DISTINCT ...). Résultats identiques.
       const queues = await manager.query(
         `SELECT q.queue_id, q.queue_code, q.queue_name, q.thread_count,
                 q.average_wait_time,
-                COUNT(DISTINCT r.registration_id) FILTER (
-                  WHERE r.status = 'waiting'
-                )::int AS waiting_count,
-                COUNT(DISTINCT r.registration_id) FILTER (
-                  WHERE r.entry_type = 'appointment'
-                    AND r.status IN ('booked', 'waiting')
-                    AND r.appointment_status NOT IN ('cancelled', 'expired')
-                )::int AS remaining_appointments_count,
-                COUNT(DISTINCT os.session_id)::int AS occupied_threads_count,
+                COALESCE(rc.waiting_count, 0) AS waiting_count,
+                COALESCE(rc.remaining_appointments_count, 0) AS remaining_appointments_count,
+                COALESCE(sc.occupied_threads_count, 0) AS occupied_threads_count,
                 stat.cycle_p50_minutes
          FROM dorify.dori_queue q
          JOIN dorify.dori_site s ON s.site_id = q.site_id
-         LEFT JOIN dorify.dori_registration r
-           ON r.queue_id = q.queue_id AND r.is_active = TRUE
-          AND r.business_date = ($3::timestamptz AT TIME ZONE s.timezone)::date
-         LEFT JOIN dorify.dori_operator_session os
-           ON os.queue_id = q.queue_id AND os.disconnected_at IS NULL
-          AND os.mode = 'active'
+         LEFT JOIN LATERAL (
+           SELECT COUNT(*) FILTER (
+                    WHERE r.status = 'waiting'
+                  )::int AS waiting_count,
+                  COUNT(*) FILTER (
+                    WHERE r.entry_type = 'appointment'
+                      AND r.status IN ('booked', 'waiting')
+                      AND r.appointment_status NOT IN ('cancelled', 'expired')
+                  )::int AS remaining_appointments_count
+           FROM dorify.dori_registration r
+           WHERE r.queue_id = q.queue_id AND r.is_active = TRUE
+             AND r.business_date = ($3::timestamptz AT TIME ZONE s.timezone)::date
+         ) rc ON TRUE
+         LEFT JOIN LATERAL (
+           SELECT COUNT(*)::int AS occupied_threads_count
+           FROM dorify.dori_operator_session os
+           WHERE os.queue_id = q.queue_id AND os.disconnected_at IS NULL
+             AND os.mode = 'active'
+         ) sc ON TRUE
          LEFT JOIN LATERAL (
            SELECT estimation.cycle_p50_minutes
            FROM dorify.dori_queue_estimation_stats estimation
@@ -837,8 +870,6 @@ export class QueueEngineRepository {
          ) stat ON TRUE
          WHERE q.site_id = $1 AND q.queue_id = ANY($2::uuid[])
            AND q.is_active = TRUE AND q.deleted_at IS NULL
-         GROUP BY q.queue_id, q.queue_code, q.queue_name, q.thread_count,
-                  q.average_wait_time, stat.cycle_p50_minutes
          ORDER BY q.queue_name ASC, q.queue_id ASC`,
         [input.siteId, input.queueIds, input.now],
       );
@@ -875,7 +906,7 @@ export class QueueEngineRepository {
         input.previewLimit === 0
           ? []
           : await manager.query(
-              `WITH ranked AS (
+            `WITH ranked AS (
                  SELECT r.queue_id, r.ticket_number, r.entry_type,
                         r.scheduled_time, r.priority_reference_time,
                         t.tier_id, t.tier_code, t.tier_name,
@@ -917,13 +948,13 @@ export class QueueEngineRepository {
                )
                SELECT * FROM ranked WHERE candidate_rank <= $3
                ORDER BY queue_id, candidate_rank`,
-              [input.queueIds, input.now, input.previewLimit],
-            );
+            [input.queueIds, input.now, input.previewLimit],
+          );
       const recentPassages =
         input.recentLimit === 0
           ? []
           : await manager.query(
-              `SELECT r.registration_id, r.queue_id, q.queue_name,
+            `SELECT r.registration_id, r.queue_id, q.queue_name,
                       r.ticket_number,
                       COALESCE(NULLIF(CONCAT_WS(' ', p.first_name, p.last_name), ''), '—') AS person_name,
                       os.thread_number, os.counter_name,
@@ -937,8 +968,8 @@ export class QueueEngineRepository {
                  AND r.status IN ('served', 'no_show') AND r.closed_at IS NOT NULL
                ORDER BY r.closed_at DESC, r.registration_id DESC
                LIMIT $3`,
-              [input.queueIds, input.userId, input.recentLimit],
-            );
+            [input.queueIds, input.userId, input.recentLimit],
+          );
       return {
         site: sites[0],
         operator: operators[0] ?? null,
