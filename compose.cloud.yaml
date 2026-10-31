@@ -1,0 +1,84 @@
+name: cloud-dorify
+
+services:
+  engine:
+    image: dorify/engine:dev
+    build:
+      context: .
+      target: runtime
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://dori:dori_cloud_password@postgres:5432/dori
+      DB_POOL_MAX: 10
+      REDIS_URL: redis://redis:6379
+      REDIS_ENABLED: 'true'
+      JWT_SECRET: change-me-cloud-secret-long-and-random
+      CORS_ORIGINS: http://localhost:3001,http://localhost:5173
+      PUBLIC_WEB_URL: http://localhost:5173
+      DORIFY_DEPLOYMENT_MODE: cloud
+      SWAGGER_SERVERS: http://localhost:53000
+      AUTO_RUN_MIGRATIONS: 'false'
+    ports:
+      - '127.0.0.1:53000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/api/v1/monitoring/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dori
+      POSTGRES_USER: dori
+      POSTGRES_PASSWORD: dori_cloud_password
+    ports:
+      - '127.0.0.1:55432:5432'
+    volumes:
+      - dorify_cloud_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U dori -d dori']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '127.0.0.1:56379:6379'
+    volumes:
+      - dorify_cloud_redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+volumes:
+  dorify_cloud_postgres_data:
+    name: dorify-cloud-postgres-data
+  dorify_cloud_redis_data:
+    name: dorify-cloud-redis-data
+
+networks:
+  default:
+    name: dorify-cloud-network
