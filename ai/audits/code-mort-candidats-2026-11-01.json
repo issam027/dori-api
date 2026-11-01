@@ -1,0 +1,3879 @@
+{
+  "dori-api": {
+    "files": 272,
+    "unreachableFromMain": [
+      "src/core/database/daily-activity-seed.ts"
+    ],
+    "exportsWithoutExternalProductionReference": [
+      {
+        "file": "src/core/database/migration-runner.ts",
+        "line": 5,
+        "name": "MigrationConnection",
+        "productionReferences": 3,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/database/migration-runner.ts",
+        "line": 12,
+        "name": "MigrationLogger",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/database/postgres-connection.ts",
+        "line": 3,
+        "name": "PostgresConnectionSettings",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/database/postgres-connection.ts",
+        "line": 42,
+        "name": "postgresClientConfig",
+        "productionReferences": 0,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/audit/audit.repository.ts",
+        "line": 7,
+        "name": "AuditRecord",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/audit/audit.repository.ts",
+        "line": 21,
+        "name": "AuditEventRow",
+        "productionReferences": 4,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/audit/audit.repository.ts",
+        "line": 50,
+        "name": "AUDIT_EVENT_READ_MODEL",
+        "productionReferences": 3,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/audit/audit.repository.ts",
+        "line": 129,
+        "name": "AuditSearchQuery",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/database/daily-activity-seed.ts",
+        "line": 3,
+        "name": "DailyActivitySeedConnection",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/database/daily-activity-seed.ts",
+        "line": 10,
+        "name": "DailyActivitySeedSummary",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/database/daily-activity-seed.ts",
+        "line": 81,
+        "name": "seedDailyActivity",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/types/guid.ts",
+        "line": 2,
+        "name": "Guid",
+        "productionReferences": 5,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/types/guid.ts",
+        "line": 5,
+        "name": "SiteId",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/types/guid.ts",
+        "line": 6,
+        "name": "QueueId",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/types/guid.ts",
+        "line": 7,
+        "name": "RegistrationId",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/throttler/redis-throttler-storage.service.ts",
+        "line": 7,
+        "name": "ThrottlerStorageRecord",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/rbac/services/scope.service.ts",
+        "line": 8,
+        "name": "UserScope",
+        "productionReferences": 3,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.repository.ts",
+        "line": 19,
+        "name": "UserSessionRow",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.repository.ts",
+        "line": 26,
+        "name": "RefreshRotationResult",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/swagger/api-dori-response.decorator.ts",
+        "line": 24,
+        "name": "assertPublicResponseDtoName",
+        "productionReferences": 3,
+        "testReferences": 3,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/swagger/api-dori-response.decorator.ts",
+        "line": 37,
+        "name": "ErrorResponseDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/dto/auth-response.dto.ts",
+        "line": 4,
+        "name": "AuthUserDto",
+        "productionReferences": 5,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/dto/auth-response.dto.ts",
+        "line": 89,
+        "name": "UserScopeDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/dto/queue-response.dto.ts",
+        "line": 5,
+        "name": "QueueConfigOrigin",
+        "productionReferences": 18,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/dto/queue-response.dto.ts",
+        "line": 7,
+        "name": "QueueConfigOriginsResponseDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/dto/queue-response.dto.ts",
+        "line": 190,
+        "name": "NextAppointmentItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/dto/queue-response.dto.ts",
+        "line": 239,
+        "name": "CallingTicketResponseDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/dto/queue-response.dto.ts",
+        "line": 302,
+        "name": "QueueOperatorResponseDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-estimation/queue-wait-estimation.service.ts",
+        "line": 8,
+        "name": "WaitEstimate",
+        "productionReferences": 5,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.repository.ts",
+        "line": 10,
+        "name": "ServiceTierRow",
+        "productionReferences": 5,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.repository.ts",
+        "line": 19,
+        "name": "QueueTierRow",
+        "productionReferences": 4,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.repository.ts",
+        "line": 36,
+        "name": "NotificationRuleRow",
+        "productionReferences": 9,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/persons/persons.repository.ts",
+        "line": 35,
+        "name": "PersonListQuery",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/persons/persons.repository.ts",
+        "line": 45,
+        "name": "PersonNoteListQuery",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/dto/registration-response.dto.ts",
+        "line": 208,
+        "name": "DailyAvailabilityItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/realtime/realtime.repository.ts",
+        "line": 4,
+        "name": "TrackingRegistrationRow",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 16,
+        "name": "RegistrationRow",
+        "productionReferences": 6,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 56,
+        "name": "RegistrationsTransaction",
+        "productionReferences": 2,
+        "testReferences": 4,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/realtime/realtime.service.ts",
+        "line": 24,
+        "name": "QUEUE_DISPLAY_CHANGED",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/realtime/realtime.service.ts",
+        "line": 25,
+        "name": "QUEUE_POSITION_CHANGED",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/realtime/realtime.service.ts",
+        "line": 33,
+        "name": "QueueDisplayChangeReason",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/response/response.interceptor.ts",
+        "line": 12,
+        "name": "StandardResponse",
+        "productionReferences": 5,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/response/response.interceptor.ts",
+        "line": 18,
+        "name": "SKIP_RESPONSE_ENVELOPE_KEY",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/dto/engine-response.dto.ts",
+        "line": 5,
+        "name": "QueueCandidatePersonItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/dto/engine-response.dto.ts",
+        "line": 27,
+        "name": "ThreadSessionItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/dto/engine-response.dto.ts",
+        "line": 40,
+        "name": "QueueThreadResponseDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/dto/engine-response.dto.ts",
+        "line": 91,
+        "name": "CallNextPersonItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/dto/engine-response.dto.ts",
+        "line": 126,
+        "name": "CallNextQueueItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 15,
+        "name": "QueueSessionRow",
+        "productionReferences": 12,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 48,
+        "name": "SiteNextCandidateRow",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 55,
+        "name": "SiteCallNextResult",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 59,
+        "name": "CockpitData",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 69,
+        "name": "PreviewCandidateRow",
+        "productionReferences": 3,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 85,
+        "name": "RecallRegistrationResult",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/dto/cockpit-response.dto.ts",
+        "line": 4,
+        "name": "CockpitOperatorItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/dto/cockpit-response.dto.ts",
+        "line": 11,
+        "name": "CockpitSessionItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/dto/cockpit-response.dto.ts",
+        "line": 20,
+        "name": "CockpitReplaceableSessionItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/dto/cockpit-response.dto.ts",
+        "line": 28,
+        "name": "CockpitSessionOpeningItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/dto/cockpit-response.dto.ts",
+        "line": 36,
+        "name": "CockpitCentralizedNextItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/dto/cockpit-response.dto.ts",
+        "line": 45,
+        "name": "CockpitPersonItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/dto/cockpit-response.dto.ts",
+        "line": 53,
+        "name": "CockpitActiveCallItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/dto/cockpit-response.dto.ts",
+        "line": 70,
+        "name": "CockpitCandidateItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/dto/cockpit-response.dto.ts",
+        "line": 82,
+        "name": "CockpitQueueItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/dto/cockpit-response.dto.ts",
+        "line": 107,
+        "name": "CockpitRecentPassageItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/notifications/notifications.repository.ts",
+        "line": 34,
+        "name": "NotificationListQuery",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/notifications/notifications.repository.ts",
+        "line": 43,
+        "name": "NotificationRegistrationRow",
+        "productionReferences": 3,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/notifications/notifications.repository.ts",
+        "line": 52,
+        "name": "WaitingRegistrationRow",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/dto/user-response.dto.ts",
+        "line": 74,
+        "name": "UserRoleItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/dto/user-response.dto.ts",
+        "line": 92,
+        "name": "UserSiteItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/dto/user-response.dto.ts",
+        "line": 104,
+        "name": "UserQueueItemDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/users.repository.ts",
+        "line": 11,
+        "name": "UserDetailsResult",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/users.repository.ts",
+        "line": 41,
+        "name": "UserMutationRow",
+        "productionReferences": 4,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/dto/monitoring-response.dto.ts",
+        "line": 53,
+        "name": "MonitoringLiveTotalsDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/dto/monitoring-response.dto.ts",
+        "line": 62,
+        "name": "MonitoringLiveQueueDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/dto/monitoring-response.dto.ts",
+        "line": 73,
+        "name": "MonitoringLiveOperatorDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/dto/monitoring-response.dto.ts",
+        "line": 85,
+        "name": "MonitoringLiveAlertDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/reports.repository.ts",
+        "line": 4,
+        "name": "QueueIdentityRow",
+        "productionReferences": 3,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/reports.repository.ts",
+        "line": 13,
+        "name": "SeriesRow",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/reports.repository.ts",
+        "line": 22,
+        "name": "DailyStatsRow",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/reports.repository.ts",
+        "line": 34,
+        "name": "MonitoringSeriesData",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/dto/report-response.dto.ts",
+        "line": 4,
+        "name": "MonitoringSeriesMetricsDto",
+        "productionReferences": 4,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/dto/report-response.dto.ts",
+        "line": 23,
+        "name": "MonitoringSeriesBucketDto",
+        "productionReferences": 4,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/dto/report-response.dto.ts",
+        "line": 27,
+        "name": "MonitoringQueueBreakdownDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/dto/report-response.dto.ts",
+        "line": 34,
+        "name": "MonitoringUserBreakdownDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/dto/report-response.dto.ts",
+        "line": 43,
+        "name": "MonitoringTierBreakdownDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/dto/report-response.dto.ts",
+        "line": 53,
+        "name": "MonitoringCountBreakdownDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/dto/report-response.dto.ts",
+        "line": 58,
+        "name": "MonitoringStatusBreakdownDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/dto/report-response.dto.ts",
+        "line": 63,
+        "name": "MonitoringSeriesBreakdownsDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/dto/report-response.dto.ts",
+        "line": 76,
+        "name": "MonitoringAppliedFiltersDto",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/dto/report-response.dto.ts",
+        "line": 101,
+        "name": "DailyQueueVolumeItemDto",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/dto/report-response.dto.ts",
+        "line": 153,
+        "name": "QueuePeriodVolumesResponseDto",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/serialization/serialization.interceptor.ts",
+        "line": 27,
+        "name": "transformKeysToCamel",
+        "productionReferences": 3,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/audit/dto/audit-response.dto.ts",
+        "line": 5,
+        "name": "AuditEventResponseDto",
+        "productionReferences": 3,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/workers/appointment-expiry/appointment-expiry.repository.ts",
+        "line": 5,
+        "name": "ExpiredAppointmentRow",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/workers/daily-reset/daily-reset.repository.ts",
+        "line": 5,
+        "name": "DailyResetQueueRow",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/workers/daily-reset/daily-reset.repository.ts",
+        "line": 17,
+        "name": "ExecuteDailyResetInput",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/workers/notification-worker/notification-worker.repository.ts",
+        "line": 5,
+        "name": "ClaimedNotificationRow",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/workers/queue-estimation/queue-estimation.repository.ts",
+        "line": 5,
+        "name": "EstimationQueueRow",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/dto/edge-control.dto.ts",
+        "line": 207,
+        "name": "EdgeCommandPageResponseDto",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/main.ts",
+        "line": 121,
+        "name": "handler",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      }
+    ],
+    "methodsWithoutProductionReference": [
+      {
+        "file": "src/core/pagination/pagination.dto.ts",
+        "line": 76,
+        "name": "getParams",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/audit/audit.repository.ts",
+        "line": 192,
+        "name": "search",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/audit/audit.repository.ts",
+        "line": 259,
+        "name": "findById",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/database/database-seed.service.ts",
+        "line": 18,
+        "name": "onApplicationBootstrap",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/clock/clock.service.ts",
+        "line": 14,
+        "name": "nowUtc",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/clock/clock.service.ts",
+        "line": 42,
+        "name": "dateRangeToUtcBounds",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/clock/clock.service.ts",
+        "line": 85,
+        "name": "tomorrowInTimezone",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/clock/clock.service.ts",
+        "line": 99,
+        "name": "dateInTimezone",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/clock/clock.service.ts",
+        "line": 121,
+        "name": "minutesSince",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/rbac/guards/permissions.guard.ts",
+        "line": 14,
+        "name": "canActivate",
+        "productionReferences": 0,
+        "testReferences": 5,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/rbac/repositories/scope.repository.ts",
+        "line": 58,
+        "name": "findUserQueueScope",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/throttler/redis-throttler-storage.service.ts",
+        "line": 41,
+        "name": "increment",
+        "productionReferences": 0,
+        "testReferences": 4,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/redis/redis.module.ts",
+        "line": 88,
+        "name": "onApplicationShutdown",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/rbac/services/scope.service.ts",
+        "line": 113,
+        "name": "checkQueueAccess",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/rbac/services/rank.service.ts",
+        "line": 13,
+        "name": "callerRank",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/rbac/services/rank.service.ts",
+        "line": 22,
+        "name": "maximumManageableRank",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.repository.ts",
+        "line": 35,
+        "name": "findActiveUserByUsername",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.repository.ts",
+        "line": 49,
+        "name": "findActiveUserById",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.repository.ts",
+        "line": 60,
+        "name": "findUserProfile",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.repository.ts",
+        "line": 69,
+        "name": "recordFailedLogin",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.repository.ts",
+        "line": 89,
+        "name": "recordSuccessfulLogin",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.repository.ts",
+        "line": 98,
+        "name": "rotateRefreshSession",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.repository.ts",
+        "line": 175,
+        "name": "revokeAllSessions",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.repository.ts",
+        "line": 188,
+        "name": "revokeSession",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.repository.ts",
+        "line": 201,
+        "name": "getMaxRoleRank",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.repository.ts",
+        "line": 214,
+        "name": "activeUserExists",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.repository.ts",
+        "line": 223,
+        "name": "getRolesAndPermissions",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.repository.ts",
+        "line": 253,
+        "name": "createSession",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.repository.ts",
+        "line": 278,
+        "name": "changePasswordAndRevokeSessions",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.service.ts",
+        "line": 31,
+        "name": "login",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.service.ts",
+        "line": 99,
+        "name": "refresh",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.service.ts",
+        "line": 155,
+        "name": "logout",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.service.ts",
+        "line": 222,
+        "name": "me",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/auth/auth.service.ts",
+        "line": 248,
+        "name": "changePassword",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/auth/repositories/jwt-session.repository.ts",
+        "line": 8,
+        "name": "findValidSessionId",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/auth/strategies/jwt.strategy.ts",
+        "line": 32,
+        "name": "validate",
+        "productionReferences": 0,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/auth/guards/jwt-auth.guard.ts",
+        "line": 16,
+        "name": "canActivate",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/auth/guards/jwt-auth.guard.ts",
+        "line": 27,
+        "name": "handleRequest",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/sites/sites.repository.ts",
+        "line": 33,
+        "name": "findPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/sites/sites.repository.ts",
+        "line": 123,
+        "name": "findById",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/sites/sites.repository.ts",
+        "line": 273,
+        "name": "findDirectSiteUsers",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/sites/sites.repository.ts",
+        "line": 303,
+        "name": "findUserStatus",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/sites/sites.repository.ts",
+        "line": 320,
+        "name": "assignDirectSiteUser",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/sites/sites.repository.ts",
+        "line": 333,
+        "name": "removeDirectSiteUser",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/sites/sites.service.ts",
+        "line": 51,
+        "name": "createSite",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/sites/sites.service.ts",
+        "line": 59,
+        "name": "findSiteById",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/sites/sites.service.ts",
+        "line": 66,
+        "name": "updateSite",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/sites/sites.service.ts",
+        "line": 82,
+        "name": "deleteSite",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/sites/sites.service.ts",
+        "line": 117,
+        "name": "assignDirectSiteUser",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/sites/sites.service.ts",
+        "line": 143,
+        "name": "removeDirectSiteUser",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.repository.ts",
+        "line": 36,
+        "name": "createWithDefaultTier",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.repository.ts",
+        "line": 104,
+        "name": "findPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.repository.ts",
+        "line": 160,
+        "name": "findById",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.repository.ts",
+        "line": 277,
+        "name": "findOperationalContext",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.repository.ts",
+        "line": 306,
+        "name": "getStatusSnapshot",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.repository.ts",
+        "line": 334,
+        "name": "getDisplaySnapshot",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.repository.ts",
+        "line": 364,
+        "name": "reset",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.repository.ts",
+        "line": 423,
+        "name": "findOperatorPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.repository.ts",
+        "line": 444,
+        "name": "findQueueSiteId",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.repository.ts",
+        "line": 452,
+        "name": "findUserStatus",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.repository.ts",
+        "line": 472,
+        "name": "assignOperator",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.repository.ts",
+        "line": 502,
+        "name": "removeOperator",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-estimation/queue-wait-estimation.repository.ts",
+        "line": 24,
+        "name": "findOperationalPosition",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-estimation/queue-wait-estimation.repository.ts",
+        "line": 88,
+        "name": "findBestStat",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-estimation/queue-wait-estimation.service.ts",
+        "line": 126,
+        "name": "estimateQueue",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.service.ts",
+        "line": 177,
+        "name": "createQueue",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.service.ts",
+        "line": 199,
+        "name": "updateQueue",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.service.ts",
+        "line": 217,
+        "name": "deleteQueue",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.service.ts",
+        "line": 231,
+        "name": "getQueueStatus",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.service.ts",
+        "line": 266,
+        "name": "getQueueDisplay",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.service.ts",
+        "line": 285,
+        "name": "resetQueue",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.service.ts",
+        "line": 324,
+        "name": "getOperators",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.service.ts",
+        "line": 347,
+        "name": "assignOperator",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queues/queues.service.ts",
+        "line": 388,
+        "name": "removeOperator",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.repository.ts",
+        "line": 69,
+        "name": "findTierPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.repository.ts",
+        "line": 86,
+        "name": "findActiveTier",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.repository.ts",
+        "line": 94,
+        "name": "createTier",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.repository.ts",
+        "line": 116,
+        "name": "updateTier",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.repository.ts",
+        "line": 149,
+        "name": "findQueueTier",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.repository.ts",
+        "line": 170,
+        "name": "findQueueTierPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.repository.ts",
+        "line": 201,
+        "name": "upsertQueueTier",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.repository.ts",
+        "line": 239,
+        "name": "updateQueueTier",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.repository.ts",
+        "line": 277,
+        "name": "removeQueueTier",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.repository.ts",
+        "line": 290,
+        "name": "findNotificationRulePage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.repository.ts",
+        "line": 312,
+        "name": "findNotificationRule",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.service.ts",
+        "line": 153,
+        "name": "createTier",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.service.ts",
+        "line": 162,
+        "name": "updateTier",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.service.ts",
+        "line": 178,
+        "name": "deleteTier",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.service.ts",
+        "line": 236,
+        "name": "associateQueueTier",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.service.ts",
+        "line": 255,
+        "name": "updateQueueTier",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.service.ts",
+        "line": 281,
+        "name": "removeQueueTier",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.service.ts",
+        "line": 305,
+        "name": "findNotificationRules",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.service.ts",
+        "line": 332,
+        "name": "createNotificationRule",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.service.ts",
+        "line": 352,
+        "name": "updateNotificationRule",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.service.ts",
+        "line": 416,
+        "name": "deleteNotificationRule",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.service.ts",
+        "line": 436,
+        "name": "getQueueTiers",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.service.ts",
+        "line": 455,
+        "name": "getNotificationRules",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/persons/persons.repository.ts",
+        "line": 95,
+        "name": "findPersons",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/persons/persons.repository.ts",
+        "line": 124,
+        "name": "findById",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/persons/persons.repository.ts",
+        "line": 137,
+        "name": "findByPhone",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/persons/persons.repository.ts",
+        "line": 155,
+        "name": "findByEmail",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/persons/persons.repository.ts",
+        "line": 239,
+        "name": "findNotes",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/persons/persons.repository.ts",
+        "line": 274,
+        "name": "updateNote",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/persons/persons.service.ts",
+        "line": 131,
+        "name": "createPerson",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/persons/persons.service.ts",
+        "line": 173,
+        "name": "updatePerson",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/persons/persons.service.ts",
+        "line": 273,
+        "name": "getNotes",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/persons/persons.service.ts",
+        "line": 292,
+        "name": "createNote",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/persons/persons.service.ts",
+        "line": 300,
+        "name": "updateNote",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/persons/persons.service.ts",
+        "line": 309,
+        "name": "deleteNote",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/persons/persons.service.ts",
+        "line": 314,
+        "name": "deletePerson",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/realtime/realtime.repository.ts",
+        "line": 50,
+        "name": "findTopicState",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/realtime/realtime.repository.ts",
+        "line": 66,
+        "name": "findRegistrationByTrackingToken",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/notifications/notification-template.service.ts",
+        "line": 19,
+        "name": "buildTrackingUrl",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/notifications/notification-template.service.ts",
+        "line": 28,
+        "name": "render",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 59,
+        "name": "enqueueRealtime",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 68,
+        "name": "findQueueConfig",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 81,
+        "name": "personExistsInSite",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 90,
+        "name": "findOfferedTier",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 104,
+        "name": "hasOpenRegistration",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 113,
+        "name": "lockAndCountSlot",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 134,
+        "name": "nextTicketNumber",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 144,
+        "name": "create",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 185,
+        "name": "createWelcomeNotifications",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 269,
+        "name": "reschedule",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 299,
+        "name": "transaction",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 307,
+        "name": "findAvailabilityConfig",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 318,
+        "name": "findBookedSlotsBetween",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 332,
+        "name": "findSiteTimezone",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 340,
+        "name": "findForCheckIn",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 350,
+        "name": "expire",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 358,
+        "name": "checkIn",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 392,
+        "name": "findForReschedule",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 403,
+        "name": "lookup",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 444,
+        "name": "findPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 521,
+        "name": "findById",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 536,
+        "name": "isTierOffered",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 544,
+        "name": "update",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 579,
+        "name": "cancel",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 588,
+        "name": "findByTrackingToken",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 603,
+        "name": "findPublicTrackingState",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 617,
+        "name": "countWaitingBefore",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.repository.ts",
+        "line": 626,
+        "name": "countActiveThreads",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.service.ts",
+        "line": 86,
+        "name": "createRegistration",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.service.ts",
+        "line": 302,
+        "name": "getAvailability",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.service.ts",
+        "line": 460,
+        "name": "checkIn",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.service.ts",
+        "line": 499,
+        "name": "reschedule",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.service.ts",
+        "line": 576,
+        "name": "lookupAppointment",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.service.ts",
+        "line": 764,
+        "name": "updateRegistration",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.service.ts",
+        "line": 801,
+        "name": "cancelRegistration",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/registrations/registrations.service.ts",
+        "line": 811,
+        "name": "getPublicPosition",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/response/response.interceptor.ts",
+        "line": 44,
+        "name": "intercept",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 118,
+        "name": "findThreadState",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 152,
+        "name": "findThreadCount",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 160,
+        "name": "createSession",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 184,
+        "name": "findActiveUserSession",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 201,
+        "name": "findOccupiedThread",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 215,
+        "name": "takeOverThread",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 293,
+        "name": "findInProgressRegistration",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 307,
+        "name": "closeRegistration",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 351,
+        "name": "recallRegistration",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 436,
+        "name": "findSessionPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 466,
+        "name": "findCallContext",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 528,
+        "name": "callNext",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 635,
+        "name": "callNextForSite",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.repository.ts",
+        "line": 795,
+        "name": "getCockpitData",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.service.ts",
+        "line": 88,
+        "name": "openSession",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.service.ts",
+        "line": 268,
+        "name": "closeSession",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.service.ts",
+        "line": 317,
+        "name": "nextForSite",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.service.ts",
+        "line": 375,
+        "name": "markServed",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.service.ts",
+        "line": 408,
+        "name": "markNoShow",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.service.ts",
+        "line": 441,
+        "name": "recall",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.service.ts",
+        "line": 590,
+        "name": "getCockpit",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.service.ts",
+        "line": 783,
+        "name": "previewNext",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.service.ts",
+        "line": 792,
+        "name": "getThreadsStatus",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.service.ts",
+        "line": 800,
+        "name": "getActiveSessions",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/queue-engine/queue-engine.service.ts",
+        "line": 808,
+        "name": "callNext",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/notifications/notifications.repository.ts",
+        "line": 86,
+        "name": "findMany",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/notifications/notifications.repository.ts",
+        "line": 137,
+        "name": "findById",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/notifications/notifications.repository.ts",
+        "line": 148,
+        "name": "findActiveRegistration",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/notifications/notifications.repository.ts",
+        "line": 161,
+        "name": "createManual",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/notifications/notifications.repository.ts",
+        "line": 219,
+        "name": "applyWebhook",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/notifications/notifications.repository.ts",
+        "line": 273,
+        "name": "findActiveTemplates",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/notifications/notifications.repository.ts",
+        "line": 287,
+        "name": "createThresholdNotifications",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/notifications/notifications.service.ts",
+        "line": 112,
+        "name": "sendManualNotification",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/notifications/notifications.service.ts",
+        "line": 159,
+        "name": "resendNotification",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/notifications/notifications.service.ts",
+        "line": 167,
+        "name": "handleWebhook",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/notifications/notifications.service.ts",
+        "line": 227,
+        "name": "evaluateQueueThresholds",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/translations/translations.repository.ts",
+        "line": 34,
+        "name": "getBundle",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/translations/translations.repository.ts",
+        "line": 51,
+        "name": "findPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/translations/translations.repository.ts",
+        "line": 76,
+        "name": "create",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/translations/translations.repository.ts",
+        "line": 103,
+        "name": "findById",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/translations/translations.repository.ts",
+        "line": 111,
+        "name": "update",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/translations/translations.repository.ts",
+        "line": 155,
+        "name": "delete",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/translations/translations.service.ts",
+        "line": 40,
+        "name": "getBundle",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/translations/translations.service.ts",
+        "line": 81,
+        "name": "createTranslation",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/translations/translations.service.ts",
+        "line": 91,
+        "name": "updateTranslation",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/translations/translations.service.ts",
+        "line": 119,
+        "name": "deleteTranslation",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/users.repository.ts",
+        "line": 83,
+        "name": "getUserMaxRank",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/users.repository.ts",
+        "line": 123,
+        "name": "getRoleRank",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/users.repository.ts",
+        "line": 134,
+        "name": "findUsers",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/users.repository.ts",
+        "line": 207,
+        "name": "findUserById",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/users.repository.ts",
+        "line": 252,
+        "name": "createUser",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/users.repository.ts",
+        "line": 423,
+        "name": "assignUserRole",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/users.service.ts",
+        "line": 130,
+        "name": "findUsers",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/users.service.ts",
+        "line": 171,
+        "name": "createUser",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/users.service.ts",
+        "line": 202,
+        "name": "updateUser",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/users.service.ts",
+        "line": 223,
+        "name": "updateUserStatus",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/users.service.ts",
+        "line": 244,
+        "name": "setUserPassword",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/users.service.ts",
+        "line": 273,
+        "name": "assignUserRole",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/users.service.ts",
+        "line": 300,
+        "name": "removeUserRole",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/users.service.ts",
+        "line": 319,
+        "name": "getRoles",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/users.service.ts",
+        "line": 323,
+        "name": "updateRolePermissions",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/users/users.service.ts",
+        "line": 358,
+        "name": "deleteUser",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/monitoring.repository.ts",
+        "line": 17,
+        "name": "activitySnapshot",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/monitoring.repository.ts",
+        "line": 47,
+        "name": "liveSnapshot",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/monitoring.service.ts",
+        "line": 30,
+        "name": "increment",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/monitoring.service.ts",
+        "line": 43,
+        "name": "health",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/monitoring.service.ts",
+        "line": 53,
+        "name": "metrics",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/monitoring.service.ts",
+        "line": 92,
+        "name": "activity",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/monitoring.service.ts",
+        "line": 99,
+        "name": "live",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/reports.repository.ts",
+        "line": 61,
+        "name": "findQueueIdentity",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/reports.repository.ts",
+        "line": 72,
+        "name": "findScopeIdentities",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/reports.repository.ts",
+        "line": 94,
+        "name": "getSeries",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/reports.repository.ts",
+        "line": 182,
+        "name": "getMonitoringSeries",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/reports.repository.ts",
+        "line": 393,
+        "name": "getDailyStats",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/reports.service.ts",
+        "line": 15,
+        "name": "getSeries",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/monitoring/request-metrics.middleware.ts",
+        "line": 9,
+        "name": "use",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/http/correlation-id.interceptor.ts",
+        "line": 18,
+        "name": "intercept",
+        "productionReferences": 0,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/serialization/serialization.interceptor.ts",
+        "line": 134,
+        "name": "intercept",
+        "productionReferences": 0,
+        "testReferences": 3,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/errors/global-exception.filter.ts",
+        "line": 18,
+        "name": "catch",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/audit/audit.interceptor.ts",
+        "line": 27,
+        "name": "intercept",
+        "productionReferences": 0,
+        "testReferences": 8,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/audit/audit.service.ts",
+        "line": 37,
+        "name": "search",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/audit/audit.service.ts",
+        "line": 65,
+        "name": "findById",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/workers/base.worker.ts",
+        "line": 4,
+        "name": "runOnce",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/workers/queue-estimation/queue-estimation.repository.ts",
+        "line": 24,
+        "name": "aggregateQueue",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.repository.ts",
+        "line": 13,
+        "name": "findInstallation",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.repository.ts",
+        "line": 23,
+        "name": "listInstallations",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.repository.ts",
+        "line": 55,
+        "name": "createInstallation",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.repository.ts",
+        "line": 66,
+        "name": "updateDeploymentStatus",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.repository.ts",
+        "line": 81,
+        "name": "updateHeartbeat",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.repository.ts",
+        "line": 90,
+        "name": "relayNotification",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.repository.ts",
+        "line": 170,
+        "name": "listCommands",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.repository.ts",
+        "line": 184,
+        "name": "listRecentCommands",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.repository.ts",
+        "line": 194,
+        "name": "createCommand",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.repository.ts",
+        "line": 211,
+        "name": "acknowledgeCommand",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.repository.ts",
+        "line": 221,
+        "name": "completeCommand",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.service.ts",
+        "line": 55,
+        "name": "relayNotification",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.service.ts",
+        "line": 63,
+        "name": "syncTracking",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.service.ts",
+        "line": 80,
+        "name": "agentInstallationStatus",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.service.ts",
+        "line": 91,
+        "name": "commands",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.service.ts",
+        "line": 117,
+        "name": "createInstallation",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.service.ts",
+        "line": 126,
+        "name": "listInstallations",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.service.ts",
+        "line": 132,
+        "name": "installationDetail",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.service.ts",
+        "line": 143,
+        "name": "updateDeploymentStatus",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-control.service.ts",
+        "line": 155,
+        "name": "createCommand",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-local-status.service.ts",
+        "line": 15,
+        "name": "getStatus",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/modules/edge-control/edge-deployment.guard.ts",
+        "line": 21,
+        "name": "canActivate",
+        "productionReferences": 0,
+        "testReferences": 3,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/app.module.ts",
+        "line": 134,
+        "name": "configure",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/validation/internal-uuid-param.pipe.ts",
+        "line": 11,
+        "name": "transform",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      }
+    ],
+    "unusedDiagnostics": [],
+    "uniqueNameMethodCandidates": [
+      {
+        "file": "src/core/database/database-seed.service.ts",
+        "line": 18,
+        "name": "onApplicationBootstrap",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0,
+        "lexicalOccurrences": 1
+      },
+      {
+        "file": "src/core/clock/clock.service.ts",
+        "line": 14,
+        "name": "nowUtc",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0,
+        "lexicalOccurrences": 1
+      },
+      {
+        "file": "src/core/clock/clock.service.ts",
+        "line": 85,
+        "name": "tomorrowInTimezone",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0,
+        "lexicalOccurrences": 1
+      },
+      {
+        "file": "src/core/clock/clock.service.ts",
+        "line": 121,
+        "name": "minutesSince",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0,
+        "lexicalOccurrences": 1
+      },
+      {
+        "file": "src/core/redis/redis.module.ts",
+        "line": 88,
+        "name": "onApplicationShutdown",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0,
+        "lexicalOccurrences": 1
+      },
+      {
+        "file": "src/core/auth/guards/jwt-auth.guard.ts",
+        "line": 27,
+        "name": "handleRequest",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0,
+        "lexicalOccurrences": 1
+      },
+      {
+        "file": "src/modules/service-tiers/service-tiers.service.ts",
+        "line": 455,
+        "name": "getNotificationRules",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0,
+        "lexicalOccurrences": 1
+      },
+      {
+        "file": "src/modules/notifications/notifications.service.ts",
+        "line": 227,
+        "name": "evaluateQueueThresholds",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0,
+        "lexicalOccurrences": 1
+      },
+      {
+        "file": "src/modules/monitoring/reports.repository.ts",
+        "line": 61,
+        "name": "findQueueIdentity",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0,
+        "lexicalOccurrences": 1
+      },
+      {
+        "file": "src/modules/monitoring/reports.repository.ts",
+        "line": 393,
+        "name": "getDailyStats",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0,
+        "lexicalOccurrences": 1
+      },
+      {
+        "file": "src/app.module.ts",
+        "line": 134,
+        "name": "configure",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0,
+        "lexicalOccurrences": 1
+      }
+    ]
+  },
+  "dori-web": {
+    "files": 367,
+    "unreachableFromMain": [
+      "src/shared/testing/mock-server.ts",
+      "src/core/i18n/locales/allow-identical.ts",
+      "src/core/i18n/glossary.ts",
+      "src/features/onboarding/model/settings-schemas.ts",
+      "src/features/queues/public.ts",
+      "src/shared/testing/setup-tests.ts"
+    ],
+    "exportsWithoutExternalProductionReference": [
+      {
+        "file": "src/core/permissions/permissions.ts",
+        "line": 21,
+        "name": "isWithinScope",
+        "productionReferences": 0,
+        "testReferences": 3,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/api/client/http-client.ts",
+        "line": 14,
+        "name": "httpClient",
+        "productionReferences": 4,
+        "testReferences": 3,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/api/client/http-client.ts",
+        "line": 116,
+        "name": "request",
+        "productionReferences": 0,
+        "testReferences": 3,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/shared/queue-operations/operation-store.ts",
+        "line": 60,
+        "name": "canCallNext",
+        "productionReferences": 0,
+        "testReferences": 5,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/theme/theme.ts",
+        "line": 1,
+        "name": "themes",
+        "productionReferences": 4,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/design-system/components/Button.tsx",
+        "line": 22,
+        "name": "ButtonProps",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/public-experiences/DeviceModePage.tsx",
+        "line": 10,
+        "name": "DeviceModePage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/i18n/locales/fr/index.ts",
+        "line": 17,
+        "name": "frDomains",
+        "productionReferences": 0,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/i18n/locales/en/index.ts",
+        "line": 18,
+        "name": "enDomains",
+        "productionReferences": 0,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/i18n/locales/ar/index.ts",
+        "line": 18,
+        "name": "arDomains",
+        "productionReferences": 0,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/i18n/locales/ar-TN/index.ts",
+        "line": 12,
+        "name": "arTNDomains",
+        "productionReferences": 0,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/i18n/placeholders.ts",
+        "line": 14,
+        "name": "hasPluralSuffix",
+        "productionReferences": 1,
+        "testReferences": 3,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/i18n/placeholders.ts",
+        "line": 15,
+        "name": "stripPluralSuffix",
+        "productionReferences": 1,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/i18n/remote.ts",
+        "line": 33,
+        "name": "TranslationRejectionReporter",
+        "productionReferences": 3,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/portfolio/PortfolioPage.tsx",
+        "line": 24,
+        "name": "PortfolioPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/i18n/date-format.ts",
+        "line": 1,
+        "name": "DateValue",
+        "productionReferences": 4,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/realtime/queue-realtime-gateway.ts",
+        "line": 64,
+        "name": "queueRealtimeUrl",
+        "productionReferences": 1,
+        "testReferences": 3,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/realtime/realtime-status-store.ts",
+        "line": 4,
+        "name": "RealtimeConnectionState",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/realtime/realtime-status-store.ts",
+        "line": 66,
+        "name": "getRealtimeConnection",
+        "productionReferences": 0,
+        "testReferences": 3,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/api/client/use-business-mutation.ts",
+        "line": 29,
+        "name": "BusinessMutationResult",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/queue-operations/operation-actions.ts",
+        "line": 6,
+        "name": "CallNextOutcome",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/realtime/realtime-gateway.ts",
+        "line": 1,
+        "name": "RealtimeListener",
+        "productionReferences": 3,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/appointments/appointment-rules.ts",
+        "line": 3,
+        "name": "AppointmentVisualStatus",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/shared/printing/print-document.ts",
+        "line": 1,
+        "name": "PrintDocumentOptions",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/design-system/use-queue-service-selection.ts",
+        "line": 4,
+        "name": "activeQueueServices",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/design-system/use-queue-service-selection.ts",
+        "line": 8,
+        "name": "preferredQueueService",
+        "productionReferences": 1,
+        "testReferences": 7,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/design-system/components/DataTableMobileCard.tsx",
+        "line": 4,
+        "name": "MobileCardField",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/cockpit/hooks/useCockpitPreferences.ts",
+        "line": 4,
+        "name": "CockpitDensity",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/cockpit/CockpitPage.tsx",
+        "line": 109,
+        "name": "CockpitPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/queue-operations/MyQueuesPage.tsx",
+        "line": 32,
+        "name": "MyQueuesPage",
+        "productionReferences": 0,
+        "testReferences": 3,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/persons/PersonsPage.tsx",
+        "line": 48,
+        "name": "PersonsPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/appointments/appointment-actions.ts",
+        "line": 19,
+        "name": "updateAppointment",
+        "productionReferences": 0,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/appointments/AppointmentsPage.tsx",
+        "line": 26,
+        "name": "AppointmentsPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/design-system/components/SvgChartTooltip.tsx",
+        "line": 3,
+        "name": "SvgChartTooltipRow",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/supervision/ControlRoomPage.tsx",
+        "line": 67,
+        "name": "ControlRoomPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/reports/ReportsPage.tsx",
+        "line": 25,
+        "name": "ReportsPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/notifications/notification-wizard-machine.ts",
+        "line": 6,
+        "name": "NotificationWizardEvent",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/notifications/NotificationsPage.tsx",
+        "line": 28,
+        "name": "NotificationsPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/public-experiences/hooks/usePublicExperiences.ts",
+        "line": 67,
+        "name": "resolveDisplayQueueIds",
+        "productionReferences": 1,
+        "testReferences": 4,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/public-experiences/model/kiosk-wizard-state.ts",
+        "line": 4,
+        "name": "KioskWizardState",
+        "productionReferences": 3,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/public-experiences/model/kiosk-wizard-state.ts",
+        "line": 9,
+        "name": "KioskWizardAction",
+        "productionReferences": 1,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/public-experiences/KioskPage.tsx",
+        "line": 3,
+        "name": "KioskPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/public-experiences/DisplayPage.tsx",
+        "line": 19,
+        "name": "DisplayPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/onboarding/OnboardingPage.tsx",
+        "line": 3,
+        "name": "OnboardingPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/users/user-display.ts",
+        "line": 1,
+        "name": "DisplayableUser",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/onboarding/SettingsPage.tsx",
+        "line": 5,
+        "name": "SettingsPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/users/UsersAdminPage.tsx",
+        "line": 50,
+        "name": "UsersAdminPage",
+        "productionReferences": 0,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/translations/TranslationsAdminPage.tsx",
+        "line": 42,
+        "name": "TranslationsAdminPage",
+        "productionReferences": 0,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/edge-installations/hooks/useEdgeInstallations.ts",
+        "line": 13,
+        "name": "edgeInstallationKeys",
+        "productionReferences": 8,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/edge-installations/EdgeInstallationsPage.tsx",
+        "line": 33,
+        "name": "EdgeInstallationsPage",
+        "productionReferences": 0,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/health/HealthPage.tsx",
+        "line": 12,
+        "name": "HealthPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/audit/AuditPage.tsx",
+        "line": 22,
+        "name": "AuditPage",
+        "productionReferences": 0,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/auth/LoginPage.tsx",
+        "line": 159,
+        "name": "LoginPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/auth/ChangePasswordPage.tsx",
+        "line": 31,
+        "name": "ChangePasswordPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/profile/ProfilePage.tsx",
+        "line": 55,
+        "name": "ProfilePage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/public-experiences/privacy.ts",
+        "line": 32,
+        "name": "isPublicDisplaySnapshot",
+        "productionReferences": 0,
+        "testReferences": 3,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/public-experiences/TrackPage.tsx",
+        "line": 35,
+        "name": "TrackPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/legal/legal-config.ts",
+        "line": 3,
+        "name": "LegalConfig",
+        "productionReferences": 3,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/legal/legal-config.ts",
+        "line": 12,
+        "name": "validateProductionLegalConfig",
+        "productionReferences": 0,
+        "testReferences": 3,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/legal/LegalPage.tsx",
+        "line": 12,
+        "name": "LegalPage",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/i18n/locales/allow-identical.ts",
+        "line": 3,
+        "name": "ALLOW_IDENTICAL",
+        "productionReferences": 0,
+        "testReferences": 3,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/i18n/glossary.ts",
+        "line": 5,
+        "name": "FORBIDDEN",
+        "productionReferences": 0,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/onboarding/model/settings-schemas.ts",
+        "line": 3,
+        "name": "tierAssociationSchema",
+        "productionReferences": 0,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/onboarding/model/settings-schemas.ts",
+        "line": 12,
+        "name": "notificationRuleSchema",
+        "productionReferences": 0,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/features/onboarding/model/settings-schemas.ts",
+        "line": 24,
+        "name": "translationSchema",
+        "productionReferences": 0,
+        "testReferences": 2,
+        "externalProductionReferences": 0
+      }
+    ],
+    "methodsWithoutProductionReference": [
+      {
+        "file": "src/core/realtime/queue-realtime-gateway.ts",
+        "line": 106,
+        "name": "connect",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/realtime/queue-realtime-gateway.ts",
+        "line": 117,
+        "name": "disconnect",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/realtime/realtime-gateway.ts",
+        "line": 23,
+        "name": "connect",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/realtime/realtime-gateway.ts",
+        "line": 31,
+        "name": "disconnect",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/core/realtime/realtime-gateway.ts",
+        "line": 55,
+        "name": "subscribe",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/app/AppErrorBoundary.tsx",
+        "line": 47,
+        "name": "componentDidMount",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/app/AppErrorBoundary.tsx",
+        "line": 53,
+        "name": "componentWillUnmount",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/app/AppErrorBoundary.tsx",
+        "line": 81,
+        "name": "getDerivedStateFromError",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/app/AppErrorBoundary.tsx",
+        "line": 89,
+        "name": "componentDidCatch",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/app/AppErrorBoundary.tsx",
+        "line": 94,
+        "name": "componentDidUpdate",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/app/AppErrorBoundary.tsx",
+        "line": 123,
+        "name": "render",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      }
+    ],
+    "unusedDiagnostics": [],
+    "uniqueNameMethodCandidates": [
+      {
+        "file": "src/app/AppErrorBoundary.tsx",
+        "line": 47,
+        "name": "componentDidMount",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0,
+        "lexicalOccurrences": 1
+      },
+      {
+        "file": "src/app/AppErrorBoundary.tsx",
+        "line": 53,
+        "name": "componentWillUnmount",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0,
+        "lexicalOccurrences": 1
+      },
+      {
+        "file": "src/app/AppErrorBoundary.tsx",
+        "line": 81,
+        "name": "getDerivedStateFromError",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0,
+        "lexicalOccurrences": 1
+      },
+      {
+        "file": "src/app/AppErrorBoundary.tsx",
+        "line": 89,
+        "name": "componentDidCatch",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0,
+        "lexicalOccurrences": 1
+      },
+      {
+        "file": "src/app/AppErrorBoundary.tsx",
+        "line": 94,
+        "name": "componentDidUpdate",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0,
+        "lexicalOccurrences": 1
+      }
+    ]
+  },
+  "dori-agent": {
+    "files": 9,
+    "unreachableFromMain": [],
+    "exportsWithoutExternalProductionReference": [
+      {
+        "file": "src/types.ts",
+        "line": 3,
+        "name": "commandTypeSchema",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/types.ts",
+        "line": 4,
+        "name": "CommandType",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/types.ts",
+        "line": 6,
+        "name": "cloudCommandSchema",
+        "productionReferences": 2,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      }
+    ],
+    "methodsWithoutProductionReference": [
+      {
+        "file": "src/cloud-client.ts",
+        "line": 33,
+        "name": "getInstallationStatus",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/cloud-client.ts",
+        "line": 38,
+        "name": "sendHeartbeat",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/cloud-client.ts",
+        "line": 42,
+        "name": "getCommands",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/cloud-client.ts",
+        "line": 48,
+        "name": "acknowledgeCommand",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/cloud-client.ts",
+        "line": 52,
+        "name": "sendCommandResult",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/cloud-client.ts",
+        "line": 56,
+        "name": "relayNotification",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/cloud-client.ts",
+        "line": 60,
+        "name": "syncTracking",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/engine-client.ts",
+        "line": 11,
+        "name": "health",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/store.ts",
+        "line": 43,
+        "name": "initialize",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/store.ts",
+        "line": 60,
+        "name": "close",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/store.ts",
+        "line": 64,
+        "name": "ping",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/store.ts",
+        "line": 68,
+        "name": "getCursor",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/store.ts",
+        "line": 75,
+        "name": "setCursor",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/store.ts",
+        "line": 85,
+        "name": "getDeploymentControl",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/store.ts",
+        "line": 103,
+        "name": "saveDeploymentControl",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/store.ts",
+        "line": 113,
+        "name": "reserveCommand",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/store.ts",
+        "line": 134,
+        "name": "completeCommand",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/store.ts",
+        "line": 143,
+        "name": "refreshTracking",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/store.ts",
+        "line": 193,
+        "name": "listUnsyncedTracking",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/store.ts",
+        "line": 217,
+        "name": "markTrackingSynced",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/store.ts",
+        "line": 226,
+        "name": "listPendingNotifications",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/store.ts",
+        "line": 245,
+        "name": "markNotificationRelayed",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      },
+      {
+        "file": "src/store.ts",
+        "line": 254,
+        "name": "skipPendingNotifications",
+        "productionReferences": 0,
+        "testReferences": 0,
+        "externalProductionReferences": 0
+      }
+    ],
+    "unusedDiagnostics": [],
+    "uniqueNameMethodCandidates": []
+  },
+  "_limitations": [
+    "Candidats uniquement : références par interface, réflexion et noms de routes sous-comptées.",
+    "Scripts et code généré exclus du graphe principal : vérification manuelle obligatoire."
+  ]
+}

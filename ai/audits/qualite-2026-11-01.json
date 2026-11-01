@@ -1,0 +1,44 @@
+{
+  "date": "2026-11-01",
+  "checks": {
+    "apiTypeScript": {
+      "passed": true,
+      "command": "node node_modules/typescript/bin/tsc --noEmit --incremental false --pretty false"
+    },
+    "webTypeScript": {
+      "passed": true,
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.app.json --incremental false --pretty false"
+    },
+    "agentTypeScript": {
+      "passed": true,
+      "command": "node node_modules/typescript/bin/tsc --noEmit --pretty false"
+    },
+    "apiLint": {
+      "passed": false,
+      "errors": 46,
+      "classification": "Prettier formatting"
+    },
+    "webLint": {
+      "passed": false,
+      "errors": 34
+    },
+    "webUIAudit": {
+      "passed": true
+    },
+    "webTokenAudit": {
+      "passed": true
+    },
+    "webPhase11": {
+      "passed": false,
+      "findings": 2,
+      "qualification": "Faux positifs de détection de DTO recopiés : imports de types"
+    },
+    "webI18n": {
+      "passed": false,
+      "findings": 5,
+      "qualification": "3 clés dupliquées et 2 noms techniques à autoriser explicitement"
+    }
+  },
+  "applicationModified": false,
+  "databaseModified": false
+}

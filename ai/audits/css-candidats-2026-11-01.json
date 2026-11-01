@@ -1,0 +1,385 @@
+{
+  "warning": "Candidats seulement : classes construites dynamiquement, bibliothèques, sélecteurs de fichiers et sorties de génération doivent être vérifiés. Aucun sélecteur n'a été supprimé.",
+  "candidates": [
+    {
+      "file": "src/design-system/styles/components/content.css",
+      "class": "appointment-status-scheduled"
+    },
+    {
+      "file": "src/design-system/styles/components/content.css",
+      "class": "appointment-status-booked"
+    },
+    {
+      "file": "src/design-system/styles/components/content.css",
+      "class": "appointment-status-confirmed"
+    },
+    {
+      "file": "src/design-system/styles/components/content.css",
+      "class": "appointment-status-present"
+    },
+    {
+      "file": "src/design-system/styles/components/content.css",
+      "class": "appointment-status-in-progress"
+    },
+    {
+      "file": "src/design-system/styles/components/content.css",
+      "class": "appointment-status-served"
+    },
+    {
+      "file": "src/design-system/styles/components/content.css",
+      "class": "appointment-status-no-show"
+    },
+    {
+      "file": "src/design-system/styles/components/content.css",
+      "class": "appointment-status-expired"
+    },
+    {
+      "file": "src/design-system/styles/components/content.css",
+      "class": "appointment-status-cancelled"
+    },
+    {
+      "file": "src/design-system/styles/components/content.css",
+      "class": "metric-card-info"
+    },
+    {
+      "file": "src/design-system/styles/components/content.css",
+      "class": "metric-card-success"
+    },
+    {
+      "file": "src/design-system/styles/components/content.css",
+      "class": "metric-card-warning"
+    },
+    {
+      "file": "src/design-system/styles/components/content.css",
+      "class": "status-danger"
+    },
+    {
+      "file": "src/design-system/styles/components/content.css",
+      "class": "status-accent"
+    },
+    {
+      "file": "src/design-system/styles/components/content.css",
+      "class": "tracking-status"
+    },
+    {
+      "file": "src/design-system/styles/components/content.css",
+      "class": "cockpit-muted"
+    },
+    {
+      "file": "src/design-system/styles/components/content.css",
+      "class": "is-compact"
+    },
+    {
+      "file": "src/design-system/styles/components/content.css",
+      "class": "button-label-responsive"
+    },
+    {
+      "file": "src/design-system/styles/components/controls.css",
+      "class": "appointment-tier-0"
+    },
+    {
+      "file": "src/design-system/styles/components/controls.css",
+      "class": "appointment-tier-1"
+    },
+    {
+      "file": "src/design-system/styles/components/controls.css",
+      "class": "appointment-tier-2"
+    },
+    {
+      "file": "src/design-system/styles/components/controls.css",
+      "class": "appointment-tier-3"
+    },
+    {
+      "file": "src/design-system/styles/components/controls.css",
+      "class": "appointment-tier-4"
+    },
+    {
+      "file": "src/design-system/styles/components/controls.css",
+      "class": "appointment-tier-5"
+    },
+    {
+      "file": "src/design-system/styles/components/controls.css",
+      "class": "appointment-status-scheduled"
+    },
+    {
+      "file": "src/design-system/styles/components/controls.css",
+      "class": "appointment-status-confirmed"
+    },
+    {
+      "file": "src/design-system/styles/components/controls.css",
+      "class": "appointment-status-present"
+    },
+    {
+      "file": "src/design-system/styles/components/controls.css",
+      "class": "appointment-status-in-progress"
+    },
+    {
+      "file": "src/design-system/styles/components/controls.css",
+      "class": "appointment-status-served"
+    },
+    {
+      "file": "src/design-system/styles/components/controls.css",
+      "class": "appointment-status-no-show"
+    },
+    {
+      "file": "src/design-system/styles/components/controls.css",
+      "class": "appointment-status-cancelled"
+    },
+    {
+      "file": "src/design-system/styles/components/controls.css",
+      "class": "appointment-status-booked"
+    },
+    {
+      "file": "src/design-system/styles/components/controls.css",
+      "class": "appointment-status-expired"
+    },
+    {
+      "file": "src/design-system/styles/components/controls.css",
+      "class": "button-label-icon-only"
+    },
+    {
+      "file": "src/design-system/styles/components/controls.css",
+      "class": "button-label-responsive"
+    },
+    {
+      "file": "src/design-system/styles/components/overlays.css",
+      "class": "button-label-responsive"
+    },
+    {
+      "file": "src/design-system/styles/experiences/display.css",
+      "class": "public-kiosk"
+    },
+    {
+      "file": "src/design-system/styles/experiences/display.css",
+      "class": "public-display"
+    },
+    {
+      "file": "src/design-system/styles/experiences/display.css",
+      "class": "experience-preview-display"
+    },
+    {
+      "file": "src/design-system/styles/experiences/kiosk.css",
+      "class": "public-kiosk"
+    },
+    {
+      "file": "src/design-system/styles/experiences/kiosk.css",
+      "class": "kiosk-brand"
+    },
+    {
+      "file": "src/design-system/styles/experiences/kiosk.css",
+      "class": "kiosk-privacy"
+    },
+    {
+      "file": "src/design-system/styles/experiences/kiosk.css",
+      "class": "kiosk-session"
+    },
+    {
+      "file": "src/design-system/styles/experiences/kiosk.css",
+      "class": "kiosk-phone-input"
+    },
+    {
+      "file": "src/design-system/styles/experiences/kiosk.css",
+      "class": "experience-preview-kiosk"
+    },
+    {
+      "file": "src/design-system/styles/experiences/kiosk.css",
+      "class": "kiosk-header"
+    },
+    {
+      "file": "src/design-system/styles/experiences/kiosk.css",
+      "class": "kiosk-inline-print-header"
+    },
+    {
+      "file": "src/design-system/styles/experiences/kiosk.css",
+      "class": "kiosk-inline-print-footer"
+    },
+    {
+      "file": "src/design-system/styles/experiences/tracking.css",
+      "class": "experience-preview-tracking"
+    },
+    {
+      "file": "src/design-system/styles/experiences/tracking.css",
+      "class": "tracking-phase-called"
+    },
+    {
+      "file": "src/design-system/styles/experiences/tracking.css",
+      "class": "tracking-proximity-near"
+    },
+    {
+      "file": "src/design-system/styles/experiences/tracking.css",
+      "class": "tracking-proximity-next"
+    },
+    {
+      "file": "src/design-system/styles/experiences/tracking.css",
+      "class": "tracking-status-served"
+    },
+    {
+      "file": "src/design-system/styles/experiences/tracking.css",
+      "class": "tracking-status-no_show"
+    },
+    {
+      "file": "src/design-system/styles/experiences/tracking.css",
+      "class": "tracking-status-cancelled"
+    },
+    {
+      "file": "src/design-system/styles/experiences/tracking.css",
+      "class": "tracking-status-expired"
+    },
+    {
+      "file": "src/design-system/styles/experiences/tracking.css",
+      "class": "tracking-error-expired"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "public-public"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "public-device"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "experience-preview-display"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "experience-preview-tracking"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "experience-preview-kiosk"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "tone-success"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "tone-error"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "tone-warning"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "is-connecting"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "is-degraded"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "tracking-queue"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "control-room-alert-critical"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "control-room-alert-info"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "supervision-danger"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "supervision-warning"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "supervision-success"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "report-point-primary"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "report-point-success"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "report-hit-point"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "report-line-primary"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "report-line-success"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "report-comparison-bars"
+    },
+    {
+      "file": "src/design-system/styles/features/application.css",
+      "class": "report-comparison-row"
+    },
+    {
+      "file": "src/design-system/styles/layouts/mobile.css",
+      "class": "button-label-responsive"
+    },
+    {
+      "file": "src/design-system/styles/layouts/mobile.css",
+      "class": "button-label-icon-only"
+    },
+    {
+      "file": "src/design-system/styles/layouts/mobile.css",
+      "class": "quick-registration-panel"
+    },
+    {
+      "file": "src/design-system/styles/layouts/mobile.css",
+      "class": "control-room-queue-filter"
+    },
+    {
+      "file": "src/design-system/styles/layouts/mobile.css",
+      "class": "wizard-steps"
+    },
+    {
+      "file": "src/design-system/styles/layouts/mobile.css",
+      "class": "wizard-step"
+    },
+    {
+      "file": "src/design-system/styles/layouts/shell.css",
+      "class": "public-public"
+    },
+    {
+      "file": "src/design-system/styles/layouts/shell.css",
+      "class": "public-device"
+    },
+    {
+      "file": "src/design-system/styles/print/documents.css",
+      "class": "receipt-80mm"
+    },
+    {
+      "file": "src/design-system/styles/print/documents.css",
+      "class": "passage-print-header"
+    },
+    {
+      "file": "src/design-system/styles/print/documents.css",
+      "class": "passage-print-legal"
+    },
+    {
+      "file": "src/design-system/styles/print/documents.css",
+      "class": "kiosk-inline-print-header"
+    },
+    {
+      "file": "src/design-system/styles/print/documents.css",
+      "class": "kiosk-inline-print-footer"
+    },
+    {
+      "file": "src/features/onboarding/admin.css",
+      "class": "button-label-responsive"
+    },
+    {
+      "file": "src/features/onboarding/admin.css",
+      "class": "tier-default-option"
+    }
+  ]
+}

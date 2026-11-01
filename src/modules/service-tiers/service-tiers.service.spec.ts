@@ -144,7 +144,7 @@ describe('ServiceTiersService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
               is_system: true,
               display_order: 0,
               tier_code: 'FREE',
-              tier_name: 'Gratuit',
+              tier_name: 'Basic',
               tier_description: 'Standard',
             },
           ];

@@ -1,0 +1,8439 @@
+{
+  "baseURL": "http://localhost:18080",
+  "mockedAPI": true,
+  "errors": [],
+  "results": [
+    {
+      "route": "/desk",
+      "width": 1440,
+      "url": "/desk",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "headings": [
+        "Cockpit opérateur",
+        "Accueil rapide",
+        "Vos files de travail",
+        "Derniers passages",
+        "Aucun passage terminé récemment."
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Appeler le meilleur suivant",
+          "w": 230,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Créer un ticket",
+          "w": 150,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 357,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Sessions activesAttente la plus forteNom de la file",
+          "w": 357,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Vue compacte",
+          "w": 148,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Activer les sons",
+          "w": 155,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Ajouter aux favoris",
+          "w": 38,
+          "h": 38,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Réduire la file",
+          "w": 38,
+          "h": 38,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Ouvrir une session",
+          "w": 255,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Appeler sur cette file",
+          "w": 255,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Ajouter aux favoris",
+          "w": 38,
+          "h": 38,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Réduire la file",
+          "w": 38,
+          "h": 38,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Ouvrir une session",
+          "w": 255,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Appeler sur cette file",
+          "w": 255,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 561,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Tous les résultatsServiAbsent",
+          "w": 561,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Toutes les filesAccueil E2EAccueil E2E",
+          "w": 561,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [
+        {
+          "label": "",
+          "font": "12.48px"
+        },
+        {
+          "label": "",
+          "font": "12.48px"
+        }
+      ],
+      "accessibility": []
+    },
+    {
+      "route": "/my-queues",
+      "width": 1440,
+      "url": "/my-queues",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "headings": [
+        "Suivi du jour",
+        "Passages de la journée sélectionnée",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 1102,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 265,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Toutes · 2Accueil E2EAccueil E2E",
+          "w": 265,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "ToutesEn attenteRéservéEn coursTerminéAbsentAnnuléExpiré",
+          "w": 265,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "PositionPlus récentesPlus anciennesTicket · A–ZTicket · Z–AStatut · A–Z",
+          "w": 265,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": []
+    },
+    {
+      "route": "/persons",
+      "width": 1440,
+      "url": "/persons",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "headings": [
+        "Annuaire des personnes",
+        "Annuaire des personnes",
+        "Aucune personne trouvée"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Nouvelle personne",
+          "w": 178,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 1102,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Actives et inactivesActifInactif",
+          "w": 499,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Nom · A à ZNom · Z à APrénom · A à ZPrénom · Z à APlus récemment crééesPlus anciennesAdres",
+          "w": 249,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": []
+    },
+    {
+      "route": "/appointments",
+      "width": 1440,
+      "url": "/appointments",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "headings": [
+        "Rendez-vous — Accueil E2E",
+        "lundi2026-10-26",
+        "mardi2026-10-27",
+        "mercredi2026-10-28",
+        "jeudi2026-10-29",
+        "vendredi2026-10-30",
+        "samedi2026-10-31",
+        "dimancheAujourd’hui2026-11-01"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Semaine",
+          "w": 82,
+          "h": 38,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Mois",
+          "w": 57,
+          "h": 38,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "File",
+          "w": 334,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Précédent",
+          "w": 96,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Suivant",
+          "w": 78,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": []
+    },
+    {
+      "route": "/control-room",
+      "width": 1440,
+      "url": "/control-room",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "headings": [
+        "Supervision temps réel",
+        "Flux entrants et sorties",
+        "Pression par file",
+        "Aucune file à superviser"
+      ],
+      "smallTargets": [
+        {
+          "label": "Supervision",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "DésactivéeToutes les 30 sToutes les minutesToutes les 5 min",
+          "w": 340,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "2 h8 hAujourd’hui24 h7 jours",
+          "w": 340,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "ToutesCritiquesÀ surveillerFluides",
+          "w": 340,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Toutes les files",
+          "w": 115,
+          "h": 37,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [
+        {
+          "label": "",
+          "font": "12.8px"
+        },
+        {
+          "label": "",
+          "font": "12.8px"
+        },
+        {
+          "label": "",
+          "font": "12.8px"
+        }
+      ],
+      "accessibility": []
+    },
+    {
+      "route": "/reports",
+      "width": 1440,
+      "url": "/reports",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "headings": [
+        "Rapports",
+        "Aucune donnée pour cette période"
+      ],
+      "smallTargets": [
+        {
+          "label": "Supervision",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Exporter CSV local",
+          "w": 184,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 250,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 250,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "JourSemaineMois",
+          "w": 200,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "ToutesE2E · Accueil E2EBIS · Accueil E2E",
+          "w": 350,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": []
+    },
+    {
+      "route": "/notifications",
+      "width": 1440,
+      "url": "/notifications",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "headings": [
+        "Notifications",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Supervision",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Nouvel envoi",
+          "w": 141,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "ToutesEn attenteEn cours d’envoiNon renseignéDistribuéeÉchec",
+          "w": 1102,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "ToutesSMSEmail",
+          "w": 265,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "",
+          "w": 265,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 265,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Toutes",
+          "w": 265,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Plus récentesPlus anciennesStatutCanalEnvois les plus récents",
+          "w": 265,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": []
+    },
+    {
+      "route": "/portfolio",
+      "width": 1440,
+      "url": "/portfolio",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "headings": [
+        "Portefeuille de sites",
+        "Site E2E Alpha",
+        "Site E2E Beta"
+      ],
+      "smallTargets": [
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Créer un site",
+          "w": 137,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Sites actifs 2",
+          "w": 106,
+          "h": 30,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Sites désactivés 0",
+          "w": 134,
+          "h": 30,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Tous les sites 2",
+          "w": 119,
+          "h": 30,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Contexte actuel",
+          "w": 157,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Travailler sur ce site",
+          "w": 518,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": []
+    },
+    {
+      "route": "/settings/sites",
+      "width": 1440,
+      "url": "/settings/sites",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "headings": [
+        "Configuration du service",
+        "Site et utilisateurs directs"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Sites",
+          "w": 60,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Files",
+          "w": 54,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Niveaux de service",
+          "w": 149,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Modifier",
+          "w": 88,
+          "h": 32,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Affecter un utilisateur",
+          "w": 159,
+          "h": 32,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Désactiver",
+          "w": 98,
+          "h": 32,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Affecter un utilisateur",
+          "w": 196,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": []
+    },
+    {
+      "route": "/settings/queues",
+      "width": 1440,
+      "url": "/settings/queues",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "headings": [
+        "Cette page a rencontré une erreur"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Détails techniques",
+          "w": 817,
+          "h": 43,
+          "tag": "SUMMARY"
+        },
+        {
+          "label": "Réessayer",
+          "w": 118,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Recharger la page",
+          "w": 173,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Copier le diagnostic",
+          "w": 185,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": []
+    },
+    {
+      "route": "/settings/tiers",
+      "width": 1440,
+      "url": "/settings/tiers",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "headings": [
+        "Configuration du service",
+        "Niveaux de service"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Sites",
+          "w": 56,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Files",
+          "w": 54,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Niveaux de service",
+          "w": 166,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Accueil E2E (E2E)Accueil E2E (BIS)",
+          "w": 486,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "AucunStandard E2E",
+          "w": 486,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Désactiver Standard E2E",
+          "w": 274,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Modifier Standard E2E",
+          "w": 538,
+          "h": 43,
+          "tag": "SUMMARY"
+        },
+        {
+          "label": "",
+          "w": 292,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "TNDEURUSD",
+          "w": 204,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "",
+          "w": 17,
+          "h": 17,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 17,
+          "h": 17,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 17,
+          "h": 17,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 17,
+          "h": 17,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Enregistrer",
+          "w": 507,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [
+        {
+          "label": "",
+          "font": "14px"
+        },
+        {
+          "label": "",
+          "font": "14px"
+        }
+      ],
+      "accessibility": []
+    },
+    {
+      "route": "/admin/users",
+      "width": 1440,
+      "url": "/admin/users",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "headings": [
+        "Utilisateurs",
+        "Comptes utilisateurs",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Nouvel utilisateur",
+          "w": 170,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 1102,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "TousHumainKiosque",
+          "w": 357,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Nom · A–ZNom · Z–ADernière connexion ↓Dernière connexion ↑Créée le ↓",
+          "w": 357,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": []
+    },
+    {
+      "route": "/admin/translations",
+      "width": 1440,
+      "url": "/admin/translations",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "headings": [
+        "Traductions",
+        "Catalogue des traductions",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Traductions",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Nouvelle traduction",
+          "w": 185,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 1102,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "ToutesInterface interneInterface publiqueSMSE-mailErreurs",
+          "w": 357,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "ToutesFrançaisEnglishالعربية",
+          "w": 357,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": []
+    },
+    {
+      "route": "/audit",
+      "width": 1440,
+      "url": "/audit",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "headings": [
+        "Journal d’audit",
+        "Aucun événement trouvé"
+      ],
+      "smallTargets": [
+        {
+          "label": "Traductions",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 1102,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 357,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 357,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 357,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "ToutesRéussiteÉchec",
+          "w": 357,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "",
+          "w": 357,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 357,
+          "h": 42,
+          "tag": "INPUT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": []
+    },
+    {
+      "route": "/profile",
+      "width": 1440,
+      "url": "/profile",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "headings": [
+        "Mon profil",
+        "root.e2e",
+        "Informations et préférences"
+      ],
+      "smallTargets": [
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Déconnecter toutes mes sessions",
+          "w": 264,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 772,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 772,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "🇫🇷🇬🇧🇹🇳😊",
+          "w": 772,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Enregistrer",
+          "w": 772,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Lagon",
+          "w": 38,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Océan",
+          "w": 38,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Bleu royal",
+          "w": 38,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Iris",
+          "w": 38,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Orchidée",
+          "w": 38,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Baie",
+          "w": 38,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Corail",
+          "w": 38,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Braise",
+          "w": 38,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Ambre",
+          "w": 38,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Citron vert",
+          "w": 38,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Forêt",
+          "w": 38,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Menthe",
+          "w": 38,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Ardoise",
+          "w": 38,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Graphite",
+          "w": 38,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Cacao",
+          "w": 38,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Bordeaux",
+          "w": 38,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer mon mot de passe",
+          "w": 238,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": []
+    },
+    {
+      "route": "/onboarding",
+      "width": 1440,
+      "url": "/onboarding",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "headings": [
+        "Configurer un nouveau site",
+        "Parcours de configuration",
+        "Identité du site"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 369,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "PublicPrivé",
+          "w": 369,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "",
+          "w": 369,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 369,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Africa/TunisEurope/ParisAfrica/Casablanca",
+          "w": 369,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "fraren",
+          "w": 369,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Précédent",
+          "w": 120,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Enregistrer le brouillon",
+          "w": 181,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Enregistrer et continuer",
+          "w": 186,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": []
+    },
+    {
+      "route": "/kiosk",
+      "width": 1440,
+      "url": "/kiosk",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "headings": [
+        "Comment pouvons-nous vous accueillir ?"
+      ],
+      "smallTargets": [
+        {
+          "label": "Borne kiosque",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": []
+    },
+    {
+      "route": "/desk",
+      "width": 1024,
+      "url": "/desk",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "headings": [
+        "Cockpit opérateur",
+        "Accueil rapide",
+        "Vos files de travail",
+        "Derniers passages",
+        "Aucun passage terminé récemment."
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Appeler le meilleur suivant",
+          "w": 230,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Créer un ticket",
+          "w": 150,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 219,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Sessions activesAttente la plus forteNom de la file",
+          "w": 219,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Vue compacte",
+          "w": 148,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Activer les sons",
+          "w": 155,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Ajouter aux favoris",
+          "w": 38,
+          "h": 38,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Réduire la file",
+          "w": 38,
+          "h": 38,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Ouvrir une session",
+          "w": 152,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Appeler sur cette file",
+          "w": 152,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Ajouter aux favoris",
+          "w": 38,
+          "h": 38,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Réduire la file",
+          "w": 38,
+          "h": 38,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Ouvrir une session",
+          "w": 152,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Appeler sur cette file",
+          "w": 152,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 353,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Tous les résultatsServiAbsent",
+          "w": 353,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Toutes les filesAccueil E2EAccueil E2E",
+          "w": 353,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [
+        {
+          "label": "",
+          "font": "12.48px"
+        },
+        {
+          "label": "",
+          "font": "12.48px"
+        }
+      ]
+    },
+    {
+      "route": "/my-queues",
+      "width": 1024,
+      "url": "/my-queues",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "headings": [
+        "Suivi du jour",
+        "Passages de la journée sélectionnée",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 686,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 219,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Toutes · 2Accueil E2EAccueil E2E",
+          "w": 219,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "ToutesEn attenteRéservéEn coursTerminéAbsentAnnuléExpiré",
+          "w": 219,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "PositionPlus récentesPlus anciennesTicket · A–ZTicket · Z–AStatut · A–Z",
+          "w": 219,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/persons",
+      "width": 1024,
+      "url": "/persons",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "headings": [
+        "Annuaire des personnes",
+        "Annuaire des personnes",
+        "Aucune personne trouvée"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Nouvelle personne",
+          "w": 178,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 686,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Actives et inactivesActifInactif",
+          "w": 305,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Nom · A à ZNom · Z à APrénom · A à ZPrénom · Z à APlus récemment crééesPlus anciennesAdres",
+          "w": 153,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/appointments",
+      "width": 1024,
+      "url": "/appointments",
+      "viewport": 1024,
+      "scrollWidth": 1032,
+      "headings": [
+        "Rendez-vous — Accueil E2E",
+        "lundi2026-10-26",
+        "mardi2026-10-27",
+        "mercredi2026-10-28",
+        "jeudi2026-10-29",
+        "vendredi2026-10-30",
+        "samedi2026-10-31",
+        "dimancheAujourd’hui2026-11-01"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Semaine",
+          "w": 82,
+          "h": 38,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Mois",
+          "w": 57,
+          "h": 38,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "File",
+          "w": 334,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Précédent",
+          "w": 96,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Suivant",
+          "w": 78,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [
+        {
+          "class": "week-calendar",
+          "client": 757,
+          "scroll": 1024
+        }
+      ],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/control-room",
+      "width": 1024,
+      "url": "/control-room",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "headings": [
+        "Supervision temps réel",
+        "Flux entrants et sorties",
+        "Pression par file",
+        "Aucune file à superviser"
+      ],
+      "smallTargets": [
+        {
+          "label": "Supervision",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "DésactivéeToutes les 30 sToutes les minutesToutes les 5 min",
+          "w": 665,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "2 h8 hAujourd’hui24 h7 jours",
+          "w": 665,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "ToutesCritiquesÀ surveillerFluides",
+          "w": 665,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Toutes les files",
+          "w": 115,
+          "h": 37,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [
+        {
+          "label": "",
+          "font": "12.8px"
+        },
+        {
+          "label": "",
+          "font": "12.8px"
+        },
+        {
+          "label": "",
+          "font": "12.8px"
+        }
+      ]
+    },
+    {
+      "route": "/reports",
+      "width": 1024,
+      "url": "/reports",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "headings": [
+        "Rapports",
+        "Aucune donnée pour cette période"
+      ],
+      "smallTargets": [
+        {
+          "label": "Supervision",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Exporter CSV local",
+          "w": 137,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 152,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 152,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "JourSemaineMois",
+          "w": 137,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "ToutesE2E · Accueil E2EBIS · Accueil E2E",
+          "w": 228,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/notifications",
+      "width": 1024,
+      "url": "/notifications",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "headings": [
+        "Notifications",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Supervision",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Nouvel envoi",
+          "w": 141,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "ToutesEn attenteEn cours d’envoiNon renseignéDistribuéeÉchec",
+          "w": 686,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "ToutesSMSEmail",
+          "w": 161,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "",
+          "w": 161,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 161,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Toutes",
+          "w": 161,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Plus récentesPlus anciennesStatutCanalEnvois les plus récents",
+          "w": 161,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/portfolio",
+      "width": 1024,
+      "url": "/portfolio",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "headings": [
+        "Portefeuille de sites",
+        "Site E2E Alpha",
+        "Site E2E Beta"
+      ],
+      "smallTargets": [
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Créer un site",
+          "w": 137,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Sites actifs 2",
+          "w": 93,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Sites désactivés 0",
+          "w": 117,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Tous les sites 2",
+          "w": 104,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Contexte actuel",
+          "w": 157,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Travailler sur ce site",
+          "w": 310,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/settings/sites",
+      "width": 1024,
+      "url": "/settings/sites",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "headings": [
+        "Configuration du service",
+        "Site et utilisateurs directs"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Sites",
+          "w": 60,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Files",
+          "w": 54,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Niveaux de service",
+          "w": 149,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Affecter un utilisateur",
+          "w": 196,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [
+        {
+          "class": "table-wrap admin-table-wrap",
+          "client": 712,
+          "scroll": 813
+        }
+      ],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/settings/queues",
+      "width": 1024,
+      "url": "/settings/queues",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "headings": [
+        "Cette page a rencontré une erreur"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Détails techniques",
+          "w": 656,
+          "h": 43,
+          "tag": "SUMMARY"
+        },
+        {
+          "label": "Réessayer",
+          "w": 118,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Recharger la page",
+          "w": 173,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Copier le diagnostic",
+          "w": 185,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/settings/tiers",
+      "width": 1024,
+      "url": "/settings/tiers",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "headings": [
+        "Configuration du service",
+        "Niveaux de service"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Sites",
+          "w": 56,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Files",
+          "w": 54,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Niveaux de service",
+          "w": 166,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Accueil E2E (E2E)Accueil E2E (BIS)",
+          "w": 486,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "AucunStandard E2E",
+          "w": 486,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Désactiver Standard E2E",
+          "w": 274,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Modifier Standard E2E",
+          "w": 677,
+          "h": 43,
+          "tag": "SUMMARY"
+        },
+        {
+          "label": "",
+          "w": 374,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "TNDEURUSD",
+          "w": 261,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "",
+          "w": 17,
+          "h": 17,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 17,
+          "h": 17,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 17,
+          "h": 17,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 17,
+          "h": 17,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Enregistrer",
+          "w": 646,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [
+        {
+          "label": "",
+          "font": "14px"
+        },
+        {
+          "label": "",
+          "font": "14px"
+        }
+      ]
+    },
+    {
+      "route": "/admin/users",
+      "width": 1024,
+      "url": "/admin/users",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "headings": [
+        "Utilisateurs",
+        "Comptes utilisateurs",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Nouvel utilisateur",
+          "w": 170,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 686,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "TousHumainKiosque",
+          "w": 219,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Nom · A–ZNom · Z–ADernière connexion ↓Dernière connexion ↑Créée le ↓",
+          "w": 219,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/admin/translations",
+      "width": 1024,
+      "url": "/admin/translations",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "headings": [
+        "Traductions",
+        "Catalogue des traductions",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Traductions",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Nouvelle traduction",
+          "w": 185,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 686,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "ToutesInterface interneInterface publiqueSMSE-mailErreurs",
+          "w": 219,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "ToutesFrançaisEnglishالعربية",
+          "w": 219,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/audit",
+      "width": 1024,
+      "url": "/audit",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "headings": [
+        "Journal d’audit",
+        "Aucun événement trouvé"
+      ],
+      "smallTargets": [
+        {
+          "label": "Traductions",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 686,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 219,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 219,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 219,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "ToutesRéussiteÉchec",
+          "w": 219,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "",
+          "w": 219,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 219,
+          "h": 42,
+          "tag": "INPUT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/profile",
+      "width": 1024,
+      "url": "/profile",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "headings": [
+        "Mon profil",
+        "root.e2e",
+        "Informations et préférences"
+      ],
+      "smallTargets": [
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Déconnecter toutes mes sessions",
+          "w": 203,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 417,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 417,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "🇫🇷🇬🇧🇹🇳😊",
+          "w": 417,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Enregistrer",
+          "w": 417,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Lagon",
+          "w": 35,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Océan",
+          "w": 35,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Bleu royal",
+          "w": 35,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Iris",
+          "w": 35,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Orchidée",
+          "w": 35,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Baie",
+          "w": 35,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Corail",
+          "w": 35,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Braise",
+          "w": 35,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Ambre",
+          "w": 35,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Citron vert",
+          "w": 35,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Forêt",
+          "w": 35,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Menthe",
+          "w": 35,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Ardoise",
+          "w": 35,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Graphite",
+          "w": 35,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Cacao",
+          "w": 35,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Bordeaux",
+          "w": 35,
+          "h": 36,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/onboarding",
+      "width": 1024,
+      "url": "/onboarding",
+      "viewport": 1024,
+      "scrollWidth": 1031,
+      "headings": [
+        "Configurer un nouveau site",
+        "Parcours de configuration",
+        "Identité du site"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 200,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "PublicPrivé",
+          "w": 200,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "",
+          "w": 200,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 200,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Africa/TunisEurope/ParisAfrica/Casablanca",
+          "w": 200,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "fraren",
+          "w": 200,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Précédent",
+          "w": 120,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Enregistrer le brouillon",
+          "w": 135,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Enregistrer et continuer",
+          "w": 139,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/kiosk",
+      "width": 1024,
+      "url": "/kiosk",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "headings": [
+        "Comment pouvons-nous vous accueillir ?"
+      ],
+      "smallTargets": [
+        {
+          "label": "Borne kiosque",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 216,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Réduire le menu",
+          "w": 216,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/desk",
+      "width": 768,
+      "url": "/desk",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "headings": [
+        "Cockpit opérateur",
+        "Accueil rapide",
+        "Vos files de travail",
+        "Derniers passages",
+        "Aucun passage terminé récemment."
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Supervision",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Borne kiosque",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Portefeuille de sites",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Traductions",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Agrandir le menu",
+          "w": 56,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Appeler le meilleur suivant",
+          "w": 230,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Créer un ticket",
+          "w": 150,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 198,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Sessions activesAttente la plus forteNom de la file",
+          "w": 198,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Vue compacte",
+          "w": 307,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Activer les sons",
+          "w": 307,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Ajouter aux favoris",
+          "w": 38,
+          "h": 38,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Réduire la file",
+          "w": 38,
+          "h": 38,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Ouvrir une session",
+          "w": 303,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Appeler sur cette file",
+          "w": 303,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Ajouter aux favoris",
+          "w": 38,
+          "h": 38,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Réduire la file",
+          "w": 38,
+          "h": 38,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Ouvrir une session",
+          "w": 303,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Appeler sur cette file",
+          "w": 303,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 322,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Tous les résultatsServiAbsent",
+          "w": 322,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Toutes les filesAccueil E2EAccueil E2E",
+          "w": 322,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [
+        {
+          "label": "",
+          "font": "12.48px"
+        },
+        {
+          "label": "",
+          "font": "12.48px"
+        }
+      ]
+    },
+    {
+      "route": "/my-queues",
+      "width": 768,
+      "url": "/my-queues",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "headings": [
+        "Suivi du jour",
+        "Passages de la journée sélectionnée",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Supervision",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Borne kiosque",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Portefeuille de sites",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Traductions",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Agrandir le menu",
+          "w": 56,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 625,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 198,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Toutes · 2Accueil E2EAccueil E2E",
+          "w": 198,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "ToutesEn attenteRéservéEn coursTerminéAbsentAnnuléExpiré",
+          "w": 198,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "PositionPlus récentesPlus anciennesTicket · A–ZTicket · Z–AStatut · A–Z",
+          "w": 198,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/persons",
+      "width": 768,
+      "url": "/persons",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "headings": [
+        "Annuaire des personnes",
+        "Annuaire des personnes",
+        "Aucune personne trouvée"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Supervision",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Borne kiosque",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Portefeuille de sites",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Traductions",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Agrandir le menu",
+          "w": 56,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Nouvelle personne",
+          "w": 178,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 625,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Actives et inactivesActifInactif",
+          "w": 261,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Nom · A à ZNom · Z à APrénom · A à ZPrénom · Z à APlus récemment crééesPlus anciennesAdres",
+          "w": 152,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/appointments",
+      "width": 768,
+      "url": "/appointments",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "headings": [
+        "Rendez-vous — Accueil E2E",
+        "lundi2026-10-26",
+        "mardi2026-10-27",
+        "mercredi2026-10-28",
+        "jeudi2026-10-29",
+        "vendredi2026-10-30",
+        "samedi2026-10-31",
+        "dimancheAujourd’hui2026-11-01"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Supervision",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Borne kiosque",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Portefeuille de sites",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Traductions",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Agrandir le menu",
+          "w": 56,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Semaine",
+          "w": 82,
+          "h": 38,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Mois",
+          "w": 57,
+          "h": 38,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "File",
+          "w": 334,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Précédent",
+          "w": 96,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Suivant",
+          "w": 78,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [
+        {
+          "class": "week-calendar",
+          "client": 692,
+          "scroll": 1024
+        }
+      ],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/control-room",
+      "width": 768,
+      "url": "/control-room",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "headings": [
+        "Supervision temps réel",
+        "Flux entrants et sorties",
+        "Pression par file",
+        "Aucune file à superviser"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Supervision",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Borne kiosque",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Portefeuille de sites",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Traductions",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Agrandir le menu",
+          "w": 56,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "DésactivéeToutes les 30 sToutes les minutesToutes les 5 min",
+          "w": 615,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "2 h8 hAujourd’hui24 h7 jours",
+          "w": 615,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "ToutesCritiquesÀ surveillerFluides",
+          "w": 615,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Toutes les files",
+          "w": 115,
+          "h": 37,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [
+        {
+          "label": "",
+          "font": "12.8px"
+        },
+        {
+          "label": "",
+          "font": "12.8px"
+        },
+        {
+          "label": "",
+          "font": "12.8px"
+        }
+      ]
+    },
+    {
+      "route": "/reports",
+      "width": 768,
+      "url": "/reports",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "headings": [
+        "Rapports",
+        "Aucune donnée pour cette période"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Supervision",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Borne kiosque",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Portefeuille de sites",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Traductions",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Agrandir le menu",
+          "w": 56,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Exporter CSV local",
+          "w": 125,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 301,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 301,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "JourSemaineMois",
+          "w": 301,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "ToutesE2E · Accueil E2EBIS · Accueil E2E",
+          "w": 301,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/notifications",
+      "width": 768,
+      "url": "/notifications",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "headings": [
+        "Notifications",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Supervision",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Borne kiosque",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Portefeuille de sites",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Traductions",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Agrandir le menu",
+          "w": 56,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Nouvel envoi",
+          "w": 141,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "ToutesEn attenteEn cours d’envoiNon renseignéDistribuéeÉchec",
+          "w": 625,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "ToutesSMSEmail",
+          "w": 152,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "",
+          "w": 152,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 152,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Toutes",
+          "w": 152,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Plus récentesPlus anciennesStatutCanalEnvois les plus récents",
+          "w": 152,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/portfolio",
+      "width": 768,
+      "url": "/portfolio",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "headings": [
+        "Portefeuille de sites",
+        "Site E2E Alpha",
+        "Site E2E Beta"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Supervision",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Borne kiosque",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Portefeuille de sites",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Traductions",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Agrandir le menu",
+          "w": 56,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Créer un site",
+          "w": 137,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Sites actifs 2",
+          "w": 84,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Sites désactivés 0",
+          "w": 106,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Tous les sites 2",
+          "w": 94,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Contexte actuel",
+          "w": 157,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Travailler sur ce site",
+          "w": 279,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/settings/sites",
+      "width": 768,
+      "url": "/settings/sites",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "headings": [
+        "Configuration du service",
+        "Site et utilisateurs directs"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Supervision",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Borne kiosque",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Portefeuille de sites",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Traductions",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Agrandir le menu",
+          "w": 56,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Sites",
+          "w": 60,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Files",
+          "w": 54,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Niveaux de service",
+          "w": 149,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Affecter un utilisateur",
+          "w": 196,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [
+        {
+          "class": "table-wrap admin-table-wrap",
+          "client": 648,
+          "scroll": 813
+        }
+      ],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/settings/queues",
+      "width": 768,
+      "url": "/settings/queues",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "headings": [
+        "Cette page a rencontré une erreur"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Supervision",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Borne kiosque",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Portefeuille de sites",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Traductions",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Agrandir le menu",
+          "w": 56,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Détails techniques",
+          "w": 610,
+          "h": 43,
+          "tag": "SUMMARY"
+        },
+        {
+          "label": "Réessayer",
+          "w": 118,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Recharger la page",
+          "w": 173,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Copier le diagnostic",
+          "w": 185,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/settings/tiers",
+      "width": 768,
+      "url": "/settings/tiers",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "headings": [
+        "Configuration du service",
+        "Niveaux de service"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Supervision",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Borne kiosque",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Portefeuille de sites",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Traductions",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Agrandir le menu",
+          "w": 56,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Sites",
+          "w": 56,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Files",
+          "w": 54,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Niveaux de service",
+          "w": 166,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Accueil E2E (E2E)Accueil E2E (BIS)",
+          "w": 486,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "AucunStandard E2E",
+          "w": 486,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Désactiver Standard E2E",
+          "w": 274,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Modifier Standard E2E",
+          "w": 616,
+          "h": 43,
+          "tag": "SUMMARY"
+        },
+        {
+          "label": "",
+          "w": 338,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "TNDEURUSD",
+          "w": 236,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "",
+          "w": 17,
+          "h": 17,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 17,
+          "h": 17,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 17,
+          "h": 17,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 17,
+          "h": 17,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Enregistrer",
+          "w": 585,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [
+        {
+          "label": "",
+          "font": "14px"
+        },
+        {
+          "label": "",
+          "font": "14px"
+        }
+      ]
+    },
+    {
+      "route": "/admin/users",
+      "width": 768,
+      "url": "/admin/users",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "headings": [
+        "Utilisateurs",
+        "Comptes utilisateurs",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Supervision",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Borne kiosque",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Portefeuille de sites",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Traductions",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Agrandir le menu",
+          "w": 56,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Nouvel utilisateur",
+          "w": 170,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 625,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "TousHumainKiosque",
+          "w": 198,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Nom · A–ZNom · Z–ADernière connexion ↓Dernière connexion ↑Créée le ↓",
+          "w": 198,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/admin/translations",
+      "width": 768,
+      "url": "/admin/translations",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "headings": [
+        "Traductions",
+        "Catalogue des traductions",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Supervision",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Borne kiosque",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Portefeuille de sites",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Traductions",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Agrandir le menu",
+          "w": 56,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Nouvelle traduction",
+          "w": 177,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 625,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "ToutesInterface interneInterface publiqueSMSE-mailErreurs",
+          "w": 198,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "ToutesFrançaisEnglishالعربية",
+          "w": 198,
+          "h": 42,
+          "tag": "SELECT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/audit",
+      "width": 768,
+      "url": "/audit",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "headings": [
+        "Journal d’audit",
+        "Aucun événement trouvé"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Supervision",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Borne kiosque",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Portefeuille de sites",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Traductions",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Agrandir le menu",
+          "w": 56,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 625,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 198,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 198,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 198,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "ToutesRéussiteÉchec",
+          "w": 198,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "",
+          "w": 198,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 198,
+          "h": 42,
+          "tag": "INPUT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/profile",
+      "width": 768,
+      "url": "/profile",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "headings": [
+        "Mon profil",
+        "root.e2e",
+        "Informations et préférences"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Supervision",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Borne kiosque",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Portefeuille de sites",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Traductions",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Agrandir le menu",
+          "w": 56,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Déconnecter toutes mes sessions",
+          "w": 618,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 618,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 618,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "🇫🇷🇬🇧🇹🇳😊",
+          "w": 618,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Enregistrer",
+          "w": 618,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Lagon",
+          "w": 34,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Océan",
+          "w": 34,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Bleu royal",
+          "w": 34,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Iris",
+          "w": 34,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Orchidée",
+          "w": 34,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Baie",
+          "w": 34,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Corail",
+          "w": 34,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Braise",
+          "w": 34,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Ambre",
+          "w": 34,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Citron vert",
+          "w": 34,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Forêt",
+          "w": 34,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Menthe",
+          "w": 34,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Ardoise",
+          "w": 34,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Graphite",
+          "w": 34,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Cacao",
+          "w": 34,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Bordeaux",
+          "w": 34,
+          "h": 36,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer mon mot de passe",
+          "w": 587,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/onboarding",
+      "width": 768,
+      "url": "/onboarding",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "headings": [
+        "Configurer un nouveau site",
+        "Parcours de configuration",
+        "Identité du site"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Supervision",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Borne kiosque",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Portefeuille de sites",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Traductions",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Agrandir le menu",
+          "w": 56,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "",
+          "w": 301,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "PublicPrivé",
+          "w": 301,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "",
+          "w": 301,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 301,
+          "h": 42,
+          "tag": "INPUT"
+        },
+        {
+          "label": "Africa/TunisEurope/ParisAfrica/Casablanca",
+          "w": 301,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "fraren",
+          "w": 301,
+          "h": 42,
+          "tag": "SELECT"
+        },
+        {
+          "label": "Précédent",
+          "w": 120,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Enregistrer le brouillon",
+          "w": 181,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Enregistrer et continuer",
+          "w": 186,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/kiosk",
+      "width": 768,
+      "url": "/kiosk",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "headings": [
+        "Comment pouvons-nous vous accueillir ?"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Supervision",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Borne kiosque",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Portefeuille de sites",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Traductions",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 56,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "Agrandir le menu",
+          "w": 56,
+          "h": 40,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Actualiser la page",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Changer de thème",
+          "w": 32,
+          "h": 44,
+          "tag": "BUTTON"
+        },
+        {
+          "label": "Langue: Français",
+          "w": 42,
+          "h": 42,
+          "tag": "BUTTON"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/desk",
+      "width": 390,
+      "url": "/desk",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Cockpit opérateur",
+        "Accueil rapide",
+        "Vos files de travail",
+        "Derniers passages",
+        "Aucun passage terminé récemment."
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 268,
+          "h": 42,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".mobile-bottom-nav > .active[aria-current=\"page\"][href$=\"desk\"] > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.42 (foreground color: #087477, background color: #d7e9e9, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/my-queues",
+      "width": 390,
+      "url": "/my-queues",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Suivi du jour",
+        "Passages de la journée sélectionnée",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 268,
+          "h": 42,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".mobile-bottom-nav > .active[aria-current=\"page\"][href$=\"my-queues\"] > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.42 (foreground color: #087477, background color: #d7e9e9, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/persons",
+      "width": 390,
+      "url": "/persons",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Annuaire des personnes",
+        "Annuaire des personnes",
+        "Aucune personne trouvée"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 268,
+          "h": 42,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".mobile-bottom-nav > .active > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.42 (foreground color: #087477, background color: #d7e9e9, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/appointments",
+      "width": 390,
+      "url": "/appointments",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Rendez-vous — Accueil E2E",
+        "dimanche 1 novembre 2026"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 268,
+          "h": 42,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".mobile-bottom-nav > .active[aria-current=\"page\"][href$=\"appointments\"] > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.42 (foreground color: #087477, background color: #d7e9e9, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/control-room",
+      "width": 390,
+      "url": "/control-room",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Supervision temps réel",
+        "Flux entrants et sorties",
+        "Pression par file",
+        "Aucune file à superviser"
+      ],
+      "smallTargets": [
+        {
+          "label": "Supervision",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 268,
+          "h": 42,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".mobile-bottom-nav > .active > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.42 (foreground color: #087477, background color: #d7e9e9, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/reports",
+      "width": 390,
+      "url": "/reports",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Rapports",
+        "Aucune donnée pour cette période"
+      ],
+      "smallTargets": [
+        {
+          "label": "Supervision",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 268,
+          "h": 42,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".mobile-bottom-nav > .active > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.42 (foreground color: #087477, background color: #d7e9e9, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/notifications",
+      "width": 390,
+      "url": "/notifications",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Notifications",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Supervision",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 268,
+          "h": 42,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".mobile-bottom-nav > .active > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.42 (foreground color: #087477, background color: #d7e9e9, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/portfolio",
+      "width": 390,
+      "url": "/portfolio",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Portefeuille de sites",
+        "Site E2E Alpha",
+        "Site E2E Beta"
+      ],
+      "smallTargets": [
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 268,
+          "h": 42,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".active > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.42 (foreground color: #087477, background color: #d7e9e9, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/settings/sites",
+      "width": 390,
+      "url": "/settings/sites",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Configuration du service",
+        "Site et utilisateurs directs"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 268,
+          "h": 42,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".active[type=\"button\"] > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.42 (foreground color: #087477, background color: #d7e9e9, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/settings/queues",
+      "width": 390,
+      "url": "/settings/queues",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Cette page a rencontré une erreur"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 268,
+          "h": 42,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".mobile-bottom-nav > .active > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.42 (foreground color: #087477, background color: #d7e9e9, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/settings/tiers",
+      "width": 390,
+      "url": "/settings/tiers",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Configuration du service",
+        "Niveaux de service"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 268,
+          "h": 42,
+          "tag": "A"
+        },
+        {
+          "label": "",
+          "w": 18,
+          "h": 18,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 18,
+          "h": 18,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 18,
+          "h": 18,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 18,
+          "h": 18,
+          "tag": "INPUT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".mobile-bottom-nav > .active > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.42 (foreground color: #087477, background color: #d7e9e9, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/admin/users",
+      "width": 390,
+      "url": "/admin/users",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Utilisateurs",
+        "Comptes utilisateurs",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 268,
+          "h": 42,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".mobile-bottom-nav > .active > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.42 (foreground color: #087477, background color: #d7e9e9, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/admin/translations",
+      "width": 390,
+      "url": "/admin/translations",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Traductions",
+        "Catalogue des traductions",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Traductions",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 268,
+          "h": 42,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".mobile-bottom-nav > .active > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.42 (foreground color: #087477, background color: #d7e9e9, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/audit",
+      "width": 390,
+      "url": "/audit",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Journal d’audit",
+        "Aucun événement trouvé"
+      ],
+      "smallTargets": [
+        {
+          "label": "Traductions",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 268,
+          "h": 42,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".feedback-state > p"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.8 (foreground color: #6d849b, background color: #fdfdfe, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".mobile-bottom-nav > .active > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.42 (foreground color: #087477, background color: #d7e9e9, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/profile",
+      "width": 390,
+      "url": "/profile",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Mon profil",
+        "root.e2e",
+        "Informations et préférences"
+      ],
+      "smallTargets": [
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 268,
+          "h": 42,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".active > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.42 (foreground color: #087477, background color: #d7e9e9, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/onboarding",
+      "width": 390,
+      "url": "/onboarding",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Configurer un nouveau site",
+        "Parcours de configuration",
+        "Identité du site"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 268,
+          "h": 42,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".active[type=\"button\"] > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.42 (foreground color: #087477, background color: #d7e9e9, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/kiosk",
+      "width": 390,
+      "url": "/kiosk",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Comment pouvons-nous vous accueillir ?"
+      ],
+      "smallTargets": [
+        {
+          "label": "Borne kiosque",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 268,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Mentions légales · Confidentialité",
+          "w": 268,
+          "h": 42,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": [],
+      "accessibility": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".mobile-bottom-nav > .active > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.42 (foreground color: #087477, background color: #d7e9e9, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/desk",
+      "width": 320,
+      "url": "/desk",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Cockpit opérateur",
+        "Accueil rapide",
+        "Vos files de travail",
+        "Derniers passages",
+        "Aucun passage terminé récemment."
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/my-queues",
+      "width": 320,
+      "url": "/my-queues",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Suivi du jour",
+        "Passages de la journée sélectionnée",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/persons",
+      "width": 320,
+      "url": "/persons",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Annuaire des personnes",
+        "Annuaire des personnes",
+        "Aucune personne trouvée"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/appointments",
+      "width": 320,
+      "url": "/appointments",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Rendez-vous — Accueil E2E",
+        "dimanche 1 novembre 2026"
+      ],
+      "smallTargets": [
+        {
+          "label": "Cockpit guichet",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi du jour",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Annuaire",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rendez-vous",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/control-room",
+      "width": 320,
+      "url": "/control-room",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Supervision temps réel",
+        "Flux entrants et sorties",
+        "Pression par file",
+        "Aucune file à superviser"
+      ],
+      "smallTargets": [
+        {
+          "label": "Supervision",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/reports",
+      "width": 320,
+      "url": "/reports",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Rapports",
+        "Aucune donnée pour cette période"
+      ],
+      "smallTargets": [
+        {
+          "label": "Supervision",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/notifications",
+      "width": 320,
+      "url": "/notifications",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Notifications",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Supervision",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Rapports",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Notifications",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/portfolio",
+      "width": 320,
+      "url": "/portfolio",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Portefeuille de sites",
+        "Site E2E Alpha",
+        "Site E2E Beta"
+      ],
+      "smallTargets": [],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/settings/sites",
+      "width": 320,
+      "url": "/settings/sites",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Configuration du service",
+        "Site et utilisateurs directs"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/settings/queues",
+      "width": 320,
+      "url": "/settings/queues",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Cette page a rencontré une erreur"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/settings/tiers",
+      "width": 320,
+      "url": "/settings/tiers",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Configuration du service",
+        "Niveaux de service"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "",
+          "w": 18,
+          "h": 18,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 18,
+          "h": 18,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 18,
+          "h": 18,
+          "tag": "INPUT"
+        },
+        {
+          "label": "",
+          "w": 18,
+          "h": 18,
+          "tag": "INPUT"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/admin/users",
+      "width": 320,
+      "url": "/admin/users",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Utilisateurs",
+        "Comptes utilisateurs",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/admin/translations",
+      "width": 320,
+      "url": "/admin/translations",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Traductions",
+        "Catalogue des traductions",
+        "Aucun résultat à afficher"
+      ],
+      "smallTargets": [
+        {
+          "label": "Traductions",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/audit",
+      "width": 320,
+      "url": "/audit",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Journal d’audit",
+        "Aucun événement trouvé"
+      ],
+      "smallTargets": [
+        {
+          "label": "Traductions",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "État de la plateforme",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Journal d’audit",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/profile",
+      "width": 320,
+      "url": "/profile",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Mon profil",
+        "root.e2e",
+        "Informations et préférences"
+      ],
+      "smallTargets": [],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/onboarding",
+      "width": 320,
+      "url": "/onboarding",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Configurer un nouveau site",
+        "Parcours de configuration",
+        "Identité du site"
+      ],
+      "smallTargets": [
+        {
+          "label": "Portefeuille de sites",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Créer un site",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Paramètres du site",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Utilisateurs",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    },
+    {
+      "route": "/kiosk",
+      "width": 320,
+      "url": "/kiosk",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Comment pouvons-nous vous accueillir ?"
+      ],
+      "smallTargets": [
+        {
+          "label": "Borne kiosque",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Écran salle",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        },
+        {
+          "label": "Suivi mobile",
+          "w": 239,
+          "h": 43,
+          "tag": "A"
+        }
+      ],
+      "horizontalRegions": [],
+      "smallInputFonts": []
+    }
+  ]
+}

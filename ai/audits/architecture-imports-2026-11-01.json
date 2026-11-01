@@ -1,0 +1,151 @@
+{
+  "dori-api": {
+    "files": 183,
+    "staticValueImportCycles": [
+      [
+        "src/core/throttler/redis-throttler-storage.service.ts",
+        "src/core/redis/redis.module.ts"
+      ],
+      [
+        "src/core/audit/dto/audit-query.dto.ts",
+        "src/core/audit/audit.repository.ts"
+      ]
+    ],
+    "crossFeatureInternals": []
+  },
+  "dori-web": {
+    "files": 279,
+    "staticValueImportCycles": [],
+    "crossFeatureInternals": [
+      {
+        "from": "src/features/appointments/AppointmentActionDialog.tsx",
+        "to": "src/features/public-experiences/TrackingQr.tsx"
+      },
+      {
+        "from": "src/features/appointments/AppointmentActionDialog.tsx",
+        "to": "src/features/public-experiences/tracking-url.ts"
+      },
+      {
+        "from": "src/features/appointments/AppointmentActionDialog.tsx",
+        "to": "src/features/public-experiences/components/kiosk/KioskTicketPrintDocument.tsx"
+      },
+      {
+        "from": "src/features/appointments/AppointmentActionDialog.tsx",
+        "to": "src/features/notes/hooks/usePersonNotes.ts"
+      },
+      {
+        "from": "src/features/appointments/AppointmentActionDialog.tsx",
+        "to": "src/features/persons/hooks/usePersons.ts"
+      },
+      {
+        "from": "src/features/appointments/AppointmentEditor.tsx",
+        "to": "src/features/persons/PersonPickerOrCreate.tsx"
+      },
+      {
+        "from": "src/features/appointments/AppointmentsPage.tsx",
+        "to": "src/features/queues/hooks/useQueues.ts"
+      },
+      {
+        "from": "src/features/appointments/AppointmentsPage.tsx",
+        "to": "src/features/portfolio/hooks/useSites.ts"
+      },
+      {
+        "from": "src/features/notifications/ManualNotificationWizard.tsx",
+        "to": "src/features/persons/hooks/usePersons.ts"
+      },
+      {
+        "from": "src/features/notifications/NotificationsPage.tsx",
+        "to": "src/features/queues/hooks/useQueues.ts"
+      },
+      {
+        "from": "src/features/onboarding/components/OnboardingWizard.tsx",
+        "to": "src/features/queues/QueueEditor.tsx"
+      },
+      {
+        "from": "src/features/onboarding/components/OnboardingWizard.tsx",
+        "to": "src/features/queues/WorkingDaysField.tsx"
+      },
+      {
+        "from": "src/features/onboarding/components/SettingsWorkspace.tsx",
+        "to": "src/features/queues/QueueEditor.tsx"
+      },
+      {
+        "from": "src/features/onboarding/components/SettingsWorkspace.tsx",
+        "to": "src/features/users/UserAssignmentModal.tsx"
+      },
+      {
+        "from": "src/features/onboarding/components/SettingsWorkspace.tsx",
+        "to": "src/features/users/QueueOperatorsModal.tsx"
+      },
+      {
+        "from": "src/features/onboarding/components/SiteEditor.tsx",
+        "to": "src/features/queues/WorkingDaysField.tsx"
+      },
+      {
+        "from": "src/features/persons/PersonMobileCard.tsx",
+        "to": "src/features/notes/PersonNotesButton.tsx"
+      },
+      {
+        "from": "src/features/persons/PersonsPage.tsx",
+        "to": "src/features/notes/PersonNotesViewer.tsx"
+      },
+      {
+        "from": "src/features/persons/PersonsPage.tsx",
+        "to": "src/features/notes/PersonNotesButton.tsx"
+      },
+      {
+        "from": "src/features/profile/ProfilePage.tsx",
+        "to": "src/features/users/user-display.ts"
+      },
+      {
+        "from": "src/features/public-experiences/components/kiosk/KioskWizard.tsx",
+        "to": "src/features/portfolio/hooks/useSites.ts"
+      },
+      {
+        "from": "src/features/queue-operations/MyQueuesPage.tsx",
+        "to": "src/features/notes/PersonNotesViewer.tsx"
+      },
+      {
+        "from": "src/features/queue-operations/MyQueuesPage.tsx",
+        "to": "src/features/notes/PersonNotesButton.tsx"
+      },
+      {
+        "from": "src/features/queue-operations/MyQueuesPage.tsx",
+        "to": "src/features/queues/hooks/useQueues.ts"
+      },
+      {
+        "from": "src/features/queue-operations/QueueRegistrationMobileCard.tsx",
+        "to": "src/features/notes/PersonNotesButton.tsx"
+      },
+      {
+        "from": "src/features/queue-operations/RegistrationDetailsModal.tsx",
+        "to": "src/features/persons/hooks/usePersons.ts"
+      },
+      {
+        "from": "src/features/queue-operations/RegistrationDetailsModal.tsx",
+        "to": "src/features/public-experiences/TrackingQr.tsx"
+      },
+      {
+        "from": "src/features/queue-operations/RegistrationDetailsModal.tsx",
+        "to": "src/features/public-experiences/tracking-url.ts"
+      },
+      {
+        "from": "src/features/reports/ReportsPage.tsx",
+        "to": "src/features/appointments/appointment-rules.ts"
+      },
+      {
+        "from": "src/features/reports/ReportsPage.tsx",
+        "to": "src/features/queues/hooks/useQueues.ts"
+      },
+      {
+        "from": "src/features/reports/ReportsPage.tsx",
+        "to": "src/features/portfolio/hooks/useSites.ts"
+      }
+    ]
+  },
+  "dori-agent": {
+    "files": 9,
+    "staticValueImportCycles": [],
+    "crossFeatureInternals": []
+  }
+}

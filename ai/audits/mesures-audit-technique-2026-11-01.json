@@ -1,0 +1,94 @@
+{
+  "date": "2026-11-01",
+  "environment": "Docker local, données de démonstration",
+  "applicationMutated": false,
+  "databaseMutated": false,
+  "productionLoadTest": false,
+  "database": {
+    "sizeMB": 325,
+    "registrations": 243600,
+    "notifications": 60133,
+    "persons": 50000,
+    "notes": 10001,
+    "tracking": 122400,
+    "trackingUnsynced": 45100,
+    "trackingExpired": 3600
+  },
+  "frontendFixtureGET": {
+    "sites": 11,
+    "queues": 11,
+    "services": 27,
+    "queuesInFixture": 4,
+    "servicesPerQueue": 3,
+    "associationRequests": 4,
+    "ruleRequests": 12
+  },
+  "reportQueriesMs": {
+    "totals": 78.542,
+    "series": 233.614,
+    "byQueue": 80.99,
+    "byQueueSeries": 229.961,
+    "byUser": 34.241,
+    "byTier": 26.877,
+    "byEntryType": 59.86,
+    "byStatus": 21.428
+  },
+  "reportTemporaryBlocks": {
+    "series": {
+      "read": 4788,
+      "written": 1344
+    },
+    "byQueueSeries": {
+      "read": 4902,
+      "written": 1459
+    }
+  },
+  "notificationSelection": {
+    "rowsReturned": 0,
+    "rowsRemoved": 60133,
+    "executionMs": 27.376,
+    "sharedHitBlocks": 60715,
+    "lockingClauseExcludedFromMeasuredSELECT": true
+  },
+  "agentTrackingSELECT": {
+    "rows": 118800,
+    "executionMs": 466.1,
+    "sharedHitBlocks": 8885,
+    "sharedReadBlocks": 2326,
+    "tempReadBlocks": 1808,
+    "tempWrittenBlocks": 1810,
+    "upsertMeasured": false
+  },
+  "staticFiles": {
+    "acceptEncoding": "gzip",
+    "responseContentEncoding": null,
+    "js": {
+      "servedBytes": 384878,
+      "computedGzipBytes": 120790
+    },
+    "css": {
+      "servedBytes": 238393,
+      "computedGzipBytes": 40717
+    }
+  },
+  "personCountWarmRunsMs": {
+    "current": [
+      8.262,
+      7.981,
+      7.939,
+      8.711
+    ],
+    "withoutDistinct": [
+      5.245,
+      1.758,
+      1.721,
+      1.78
+    ]
+  },
+  "limits": [
+    "Mesures locales isolées, sans p95 de production",
+    "Comptage des requêtes front avec fixtures : aucune conclusion sur leur latence HTTP",
+    "Les durées SQL parallèles ne s'additionnent pas pour calculer une durée HTTP",
+    "Compression calculée localement sur les mêmes octets, configuration serveur inchangée"
+  ]
+}

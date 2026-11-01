@@ -58,7 +58,7 @@ export class ServiceTiersController {
   @ApiOperation({
     summary: 'Catalogue global des forfaits',
     description:
-      'Retourne tous les forfaits disponibles au catalogue (Gratuit, Standard, Premium...).',
+      'Retourne tous les forfaits disponibles au catalogue (Basic, Standard, Premium...).',
   })
   @ApiDoriOkResponse(
     PaginatedServiceTierResponseDto,

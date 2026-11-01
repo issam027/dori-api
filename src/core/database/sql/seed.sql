@@ -12,7 +12,7 @@ BEGIN;
 -- 1. Forfaits (Â§3.6)
 -- ---------------------------------------------------------------------
 INSERT INTO dorify.dori_service_tier (tier_id, tier_code, tier_name, is_system, description) VALUES
-('72f4df8f-557c-4409-9057-c20c7998579e', 'free',     'Gratuit',  TRUE,  'Aucune notification â€” le client attend sur place'),
+('72f4df8f-557c-4409-9057-c20c7998579e', 'free',     'Basic',    TRUE,  'Aucune notification â€” le client attend sur place'),
 ('2e6c47e4-ac5f-49d9-a041-0fdce7bb25c4', 'standard', 'Standard', FALSE, 'Notification de seuil'),
 ('e863aa28-cb7e-407e-8c58-eff39e12b08d', 'premium',  'Premium',  FALSE, 'Notification de bienvenue avec lien de suivi + seuil')
 ON CONFLICT (tier_code) DO NOTHING;
