@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { AuditEventQueryDto } from './dto/audit-query.dto';
-
-export type AuditOutcome = 'success' | 'failure';
+import type { AuditFilter, AuditOutcome } from './audit.model';
+export type { AuditOutcome } from './audit.model';
 
 export interface AuditRecord {
   actorUserId: string | null;
@@ -127,7 +126,7 @@ export const AUDIT_EVENT_READ_MODEL = `(
 ) audit_view`;
 
 export interface AuditSearchQuery {
-  filter: AuditEventQueryDto;
+  filter: AuditFilter;
   sortField: string;
   sortOrder: 'ASC' | 'DESC';
   pageSize: number;

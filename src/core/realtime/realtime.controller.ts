@@ -1,3 +1,4 @@
+import { RealtimeAuthorizationService } from './realtime-authorization.service';
 import {
   Controller,
   Headers,
@@ -19,28 +20,20 @@ import { Observable } from 'rxjs';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
-import { ClockService } from '../clock/clock.service';
-import { DoriException } from '../errors/dori.exception';
-import { ScopeService } from '../rbac/services/scope.service';
 import { SkipResponseEnvelope } from '../response/response.interceptor';
 import {
   ApiDoriErrorResponses,
   ApiDoriPublicErrorResponses,
   ApiDoriSseResponse,
 } from '../swagger/api-dori-response.decorator';
-import { RealtimeRepository } from './realtime.repository';
 import { RealtimeService } from './realtime.service';
-import { JwtSessionRepository } from '../auth/repositories/jwt-session.repository';
 
 @ApiTags('Realtime')
 @Controller('api/v1/realtime/queues')
 export class RealtimeController {
   constructor(
     private readonly realtimeService: RealtimeService,
-    private readonly realtimeRepository: RealtimeRepository,
-    private readonly scopeService: ScopeService,
-    private readonly clockService: ClockService,
-    private readonly jwtSessionRepository: JwtSessionRepository,
+    private readonly authorization: RealtimeAuthorizationService,
   ) {}
 
   @Sse(':queueId/display')
@@ -74,22 +67,7 @@ export class RealtimeController {
     @CurrentUser() user: AuthenticatedUser,
     @Headers('last-event-id') lastEventId?: string,
   ): Promise<Observable<MessageEvent>> {
-    const authorize = async () => {
-      if (
-        !user.sessionId ||
-        !user.accessTokenExpiresAt ||
-        user.accessTokenExpiresAt * 1000 <= this.clockService.now().getTime()
-      ) {
-        throw new DoriException('UNAUTHENTICATED');
-      }
-      const session = await this.jwtSessionRepository.findValidSessionId(
-        user.sessionId,
-        user.userId,
-        this.clockService.now(),
-      );
-      if (!session) throw new DoriException('UNAUTHENTICATED');
-      await this.scopeService.checkQueueAccess(user, queueId, { fresh: true });
-    };
+    const authorize = () => this.authorization.verifyDisplay(user, queueId);
     await authorize();
     return this.realtimeService.streamDisplay(
       queueId,
@@ -141,25 +119,9 @@ export class RealtimeController {
     @Headers('X-Registration-Token') trackingToken: string,
     @Headers('last-event-id') lastEventId?: string,
   ): Promise<Observable<MessageEvent>> {
-    if (!trackingToken) throw new DoriException('UNAUTHENTICATED');
-    const authorize = async () => {
-      const current =
-        await this.realtimeRepository.findRegistrationByTrackingToken(
-          trackingToken,
-        );
-      if (
-        !current ||
-        !current.is_active ||
-        current.queue_id !== queueId ||
-        this.clockService.parse(
-          current.registration_tracking_token_valid_until,
-        ) <= this.clockService.now()
-      ) {
-        throw new DoriException('TOKEN_EXPIRED');
-      }
-      return current;
-    };
-    const registration = await authorize();
+    const authorize = () =>
+      this.authorization.verifyTracking(queueId, trackingToken);
+    const expiresAt = await authorize();
     return this.realtimeService.streamTracking(
       queueId,
       this.validLastEventId(lastEventId),
@@ -167,9 +129,7 @@ export class RealtimeController {
         authorize: async () => {
           await authorize();
         },
-        expiresAt: this.clockService.parse(
-          registration.registration_tracking_token_valid_until,
-        ),
+        expiresAt,
       },
     );
   }

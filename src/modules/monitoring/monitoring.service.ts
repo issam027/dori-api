@@ -1,10 +1,11 @@
-﻿import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
+﻿import { runtimeMetrics } from '../../core/observability/runtime-metrics';
+import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
 import { ClockService } from '../../core/clock/clock.service';
 import { MonitoringRepository } from './monitoring.repository';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { DoriException } from '../../core/errors/dori.exception';
-import { REDIS_CLIENT } from '../../core/redis/redis.module';
+import { REDIS_CLIENT } from '../../core/redis/redis.tokens';
 import type Redis from 'ioredis';
 
 const METRICS_HASH_KEY = 'dori:metrics:counters';
@@ -73,6 +74,7 @@ export class MonitoringService {
       counters = Object.fromEntries(this.counters);
     }
 
+    Object.assign(counters, runtimeMetrics.snapshot());
     const requests =
       counters.http_rest_requests_total ?? counters.http_requests_total ?? 0;
     const totalDuration =

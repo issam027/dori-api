@@ -22,7 +22,7 @@
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --max-warnings=0",
     "lint:fix": "npm run lint -- --fix",
     "typecheck": "tsc --noEmit --noUnusedLocals --noUnusedParameters",
-    "quality:check": "npm run format:check && npm run lint && npm run typecheck && npm run build:check && npm run uuid:verify && npm test -- --runInBand --coverage=false",
+    "quality:check": "npm run format:check && npm run lint && npm run typecheck && npm run build:check && npm run audit:architecture && npm run uuid:verify && npm test -- --runInBand --coverage=false",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
@@ -41,7 +41,8 @@
     "perf:explain": "ts-node -r tsconfig-paths/register scripts/performance/perf-explain-runner.ts",
     "swagger:export": "ts-node -r tsconfig-paths/register scripts/swagger-export.ts",
     "uuid:verify": "ts-node -r tsconfig-paths/register scripts/uuid-verify.ts",
-    "db:reset": "ts-node -r tsconfig-paths/register scripts/db-init.ts --seed --force"
+    "db:reset": "ts-node -r tsconfig-paths/register scripts/db-init.ts --seed --force",
+    "audit:architecture": "node tools/architecture-check.cjs"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

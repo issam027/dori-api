@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ClockService } from '../../core/clock/clock.service';
-import { QueueEstimationWorkerRepository } from './queue-estimation.repository';
+import { QueueStatisticsRepository } from '../../modules/queue-estimation/queue-statistics.repository';
 import { safeErrorName } from '../../core/logging/safe-error';
 import { BaseWorker } from '../base.worker';
 
@@ -10,7 +10,7 @@ export class QueueEstimationWorker extends BaseWorker {
   private readonly logger = new Logger(QueueEstimationWorker.name);
 
   constructor(
-    private readonly repository: QueueEstimationWorkerRepository,
+    private readonly repository: QueueStatisticsRepository,
     private readonly clockService: ClockService,
   ) {
     super();
@@ -22,7 +22,7 @@ export class QueueEstimationWorker extends BaseWorker {
       try {
         this.logger.debug('Running queue estimation worker...');
         const now = this.clockService.now();
-        const queues = await this.repository.findActiveQueues();
+        const queues = await this.repository.findActiveQueues(now);
         for (const queue of queues) {
           try {
             await this.repository.aggregateQueue({

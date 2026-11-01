@@ -13,7 +13,7 @@ import {
   IsCalendarDate,
   ValidDateRange,
 } from '../../dates/date-range.dto';
-import { AuditOutcome } from '../audit.repository';
+import type { AuditOutcome } from '../audit.model';
 
 @ValidDateRange(DATE_RANGE_LIMITS.auditFilterDays)
 export class AuditEventQueryDto extends PaginationDto {

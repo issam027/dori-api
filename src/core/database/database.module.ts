@@ -1,3 +1,4 @@
+import { PoolObserver } from './pool-observer.service';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -39,7 +40,7 @@ import { DatabaseSeedService } from './database-seed.service';
       }),
     }),
   ],
-  providers: [DatabaseSeedService],
+  providers: [DatabaseSeedService, PoolObserver],
   exports: [TypeOrmModule, DatabaseSeedService],
 })
 export class DatabaseModule {}

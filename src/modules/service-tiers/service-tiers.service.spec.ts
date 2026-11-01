@@ -170,45 +170,6 @@ describe('ServiceTiersService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
   });
 
   describe('getNotificationRules', () => {
-    it('should return all notification rules without artificial limit/truncation', async () => {
-      dataSourceMock.query.mockImplementation(async (sql: string) => {
-        if (sql.includes('FROM dorify.dori_queue_tier_notification_rule')) {
-          return [
-            {
-              rule_id: '00000000-0000-4000-8000-000000000001',
-              queue_id: '00000000-0000-4000-8000-000000000010',
-              tier_id: '00000000-0000-4000-8000-000000000002',
-              notification_type: 'threshold',
-              threshold_position: 3,
-              threshold_minutes: null,
-              channel: 'sms',
-              is_active: true,
-              include_tracking_link: true,
-            },
-          ];
-        }
-        return [];
-      });
-
-      const rules = await service.getNotificationRules(
-        '00000000-0000-4000-8000-000000000010',
-        '00000000-0000-4000-8000-000000000002',
-        adminUser,
-      );
-      expect(rules).toHaveLength(1);
-      expect(rules[0]).toEqual({
-        ruleId: '00000000-0000-4000-8000-000000000001',
-        queueId: '00000000-0000-4000-8000-000000000010',
-        tierId: '00000000-0000-4000-8000-000000000002',
-        notificationType: 'threshold',
-        thresholdType: 'position',
-        thresholdValue: 3,
-        channel: 'sms',
-        isActive: true,
-        includeTrackingLink: true,
-      });
-    });
-
     it('allows a tracking link on both welcome and threshold rules', async () => {
       dataSourceMock.query
         .mockResolvedValueOnce([

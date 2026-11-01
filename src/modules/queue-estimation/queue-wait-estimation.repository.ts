@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { ClockService } from '../../core/clock/clock.service';
+import { QueueStatisticsRepository } from './queue-statistics.repository';
+import { Injectable, Optional } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 export interface WaitEstimationRegistration {
@@ -19,7 +21,12 @@ export interface EstimationStatRow {
 
 @Injectable()
 export class QueueWaitEstimationRepository {
-  constructor(private readonly dataSource: DataSource) {}
+  private readonly refreshes = new Map<string, Promise<boolean>>();
+  constructor(
+    private readonly dataSource: DataSource,
+    @Optional() private readonly statistics?: QueueStatisticsRepository,
+    @Optional() private readonly clock?: ClockService,
+  ) {}
 
   async findOperationalPosition(
     registrationId: string,
@@ -40,35 +47,9 @@ export class QueueWaitEstimationRepository {
     const rows = await this.dataSource.query<
       Array<{ registration_id: string; position: number }>
     >(
-      `WITH context AS (
-         SELECT DISTINCT target.queue_id, target.business_date
-         FROM dorify.dori_registration target WHERE target.registration_id = ANY($1::uuid[])
-       ), ranked AS (
-         SELECT r.registration_id,
-           ROW_NUMBER() OVER (PARTITION BY r.queue_id, r.business_date ORDER BY
-             CASE WHEN r.entry_type = 'walkin'
-                    OR (r.appointment_status = 'checked_in' AND r.scheduled_time <= $2)
-               THEN 0 ELSE 1 END ASC,
-             CASE WHEN r.entry_type = 'walkin' OR r.scheduled_time <= $2 THEN
-             ROUND((CASE WHEN r.entry_type = 'appointment'
-               THEN COALESCE(q.base_weight_appointment, s.default_base_weight_appointment, 60)
-                 + EXTRACT(EPOCH FROM ($2 - r.priority_reference_time))/60
-                   * COALESCE(q.escalation_rate_appointment, s.default_escalation_rate_appointment, 1)
-               ELSE COALESCE(q.base_weight_walkin, s.default_base_weight_walkin, 0)
-                 + EXTRACT(EPOCH FROM ($2 - r.priority_reference_time))/60
-                   * COALESCE(q.escalation_rate_walkin, s.default_escalation_rate_walkin, 1)
-             END)::numeric, 2) ELSE NULL END DESC NULLS LAST,
-             CASE WHEN r.entry_type = 'walkin' OR r.scheduled_time <= $2
-               THEN r.priority_reference_time ELSE r.scheduled_time END ASC,
-             r.registration_id ASC
-           )::int AS position
-         FROM dorify.dori_registration r
-         JOIN context c ON c.queue_id = r.queue_id AND c.business_date = r.business_date
-         JOIN dorify.dori_queue q ON q.queue_id = r.queue_id
-         JOIN dorify.dori_site s ON s.site_id = q.site_id
-         WHERE r.status = 'waiting' AND r.is_active = TRUE
-           AND (r.entry_type = 'walkin' OR r.appointment_status = 'checked_in')
-       ) SELECT registration_id, position FROM ranked WHERE registration_id = ANY($1::uuid[])`,
+      'SELECT registration_id, position FROM dorify.queue_operational_positions(' +
+        'ARRAY(SELECT DISTINCT queue_id FROM dorify.dori_registration WHERE registration_id=ANY($1::uuid[])), $2)' +
+        ' WHERE registration_id=ANY($1::uuid[])',
       [registrationIds, now],
     );
     return new Map(
@@ -90,14 +71,44 @@ export class QueueWaitEstimationRepository {
     queueId: string,
     activityDate: string,
   ): Promise<EstimationStatRow | null> {
-    const rows: EstimationStatRow[] = await this.dataSource.query(
-      `SELECT activity_date, cycle_p50_minutes, sample_size, is_reliable, calculated_at
-       FROM dorify.dori_queue_estimation_stats
-       WHERE site_id = $1 AND queue_id = $2 AND cycle_p50_minutes IS NOT NULL
-       ORDER BY (activity_date = $3::date) DESC, calculated_at DESC
-       LIMIT 1`,
-      [siteId, queueId, activityDate],
-    );
-    return rows[0] ?? null;
+    const now = this.clock?.now();
+    const sql = `SELECT best.activity_date, best.cycle_p50_minutes, best.sample_size,
+       best.is_reliable, best.calculated_at,
+       (today.queue_id IS NULL OR rev.queue_id IS NULL OR rev.revision>today.input_revision
+         OR today.calculated_at<COALESCE($4::timestamptz,CURRENT_TIMESTAMP)-INTERVAL '15 minutes') AS needs_refresh
+       FROM dorify.dori_queue q
+       LEFT JOIN dorify.dori_queue_estimation_revision rev ON rev.queue_id=q.queue_id
+       LEFT JOIN dorify.dori_queue_estimation_stats today ON today.site_id=q.site_id
+         AND today.queue_id=q.queue_id AND today.activity_date=$3::date
+       LEFT JOIN LATERAL (
+         SELECT activity_date,cycle_p50_minutes,sample_size,is_reliable,calculated_at
+         FROM dorify.dori_queue_estimation_stats
+         WHERE site_id=q.site_id AND queue_id=q.queue_id AND cycle_p50_minutes IS NOT NULL
+         ORDER BY (activity_date=$3::date) DESC,calculated_at DESC LIMIT 1
+       ) best ON TRUE
+       WHERE q.site_id=$1 AND q.queue_id=$2`;
+    const params = [siteId, queueId, activityDate, now ?? null];
+    let rows = await this.dataSource.query<
+      Array<EstimationStatRow & { needs_refresh?: boolean }>
+    >(sql, params);
+    if (rows[0]?.needs_refresh && this.statistics && now) {
+      const key = queueId + ':' + activityDate;
+      let work = this.refreshes.get(key);
+      if (!work) {
+        work = this.statistics.aggregateQueue({
+          siteId,
+          queueId,
+          activityDate,
+          now,
+        });
+        this.refreshes.set(key, work);
+        void work
+          .finally(() => this.refreshes.delete(key))
+          .catch(() => undefined);
+      }
+      await work;
+      rows = await this.dataSource.query(sql, params);
+    }
+    return rows[0]?.cycle_p50_minutes == null ? null : rows[0];
   }
 }

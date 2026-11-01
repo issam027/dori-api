@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
-import { QueueEstimationWorkerRepository } from './queue-estimation.repository';
+import { QueueStatisticsRepository } from '../../modules/queue-estimation/queue-statistics.repository';
 
-describe('QueueEstimationWorkerRepository', () => {
+describe('QueueStatisticsRepository', () => {
   it('calculates minute percentiles under an advisory lock', async () => {
     const query = jest
       .fn()
@@ -10,7 +10,7 @@ describe('QueueEstimationWorkerRepository', () => {
     const dataSource = {
       transaction: jest.fn((callback) => callback({ query })),
     } as unknown as DataSource;
-    const repository = new QueueEstimationWorkerRepository(dataSource);
+    const repository = new QueueStatisticsRepository(dataSource);
 
     await expect(
       repository.aggregateQueue({
@@ -26,9 +26,13 @@ describe('QueueEstimationWorkerRepository', () => {
       'queue-estimation',
       '00000000-0000-4000-8000-000000000004',
     ]);
-    expect(query.mock.calls[1][0]).toContain('/ 60.0');
-    expect(query.mock.calls[1][0]).toContain('cycle_p50_minutes');
-    expect(query.mock.calls[1][1]).toEqual([
+    const aggregation = query.mock.calls.find((call: unknown[]) =>
+      String(call[0]).includes('WITH ordered_calls'),
+    );
+    expect(aggregation).toBeDefined();
+    expect(aggregation[0]).toContain('/ 60.0');
+    expect(aggregation[0]).toContain('cycle_p50_minutes');
+    expect(aggregation[1]).toEqual([
       '00000000-0000-4000-8000-000000000002',
       '00000000-0000-4000-8000-000000000004',
       '2026-10-20',

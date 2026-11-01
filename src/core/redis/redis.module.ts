@@ -15,7 +15,8 @@ import { RedisThrottlerStorage } from '../throttler/redis-throttler-storage.serv
  * Token d'injection pour le client Redis partagé.
  * Usage : @Inject(REDIS_CLIENT) @Optional() private readonly redis?: Redis | null
  */
-export const REDIS_CLIENT = 'REDIS_CLIENT';
+export { REDIS_CLIENT } from './redis.tokens';
+import { REDIS_CLIENT } from './redis.tokens';
 
 /**
  * Module Redis global : expose un client ioredis unique partagé

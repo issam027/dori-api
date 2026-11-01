@@ -17,6 +17,7 @@ import { AppointmentExpiryWorker } from '../workers/appointment-expiry/appointme
 import { DailyResetWorker } from '../workers/daily-reset/daily-reset.worker';
 import { NotificationWorker } from '../workers/notification-worker/notification.worker';
 import { QueueEstimationWorker } from '../workers/queue-estimation/queue-estimation.worker';
+import { TechnicalRetentionWorker } from '../workers/retention/technical-retention.worker';
 import { CronExecutionResponseDto } from './dto/cron-execution-response.dto';
 
 @Public()
@@ -30,6 +31,7 @@ export class CronController {
     private readonly appointmentExpiry: AppointmentExpiryWorker,
     private readonly notificationWorker: NotificationWorker,
     private readonly queueEstimation: QueueEstimationWorker,
+    private readonly retention: TechnicalRetentionWorker,
   ) {}
 
   private async run(
@@ -132,5 +134,22 @@ export class CronController {
     return this.run(authorization, () =>
       this.queueEstimation.handleQueueEstimation(),
     );
+  }
+  @Get('retention')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Purger les données techniques expirées',
+    description:
+      'Purge bornée avec délais de grâce, sans suppression de données métier.',
+  })
+  @ApiDoriOkResponse(CronExecutionResponseDto, 'Rétention technique exécutée')
+  @ApiDoriPublicErrorResponses({
+    include401: true,
+    omit404: true,
+    omit409: true,
+    omit422: true,
+  })
+  retentionCron(@Headers('authorization') authorization?: string) {
+    return this.run(authorization, () => this.retention.prune());
   }
 }

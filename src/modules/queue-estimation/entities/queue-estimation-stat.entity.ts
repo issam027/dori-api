@@ -24,6 +24,7 @@ export class DoriQueueEstimationStat {
   @Column({ type: 'int', nullable: true }) wait_p90_minutes: number | null;
   @Column({ type: 'int' }) sample_size: number;
   @Column({ type: 'boolean', default: false }) is_reliable: boolean;
+  @Column({ type: 'bigint', default: 0 }) input_revision: string;
   @Column({ type: 'timestamptz' }) calculated_at: Date;
   @CreateDateColumn({ type: 'timestamptz' }) created_at: Date;
   @UpdateDateColumn({ type: 'timestamptz' }) updated_at: Date;

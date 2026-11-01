@@ -256,6 +256,17 @@ export class NotificationsRepository {
        JOIN dorify.dori_queue q ON q.queue_id = c.queue_id
        JOIN dorify.dori_site s ON s.site_id = q.site_id
        WHERE c.queue_id = $1 AND c.status = 'waiting' AND c.is_active = TRUE
+         AND EXISTS (
+           SELECT 1 FROM dorify.dori_queue_tier_notification_rule rule
+           JOIN dorify.dori_queue_service_tier tier
+             ON tier.queue_id=rule.queue_id AND tier.tier_id=rule.tier_id AND tier.is_active
+           WHERE rule.queue_id=c.queue_id AND rule.tier_id=c.tier_id
+             AND rule.notification_type='threshold' AND rule.is_active
+             AND NOT EXISTS (
+               SELECT 1 FROM dorify.dori_notification n
+               WHERE n.registration_id=c.registration_id AND n.notification_type='threshold' AND n.channel=rule.channel
+             )
+         )
        ORDER BY c.priority_reference_time ASC`,
       [queueId],
     );

@@ -132,7 +132,7 @@ describe('RealtimeService', () => {
       expect(error).not.toHaveBeenCalled();
       expect(next).not.toHaveBeenCalled();
       expect(authorize).toHaveBeenCalledTimes(2);
-      expect(repository.findTopicState).toHaveBeenCalledTimes(2);
+      expect(repository.findTopicState).toHaveBeenCalledTimes(3);
     },
   );
 
@@ -152,5 +152,37 @@ describe('RealtimeService', () => {
     await jest.advanceTimersByTimeAsync(20000);
     expect(authorize).toHaveBeenCalledTimes(1);
     expect(repository.findTopicState).toHaveBeenCalledTimes(2);
+  });
+  it('shares topic reads across clients while keeping per-client revocation and teardown', async () => {
+    const repository = { findTopicState: jest.fn().mockResolvedValue(null) };
+    const service = new RealtimeService(clock, repository as never);
+    const authorizers = Array.from({ length: 50 }, () =>
+      jest.fn().mockResolvedValue(undefined),
+    );
+    authorizers[0]
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValue(new Error('revoked'));
+    const streams = await Promise.all(
+      authorizers.map((authorize) =>
+        service.streamTracking(queueId, undefined, {
+          authorize,
+          expiresAt: new Date(now.getTime() + 60_000),
+        }),
+      ),
+    );
+    const closed = jest.fn();
+    const subscriptions = streams.map((stream, index) =>
+      stream.subscribe({
+        complete: index === 0 ? closed : undefined,
+      }),
+    );
+    expect(repository.findTopicState).toHaveBeenCalledTimes(50);
+    await jest.advanceTimersByTimeAsync(4000);
+    expect(repository.findTopicState).toHaveBeenCalledTimes(52);
+    expect(closed).toHaveBeenCalledTimes(1);
+    expect(authorizers[1]).toHaveBeenCalledTimes(2);
+    subscriptions.forEach((subscription) => subscription.unsubscribe());
+    await jest.advanceTimersByTimeAsync(10_000);
+    expect(repository.findTopicState).toHaveBeenCalledTimes(52);
   });
 });

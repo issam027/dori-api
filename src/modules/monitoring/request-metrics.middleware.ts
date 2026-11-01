@@ -1,3 +1,4 @@
+import { runtimeMetrics } from '../../core/observability/runtime-metrics';
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import { MonitoringService } from './monitoring.service';
@@ -30,6 +31,14 @@ export class RequestMetricsMiddleware implements NestMiddleware {
           elapsedMs,
         );
       } else {
+        const route: unknown = _request.route?.path;
+        if (typeof route === 'string') {
+          const key = (_request.method + '_' + route).replace(
+            /[^a-zA-Z0-9_]/g,
+            '_',
+          );
+          runtimeMetrics.observe('http_route_' + key, elapsedMs);
+        }
         this.monitoringService.increment('http_rest_requests_total');
         this.monitoringService.increment(
           'http_request_duration_ms_total',

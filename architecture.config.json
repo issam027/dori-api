@@ -1,0 +1,4 @@
+{
+  "tsconfig": "tsconfig.json",
+  "entrypoints": ["src/main.ts", "src/core/database/postgres-connection.ts", "src/core/database/daily-activity-seed.ts"]
+}

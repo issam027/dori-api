@@ -2,7 +2,7 @@ import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
 import { AuthenticatedUser } from '../../auth/interfaces/jwt-payload.interface';
 import { DoriException } from '../../errors/dori.exception';
 import { ScopeRepository } from '../repositories/scope.repository';
-import { REDIS_CLIENT } from '../../redis/redis.module';
+import { REDIS_CLIENT } from '../../redis/redis.tokens';
 import type Redis from 'ioredis';
 
 export interface UserScope {

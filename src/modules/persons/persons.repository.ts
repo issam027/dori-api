@@ -107,11 +107,11 @@ export class PersonsRepository {
       where += ` AND (p.first_name ILIKE ${searchParameter} OR p.last_name ILIKE ${searchParameter} OR p.email ILIKE ${searchParameter} OR p.phone_number ILIKE ${searchParameter})`;
     }
     const countRows: Array<{ total: number }> = await this.dataSource.query(
-      `SELECT COUNT(DISTINCT p.person_id)::int AS total FROM dorify.dori_person p WHERE ${where}`,
+      `SELECT COUNT(*)::int AS total FROM dorify.dori_person p WHERE ${where}`,
       params,
     );
     const items: PersonRow[] = await this.dataSource.query(
-      `SELECT DISTINCT ${personColumns('p')},
+      `SELECT ${personColumns('p')},
        (SELECT COUNT(*)::int FROM dorify.dori_person_note pn
         WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
        FROM dorify.dori_person p WHERE ${where}

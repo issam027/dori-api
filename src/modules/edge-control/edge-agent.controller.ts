@@ -11,6 +11,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import { Public } from '../../core/auth/decorators/public.decorator';
 import { SkipResponseEnvelope } from '../../core/response/response.interceptor';
 import {
@@ -54,6 +55,7 @@ export class EdgeAgentController {
   }
 
   @Post('notifications')
+  @SkipThrottle({ strict: true, auth: true })
   @ApiOperation({ summary: 'Relay one idempotent intra notification to Cloud' })
   async relayNotification(
     @Headers('x-dorify-installation-id') installationId: string,
@@ -65,6 +67,7 @@ export class EdgeAgentController {
   }
 
   @Post('tracking')
+  @SkipThrottle({ strict: true, auth: true })
   @ApiOperation({ summary: 'Synchronize minimal public tracking projections' })
   async syncTracking(
     @Headers('x-dorify-installation-id') installationId: string,
@@ -87,6 +90,7 @@ export class EdgeAgentController {
   }
 
   @Post('commands/:commandId/ack')
+  @SkipThrottle({ strict: true, auth: true })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Acknowledge durable local command receipt' })
   async acknowledge(
@@ -99,6 +103,7 @@ export class EdgeAgentController {
   }
 
   @Post('commands/:commandId/result')
+  @SkipThrottle({ strict: true, auth: true })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Accept an idempotent command result' })
   async complete(

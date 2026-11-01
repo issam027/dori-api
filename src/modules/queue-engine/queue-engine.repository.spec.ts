@@ -169,16 +169,11 @@ describe('QueueEngineRepository', () => {
   it('closes served and no-show registrations through controlled transitions', async () => {
     const query = jest
       .fn()
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([
-        { queue_id: '00000000-0000-4000-8000-000000000001' },
-      ])
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([
-        { queue_id: '00000000-0000-4000-8000-000000000001' },
-      ])
-      .mockResolvedValueOnce([]);
+      .mockImplementation(async (sql: string) =>
+        sql.includes('RETURNING queue_id')
+          ? [{ queue_id: '00000000-0000-4000-8000-000000000001' }]
+          : [],
+      );
     const repository = new QueueEngineRepository({
       query,
       transaction: (
@@ -199,8 +194,8 @@ describe('QueueEngineRepository', () => {
     );
 
     expect(query.mock.calls[0][0]).toContain("status = 'served'");
-    expect(query.mock.calls[3][0]).toContain("status = 'no_show'");
-    expect(query.mock.calls[3][0]).not.toContain('is_active');
+    expect(query.mock.calls[2][0]).toContain("status = 'no_show'");
+    expect(query.mock.calls[2][0]).not.toContain('is_active');
   });
 
   it('binds pagination for active session lists', async () => {

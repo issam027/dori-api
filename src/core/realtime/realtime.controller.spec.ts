@@ -1,3 +1,4 @@
+import { RealtimeAuthorizationService } from './realtime-authorization.service';
 import { RealtimeController } from './realtime.controller';
 import { RealtimeService } from './realtime.service';
 import { ClockService } from '../clock/clock.service';
@@ -42,10 +43,12 @@ describe('Realtime authorization lifecycle', () => {
     const service = new RealtimeService(clock, repository as never);
     const controller = new RealtimeController(
       service,
-      repository as never,
-      scope as never,
-      clock,
-      sessions as never,
+      new RealtimeAuthorizationService(
+        sessions as never,
+        scope as never,
+        clock,
+        repository as never,
+      ),
     );
     return { controller, repository, sessions, scope };
   }

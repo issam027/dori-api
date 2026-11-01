@@ -2,6 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "regions": ["fra1"],
   "crons": [
+    { "path": "/api/internal/cron/retention", "schedule": "0 2 * * *" },
     {
       "path": "/api/internal/cron/daily-reset",
       "schedule": "0 0 * * *"

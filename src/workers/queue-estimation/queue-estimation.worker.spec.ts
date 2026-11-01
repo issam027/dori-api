@@ -1,5 +1,5 @@
 import { ClockService } from '../../core/clock/clock.service';
-import { QueueEstimationWorkerRepository } from './queue-estimation.repository';
+import { QueueStatisticsRepository } from '../../modules/queue-estimation/queue-statistics.repository';
 import { QueueEstimationWorker } from './queue-estimation.worker';
 
 describe('QueueEstimationWorker', () => {
@@ -14,7 +14,7 @@ describe('QueueEstimationWorker', () => {
         },
       ]),
       aggregateQueue: jest.fn().mockResolvedValue(true),
-    } as unknown as QueueEstimationWorkerRepository;
+    } as unknown as QueueStatisticsRepository;
     const clock = {
       now: jest.fn().mockReturnValue(now),
       dateInTimezone: jest.fn().mockReturnValue('2026-10-21'),
@@ -48,7 +48,7 @@ describe('QueueEstimationWorker', () => {
         .fn()
         .mockRejectedValueOnce(new Error('failure'))
         .mockResolvedValueOnce(true),
-    } as unknown as QueueEstimationWorkerRepository;
+    } as unknown as QueueStatisticsRepository;
     const clock = {
       now: jest.fn().mockReturnValue(new Date('2026-10-20T10:00:00Z')),
       dateInTimezone: jest.fn().mockReturnValue('2026-10-20'),

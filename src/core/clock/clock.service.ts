@@ -11,10 +11,6 @@ export class ClockService {
     return new Date();
   }
 
-  nowUtc(): Date {
-    return this.now();
-  }
-
   parse(value: Date | string): Date {
     return value instanceof Date ? value : new Date(value);
   }
@@ -82,13 +78,6 @@ export class ClockService {
     return this.businessDate(timezone);
   }
 
-  tomorrowInTimezone(timezone: string): string {
-    const todayStr = this.businessDate(timezone);
-    const [y, m, d] = todayStr.split('-').map(Number);
-    const date = new Date(Date.UTC(y, m - 1, d + 1));
-    return date.toISOString().split('T')[0];
-  }
-
   yesterdayInTimezone(timezone: string): string {
     const todayStr = this.businessDate(timezone);
     const [y, m, d] = todayStr.split('-').map(Number);
@@ -116,9 +105,5 @@ export class ClockService {
 
   endOfDayInTimezone(businessDate: string, timezone: string): Date {
     return this.endOfBusinessDay(businessDate, timezone);
-  }
-
-  minutesSince(past: Date): number {
-    return (this.now().getTime() - past.getTime()) / 60_000;
   }
 }

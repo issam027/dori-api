@@ -203,9 +203,3 @@ export class EdgeInstallationDetailResponseDto extends EdgeInstallationResponseD
   @ApiProperty({ type: [EdgeCommandResponseDto] })
   commands!: EdgeCommandResponseDto[];
 }
-
-export class EdgeCommandPageResponseDto {
-  @ApiProperty({ type: [EdgeCommandResponseDto] })
-  commands!: EdgeCommandResponseDto[];
-  @ApiProperty({ nullable: true }) nextCursor!: string | null;
-}

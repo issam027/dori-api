@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { enqueueRealtimeEvent } from '../../core/realtime/realtime.repository';
 import { returningRows } from '../../core/database/returning-rows';
 
 export interface EstimationQueueRow {
@@ -9,15 +10,22 @@ export interface EstimationQueueRow {
 }
 
 @Injectable()
-export class QueueEstimationWorkerRepository {
+export class QueueStatisticsRepository {
   constructor(private readonly dataSource: DataSource) {}
 
-  findActiveQueues(): Promise<EstimationQueueRow[]> {
+  findActiveQueues(now: Date): Promise<EstimationQueueRow[]> {
     return this.dataSource.query(
       `SELECT q.site_id, q.queue_id, s.timezone
        FROM dorify.dori_queue q JOIN dorify.dori_site s ON s.site_id = q.site_id
+       LEFT JOIN dorify.dori_queue_estimation_revision rev ON rev.queue_id=q.queue_id
+       LEFT JOIN dorify.dori_queue_estimation_stats stats ON stats.queue_id=q.queue_id
+         AND stats.activity_date=($1::timestamptz AT TIME ZONE s.timezone)::date
        WHERE q.is_active = TRUE AND s.is_active = TRUE
+         AND (stats.queue_id IS NULL OR rev.queue_id IS NULL
+           OR rev.revision>stats.input_revision
+           OR stats.calculated_at<$1::timestamptz-INTERVAL '15 minutes')
        ORDER BY q.site_id, q.queue_id`,
+      [now],
     );
   }
 
@@ -36,6 +44,14 @@ export class QueueEstimationWorkerRepository {
       );
       if (!lock[0]?.acquired) return false;
 
+      await manager.query(
+        'INSERT INTO dorify.dori_queue_estimation_revision(queue_id) VALUES($1) ON CONFLICT DO NOTHING',
+        [input.queueId],
+      );
+      await manager.query(
+        'SELECT revision FROM dorify.dori_queue_estimation_revision WHERE queue_id=$1 FOR UPDATE',
+        [input.queueId],
+      );
       await manager.query(
         `WITH ordered_calls AS (
            SELECT r.called_at,
@@ -78,11 +94,12 @@ export class QueueEstimationWorkerRepository {
            site_id, queue_id, activity_date, window_started_at, window_ended_at,
            cycle_p50_minutes, cycle_p65_minutes, cycle_p90_minutes,
            wait_p50_minutes, wait_p65_minutes, wait_p90_minutes,
-           sample_size, is_reliable, calculated_at, created_at, updated_at
+           sample_size, is_reliable, input_revision, calculated_at, created_at, updated_at
          )
          SELECT $1, $2, $3::date, b.started_at, $4,
            c.p50, c.p65, c.p90, w.p50, w.p65, w.p90,
-           c.sample_size, c.sample_size >= 30, $4, $4, $4
+           c.sample_size, c.sample_size >= 30,
+           (SELECT revision FROM dorify.dori_queue_estimation_revision WHERE queue_id=$2), $4, $4, $4
          FROM cycle_stats c CROSS JOIN wait_stats w CROSS JOIN bounds b
          ON CONFLICT (site_id, queue_id, activity_date) DO UPDATE SET
            window_started_at = EXCLUDED.window_started_at,
@@ -95,10 +112,31 @@ export class QueueEstimationWorkerRepository {
            wait_p90_minutes = EXCLUDED.wait_p90_minutes,
            sample_size = EXCLUDED.sample_size,
            is_reliable = EXCLUDED.is_reliable,
+           input_revision = EXCLUDED.input_revision,
            calculated_at = EXCLUDED.calculated_at,
            updated_at = EXCLUDED.updated_at`,
         [input.siteId, input.queueId, input.activityDate, input.now],
       );
+      await manager.query(
+        'UPDATE dorify.dori_queue_estimation_revision SET calculated_revision=revision WHERE queue_id=$1',
+        [input.queueId],
+      );
+      for (const type of [
+        'queue_position_changed',
+        'queue_display_changed',
+      ] as const) {
+        await enqueueRealtimeEvent(
+          manager,
+          input.queueId,
+          type,
+          {
+            queueId: input.queueId,
+            reason: 'estimation_updated',
+            timestamp: input.now.toISOString(),
+          },
+          input.now,
+        );
+      }
       return true;
     });
   }

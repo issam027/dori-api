@@ -451,18 +451,4 @@ export class ServiceTiersService {
 
     return this.findQueueTiers(queueId, pagination, user);
   }
-
-  async getNotificationRules(
-    queueId: string,
-    tierId: string,
-    user: AuthenticatedUser,
-  ) {
-    await this.scopeService.checkQueueAccess(user, queueId);
-    const items = await this.serviceTiersRepository.findActiveNotificationRules(
-      queueId,
-      tierId,
-    );
-
-    return items.map((rule) => this.toNotificationRuleResponse(rule));
-  }
 }

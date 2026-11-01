@@ -11,10 +11,10 @@ import { EdgeLocalStatusService } from './edge-local-status.service';
 import { EdgeDeploymentGuard } from './edge-deployment.guard';
 import { EdgeInstallationsRealtimeController } from './edge-installations-realtime.controller';
 import { EdgeInstallationsRealtimeService } from './edge-installations-realtime.service';
-import { JwtSessionRepository } from '../../core/auth/repositories/jwt-session.repository';
+import { RealtimeModule } from '../../core/realtime/realtime.module';
 
 @Module({
-  imports: [ConfigModule, DatabaseModule, ClockModule],
+  imports: [ConfigModule, DatabaseModule, ClockModule, RealtimeModule],
   controllers: [
     EdgeAgentController,
     EdgeAdminController,
@@ -27,7 +27,6 @@ import { JwtSessionRepository } from '../../core/auth/repositories/jwt-session.r
     EdgeLocalStatusService,
     EdgeDeploymentGuard,
     EdgeInstallationsRealtimeService,
-    JwtSessionRepository,
   ],
   exports: [EdgeDeploymentGuard, EdgeLocalStatusService],
 })

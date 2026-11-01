@@ -1,3 +1,4 @@
+import { RealtimeAuthorizationService } from '../../core/realtime/realtime-authorization.service';
 import { Controller, Headers, MessageEvent, Sse } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -8,9 +9,6 @@ import {
 import { Observable } from 'rxjs';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
-import { JwtSessionRepository } from '../../core/auth/repositories/jwt-session.repository';
-import { ClockService } from '../../core/clock/clock.service';
-import { DoriException } from '../../core/errors/dori.exception';
 import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
 import { SkipResponseEnvelope } from '../../core/response/response.interceptor';
 import { ApiDoriSseResponse } from '../../core/swagger/api-dori-response.decorator';
@@ -23,8 +21,7 @@ import { EdgeInstallationsRealtimeService } from './edge-installations-realtime.
 export class EdgeInstallationsRealtimeController {
   constructor(
     private readonly realtime: EdgeInstallationsRealtimeService,
-    private readonly sessions: JwtSessionRepository,
-    private readonly clock: ClockService,
+    private readonly authorization: RealtimeAuthorizationService,
   ) {}
 
   @Sse('realtime/events')
@@ -46,21 +43,7 @@ export class EdgeInstallationsRealtimeController {
     @CurrentUser() user: AuthenticatedUser,
     @Headers('last-event-id') _lastEventId?: string,
   ): Promise<Observable<MessageEvent>> {
-    const authorize = async () => {
-      if (
-        !user.sessionId ||
-        !user.accessTokenExpiresAt ||
-        user.accessTokenExpiresAt * 1000 <= this.clock.now().getTime()
-      ) {
-        throw new DoriException('UNAUTHENTICATED');
-      }
-      const session = await this.sessions.findValidSessionId(
-        user.sessionId,
-        user.userId,
-        this.clock.now(),
-      );
-      if (!session) throw new DoriException('UNAUTHENTICATED');
-    };
+    const authorize = () => this.authorization.verifySession(user);
     await authorize();
     return this.realtime.stream({
       authorize,

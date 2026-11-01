@@ -1,3 +1,4 @@
+import { RealtimeAuthorizationService } from './realtime-authorization.service';
 import { Module } from '@nestjs/common';
 import { RealtimeService } from './realtime.service';
 import { RbacModule } from '../rbac/rbac.module';
@@ -10,7 +11,12 @@ import { JwtSessionRepository } from '../auth/repositories/jwt-session.repositor
 @Module({
   imports: [DatabaseModule, RbacModule, ClockModule],
   controllers: [RealtimeController],
-  providers: [RealtimeService, RealtimeRepository, JwtSessionRepository],
-  exports: [RealtimeService],
+  providers: [
+    RealtimeService,
+    RealtimeRepository,
+    JwtSessionRepository,
+    RealtimeAuthorizationService,
+  ],
+  exports: [RealtimeService, RealtimeAuthorizationService],
 })
 export class RealtimeModule {}

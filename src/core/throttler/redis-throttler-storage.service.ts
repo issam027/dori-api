@@ -1,6 +1,6 @@
 import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
 import { ThrottlerStorage } from '@nestjs/throttler';
-import { REDIS_CLIENT } from '../redis/redis.module';
+import { REDIS_CLIENT } from '../redis/redis.tokens';
 import type Redis from 'ioredis';
 import { safeErrorName } from '../logging/safe-error';
 

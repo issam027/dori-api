@@ -1,4 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ThresholdWorker } from './threshold.worker';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { randomUUID } from 'crypto';
 import { ClockService } from '../../core/clock/clock.service';
@@ -15,6 +16,7 @@ export class NotificationWorker extends BaseWorker {
     private readonly repository: NotificationWorkerRepository,
     private readonly clockService: ClockService,
     private readonly metricsService: MonitoringService,
+    @Optional() private readonly thresholds?: ThresholdWorker,
   ) {
     super();
   }
@@ -24,6 +26,7 @@ export class NotificationWorker extends BaseWorker {
     return this.runOnce(async () => {
       this.metricsService.increment('notification_worker_runs_total');
       try {
+        await this.thresholds?.evaluateThresholds();
         const claimTime = this.clockService.now();
         const pending = await this.repository.claimPending(claimTime);
 

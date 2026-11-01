@@ -15,6 +15,28 @@ export interface ClaimedNotificationRow {
 export class NotificationWorkerRepository {
   constructor(private readonly dataSource: DataSource) {}
 
+  findThresholdQueues(): Promise<Array<{ queue_id: string }>> {
+    return this.dataSource.query(
+      `SELECT DISTINCT r.queue_id FROM dorify.dori_registration r
+       JOIN dorify.dori_queue q ON q.queue_id=r.queue_id AND q.is_active
+       JOIN dorify.dori_site s ON s.site_id=q.site_id AND s.is_active
+       WHERE r.status = 'waiting' AND r.is_active = TRUE
+         AND EXISTS (
+           SELECT 1 FROM dorify.dori_queue_tier_notification_rule rule
+           JOIN dorify.dori_queue_service_tier tier
+             ON tier.queue_id = rule.queue_id AND tier.tier_id = rule.tier_id
+           WHERE rule.queue_id = r.queue_id AND rule.notification_type = 'threshold'
+             AND rule.tier_id=r.tier_id
+             AND rule.is_active = TRUE AND tier.is_active = TRUE
+             AND NOT EXISTS (
+               SELECT 1 FROM dorify.dori_notification n
+               WHERE n.registration_id=r.registration_id AND n.notification_type='threshold' AND n.channel=rule.channel
+             )
+         )
+       ORDER BY r.queue_id`,
+    );
+  }
+
   async claimPending(claimTime: Date): Promise<ClaimedNotificationRow[]> {
     const raw: unknown = await this.dataSource.transaction((manager) =>
       manager.query(

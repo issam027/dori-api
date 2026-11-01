@@ -134,6 +134,13 @@ export class ReportsService {
           ? null
           : Number(row.p90_service_minutes),
     });
+    const queueBuckets = new Map<string, Array<Record<string, unknown>>>();
+    for (const bucket of data.byQueueSeries) {
+      const key = String(bucket.queue_id);
+      const rows = queueBuckets.get(key) ?? [];
+      rows.push(bucket);
+      queueBuckets.set(key, rows);
+    }
     return {
       generatedAt: new Date().toISOString(),
       timezone,
@@ -158,14 +165,12 @@ export class ReportsService {
           queueId: String(row.queue_id),
           queueName: row.queue_name,
           ...metric(row),
-          series: data.byQueueSeries
-            .filter(
-              (bucket) => String(bucket.queue_id) === String(row.queue_id),
-            )
-            .map((bucket) => ({
+          series: (queueBuckets.get(String(row.queue_id)) ?? []).map(
+            (bucket) => ({
               periodStart: bucket.period_start,
               ...metric(bucket),
-            })),
+            }),
+          ),
         })),
         byUser: data.byUser.map((row) => ({
           userId: String(row.user_id),

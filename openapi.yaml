@@ -2047,7 +2047,7 @@ paths:
         permissions:
           - tier_view
       summary: Catalogue global des forfaits
-      description: Retourne tous les forfaits disponibles au catalogue (Gratuit, Standard, Premium...).
+      description: Retourne tous les forfaits disponibles au catalogue (Basic, Standard, Premium...).
       parameters:
         - name: page
           required: false
@@ -7354,6 +7354,72 @@ paths:
       responses:
         '200':
           description: Actualisation des estimations d'attente exécutée
+          content:
+            application/json:
+              schema:
+                properties:
+                  code:
+                    type: string
+                    example: OK
+                    description: Code applicatif du résultat
+                  translationKey:
+                    type: string
+                    nullable: true
+                    example: null
+                    description: Clé de traduction du message (null si aucun message)
+                  translationParams:
+                    type: object
+                    additionalProperties: true
+                    example: {}
+                    description: Paramètres de traduction
+                  data:
+                    $ref: '#/components/schemas/CronExecutionResponseDto'
+                required:
+                  - code
+                  - translationKey
+                  - translationParams
+                  - data
+        '400':
+          description: Données invalides (validation échouée)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '401':
+          description: Non authentifié — token manquant ou expiré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '429':
+          description: Trop de requêtes — limite de débit atteinte
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '500':
+          description: Erreur interne sans exposition de détails techniques
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+      tags: *ref_108
+      security: *ref_109
+  /api/internal/cron/retention:
+    get:
+      operationId: CronController_retentionCron
+      summary: Purger les données techniques expirées
+      description: Purge bornée avec délais de grâce, sans suppression de données métier.
+      parameters:
+        - name: authorization
+          required: true
+          in: header
+          schema:
+            type: string
+          description: Valeur du paramètre « authorization ».
+      responses:
+        '200':
+          description: Rétention technique exécutée
           content:
             application/json:
               schema:
