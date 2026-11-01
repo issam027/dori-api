@@ -1,0 +1,18 @@
+{
+  "transactionRolledBack": true,
+  "query": "actual claimPending with SKIP LOCKED and processing lease",
+  "before": {
+    "executionMs": 2127.494,
+    "returned": 0,
+    "sharedHitBlocks": 1536,
+    "indexes": []
+  },
+  "after": {
+    "executionMs": 5.507,
+    "returned": 0,
+    "sharedHitBlocks": 1506,
+    "indexes": [
+      "idx_notification_direct_pending"
+    ]
+  }
+}

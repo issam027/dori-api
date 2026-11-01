@@ -1,0 +1,32 @@
+require('ts-node/register/transpile-only');
+const fs=require('fs'),{Pool}=require('pg'),{performance}=require('perf_hooks');
+const {RealtimeService}=require('../../src/core/realtime/realtime.service');
+const {RealtimeRepository}=require('../../src/core/realtime/realtime.repository');
+const {ClockService}=require('../../src/core/clock/clock.service');
+const {runtimeMetrics}=require('../../src/core/observability/runtime-metrics');
+const pool=new Pool({connectionString:require('./audit-database.cjs')(),max:10,options:'-c default_transaction_read_only=on -c statement_timeout=5000'});
+(async()=>{const subscriptions=[];try{
+const sample=(await pool.query('SELECT queue_id,registration_tracking_token FROM dorify.dori_registration WHERE registration_tracking_token_valid_until>CURRENT_TIMESTAMP AND is_active LIMIT 1')).rows[0];
+if(!sample)throw Error('No valid tracking sample');
+let topicReads=0,authorizationReads=0,maxWaiting=0,closed=0;const durations=[];
+const ds={query:async(sql,args)=>{if(sql.includes('dori_realtime_topic_state'))topicReads++;else authorizationReads++;
+const start=performance.now();const work=pool.query(sql,args);maxWaiting=Math.max(maxWaiting,pool.waitingCount);const rows=(await work).rows;durations.push(performance.now()-start);return rows;}};
+const repository=new RealtimeRepository(ds),service=new RealtimeService(new ClockService(),repository);
+let revoked=false;
+const start=performance.now();
+const streams=await Promise.all(Array.from({length:100},(_,i)=>service.streamTracking(sample.queue_id,undefined,{expiresAt:new Date(Date.now()+15000),authorize:async()=>{
+ const registration=await repository.findRegistrationByTrackingToken(sample.registration_tracking_token);
+ if(!registration || !registration.is_active || new Date(registration.registration_tracking_token_valid_until)<=new Date() || i===0&&revoked)throw Error('Revoked');
+}})));
+streams.forEach(stream=>subscriptions.push(stream.subscribe({complete:()=>closed++})));
+await new Promise(resolve=>setTimeout(resolve,4200));revoked=true;
+await new Promise(resolve=>setTimeout(resolve,2100));subscriptions.forEach(s=>s.unsubscribe());
+const readCount=topicReads;await new Promise(resolve=>setTimeout(resolve,2100));
+if(topicReads!==readCount)throw Error('Topic polling survived last disconnect');
+if(closed!==1)throw Error('Individual revocation did not close exactly one stream');
+if(topicReads>104)throw Error('Topic reads not shared: '+topicReads);
+if(runtimeMetrics.snapshot().sse_connections_active!==0)throw Error('Active gauge leaked');
+durations.sort((a,b)=>a-b);
+const result={clients:100,transport:'in-process SSE observables, real read-only PostgreSQL; no HTTP load',elapsedMs:performance.now()-start,poolMax:10,maxPoolWaiting:maxWaiting,topicReads,authorizationReads,queryP95Ms:durations[Math.ceil(durations.length*.95)-1],revokedConnections:closed,remainingActive:runtimeMetrics.snapshot().sse_connections_active,teardownStoppedPolling:true};
+fs.writeFileSync('ai/audits/sse-load-validation-2026-11-01.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result));
+}finally{subscriptions.forEach(s=>s.unsubscribe());await pool.end()}})().catch(e=>{console.error(e.message);process.exitCode=1});

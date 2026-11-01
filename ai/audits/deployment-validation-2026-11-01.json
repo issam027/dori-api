@@ -1,0 +1,75 @@
+{
+  "static": [
+    {
+      "port": 18080,
+      "type": "javascript",
+      "identityBytes": 385191,
+      "gzipBytes": 121832,
+      "encoding": "gzip",
+      "vary": "Accept-Encoding"
+    },
+    {
+      "port": 18080,
+      "type": "css",
+      "identityBytes": 238465,
+      "gzipBytes": 42098,
+      "encoding": "gzip",
+      "vary": "Accept-Encoding"
+    },
+    {
+      "port": 58080,
+      "type": "javascript",
+      "identityBytes": 384357,
+      "gzipBytes": 121658,
+      "encoding": "gzip",
+      "vary": "Accept-Encoding"
+    },
+    {
+      "port": 58080,
+      "type": "css",
+      "identityBytes": 238465,
+      "gzipBytes": 42098,
+      "encoding": "gzip",
+      "vary": "Accept-Encoding"
+    }
+  ],
+  "health": [
+    {
+      "port": 13000,
+      "status": 200
+    },
+    {
+      "port": 53000,
+      "status": 200
+    },
+    {
+      "port": 18080,
+      "status": 200
+    },
+    {
+      "port": 58080,
+      "status": 200
+    }
+  ],
+  "sse": {
+    "status": 200,
+    "contentType": "text/event-stream",
+    "encoding": null,
+    "cacheControl": "private, no-cache, no-store, must-revalidate, max-age=0, no-transform"
+  },
+  "agent": {
+    "status": 200,
+    "deploymentStatus": "active",
+    "lastCloudError": null,
+    "heartbeatAgeMs": 3645,
+    "lastTrackingBatchCount": 0,
+    "lastTrackingProjectionCount": 0,
+    "synchronization": {
+      "pendingTracking": 0,
+      "oldestPendingAgeMs": 0,
+      "runningCommands": 0,
+      "poolWaiting": 0
+    }
+  },
+  "queryStatisticsAvailable": true
+}

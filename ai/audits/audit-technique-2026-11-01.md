@@ -1,5 +1,28 @@
 # Audit technique Dori — 1er novembre 2026
 
+## Suivi du traitement
+
+Clôture du traitement : tous les constats de cet audit sont corrigés et validés. Les preuves après modification sont détaillées dans les sections « Validation » et dans [le bilan de validation](bilan-traitement-audits-2026-11-01.md). Les mesures et captures initiales ont été conservées séparément.
+
+Traitement demandé le 1er novembre 2026. Un point est coché uniquement après correction et validation ; les constats ci-dessous décrivent la situation initiale.
+
+- [x] F01 — corrigé et validé
+- [x] F02 — corrigé et validé
+- [x] F03 — corrigé et validé
+- [x] F04 — corrigé et validé
+- [x] F05 — corrigé et validé
+- [x] F06 — corrigé et validé
+- [x] F07 — corrigé et validé
+- [x] F08 — corrigé et validé
+- [x] F09 — corrigé et validé
+- [x] F10 — corrigé et validé
+- [x] F11 — corrigé et validé
+- [x] F12 — corrigé et validé
+- [x] F13 — corrigé et validé
+- [x] F14 — corrigé et validé
+- [x] F15 — corrigé et validé
+- [x] F16 — corrigé et validé
+
 ## Périmètre et méthode
 
 Audit de dori-web, dori-api et dori-agent, incluant les services par file, PostgreSQL, rapports, temps réel, rendez-vous, notifications et synchronisation cloud.
@@ -260,3 +283,69 @@ Ne pas augmenter globalement les pools ni multiplier les index du catalogue sans
 
 Les tests de la fonctionnalité services exécutés précédemment ne remplacent pas ces validations. Aucune optimisation applicative n'a été livrée dans cet audit.
 
+
+### Validation F07
+
+acquittement SQL groupé avec contrôle de séquence ; test PostgreSQL rejetant une réponse périmée puis acceptant la séquence courante (tracking-validation-2026-11-01.json).
+
+### Validation F10
+
+pagination plafonnée à quatre requêtes, ordre et totalité conservés ; annulation et séparation par site couvertes par les tests front (298 tests passent).
+
+### Validation F11
+
+révisions d’entrées, cron sélectif, recalcul à la lecture coalescé, changement de journée et publication des deux topics vérifiés sur PostgreSQL ; voir statistics-retention-validation-2026-11-01.json.
+
+### Validation F13
+
+purge bornée avec grâce et protections ; transactions PostgreSQL vérifient la conservation du dernier événement, des projections non acquittées et commandes RUNNING. Politique documentée dans remediation-architecture-et-exploitation-2026-11-01.md.
+
+### Validation F16
+
+lease récupérable, réutilisation du résultat, arrêt attendant le cycle et fermeture unique du pool ; tests PostgreSQL et tests agent passent.
+
+### Validation F01
+
+Chargement limité à la file sélectionnée ; règles chargées à l’ouverture des détails. La régression quatre files / trois services vérifie un seul GET d’associations et zéro GET de règles initial, à 320, 390, 768, 1024 et 1440 px. Les changements de défaut préservent le prix en cours de saisie. Les cas sans défaut et sans options restent couverts (services-settings et queue-service-selection ; 106 parcours passent).
+
+### Validation F02
+
+Lecture des topics partagée par file/type et processus, polling deux secondes et libération au dernier abonné. Autorisations individuelles et expiration conservées. Tests de révocation passent ; validation bornée de 100 observables SSE avec PostgreSQL réel : 100 lectures initiales puis trois lectures partagées, 300 vérifications individuelles, une révocation isolée et aucun polling après fermeture. Voir sse-load-validation-2026-11-01.json. Limite explicite : ce test ne mesure pas une charge HTTP réseau distribuée.
+
+### Validation F03
+
+Index partiel idx_notification_direct_pending déployé. Le plan de la vraie requête claimPending, avec SKIP LOCKED et reprise des leases, utilise l’index ; sélection vide vérifiée avec écritures annulées. Voir notification-claim-validation-2026-11-01.json. Les temps isolés restent sensibles au cache et à la charge ; le changement de plan est établi.
+
+### Validation F04
+
+Projection réduite aux onze colonnes utiles, un passage par jeu d’événements via VALUES, huit requêtes parallèles conservées et indexation des séries par file dans une Map. Résultats identiques aux références pour heure/jour/semaine/mois, fuseaux et percentiles. Sept mesures alternées donnent une médiane globale 946,7 → 808,5 ms dans cet environnement ; blocs temporaires lus des deux séries 4788/4902 → 492/492. Les mesures isolées fluctuent ; aucun gain uniforme par requête n’est prétendu. Voir reports-validation-2026-11-01.json et report-plan-validation-2026-11-01.json.
+
+### Validation F05
+
+Contrat SQL de classement partagé moteur/agent ; invalidations durables, rafraîchissement des files vivantes, tickets terminés conservés et réparation complète par file après quinze minutes. Égalité du classement sur cent inscriptions, acquittements et leases vérifiés sur PostgreSQL. Dernière comparaison : recalcul ancien complet environ 3,28 s, cycle incrémental 1,13 s ; premier recalcul environ 8,38 s, coût initial explicite. Concurrence mise à jour/refresh sans deadlock validée. Voir tracking-validation-2026-11-01.json et tracking-concurrency-validation-2026-11-01.json.
+
+### Validation F06
+
+Plusieurs lots de cent sous budgets de temps et de nombre ; priorité aux tickets vivants avec un lot FIFO sur quatre. Canal de contrôle indépendant, notifications bornées à trois tâches, délais absolus et backoff avec dispersion ; un heartbeat réussi ne remet plus à zéro un échec des transferts. Les transferts conservent la limite générale API et ne subissent plus la limite des tentatives d’authentification. Quatorze tests agent passent. Après déploiement : agent actif, heartbeat récent, zéro projection en retard et aucune erreur cloud (deployment-validation-2026-11-01.json).
+
+### Validation F08
+
+Compression Nginx limitée aux ressources statiques, Vary: Accept-Encoding et conservation octet pour octet après décompression vérifiés sur intra et cloud. Entrée JS environ 385 ko → 122 ko transférés ; CSS environ 238 ko → 42 ko. SSE réel via proxy répond text/event-stream sans compression. Voir deployment-validation-2026-11-01.json.
+
+### Validation F09
+
+Chargement des sites et utilisateurs directs réservé à l’onglet Sites ; rôles à l’ouverture d’une affectation. Les ressources partagées nécessaires aux compteurs et au périmètre restent disponibles. Les cinq tailles de configuration, l’affectation des rôles et la création de file passent dans la suite navigateur complète ; aucun chargement de règles anticipé sur Services.
+
+### Validation F12
+
+COUNT(*) et sélection des personnes sans DISTINCT redondant sur une clé primaire sans jointure multiplicatrice. Comparaison PostgreSQL en lecture seule sur cinq combinaisons (actifs/inactifs, recherche, pagination, vide) : résultats, totaux et ordre identiques. Voir persons-validation-2026-11-01.json.
+
+### Validation F14
+
+Métriques bornées de durée et P95 par modèle de route/job, abonnés et lectures SSE, pool PostgreSQL ; santé agent avec ancienneté du retard, âge du heartbeat, commandes en cours et compteurs distincts lots/projections. Tests des bornes et du percentile passent. pg_stat_statements est opérationnel sur intra, cloud et Neon ; aucune donnée personnelle ou token dans les labels. Voir les validations de déploiement, migrations et SSE.
+
+### Validation F15
+
+Extraction de la carte de file du cockpit, des étapes de l’assistant, du ticket kiosque et de la carte de service ; requêtes cockpit/rapports séparées de l’orchestration des repositories. Transactions métier conservées. Clés de cartes stables et brouillon distinct des données serveur ; régression qui modifie le défaut pendant la saisie passe. Types, architecture, tests et builds passent. Le détail de l’architecture est dans remediation-architecture-et-exploitation-2026-11-01.md.
+
+Complément de validation F11 : chaque statistique journalière enregistre sa révision d’entrée (migration 021). Le recalcul d’une journée ne masque plus une autre journée encore périmée ; ce cas est vérifié sur PostgreSQL avec plusieurs journées et lectures simultanées.

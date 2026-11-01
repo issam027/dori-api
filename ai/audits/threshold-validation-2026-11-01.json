@@ -1,0 +1,7 @@
+{
+  "transactionRolledBack": true,
+  "workerSelectsEligibleQueue": true,
+  "newCandidateIncluded": true,
+  "existingIdempotencyKeySkipped": true,
+  "noExternalDispatch": true
+}

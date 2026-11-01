@@ -1,0 +1,519 @@
+{
+  "mockedAPI": true,
+  "results": [
+    {
+      "width": 1440,
+      "route": "/display",
+      "url": "/display",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "/device-mode",
+      "url": "/forbidden",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "/health",
+      "url": "/health",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "/admin/edge-installations",
+      "url": "/admin/edge-installations",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "/legal",
+      "url": "/legal",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "/track?token=audit-factice",
+      "url": "/track",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 1024,
+      "route": "/display",
+      "url": "/display",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 1024,
+      "route": "/device-mode",
+      "url": "/forbidden",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 1024,
+      "route": "/health",
+      "url": "/health",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 1024,
+      "route": "/admin/edge-installations",
+      "url": "/admin/edge-installations",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 1024,
+      "route": "/legal",
+      "url": "/legal",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 1024,
+      "route": "/track?token=audit-factice",
+      "url": "/track",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 768,
+      "route": "/display",
+      "url": "/display",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 768,
+      "route": "/device-mode",
+      "url": "/forbidden",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 768,
+      "route": "/health",
+      "url": "/health",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 768,
+      "route": "/admin/edge-installations",
+      "url": "/admin/edge-installations",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 768,
+      "route": "/legal",
+      "url": "/legal",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 768,
+      "route": "/track?token=audit-factice",
+      "url": "/track",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 390,
+      "route": "/display",
+      "url": "/display",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 390,
+      "route": "/device-mode",
+      "url": "/forbidden",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 390,
+      "route": "/health",
+      "url": "/health",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 390,
+      "route": "/admin/edge-installations",
+      "url": "/admin/edge-installations",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 390,
+      "route": "/legal",
+      "url": "/legal",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 390,
+      "route": "/track?token=audit-factice",
+      "url": "/track",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "route": "/appointments",
+      "width": 1024,
+      "protrusions": [
+        {
+          "tag": "SECTION",
+          "class": "calendar-day",
+          "left": 916.96875,
+          "right": 1068.96875,
+          "width": 152
+        },
+        {
+          "tag": "H2",
+          "class": "",
+          "left": 917.96875,
+          "right": 1067.96875,
+          "width": 150
+        },
+        {
+          "tag": "SPAN",
+          "class": "calendar-day-name",
+          "left": 929.359375,
+          "right": 1056.578125,
+          "width": 127.21875
+        },
+        {
+          "tag": "SPAN",
+          "class": "calendar-day-date",
+          "left": 929.359375,
+          "right": 1056.578125,
+          "width": 127.21875
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-slot calendar-slot-empty",
+          "left": 917.96875,
+          "right": 1067.96875,
+          "width": 150
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-slot-header",
+          "left": 925.5625,
+          "right": 1060.375,
+          "width": 134.8125
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-slot calendar-slot-empty",
+          "left": 917.96875,
+          "right": 1067.96875,
+          "width": 150
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-slot-header",
+          "left": 925.5625,
+          "right": 1060.375,
+          "width": 134.8125
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-slot calendar-slot-empty",
+          "left": 917.96875,
+          "right": 1067.96875,
+          "width": 150
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-slot-header",
+          "left": 925.5625,
+          "right": 1060.375,
+          "width": 134.8125
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-slot calendar-slot-empty",
+          "left": 917.96875,
+          "right": 1067.96875,
+          "width": 150
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-slot-header",
+          "left": 925.5625,
+          "right": 1060.375,
+          "width": 134.8125
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-slot calendar-slot-empty",
+          "left": 917.96875,
+          "right": 1067.96875,
+          "width": 150
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-slot-header",
+          "left": 925.5625,
+          "right": 1060.375,
+          "width": 134.8125
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-slot calendar-slot-empty",
+          "left": 917.96875,
+          "right": 1067.96875,
+          "width": 150
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-slot-header",
+          "left": 925.5625,
+          "right": 1060.375,
+          "width": 134.8125
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-slot calendar-slot-empty",
+          "left": 917.96875,
+          "right": 1067.96875,
+          "width": 150
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-slot-header",
+          "left": 925.5625,
+          "right": 1060.375,
+          "width": 134.8125
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-slot calendar-slot-empty",
+          "left": 917.96875,
+          "right": 1067.96875,
+          "width": 150
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-slot-header",
+          "left": 925.5625,
+          "right": 1060.375,
+          "width": 134.8125
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-slot calendar-slot-empty",
+          "left": 917.96875,
+          "right": 1067.96875,
+          "width": 150
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-slot-header",
+          "left": 925.5625,
+          "right": 1060.375,
+          "width": 134.8125
+        },
+        {
+          "tag": "SECTION",
+          "class": "calendar-day is-closed",
+          "left": 1076.5625,
+          "right": 1160.15625,
+          "width": 83.59375
+        },
+        {
+          "tag": "H2",
+          "class": "",
+          "left": 1077.5625,
+          "right": 1159.15625,
+          "width": 81.59375
+        },
+        {
+          "tag": "SPAN",
+          "class": "calendar-day-name",
+          "left": 1085.15625,
+          "right": 1151.5625,
+          "width": 66.40625
+        },
+        {
+          "tag": "SPAN",
+          "class": "calendar-day-date",
+          "left": 1085.15625,
+          "right": 1151.5625,
+          "width": 66.40625
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-closed-day",
+          "left": 1077.5625,
+          "right": 1159.15625,
+          "width": 81.59375
+        },
+        {
+          "tag": "SPAN",
+          "class": "",
+          "left": 1110.859375,
+          "right": 1125.859375,
+          "width": 15
+        },
+        {
+          "tag": "SECTION",
+          "class": "calendar-day is-closed is-today",
+          "left": 1167.75,
+          "right": 1251.34375,
+          "width": 83.59375
+        },
+        {
+          "tag": "H2",
+          "class": "",
+          "left": 1168.75,
+          "right": 1250.34375,
+          "width": 81.59375
+        },
+        {
+          "tag": "SPAN",
+          "class": "calendar-day-name",
+          "left": 1176.34375,
+          "right": 1242.75,
+          "width": 66.40625
+        },
+        {
+          "tag": "SPAN",
+          "class": "calendar-today-badge",
+          "left": 1183.9375,
+          "right": 1249.234375,
+          "width": 65.296875
+        },
+        {
+          "tag": "SPAN",
+          "class": "calendar-day-date",
+          "left": 1176.34375,
+          "right": 1242.75,
+          "width": 66.40625
+        },
+        {
+          "tag": "DIV",
+          "class": "calendar-closed-day",
+          "left": 1168.75,
+          "right": 1250.34375,
+          "width": 81.59375
+        },
+        {
+          "tag": "SPAN",
+          "class": "",
+          "left": 1202.046875,
+          "right": 1217.046875,
+          "width": 15
+        }
+      ]
+    },
+    {
+      "route": "/onboarding",
+      "width": 1024,
+      "protrusions": []
+    },
+    {
+      "width": 1440,
+      "route": "/settings/queues",
+      "buttons": [
+        " Nouvelle file",
+        "Actif",
+        "Inactif",
+        "Toutes",
+        "Modifier",
+        "Désactiver",
+        "Modifier",
+        "Désactiver"
+      ]
+    },
+    {
+      "width": 1440,
+      "dialog": "createQueue",
+      "bounds": {
+        "x": 310,
+        "y": 152.5,
+        "width": 820,
+        "height": 539
+      },
+      "violations": [],
+      "focusInside": true
+    },
+    {
+      "width": 1440,
+      "escapeCloses": true
+    },
+    {
+      "width": 768,
+      "route": "/settings/queues",
+      "buttons": [
+        " Nouvelle file",
+        "Actif",
+        "Inactif",
+        "Toutes",
+        "Modifier",
+        "Désactiver",
+        "Modifier",
+        "Désactiver"
+      ]
+    },
+    {
+      "width": 768,
+      "dialog": "createQueue",
+      "bounds": {
+        "x": 16,
+        "y": 152.5,
+        "width": 736,
+        "height": 539
+      },
+      "violations": [],
+      "focusInside": true
+    },
+    {
+      "width": 768,
+      "escapeCloses": true
+    },
+    {
+      "width": 390,
+      "route": "/settings/queues",
+      "buttons": [
+        " Nouvelle file",
+        "Actif",
+        "Inactif",
+        "Toutes",
+        "Modifier",
+        "",
+        "Modifier",
+        ""
+      ]
+    },
+    {
+      "width": 390,
+      "dialog": "createQueue",
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "violations": [],
+      "focusInside": true
+    },
+    {
+      "width": 390,
+      "escapeCloses": true
+    }
+  ]
+}

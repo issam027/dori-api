@@ -1,3 +1,7 @@
+# Document historique — ne pas appliquer sans revalidation
+
+Remplacé pour le traitement actuel par ai/audits/audit-uix-architecture-code-mort-2026-11-01.md. Plusieurs constats de ce document sont obsolètes (JWT, verrouillage, entités et Redis).
+
 # Handover & Audit du Code Mort (`ai/deadcode_handover.md`)
 
 Ce document recense l'audit exhaustif du code mort, orphelin, court-circuité ou non utilisé identifié dans le dossier `src/` de l'API Dori au **2026-10-07**.

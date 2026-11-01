@@ -1,0 +1,44 @@
+{
+  "readOnly": true,
+  "results": [
+    {
+      "isActive": true,
+      "searchUsed": false,
+      "offset": 0,
+      "total": 12500,
+      "returned": 25,
+      "equal": true
+    },
+    {
+      "isActive": false,
+      "searchUsed": false,
+      "offset": 0,
+      "total": 0,
+      "returned": 0,
+      "equal": true
+    },
+    {
+      "searchUsed": false,
+      "offset": 25,
+      "total": 12500,
+      "returned": 25,
+      "equal": true
+    },
+    {
+      "isActive": true,
+      "searchUsed": true,
+      "offset": 0,
+      "total": 12500,
+      "returned": 25,
+      "equal": true
+    },
+    {
+      "isActive": true,
+      "searchUsed": true,
+      "offset": 0,
+      "total": 0,
+      "returned": 0,
+      "equal": true
+    }
+  ]
+}

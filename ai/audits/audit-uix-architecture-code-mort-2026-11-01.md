@@ -1,5 +1,27 @@
 # Audit UI/UX, architecture et code mort — 1er novembre 2026
 
+## Suivi du traitement
+
+Clôture du traitement : tous les constats de cet audit sont corrigés et validés. Les preuves après modification sont détaillées dans les sections « Validation » et dans [le bilan de validation](bilan-traitement-audits-2026-11-01.md). Les mesures et captures initiales ont été conservées séparément.
+
+Traitement demandé le 1er novembre 2026. Un point est coché uniquement après correction et validation ; les constats ci-dessous décrivent la situation initiale.
+
+- [x] UX01 — corrigé et validé
+- [x] UX02 — corrigé et validé
+- [x] UX03 — corrigé et validé
+- [x] UX04 — corrigé et validé
+- [x] UX05 — corrigé et validé
+- [x] AR01 — corrigé et validé
+- [x] AR02 — corrigé et validé
+- [x] AR03 — corrigé et validé
+- [x] AR04 — corrigé et validé
+- [x] QA01 — corrigé et validé
+- [x] QA02 — corrigé et validé
+- [x] DC01 — corrigé et validé
+- [x] DC02 — corrigé et validé
+- [x] DC03 — corrigé et validé
+- [x] DC04 — corrigé et validé
+
 ## Périmètre et preuves
 
 Complément à audit-technique-2026-11-01.md. Les trois dépôts ont été inspectés : dori-web, dori-api, dori-agent.
@@ -325,3 +347,106 @@ Pour un nettoyage, exécuter les commandes complètes après chaque lot. Un test
 
 Les scripts lisent les dépendances déjà installées ; ils ne téléchargent pas de paquets. Les parcours UI simulent les réponses API et ne valident donc pas les transactions, droits ou contrats réels du serveur.
 
+<!-- CHECKPOINT id="ckpt_mvxjl2pr_qxkg63" time="2026-11-01T08:02:22.335Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxjxxrd_9k437t" time="2026-11-01T08:12:22.441Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxkassk_kvn8xs" time="2026-11-01T08:22:22.532Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxknnua_p4pgem" time="2026-11-01T08:32:22.642Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxl0itq_4khul3" time="2026-11-01T08:42:22.670Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxlddsg_gqteje" time="2026-11-01T08:52:22.672Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+### Validation AR01
+
+site inclus dans la clé des rendez-vous ; ancien périmètre annulé et retiré au changement de site. Tests du cache et de changement de site passent.
+
+### Validation AR02
+
+imports entre features via façades publiques explicites ; phase11 passe sur 382 fichiers et contrôle de portée des imports étendu.
+
+### Validation AR04
+
+sélection métier déplacée dans shared/queue-services ; composants de configuration utilisent adaptateurs et hooks. Types, tests front et phase11 passent.
+
+### Validation DC03
+
+déclarations confirmées retirées dans les trois composants ; points d’entrée de framework et scripts conservés. Types et tests passent ; contrôle de fichiers inaccessibles avec racines explicites ajouté aux trois CI.
+
+### Validation DC04
+
+19 occurrences de sélecteurs obsolètes retirées après vérification des usages ; classes dynamiques des graphiques conservées. Build front et contrôles UI/tokens passent.
+
+<!-- CHECKPOINT id="ckpt_mvxr3wkq_yf966r" time="2026-11-01T11:32:58.154Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxrgrj8_jc9ke7" time="2026-11-01T11:42:58.148Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxrtmj1_ppf967" time="2026-11-01T11:52:58.189Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxs6hhy_si3bha" time="2026-11-01T12:02:58.198Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxsjch2_jyj3mr" time="2026-11-01T12:12:58.214Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxsw7fz_rc0gv0" time="2026-11-01T12:22:58.223Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxt92ey_axi6r1" time="2026-11-01T12:32:58.234Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxtlxdt_tna6f4" time="2026-11-01T12:42:58.241Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxtyscf_zlvl8n" time="2026-11-01T12:52:58.239Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+### Validation UX01
+
+Texte actif de navigation basse aligné sur le token de texte contrasté. Aucune violation axe sur les 34 parcours principaux à 390/1440 px, ni sur le complément ; parcours RTL et quatre thèmes passent. Voir mesures-uix-apres-2026-11-01.json et suite navigateur.
+
+### Validation UX02
+
+Titre du bandeau rendu réductible, éléments internes autorisés à rétrécir et calendrier contenu dans sa région de défilement. Assistant en une colonne sous 1100 px. Zéro débordement global sur les 85 parcours à cinq largeurs ; régressions tactiles à 1023/1024/1101 px passent. Voir mesures-uix-apres-2026-11-01.json et e2e/audit-regressions.spec.ts.
+
+### Validation UX03
+
+Aperçu doté d’un nom accessible et tabindex=0 ; sa section nommée possède le rôle implicite region. Focus clavier vérifié au navigateur, ainsi que le défilement clavier du calendrier. Contrôle axe du complément sans violation. Voir mesures-uix-complement-apres-2026-11-01.json.
+
+### Validation UX04
+
+Cibles et champs tactiles portés à 44 px ; police des champs au moins 16 px. Réduction d’échelle supprimée pour le pointeur tactile afin de conserver 44 px physiques. Mesure réelle d’un champ à trois largeurs tablette et parcours de rotation/dialogues passent. La densité de bureau à la souris reste couverte par la régression visuelle.
+
+### Validation UX05
+
+Vocabulaire Services harmonisé, compteurs condensés sur mobile, défaut facultatif indépendant des options et protection du service système expliquée. Activation/désactivation distinguée de l’édition ; champs en cours préservés au refetch du défaut. Scénarios quatre files/trois services aux cinq tailles passent ; exemples peuplés, RTL, thèmes et modales couverts par les 106 parcours.
+
+### Validation AR03
+
+Token Redis isolé, types et filtres d’audit indépendants du DTO HTTP ; autorisation SSE extraite dans un service réutilisé par les contrôleurs. Graphe sans cycle de valeurs dans les trois composants, démarrage Nest effectif et 439 tests API passent. SQL explicite, référence des migrations, contrat agent et exceptions de découverte documentés.
+
+### Validation DC01
+
+Évaluateur raccordé au worker notifications toutes les dix secondes et à sa route cron protégée. Sélection des files/services actifs avec seuils ; les clés d’idempotence déjà enregistrées sont éliminées avant recalcul. Tests du worker, câblage Nest et transaction PostgreSQL (candidat neuf retenu, candidat déjà traité écarté, aucun envoi externe) passent. Voir threshold-validation-2026-11-01.json.
+
+### Validation DC02
+
+Validateur de configuration légale appelé à l’initialisation en mode production ; garde de build existante conservée, sans inventer de mentions légales. Validation du snapshot public réellement appelée avant exposition ; contrôle récursif des clés sans rejeter un nom de file contenant « phone ». Tests de confidentialité et de configuration passent ; affichage/tracking sans violation axe dans le complément.
+
+### Validation QA01
+
+Lint et types complets passent sur le front et l’API ; format, build et portes de qualité passent. Derniers résultats : API 91 suites / 439 tests, front 89 suites / 298 tests, agent trois suites / 14 tests, navigateur 106 parcours. Voir les journaux api-quality-validation.log, web-lint-validation.log, web-unit-validation.log, agent-quality-validation.log et web-e2e-validation.log.
+
+### Validation QA02
+
+Détection des déclarations DTO par AST ; contrôle des frontières de features étendu ; doublons FR/EN/AR retirés et exceptions d’identifiants techniques explicites. CI Node/Docker alignés sur 22.22.0. Portes d’architecture et de fichiers inaccessibles ajoutées aux trois CI avec points d’entrée déclarés, plus les audits i18n/env/UI au front. Les contrôles phase11, i18n, env, UI, tokens, budgets et architecture passent ; le client généré est stable et correspond à la spécification (generated-client-validation-2026-11-01.json).
+
+<!-- CHECKPOINT id="ckpt_mvxubnbb_yvpgz1" time="2026-11-01T13:02:58.247Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxuoi9z_2h1wsx" time="2026-11-01T13:12:58.247Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxv1d8v_wjojso" time="2026-11-01T13:22:58.255Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxve87v_lz5urw" time="2026-11-01T13:32:58.267Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxvr36w_2jafup" time="2026-11-01T13:42:58.280Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxy44bh_pa8tal" time="2026-11-01T14:49:05.501Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvxygz9v_osf1yu" time="2026-11-01T14:59:05.491Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

@@ -1,0 +1,17 @@
+{
+  "dori-api": {
+    "files": 192,
+    "staticValueImportCycles": [],
+    "crossFeatureInternals": []
+  },
+  "dori-web": {
+    "files": 293,
+    "staticValueImportCycles": [],
+    "crossFeatureInternals": []
+  },
+  "dori-agent": {
+    "files": 9,
+    "staticValueImportCycles": [],
+    "crossFeatureInternals": []
+  }
+}

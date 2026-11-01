@@ -1,0 +1,12 @@
+{
+  "transactionRolledBack": true,
+  "oldFullRefreshMs": 3279.0591,
+  "initialRefreshMs": 8383.9182,
+  "incrementalRefreshMs": 1129.6489999999994,
+  "initialRows": 11997,
+  "incrementalRows": 0,
+  "operationalRankSample": 100,
+  "operationalRankEqual": true,
+  "commandLeaseRecovery": true,
+  "bulkAcknowledgementCAS": true
+}

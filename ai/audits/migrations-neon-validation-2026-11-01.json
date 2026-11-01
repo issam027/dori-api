@@ -1,0 +1,32 @@
+{
+  "target": "neon",
+  "applied": [
+    "Applied migration 021_statistics_snapshot_revision.sql."
+  ],
+  "migrations": [
+    "001_uuid_baseline.sql",
+    "002_perf01_read_indexes.sql",
+    "003_realtime_outbox.sql",
+    "004_realtime_outbox_delivery.sql",
+    "005_realtime_topic_state.sql",
+    "006_registration_recall.sql",
+    "007_registration_last_recalled_at.sql",
+    "008_edge_agent_storage.sql",
+    "009_edge_control_plane.sql",
+    "010_edge_installation_permission.sql",
+    "011_grant_edge_permission_to_admin.sql",
+    "012_edge_installation_deployment_status.sql",
+    "013_edge_installation_revocation.sql",
+    "014_unified_notification_tracking.sql",
+    "015_rename_free_tier_basic.sql",
+    "016_audit_operational_indexes.sql",
+    "017_incremental_tracking_contract.sql",
+    "018_estimation_input_revisions.sql",
+    "019_query_observability.sql",
+    "020_tracking_lock_order.sql",
+    "021_statistics_snapshot_revision.sql"
+  ],
+  "contract": true,
+  "extensionInstalled": true,
+  "queryStatisticsAvailable": true
+}

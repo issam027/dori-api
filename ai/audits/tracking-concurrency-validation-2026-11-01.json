@@ -1,0 +1,7 @@
+{
+  "registrationWritesRolledBack": true,
+  "projectionWritesRolledBack": true,
+  "concurrentRegistrationAndRefresh": true,
+  "deadlock": false,
+  "technicalDirtyEntryRetainedForNextCycle": true
+}

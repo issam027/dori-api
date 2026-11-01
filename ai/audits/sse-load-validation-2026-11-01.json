@@ -1,0 +1,13 @@
+{
+  "clients": 100,
+  "transport": "in-process SSE observables, real read-only PostgreSQL; no HTTP load",
+  "elapsedMs": 8542.606099999999,
+  "poolMax": 10,
+  "maxPoolWaiting": 100,
+  "topicReads": 103,
+  "authorizationReads": 300,
+  "queryP95Ms": 116.71510000000012,
+  "revokedConnections": 1,
+  "remainingActive": 0,
+  "teardownStoppedPolling": true
+}

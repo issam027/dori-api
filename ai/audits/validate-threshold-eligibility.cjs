@@ -1,0 +1,23 @@
+require('ts-node/register/transpile-only');
+const fs=require('fs'),{Client}=require('pg'),{randomUUID}=require('crypto');
+const {NotificationsRepository}=require('../../src/modules/notifications/notifications.repository');
+const {NotificationWorkerRepository}=require('../../src/workers/notification-worker/notification-worker.repository');
+const client=new Client({connectionString:require('./audit-database.cjs')(),statement_timeout:30000});
+(async()=>{await client.connect();try{await client.query('BEGIN');
+const sample=(await client.query("SELECT r.registration_id,r.queue_id,r.tier_id FROM dorify.dori_registration r JOIN dorify.dori_queue_service_tier t ON t.queue_id=r.queue_id AND t.tier_id=r.tier_id AND t.is_active JOIN dorify.dori_queue q ON q.queue_id=r.queue_id AND q.is_active JOIN dorify.dori_site s ON s.site_id=q.site_id AND s.is_active WHERE r.status='waiting' AND r.is_active LIMIT 1")).rows[0];
+if(!sample)throw Error('No eligible sample');
+await client.query("UPDATE dorify.dori_queue_tier_notification_rule SET is_active=false WHERE queue_id=$1 AND tier_id=$2 AND notification_type='threshold'",[sample.queue_id,sample.tier_id]);
+const existing=(await client.query("SELECT rule_id FROM dorify.dori_queue_tier_notification_rule WHERE queue_id=$1 AND tier_id=$2 AND notification_type='threshold' AND channel='sms' LIMIT 1",[sample.queue_id,sample.tier_id])).rows[0];
+let ruleId=existing?.rule_id;
+if(ruleId)await client.query('UPDATE dorify.dori_queue_tier_notification_rule SET is_active=true WHERE rule_id=$1',[ruleId]);
+else{ruleId=randomUUID();await client.query("INSERT INTO dorify.dori_queue_tier_notification_rule(rule_id,queue_id,tier_id,notification_type,channel,threshold_position,is_active) VALUES($1,$2,$3,'threshold','sms',3,true)",[ruleId,sample.queue_id,sample.tier_id]);}
+await client.query("DELETE FROM dorify.dori_notification WHERE registration_id=$1 AND notification_type='threshold'",[sample.registration_id]);
+const ds={query:async(sql,args)=>(await client.query(sql,args)).rows};
+const repo=new NotificationsRepository(ds),workerRepo=new NotificationWorkerRepository(ds);
+if(!(await workerRepo.findThresholdQueues()).some(r=>r.queue_id===sample.queue_id))throw Error('Worker did not select eligible queue');
+if(!(await repo.findWaitingRegistrations(sample.queue_id)).some(r=>r.registration_id===sample.registration_id))throw Error('New candidate omitted');
+await client.query("INSERT INTO dorify.dori_notification(registration_id,rule_id,channel,notification_type,locale,recipient,notification_status,dispatch_route,failure_reason) VALUES($1,$2,'sms','threshold','fr','audit-fixture','failed','direct','AUDIT_FIXTURE')",[sample.registration_id,ruleId]);
+if((await repo.findWaitingRegistrations(sample.queue_id)).some(r=>r.registration_id===sample.registration_id))throw Error('Already processed candidate recomputed');
+const result={transactionRolledBack:true,workerSelectsEligibleQueue:true,newCandidateIncluded:true,existingIdempotencyKeySkipped:true,noExternalDispatch:true};
+await client.query('ROLLBACK');fs.writeFileSync('ai/audits/threshold-validation-2026-11-01.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result));
+}catch(e){await client.query('ROLLBACK');throw e}finally{await client.end()}})().catch(e=>{console.error(e.code||e.message);process.exitCode=1});

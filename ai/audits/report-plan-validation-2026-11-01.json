@@ -1,0 +1,82 @@
+{
+  "sameResults": true,
+  "rounds": 7,
+  "mediansMs": {
+    "baseline": 946.6958000000013,
+    "narrow": 739.9048999999995,
+    "lateral": 808.5433000000012
+  },
+  "timings": {
+    "baseline": [
+      1249.2973000000002,
+      1106.4619999999995,
+      1012.7394000000004,
+      804.3214000000007,
+      787.7186000000002,
+      946.6958000000013,
+      565.8268000000025
+    ],
+    "narrow": [
+      739.9048999999995,
+      1006.8852000000006,
+      833.8135999999995,
+      478.33359999999993,
+      681.2537000000011,
+      1094.836900000002,
+      626.0037000000011
+    ],
+    "lateral": [
+      841.4398000000001,
+      630.3353999999999,
+      962.9261999999999,
+      808.5433000000012,
+      739.1648999999998,
+      1112.0901000000013,
+      770.8793000000005
+    ]
+  },
+  "plans": {
+    "baseline": [
+      {
+        "query": 1,
+        "executionMs": 358.528,
+        "tempReadBlocks": 4788,
+        "tempWrittenBlocks": 1344
+      },
+      {
+        "query": 3,
+        "executionMs": 404.856,
+        "tempReadBlocks": 4902,
+        "tempWrittenBlocks": 1459
+      }
+    ],
+    "narrow": [
+      {
+        "query": 1,
+        "executionMs": 300.426,
+        "tempReadBlocks": 2164,
+        "tempWrittenBlocks": 688
+      },
+      {
+        "query": 3,
+        "executionMs": 675.277,
+        "tempReadBlocks": 2278,
+        "tempWrittenBlocks": 803
+      }
+    ],
+    "lateral": [
+      {
+        "query": 1,
+        "executionMs": 418.33,
+        "tempReadBlocks": 492,
+        "tempWrittenBlocks": 492
+      },
+      {
+        "query": 3,
+        "executionMs": 367.338,
+        "tempReadBlocks": 492,
+        "tempWrittenBlocks": 492
+      }
+    ]
+  }
+}

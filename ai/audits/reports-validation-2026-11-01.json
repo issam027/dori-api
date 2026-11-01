@@ -1,0 +1,34 @@
+[
+  {
+    "bucket": "hour",
+    "equal": true,
+    "beforeMs": 367.7348000000002,
+    "afterMs": 127.07650000000012,
+    "beforeQueries": 8,
+    "afterQueries": 8
+  },
+  {
+    "bucket": "day",
+    "equal": true,
+    "beforeMs": 963.0027,
+    "afterMs": 1119.2059,
+    "beforeQueries": 8,
+    "afterQueries": 8
+  },
+  {
+    "bucket": "week",
+    "equal": true,
+    "beforeMs": 1035.4369000000006,
+    "afterMs": 1087.8652999999995,
+    "beforeQueries": 8,
+    "afterQueries": 8
+  },
+  {
+    "bucket": "month",
+    "equal": true,
+    "beforeMs": 1367.1635999999999,
+    "afterMs": 2042.2381000000005,
+    "beforeQueries": 8,
+    "afterQueries": 8
+  }
+]
