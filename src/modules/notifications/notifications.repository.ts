@@ -237,9 +237,9 @@ export class NotificationsRepository {
       }>(
         await manager.query(
           `UPDATE dorify.dori_notification
-         SET notification_status = $1,
-             delivered_at = CASE WHEN $1 = 'delivered' THEN $2 ELSE delivered_at END,
-             failure_reason = CASE WHEN $1 = 'failed' THEN $3 ELSE failure_reason END,
+         SET notification_status = $1::varchar,
+             delivered_at = CASE WHEN $1::varchar = 'delivered' THEN $2 ELSE delivered_at END,
+             failure_reason = CASE WHEN $1::varchar = 'failed' THEN $3 ELSE failure_reason END,
              updated_at = $2
          WHERE provider = $4 AND provider_message_id = $5 RETURNING notification_id`,
           [dto.status, now, dto.reason ?? null, provider, dto.messageId],
