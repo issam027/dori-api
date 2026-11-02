@@ -42,7 +42,11 @@
     "swagger:export": "ts-node -r tsconfig-paths/register scripts/swagger-export.ts",
     "uuid:verify": "ts-node -r tsconfig-paths/register scripts/uuid-verify.ts",
     "db:reset": "ts-node -r tsconfig-paths/register scripts/db-init.ts --seed --force",
-    "audit:architecture": "node tools/architecture-check.cjs"
+    "audit:architecture": "node tools/architecture-check.cjs",
+    "db:demo:backup": "node scripts/database/rebuild-demo.cjs backup",
+    "db:demo:rebuild": "node scripts/database/rebuild-demo.cjs rebuild",
+    "db:demo:verify": "node scripts/database/rebuild-demo.cjs verify",
+    "test:database-tools": "node --test scripts/database/*.test.cjs"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

@@ -1,0 +1,11 @@
+.git
+node_modules
+dist
+build
+.quality-dist
+coverage
+.env
+.env.*
+.tmp*
+*.backup
+*.log
