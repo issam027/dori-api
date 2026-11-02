@@ -4,30 +4,28 @@ import { DoriException } from '../../core/errors/dori.exception';
 import { ScopeService } from '../../core/rbac/services/scope.service';
 import { ReportsRepository } from './reports.repository';
 import { ReportSeriesQueryDto } from './dto/report-query.dto';
+import { ClockService } from '../../core/clock/clock.service';
 
 @Injectable()
 export class ReportsService {
   constructor(
     private readonly reportsRepository: ReportsRepository,
     private readonly scopeService: ScopeService,
+    private readonly clockService: ClockService,
   ) {}
 
   async getSeries(query: ReportSeriesQueryDto, user: AuthenticatedUser) {
-    const csvUuids = (value?: string) =>
+    const csvValues = (value?: string) =>
       value
         ? [...new Set(value.split(',').map((item) => item.trim()))]
         : undefined;
-    const csvStrings = (value?: string) =>
-      value
-        ? [...new Set(value.split(',').map((item) => item.trim()))]
-        : undefined;
-    const requestedQueueIds = csvUuids(query.queueIds);
-    const requestedUserIds = csvUuids(query.userIds);
-    const tierIds = csvUuids(query.tierIds);
-    const statuses = csvStrings(query.statuses);
-    const entryTypes = csvStrings(query.entryTypes);
-    const from = new Date(query.from);
-    const to = new Date(query.to);
+    const requestedQueueIds = csvValues(query.queueIds);
+    const requestedUserIds = csvValues(query.userIds);
+    const tierIds = csvValues(query.tierIds);
+    const statuses = csvValues(query.statuses);
+    const entryTypes = csvValues(query.entryTypes);
+    const from = this.clockService.parse(query.from);
+    const to = this.clockService.parse(query.to);
     const maxDays = query.bucket === 'hour' ? 31 : 366;
     if (
       !Number.isFinite(from.getTime()) ||
@@ -43,12 +41,10 @@ export class ReportsService {
     }
     const scope = await this.scopeService.getUserScope(user);
     if (query.siteId !== undefined) {
-      await this.scopeService.checkSiteAccess(user, query.siteId);
+      this.scopeService.assertSiteAccess(scope, query.siteId);
     }
     if (requestedQueueIds) {
-      for (const queueId of requestedQueueIds) {
-        await this.scopeService.checkQueueAccess(user, queueId);
-      }
+      this.scopeService.assertQueuesAccess(scope, requestedQueueIds);
     }
     if (!query.siteId && !requestedQueueIds && scope.isGlobal) {
       throw new DoriException(
@@ -142,7 +138,7 @@ export class ReportsService {
       queueBuckets.set(key, rows);
     }
     return {
-      generatedAt: new Date().toISOString(),
+      generatedAt: this.clockService.now().toISOString(),
       timezone,
       appliedFilters: {
         from: query.from,

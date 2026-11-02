@@ -63,12 +63,10 @@ export class ScopeService {
       const queueIds = await this.scopeRepository.findQueueIdsBySites(siteIds);
       scope = { isGlobal: false, siteIds, queueIds };
     } else {
-      const queueScope = await this.scopeRepository.findUserQueueScope(
-        user.userId,
-      );
-      const directSiteIds = await this.scopeRepository.findUserSiteIds(
-        user.userId,
-      );
+      const [queueScope, directSiteIds] = await Promise.all([
+        this.scopeRepository.findUserQueueScope(user.userId),
+        this.scopeRepository.findUserSiteIds(user.userId),
+      ]);
       const siteIds = Array.from(
         new Set([...queueScope.siteIds, ...directSiteIds]),
       );
@@ -102,6 +100,10 @@ export class ScopeService {
     siteId: string,
   ): Promise<void> {
     const scope = await this.getUserScope(user);
+    this.assertSiteAccess(scope, siteId);
+  }
+
+  assertSiteAccess(scope: UserScope, siteId: string): void {
     if (scope.isGlobal) return;
 
     if (!scope.siteIds.includes(siteId)) {
@@ -116,11 +118,17 @@ export class ScopeService {
     options: { fresh?: boolean } = {},
   ): Promise<void> {
     const scope = await this.getUserScope(user, options);
-    if (scope.isGlobal) return;
+    this.assertQueuesAccess(scope, [queueId]);
+  }
 
-    if (!scope.queueIds.includes(queueId)) {
-      // Return 404 QUEUE_NOT_FOUND per §4.11 & §6.2
-      throw new DoriException('QUEUE_NOT_FOUND', { queueId });
+  /** Validate a whole selection against the same authorization snapshot. */
+  assertQueuesAccess(scope: UserScope, queueIds: readonly string[]): void {
+    if (scope.isGlobal) return;
+    const allowed = queueIds.length > 1 ? new Set(scope.queueIds) : null;
+    for (const queueId of queueIds) {
+      if (allowed ? !allowed.has(queueId) : !scope.queueIds.includes(queueId)) {
+        throw new DoriException('QUEUE_NOT_FOUND', { queueId });
+      }
     }
   }
 

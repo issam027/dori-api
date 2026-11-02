@@ -1,3 +1,5 @@
+import { ScopeService } from '../../core/rbac/services/scope.service';
+import { ClockService } from '../../core/clock/clock.service';
 import { ReportsService } from './reports.service';
 import { ReportSeriesQueryDto } from './dto/report-query.dto';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
@@ -10,11 +12,11 @@ describe('ReportsService monitoring series', () => {
   const scopeService = {
     getUserScope: jest.fn().mockResolvedValue({
       isGlobal: false,
-      siteIds: [1],
-      queueIds: [10],
+      siteIds: ['00000000-0000-4000-8000-000000000001'],
+      queueIds: ['00000000-0000-4000-8000-000000000010'],
     }),
-    checkQueueAccess: jest.fn(),
-    checkSiteAccess: jest.fn(),
+    assertQueuesAccess: jest.fn(ScopeService.prototype.assertQueuesAccess),
+    assertSiteAccess: jest.fn(ScopeService.prototype.assertSiteAccess),
   };
   const repository = {
     findScopeIdentities: jest.fn(),
@@ -23,9 +25,26 @@ describe('ReportsService monitoring series', () => {
   const service = new ReportsService(
     repository as never,
     scopeService as never,
+    new ClockService(),
   );
 
   beforeEach(() => jest.clearAllMocks());
+
+  it('rejects an inaccessible queue before executing any report query', async () => {
+    await expect(
+      service.getSeries(
+        Object.assign(new ReportSeriesQueryDto(), {
+          queueIds: '00000000-0000-4000-8000-000000000099',
+          from: '2026-10-01T00:00:00Z',
+          to: '2026-10-02T00:00:00Z',
+        }),
+        manager,
+      ),
+    ).rejects.toMatchObject({ code: 'QUEUE_NOT_FOUND' });
+    expect(scopeService.getUserScope).toHaveBeenCalledTimes(1);
+    expect(repository.findScopeIdentities).not.toHaveBeenCalled();
+    expect(repository.getMonitoringSeries).not.toHaveBeenCalled();
+  });
 
   it('returns null durations and coherent zero totals for an empty period', async () => {
     repository.findScopeIdentities.mockResolvedValue([
@@ -61,10 +80,8 @@ describe('ReportsService monitoring series', () => {
 
     const result = await service.getSeries(query, manager);
 
-    expect(scopeService.checkQueueAccess).toHaveBeenCalledWith(
-      manager,
-      '00000000-0000-4000-8000-000000000010',
-    );
+    expect(scopeService.getUserScope).toHaveBeenCalledTimes(1);
+    expect(scopeService.assertQueuesAccess).toHaveBeenCalledTimes(1);
     expect(result.totals.averageWaitMinutes).toBeNull();
     expect(result.totals.registered).toBe(0);
     expect(result.breakdowns.byQueue).toEqual([]);
