@@ -68,15 +68,15 @@ export const AUDIT_EVENT_READ_MODEL = `(
       WHEN 'queue' THEN COALESCE(NULLIF(BTRIM(target_queue.queue_name), ''), target_queue.queue_code, 'File #' || ae.target_id)
       WHEN 'person' THEN COALESCE(NULLIF(BTRIM(CONCAT_WS(' ', target_person.first_name, target_person.last_name)), ''), 'Personne #' || ae.target_id)
       WHEN 'registration' THEN COALESCE(target_registration.ticket_number, 'registration #' || ae.target_id)
-      WHEN 'role' THEN COALESCE(target_role.role_name, 'RÃ´le #' || ae.target_id)
-      WHEN 'audit_event' THEN COALESCE('Ã‰vÃ©nement ' || ae.target_id, 'Journal dâ€™audit')
+      WHEN 'role' THEN COALESCE(target_role.role_name, 'Rôle #' || ae.target_id)
+      WHEN 'audit_event' THEN COALESCE('Événement ' || ae.target_id, 'Journal d’audit')
       ELSE CASE WHEN ae.target_id IS NULL THEN ae.target_type ELSE ae.target_type || ' #' || ae.target_id END
     END AS target_display_name,
     ae.secondary_target_id,
     CASE
       WHEN ae.secondary_target_id IS NULL THEN NULL
       WHEN ae.action IN ('user.role.assign', 'user.role.remove')
-        THEN COALESCE(secondary_role.role_name, 'RÃ´le #' || ae.secondary_target_id)
+        THEN COALESCE(secondary_role.role_name, 'Rôle #' || ae.secondary_target_id)
       WHEN ae.action IN ('site.user.assign', 'site.user.remove', 'queue.operator.assign', 'queue.operator.remove')
         THEN CASE
           WHEN secondary_user.user_id IS NULL THEN 'Utilisateur #' || ae.secondary_target_id
