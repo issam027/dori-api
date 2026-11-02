@@ -324,18 +324,6 @@ export class ServiceTiersRepository {
     return rows[0] ?? null;
   }
 
-  async findActiveNotificationRules(
-    queueId: string,
-    tierId: string,
-  ): Promise<NotificationRuleRow[]> {
-    return this.dataSource.query(
-      `SELECT ${NOTIFICATION_RULE_COLUMNS} FROM dorify.dori_queue_tier_notification_rule
-       WHERE queue_id = $1 AND tier_id = $2 AND is_active = TRUE
-       ORDER BY rule_id ASC`,
-      [queueId, tierId],
-    );
-  }
-
   async createNotificationRule(
     queueId: string,
     tierId: string,

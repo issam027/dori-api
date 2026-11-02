@@ -1,4 +1,5 @@
-﻿import { Injectable } from '@nestjs/common';
+import { presentQueueTier } from './service-tier.presenter';
+import { Injectable } from '@nestjs/common';
 import {
   CreateTierDto,
   UpdateTierDto,
@@ -92,25 +93,7 @@ export class ServiceTiersService {
       tierId,
     );
     if (!row) throw new DoriException('TIER_NOT_FOUND', { tierId });
-    return {
-      queueId: row.queue_id,
-      tierId: row.tier_id,
-      price: Number(row.price),
-      currency: row.currency,
-      currencyOverride: row.currency_override ?? null,
-      currencyOrigin: row.currency_origin,
-      isActive: row.is_active,
-      isDefault: row.is_default,
-      displayOrder: row.display_order,
-      tier: {
-        tierId: row.tier_id,
-        tierCode: row.tier_code,
-        tierName: row.tier_name,
-        description: row.description,
-        isSystem: row.is_system,
-        isActive: row.is_active,
-      },
-    };
+    return presentQueueTier(row);
   }
 
   // 1. Global catalog
@@ -207,25 +190,7 @@ export class ServiceTiersService {
       offset,
     });
 
-    const formattedItems = result.items.map((qt) => ({
-      queueId: qt.queue_id,
-      tierId: qt.tier_id,
-      price: Number(qt.price),
-      currency: qt.currency,
-      currencyOverride: qt.currency_override ?? null,
-      currencyOrigin: qt.currency_origin,
-      isActive: qt.is_active,
-      isDefault: qt.is_default,
-      displayOrder: qt.display_order,
-      tier: {
-        tierId: qt.tier_id,
-        tierCode: qt.tier_code,
-        tierName: qt.tier_name,
-        description: qt.tier_description,
-        isSystem: qt.is_system,
-        isActive: qt.is_active,
-      },
-    }));
+    const formattedItems = result.items.map(presentQueueTier);
 
     return pagination.createResponse<QueueTierResponseDto>(
       formattedItems,
@@ -431,24 +396,5 @@ export class ServiceTiersService {
     );
 
     return { ruleId, deleted: true };
-  }
-
-  async getQueueTiers(
-    queueId: string,
-    paginationOrUser?: PaginationDto | AuthenticatedUser,
-    maybeUser?: AuthenticatedUser,
-  ): Promise<PaginatedResult<QueueTierResponseDto>> {
-    let pagination: PaginationDto;
-    let user: AuthenticatedUser;
-
-    if (paginationOrUser && 'userId' in paginationOrUser) {
-      user = paginationOrUser as AuthenticatedUser;
-      pagination = new PaginationDto();
-    } else {
-      pagination = (paginationOrUser as PaginationDto) || new PaginationDto();
-      user = maybeUser!;
-    }
-
-    return this.findQueueTiers(queueId, pagination, user);
   }
 }

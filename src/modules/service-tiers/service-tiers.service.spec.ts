@@ -156,7 +156,7 @@ describe('ServiceTiersService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
       pagination.page = 2;
       pagination.pageSize = 5;
 
-      const res = await service.getQueueTiers(
+      const res = await service.findQueueTiers(
         '00000000-0000-4000-8000-000000000010',
         pagination,
         adminUser,
