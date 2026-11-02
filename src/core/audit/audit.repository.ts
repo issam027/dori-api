@@ -67,6 +67,7 @@ export const AUDIT_EVENT_READ_MODEL = `(
       WHEN 'site' THEN COALESCE(target_site.site_name, 'Site #' || ae.target_id)
       WHEN 'queue' THEN COALESCE(NULLIF(BTRIM(target_queue.queue_name), ''), target_queue.queue_code, 'File #' || ae.target_id)
       WHEN 'person' THEN COALESCE(NULLIF(BTRIM(CONCAT_WS(' ', target_person.first_name, target_person.last_name)), ''), 'Personne #' || ae.target_id)
+      WHEN 'registration' THEN COALESCE(target_registration.ticket_number, 'registration #' || ae.target_id)
       WHEN 'role' THEN COALESCE(target_role.role_name, 'RÃ´le #' || ae.target_id)
       WHEN 'audit_event' THEN COALESCE('Ã‰vÃ©nement ' || ae.target_id, 'Journal dâ€™audit')
       ELSE CASE WHEN ae.target_id IS NULL THEN ae.target_type ELSE ae.target_type || ' #' || ae.target_id END
@@ -116,6 +117,8 @@ export const AUDIT_EVENT_READ_MODEL = `(
     AND target_queue.queue_id = CASE WHEN ae.target_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN ae.target_id::uuid END
   LEFT JOIN dorify.dori_person target_person ON ae.target_type = 'person'
     AND target_person.person_id = CASE WHEN ae.target_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN ae.target_id::uuid END
+  LEFT JOIN dorify.dori_registration target_registration ON ae.target_type = 'registration'
+    AND target_registration.registration_id = CASE WHEN ae.target_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN ae.target_id::uuid END
   LEFT JOIN dorify.dori_role target_role ON ae.target_type = 'role'
     AND target_role.role_id = CASE WHEN ae.target_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN ae.target_id::uuid END
   LEFT JOIN dorify.dori_role secondary_role ON ae.action IN ('user.role.assign', 'user.role.remove')
