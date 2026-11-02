@@ -69,13 +69,15 @@ export class EdgeControlRepository {
     installationId: string,
     deploymentStatus: string,
   ) {
-    const rows = await this.database.query(
-      `UPDATE dorify.dori_edge_installation
+    const rows = returningRows<Record<string, unknown>>(
+      await this.database.query(
+        `UPDATE dorify.dori_edge_installation
        SET deployment_status=$2, updated_at=CURRENT_TIMESTAMP
        WHERE installation_id=$1
        RETURNING installation_id, installation_name, deployment_type, deployment_status,
                  last_seen_at, last_heartbeat, created_at`,
-      [installationId, deploymentStatus],
+        [installationId, deploymentStatus],
+      ),
     );
     return rows[0] as Record<string, unknown> | undefined;
   }

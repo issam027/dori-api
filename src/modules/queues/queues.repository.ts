@@ -1,3 +1,4 @@
+import { returningRows } from '../../core/database/returning-rows';
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { CreateQueueDto } from './dto/create-queue.dto';
@@ -217,10 +218,14 @@ export class QueuesRepository {
     add('updated_by_user_id', userId);
     add('updated_at', now);
     values.push(queueId);
-    const rows: Array<{ queue_id: string }> = await this.dataSource.query(
-      `UPDATE dorify.dori_queue SET ${fields.join(', ')}
+    const rows: Array<{ queue_id: string }> = returningRows<{
+      queue_id: string;
+    }>(
+      await this.dataSource.query(
+        `UPDATE dorify.dori_queue SET ${fields.join(', ')}
        WHERE queue_id = $${values.length} RETURNING queue_id`,
-      values,
+        values,
+      ),
     );
     return rows.length > 0;
   }

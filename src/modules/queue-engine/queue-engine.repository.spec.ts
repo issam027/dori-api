@@ -88,7 +88,7 @@ describe('QueueEngineRepository', () => {
           counter_name: 'Guichet 3',
         },
       ])
-      .mockResolvedValueOnce([{ last_recalled_at: now, recall_count: 2 }])
+      .mockResolvedValueOnce([[{ last_recalled_at: now, recall_count: 2 }], 1])
       .mockResolvedValueOnce([]);
     const repository = new QueueEngineRepository({
       transaction: jest.fn((callback) => callback({ query })),

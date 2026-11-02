@@ -1,3 +1,4 @@
+import { returningRows } from '../../core/database/returning-rows';
 import { Injectable } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import {
@@ -229,9 +230,11 @@ export class PersonsRepository {
     values.push(now);
     assignments.push(`updated_at = $${values.length}`);
     values.push(personId);
-    const rows: PersonRow[] = await this.dataSource.query(
-      `UPDATE dorify.dori_person SET ${assignments.join(', ')} WHERE person_id = $${values.length} RETURNING ${personColumns()}`,
-      values,
+    const rows: PersonRow[] = returningRows<PersonRow>(
+      await this.dataSource.query(
+        `UPDATE dorify.dori_person SET ${assignments.join(', ')} WHERE person_id = $${values.length} RETURNING ${personColumns()}`,
+        values,
+      ),
     );
     return rows[0];
   }
@@ -278,20 +281,22 @@ export class PersonsRepository {
     userId: string,
     now: Date,
   ): Promise<PersonNoteRow | null> {
-    const rows: PersonNoteRow[] = await this.dataSource.query(
-      `UPDATE dorify.dori_person_note SET content = COALESCE($1, content),
+    const rows: PersonNoteRow[] = returningRows<PersonNoteRow>(
+      await this.dataSource.query(
+        `UPDATE dorify.dori_person_note SET content = COALESCE($1, content),
        is_active = COALESCE($2, is_active),
        deleted_at = CASE WHEN $2::boolean IS TRUE THEN NULL WHEN $2::boolean IS FALSE THEN $3 ELSE deleted_at END,
        updated_by_user_id = $4, updated_at = $3
        WHERE note_id = $5 AND person_id = $6 RETURNING ${NOTE_COLUMNS}`,
-      [
-        dto.content ?? null,
-        dto.isActive ?? null,
-        now,
-        userId,
-        noteId,
-        personId,
-      ],
+        [
+          dto.content ?? null,
+          dto.isActive ?? null,
+          now,
+          userId,
+          noteId,
+          personId,
+        ],
+      ),
     );
     return rows[0] ?? null;
   }
@@ -302,11 +307,13 @@ export class PersonsRepository {
     userId: string,
     now: Date,
   ): Promise<boolean> {
-    const rows: PersonNoteRow[] = await this.dataSource.query(
-      `UPDATE dorify.dori_person_note
+    const rows: PersonNoteRow[] = returningRows<PersonNoteRow>(
+      await this.dataSource.query(
+        `UPDATE dorify.dori_person_note
        SET is_active = FALSE, deleted_at = $1, updated_by_user_id = $2, updated_at = $1
        WHERE note_id = $3 AND person_id = $4 AND is_active = TRUE RETURNING note_id, person_id`,
-      [now, userId, noteId, personId],
+        [now, userId, noteId, personId],
+      ),
     );
     return rows.length > 0;
   }

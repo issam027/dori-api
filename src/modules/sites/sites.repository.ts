@@ -1,3 +1,4 @@
+import { returningRows } from '../../core/database/returning-rows';
 import { Injectable } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { CreateSiteDto } from './dto/create-site.dto';
@@ -188,9 +189,11 @@ export class SitesRepository {
     add('updated_at', now);
     values.push(siteId);
     const updateSite = async (executor: DataSource | EntityManager) => {
-      const rows = await executor.query<SiteResponseDto[]>(
-        `UPDATE dorify.dori_site SET ${fields.join(', ')} WHERE site_id = $${values.length} RETURNING ${SITE_COLUMNS}`,
-        values,
+      const rows = returningRows<SiteResponseDto>(
+        await executor.query<SiteResponseDto[]>(
+          `UPDATE dorify.dori_site SET ${fields.join(', ')} WHERE site_id = $${values.length} RETURNING ${SITE_COLUMNS}`,
+          values,
+        ),
       );
       if (dto.isActive === false) {
         await executor.query(

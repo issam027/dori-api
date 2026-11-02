@@ -1,3 +1,4 @@
+import { returningRows } from '../../core/database/returning-rows';
 import { Injectable } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import {
@@ -139,10 +140,12 @@ export class TranslationsRepository {
       add('updated_by_user_id', userId);
       add('updated_at', now);
       values.push(translationId);
-      const rows = await manager.query<TranslationRow[]>(
-        `UPDATE dorify.dori_translation SET ${fields.join(', ')}
+      const rows = returningRows<TranslationRow>(
+        await manager.query<TranslationRow[]>(
+          `UPDATE dorify.dori_translation SET ${fields.join(', ')}
          WHERE translation_id=$${values.length} RETURNING ${TRANSLATION_COLUMNS}`,
-        values,
+          values,
+        ),
       );
       return {
         item: rows[0],

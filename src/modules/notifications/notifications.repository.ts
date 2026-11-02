@@ -1,3 +1,4 @@
+import { returningRows } from '../../core/database/returning-rows';
 import {
   PreparedNotification,
   insertPreparedNotifications,
@@ -206,12 +207,14 @@ export class NotificationsRepository {
     notificationId: string,
     now: Date,
   ): Promise<NotificationRow> {
-    const rows: NotificationRow[] = await this.dataSource.query(
-      `UPDATE dorify.dori_notification
+    const rows: NotificationRow[] = returningRows<NotificationRow>(
+      await this.dataSource.query(
+        `UPDATE dorify.dori_notification
        SET notification_status = 'pending', attempt_count = attempt_count + 1,
            failure_reason = NULL, updated_at = $1
        WHERE notification_id = $2 RETURNING ${NOTIFICATION_COLUMNS}`,
-      [now, notificationId],
+        [now, notificationId],
+      ),
     );
     return rows[0];
   }
@@ -229,14 +232,18 @@ export class NotificationsRepository {
         [provider, eventId, now],
       );
       if (accepted.length === 0) return 'duplicate';
-      const updated: Array<{ notification_id: string }> = await manager.query(
-        `UPDATE dorify.dori_notification
+      const updated: Array<{ notification_id: string }> = returningRows<{
+        notification_id: string;
+      }>(
+        await manager.query(
+          `UPDATE dorify.dori_notification
          SET notification_status = $1,
              delivered_at = CASE WHEN $1 = 'delivered' THEN $2 ELSE delivered_at END,
              failure_reason = CASE WHEN $1 = 'failed' THEN $3 ELSE failure_reason END,
              updated_at = $2
          WHERE provider = $4 AND provider_message_id = $5 RETURNING notification_id`,
-        [dto.status, now, dto.reason ?? null, provider, dto.messageId],
+          [dto.status, now, dto.reason ?? null, provider, dto.messageId],
+        ),
       );
       return updated.length > 0 ? 'updated' : 'missing';
     });

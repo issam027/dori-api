@@ -1,3 +1,4 @@
+import { returningRows } from '../../core/database/returning-rows';
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { UserSessionRevocationReason } from './entities/user-session.entity';
@@ -140,12 +141,14 @@ export class AuthRepository {
       const user = users[0];
       if (!user) return { status: 'invalid' };
 
-      const revoked = await manager.query<Array<{ session_id: string }>>(
-        `UPDATE dorify.dori_user_session
+      const revoked = returningRows<{ session_id: string }>(
+        await manager.query<Array<{ session_id: string }>>(
+          `UPDATE dorify.dori_user_session
          SET revoked_at = $1, revoked_reason = 'rotation'
          WHERE session_id = $2 AND revoked_at IS NULL
          RETURNING session_id`,
-        [input.now, session.session_id],
+          [input.now, session.session_id],
+        ),
       );
       if (revoked.length === 0) return { status: 'reused' };
 

@@ -1,3 +1,4 @@
+import { returningRows } from '../../core/database/returning-rows';
 import { Injectable } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import {
@@ -444,9 +445,11 @@ export class ServiceTiersRepository {
         return `${column} = $${values.length}`;
       })
       .join(' AND ');
-    const rows: T[] = await executor.query(
-      `UPDATE ${table} SET ${fields.join(', ')} WHERE ${where} RETURNING ${returningColumns}`,
-      values,
+    const rows: T[] = returningRows<T>(
+      await executor.query(
+        `UPDATE ${table} SET ${fields.join(', ')} WHERE ${where} RETURNING ${returningColumns}`,
+        values,
+      ),
     );
     return rows[0];
   }

@@ -567,10 +567,12 @@ export class RegistrationsRepository {
     values.push(now);
     fields.push(`updated_at=$${values.length}`);
     values.push(registrationId);
-    const rows = await this.dataSource.query(
-      `UPDATE dorify.dori_registration SET ${fields.join(',')} WHERE registration_id=$${values.length}
+    const rows = returningRows<RegistrationRow>(
+      await this.dataSource.query(
+        `UPDATE dorify.dori_registration SET ${fields.join(',')} WHERE registration_id=$${values.length}
        RETURNING ${REGISTRATION_COLUMNS}`,
-      values,
+        values,
+      ),
     );
     return rows[0];
   }

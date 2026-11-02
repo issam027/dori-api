@@ -15,6 +15,30 @@ describe('AuthRepository refresh rotation', () => {
     return { repository: new AuthRepository(dataSource), dataSource, manager };
   };
 
+  it('does not rotate a session when PostgreSQL reports zero revoked rows', async () => {
+    const { repository, manager } = createRepository([
+      [
+        {
+          session_id: 'old-session',
+          user_id: 'user',
+          expires_at: expiresAt,
+          revoked_at: null,
+        },
+      ],
+      [{ user_id: 'user' }],
+      [[], 0],
+    ]);
+    await expect(
+      repository.rotateRefreshSession({
+        currentTokenHash: 'old',
+        nextTokenHash: 'new',
+        now,
+        expiresAt,
+      }),
+    ).resolves.toEqual({ status: 'reused' });
+    expect(manager.query).toHaveBeenCalledTimes(3);
+  });
+
   it('locks, consumes and replaces a refresh session in one transaction', async () => {
     const user = {
       user_id: '00000000-0000-4000-8000-000000000007',

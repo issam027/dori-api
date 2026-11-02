@@ -397,13 +397,18 @@ export class QueueEngineRepository {
       const recalled: Array<{
         last_recalled_at: Date | string;
         recall_count: number;
-      }> = await manager.query(
-        `UPDATE dorify.dori_registration
+      }> = returningRows<{
+        last_recalled_at: Date | string;
+        recall_count: number;
+      }>(
+        await manager.query(
+          `UPDATE dorify.dori_registration
          SET last_recalled_at = $1, recall_count = recall_count + 1,
              updated_by_user_id = $2, updated_at = $1
          WHERE registration_id = $3
          RETURNING last_recalled_at, recall_count`,
-        [input.now, input.userId, input.registrationId],
+          [input.now, input.userId, input.registrationId],
+        ),
       );
 
       await enqueueRealtimeEvent(
