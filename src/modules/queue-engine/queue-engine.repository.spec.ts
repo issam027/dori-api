@@ -55,7 +55,9 @@ describe('QueueEngineRepository', () => {
     });
 
     expect(query.mock.calls[0][0]).toContain("status = 'in_progress'");
-    expect(query.mock.calls[2][0]).toContain('ORDER BY score DESC');
+    expect(query.mock.calls[2][0]).toContain(
+      'ORDER BY ranked.called_early,ranked.score DESC',
+    );
     expect(query.mock.calls[2][0]).toContain('FOR UPDATE OF c SKIP LOCKED');
     expect(query.mock.calls[5][1][1]).toBe('queue_display_changed');
     expect(query.mock.calls[6][1][1]).toBe('queue_position_changed');
@@ -269,6 +271,7 @@ describe('QueueEngineRepository', () => {
         {
           registration_id: '00000000-0000-4000-8000-000000000009',
           score: '42.5',
+          called_early: false,
         },
       ])
       .mockResolvedValueOnce([])
@@ -291,10 +294,6 @@ describe('QueueEngineRepository', () => {
       userId: '00000000-0000-4000-8000-000000000012',
       businessDate: '2026-10-06',
       now: new Date('2026-10-06T12:00:00Z'),
-      baseWalkin: 0,
-      baseAppointment: 60,
-      rateWalkin: 1,
-      rateAppointment: 1,
     });
 
     expect(result?.registration_id).toBe(
@@ -304,8 +303,8 @@ describe('QueueEngineRepository', () => {
     expect(query.mock.calls[0][0]).toContain('pg_advisory_xact_lock');
     expect(query.mock.calls[0][0]).toContain('hashtextextended');
     expect(query.mock.calls[1][0]).toContain('disconnected_at IS NULL');
-    expect(query.mock.calls[2][0]).toContain('FOR UPDATE SKIP LOCKED');
-    expect(query.mock.calls[2][0]).toContain('$6::date');
+    expect(query.mock.calls[2][0]).toContain('FOR UPDATE OF c SKIP LOCKED');
+    expect(query.mock.calls[2][0]).toContain('ranked.business_date=$2::date');
     expect(query.mock.calls[3][0]).toContain('served_by_session_id = $1');
     expect(query.mock.calls[3][0]).toContain('served_by_user_id = $2');
     expect(query.mock.calls[3][1]).toEqual([
@@ -316,32 +315,25 @@ describe('QueueEngineRepository', () => {
     ]);
   });
 
-  it('binds preview exclusions as an integer array', async () => {
-    const query = jest
-      .fn()
-      .mockResolvedValueOnce([
-        {
-          registration_id: '00000000-0000-4000-8000-000000000001',
-          queue_id: '00000000-0000-4000-8000-000000000002',
-        },
-      ])
-      .mockResolvedValueOnce([]);
+  it('binds preview queues and limit in one canonical ranking query', async () => {
+    const query = jest.fn().mockResolvedValue([]);
     const repository = new QueueEngineRepository({
       query,
     } as unknown as DataSource);
-
+    const now = new Date('2026-10-20T09:30:00Z');
     await repository.findPreviewCandidates(
-      [
-        '00000000-0000-4000-8000-000000000002',
-        '00000000-0000-4000-8000-000000000003',
-      ],
-      new Date('2026-10-06T12:00:00Z'),
-      3,
+      ['00000000-0000-4000-8000-000000000002'],
+      now,
+      5,
     );
-
-    expect(query.mock.calls[1][0]).toContain('<> ALL($3::uuid[])');
-    expect(query.mock.calls[1][1][2]).toEqual([
-      '00000000-0000-4000-8000-000000000002',
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(query.mock.calls[0][0]).toContain(
+      'dorify.queue_operational_ranking($1::uuid[],$2)',
+    );
+    expect(query.mock.calls[0][1]).toEqual([
+      ['00000000-0000-4000-8000-000000000002'],
+      now,
+      5,
     ]);
   });
 
@@ -386,7 +378,7 @@ describe('QueueEngineRepository', () => {
     expect(query).toHaveBeenCalledTimes(1);
     expect(query.mock.calls[0][0]).not.toContain('PARTITION BY c.queue_id');
     expect(query.mock.calls[0][0]).toContain(
-      'ORDER BY score DESC, c.registration_id ASC LIMIT $3',
+      'ORDER BY ranked.called_early,ranked.score DESC,ranked.call_sort_time,c.registration_id LIMIT $3',
     );
     expect(query.mock.calls[0][1][2]).toBe(5);
   });
@@ -441,13 +433,13 @@ describe('QueueEngineRepository', () => {
       3,
     );
 
-    for (const call of query.mock.calls) {
-      expect(call[0]).toContain(
-        'c.business_date = ($2::timestamptz AT TIME ZONE s.timezone)::date',
-      );
-      expect(call[0]).toContain("c.appointment_status = 'checked_in'");
-    }
-    expect(query.mock.calls[0][0]).toContain('c.scheduled_time <= $2');
-    expect(query.mock.calls[1][0]).toContain('c.scheduled_time > $2');
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(query.mock.calls[0][0]).toContain(
+      'ranked.business_date=($2::timestamptz AT TIME ZONE s.timezone)::date',
+    );
+    expect(query.mock.calls[0][0]).toContain(
+      'dorify.queue_operational_ranking',
+    );
+    expect(query.mock.calls[0][0]).toContain('ORDER BY ranked.called_early');
   });
 });

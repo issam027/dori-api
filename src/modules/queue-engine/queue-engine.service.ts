@@ -303,10 +303,6 @@ export class QueueEngineService {
       userId: user.userId,
       businessDate,
       now,
-      baseWalkin: context.config.baseWalkin,
-      baseAppointment: context.config.baseAppointment,
-      rateWalkin: context.config.rateWalkin,
-      rateAppointment: context.config.rateAppointment,
     });
     if (!candidate) {
       throw new DoriException('NO_CALLABLE_REGISTRATION', { queueId });
@@ -661,20 +657,10 @@ export class QueueEngineService {
         ).filter((threadNumber) => !occupiedThreadNumbers.has(threadNumber));
         const waitingCount = Number(queue.waiting_count ?? 0);
         const activeThreads = Number(queue.occupied_threads_count ?? 0);
-        const cycleMinutes = Number(
-          queue.cycle_p50_minutes ?? queue.average_wait_time ?? 0,
-        );
         const estimatedWaitMinutes =
-          activeThreads === 0
+          queue.estimated_wait_minutes == null
             ? null
-            : waitingCount === 0
-              ? 0
-              : Math.max(
-                  1,
-                  Math.round(
-                    (waitingCount * cycleMinutes) / activeThreads / 5,
-                  ) * 5,
-                );
+            : Number(queue.estimated_wait_minutes);
         return {
           queueId,
           queueCode: String(queue.queue_code),

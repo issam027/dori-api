@@ -277,7 +277,6 @@ export class QueuesRepository {
   async findOperationalContext(queueId: string): Promise<{
     site_id: string;
     queue_name: string;
-    average_wait_time: number;
     timezone: string;
     carry_over_waiting?: boolean | null;
     daily_reset_mode?: 'close_all' | 'carry_over_open' | null;
@@ -287,14 +286,13 @@ export class QueuesRepository {
     const rows: Array<{
       site_id: string;
       queue_name: string;
-      average_wait_time: number;
       timezone: string;
       carry_over_waiting: boolean | null;
       daily_reset_mode: 'close_all' | 'carry_over_open' | null;
       default_carry_over_waiting: boolean;
       default_daily_reset_mode: 'close_all' | 'carry_over_open';
     }> = await this.dataSource.query(
-      `SELECT q.site_id, q.queue_name, q.average_wait_time, q.carry_over_waiting, q.daily_reset_mode,
+      `SELECT q.site_id, q.queue_name, q.carry_over_waiting, q.daily_reset_mode,
               s.timezone, s.default_carry_over_waiting, s.default_daily_reset_mode
        FROM dorify.dori_queue q JOIN dorify.dori_site s ON s.site_id = q.site_id
        WHERE q.queue_id = $1`,
@@ -303,35 +301,17 @@ export class QueuesRepository {
     return rows[0] ?? null;
   }
 
-  async getStatusSnapshot(queueId: string, businessDate: string) {
-    const [waiting, active, appointments] = await Promise.all([
-      this.dataSource.query<Array<{ count: number }>>(
-        `SELECT COUNT(*)::int AS count FROM dorify.dori_registration
-         WHERE queue_id = $1 AND business_date = $2::date
-           AND status = 'waiting' AND is_active = TRUE`,
-        [queueId, businessDate],
-      ),
-      this.dataSource.query<Array<{ count: number }>>(
-        `SELECT COUNT(*)::int AS count FROM dorify.dori_operator_session
-         WHERE queue_id = $1 AND disconnected_at IS NULL AND mode = 'active'`,
-        [queueId],
-      ),
-      this.dataSource.query(
-        `SELECT registration_id, ticket_number, scheduled_time, appointment_status, status
-         FROM dorify.dori_registration WHERE queue_id = $1 AND business_date = $2::date
-           AND entry_type = 'appointment' AND is_active = TRUE
-           AND status IN ('booked', 'waiting') ORDER BY scheduled_time ASC LIMIT 5`,
-        [queueId, businessDate],
-      ),
-    ]);
-    return {
-      waitingCount: waiting[0]?.count ?? 0,
-      activeThreads: active[0]?.count ?? 0,
-      nextAppointments: appointments,
-    };
+  findNextAppointments(queueId: string, businessDate: string) {
+    return this.dataSource.query(
+      `SELECT registration_id,ticket_number,scheduled_time,appointment_status,status
+       FROM dorify.dori_registration WHERE queue_id=$1 AND business_date=$2::date
+         AND entry_type='appointment' AND is_active AND status IN ('booked','waiting')
+       ORDER BY scheduled_time,registration_id LIMIT 5`,
+      [queueId, businessDate],
+    );
   }
 
-  async getDisplaySnapshot(queueId: string, businessDate: string) {
+  async getDisplaySnapshot(queueId: string, businessDate: string, now: Date) {
     const [sessions, tickets] = await Promise.all([
       this.dataSource.query<
         Array<{ thread_number: number; ticket_number: string | null }>
@@ -345,11 +325,10 @@ export class QueuesRepository {
         [queueId],
       ),
       this.dataSource.query<Array<{ ticket_number: string }>>(
-        `SELECT ticket_number FROM dorify.dori_registration
-         WHERE queue_id = $1 AND business_date = $2::date
-           AND status = 'waiting' AND is_active = TRUE
-         ORDER BY priority_reference_time ASC LIMIT 10`,
-        [queueId, businessDate],
+        `SELECT r.ticket_number FROM dorify.queue_operational_ranking(ARRAY[$1::uuid],$3) ranked
+         JOIN dorify.dori_registration r ON r.registration_id=ranked.registration_id
+         WHERE ranked.business_date=$2::date ORDER BY ranked.position LIMIT 10`,
+        [queueId, businessDate, now],
       ),
     ]);
     return {

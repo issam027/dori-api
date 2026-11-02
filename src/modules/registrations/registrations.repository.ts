@@ -22,7 +22,6 @@ export type RegistrationRow = Record<string, unknown> & {
   registration_tracking_token_valid_until: Date | string;
   closed_at?: Date | string | null;
   status: string;
-  average_wait_time: number;
   ticket_number: string;
   called_at: Date | string | null;
   counter_name: string | null;
@@ -508,7 +507,7 @@ export class RegistrationsRepository {
     );
     const items: RegistrationRow[] = await this.dataSource.query(
       `SELECT ${registrationColumns('r')},p.first_name,p.last_name,p.phone_number,p.email,
-      q.queue_name,q.queue_code,q.site_id,q.average_wait_time,t.tier_code,t.tier_name,
+      q.queue_name,q.queue_code,q.site_id,t.tier_code,t.tier_name,
       (SELECT COUNT(*)::int FROM dorify.dori_person_note pn
        WHERE pn.person_id = p.person_id AND pn.is_active = TRUE AND pn.deleted_at IS NULL) AS active_note_count
       ${from} ORDER BY r.${sortField} ${sortOrder}
@@ -587,7 +586,7 @@ export class RegistrationsRepository {
 
   async findByTrackingToken(token: string) {
     const rows = await this.dataSource.query(
-      `SELECT ${registrationColumns('r')}, q.average_wait_time, q.queue_name,
+      `SELECT ${registrationColumns('r')}, q.queue_name,
               q.site_id,
               os.thread_number, os.counter_name
        FROM dorify.dori_registration r
@@ -612,22 +611,5 @@ export class RegistrationsRepository {
       [tokenHash],
     );
     return rows[0] ?? null;
-  }
-
-  async countWaitingBefore(row: RegistrationRow) {
-    const rows = await this.dataSource.query(
-      `SELECT COUNT(*)::int AS count FROM dorify.dori_registration WHERE queue_id=$1 AND business_date=$2
-     AND status='waiting' AND is_active=TRUE AND priority_reference_time<$3`,
-      [row.queue_id, row.business_date, row.priority_reference_time],
-    );
-    return rows[0]?.count ?? 0;
-  }
-
-  async countActiveThreads(queueId: string) {
-    const rows = await this.dataSource.query(
-      `SELECT COUNT(*)::int AS count FROM dorify.dori_operator_session WHERE queue_id=$1 AND disconnected_at IS NULL AND mode='active'`,
-      [queueId],
-    );
-    return rows[0]?.count ?? 0;
   }
 }

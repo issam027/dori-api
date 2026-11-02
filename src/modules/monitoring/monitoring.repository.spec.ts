@@ -17,7 +17,10 @@ describe('MonitoringRepository live snapshot', () => {
       query,
     } as unknown as DataSource);
 
-    await repository.liveSnapshot('00000000-0000-4000-8000-000000000001');
+    await repository.liveSnapshot(
+      '00000000-0000-4000-8000-000000000001',
+      new Date('2026-10-15T12:00:00Z'),
+    );
 
     expect(query).toHaveBeenCalledTimes(3);
     expect(query.mock.calls[1][0]).toContain(

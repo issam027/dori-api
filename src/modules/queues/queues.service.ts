@@ -235,31 +235,22 @@ export class QueuesService {
     if (!context) {
       throw new DoriException('QUEUE_NOT_FOUND', { queueId });
     }
-    const { site_id, average_wait_time, timezone } = context;
-    const businessDate = this.clockService.todayInTimezone(timezone);
-    const snapshot = await this.queuesRepository.getStatusSnapshot(
-      queueId,
-      businessDate,
-    );
-
-    const estimate = this.waitEstimationService
-      ? await this.waitEstimationService.estimateQueue({
-          siteId: site_id,
-          queueId,
-          activityDate: businessDate,
-          waitingCount: snapshot.waitingCount,
-          activeThreads: snapshot.activeThreads,
-          theoreticalMinutes: average_wait_time,
-          now: this.clockService.now(),
-        })
-      : { estimatedWaitMinutes: null };
+    const businessDate = this.clockService.todayInTimezone(context.timezone);
+    const [estimate, nextAppointments] = await Promise.all([
+      this.waitEstimationService.estimateQueue({
+        queueId,
+        activityDate: businessDate,
+        now: this.clockService.now(),
+      }),
+      this.queuesRepository.findNextAppointments(queueId, businessDate),
+    ]);
 
     return {
       queueId,
-      waitingCount: snapshot.waitingCount,
-      activeThreads: snapshot.activeThreads,
+      waitingCount: estimate.waitingCount,
+      activeThreads: estimate.activeThreads,
       estimatedWaitMinutes: estimate.estimatedWaitMinutes,
-      nextAppointments: snapshot.nextAppointments,
+      nextAppointments,
     };
   }
 
@@ -278,6 +269,7 @@ export class QueuesService {
       ...(await this.queuesRepository.getDisplaySnapshot(
         queueId,
         businessDate,
+        this.clockService.now(),
       )),
     };
   }

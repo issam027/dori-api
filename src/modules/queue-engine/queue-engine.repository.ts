@@ -470,10 +470,6 @@ export class QueueEngineRepository {
   ): Promise<{
     session: QueueSessionRow | null;
     config: {
-      baseWalkin: number;
-      baseAppointment: number;
-      rateWalkin: number;
-      rateAppointment: number;
       timezone: string;
     } | null;
   }> {
@@ -488,12 +484,7 @@ export class QueueEngineRepository {
         [queueId, userId],
       ),
       this.dataSource.query(
-        `SELECT q.base_weight_walkin, q.base_weight_appointment,
-                q.escalation_rate_walkin, q.escalation_rate_appointment,
-                s.default_base_weight_walkin, s.default_base_weight_appointment,
-                s.default_escalation_rate_walkin, s.default_escalation_rate_appointment,
-                s.timezone FROM dorify.dori_queue q
-         JOIN dorify.dori_site s ON s.site_id = q.site_id WHERE q.queue_id = $1`,
+        `SELECT s.timezone FROM dorify.dori_queue q JOIN dorify.dori_site s ON s.site_id=q.site_id WHERE q.queue_id=$1`,
         [queueId],
       ),
     ]);
@@ -502,24 +493,6 @@ export class QueueEngineRepository {
       session: sessions[0] ?? null,
       config: cfg
         ? {
-            baseWalkin: Number(
-              cfg.base_weight_walkin ?? cfg.default_base_weight_walkin ?? 0,
-            ),
-            baseAppointment: Number(
-              cfg.base_weight_appointment ??
-                cfg.default_base_weight_appointment ??
-                60,
-            ),
-            rateWalkin: Number(
-              cfg.escalation_rate_walkin ??
-                cfg.default_escalation_rate_walkin ??
-                1,
-            ),
-            rateAppointment: Number(
-              cfg.escalation_rate_appointment ??
-                cfg.default_escalation_rate_appointment ??
-                1,
-            ),
             timezone: String(cfg.timezone || 'Africa/Tunis'),
           }
         : null,
@@ -532,10 +505,6 @@ export class QueueEngineRepository {
     userId: string;
     businessDate: string;
     now: Date;
-    baseWalkin: number;
-    baseAppointment: number;
-    rateWalkin: number;
-    rateAppointment: number;
   }): Promise<NextCandidateRow | null> {
     return this.dataSource.transaction(async (manager) => {
       await manager.query(
@@ -550,42 +519,18 @@ export class QueueEngineRepository {
       );
       if (!activeSession.length) return null;
 
-      let selected: Array<{ registration_id: string; score: number }> =
-        await manager.query(
-          `WITH eligible AS (
-             SELECT c.registration_id,
-               ROUND((CASE WHEN c.entry_type = 'appointment'
-                 THEN $1 + EXTRACT(EPOCH FROM ($7 - c.priority_reference_time))/60 * $2
-                 ELSE $3 + EXTRACT(EPOCH FROM ($7 - c.priority_reference_time))/60 * $4
-               END)::numeric, 2) AS score
-             FROM dorify.dori_registration c WHERE c.queue_id = $5
-               AND c.business_date = $6::date AND c.status = 'waiting' AND c.is_active = TRUE
-               AND (c.entry_type = 'walkin' OR
-                 (c.appointment_status = 'checked_in' AND c.scheduled_time <= $7))
-           ) SELECT registration_id, score FROM eligible ORDER BY score DESC
-             FOR UPDATE SKIP LOCKED LIMIT 1`,
-          [
-            input.baseAppointment,
-            input.rateAppointment,
-            input.baseWalkin,
-            input.rateWalkin,
-            input.queueId,
-            input.businessDate,
-            input.now,
-          ],
-        );
-      let calledEarly = false;
-      if (!selected.length) {
-        selected = await manager.query(
-          `SELECT registration_id, 0 AS score FROM dorify.dori_registration
-           WHERE queue_id = $1 AND business_date = $2::date AND status = 'waiting'
-             AND is_active = TRUE AND appointment_status = 'checked_in'
-             AND scheduled_time > $3 ORDER BY scheduled_time ASC
-             FOR UPDATE SKIP LOCKED LIMIT 1`,
-          [input.queueId, input.businessDate, input.now],
-        );
-        calledEarly = selected.length > 0;
-      }
+      const selected: Array<{
+        registration_id: string;
+        score: number;
+        called_early: boolean;
+      }> = await manager.query(
+        `SELECT c.registration_id,ranked.score,ranked.called_early
+         FROM dorify.queue_operational_ranking(ARRAY[$1::uuid],$3) ranked
+         JOIN dorify.dori_registration c ON c.registration_id=ranked.registration_id
+         WHERE ranked.business_date=$2::date AND c.status='waiting' AND c.is_active
+         ORDER BY ranked.position FOR UPDATE OF c SKIP LOCKED LIMIT 1`,
+        [input.queueId, input.businessDate, input.now],
+      );
       if (!selected.length) return null;
       const candidate = selected[0];
       await manager.query(
@@ -628,7 +573,7 @@ export class QueueEngineRepository {
       );
       return Object.assign(details[0], {
         score: Number(candidate.score || 0),
-        called_early: calledEarly,
+        called_early: candidate.called_early,
       });
     });
   }
@@ -673,57 +618,24 @@ export class QueueEngineRepository {
         [queueIds],
       );
 
-      let selected: Array<{
+      const selected: Array<{
         registration_id: string;
         queue_id: string;
         session_id: string;
         score: number;
+        called_early: boolean;
       }> = await manager.query(
-        `SELECT c.registration_id, c.queue_id, os.session_id,
-                ROUND((CASE WHEN c.entry_type = 'appointment'
-                  THEN COALESCE(q.base_weight_appointment, s.default_base_weight_appointment, 60)
-                    + EXTRACT(EPOCH FROM ($3 - c.priority_reference_time))/60
-                      * COALESCE(q.escalation_rate_appointment, s.default_escalation_rate_appointment, 1)
-                  ELSE COALESCE(q.base_weight_walkin, s.default_base_weight_walkin, 0)
-                    + EXTRACT(EPOCH FROM ($3 - c.priority_reference_time))/60
-                      * COALESCE(q.escalation_rate_walkin, s.default_escalation_rate_walkin, 1)
-                END)::numeric, 2) AS score
-         FROM dorify.dori_registration c
-         JOIN dorify.dori_queue q ON q.queue_id = c.queue_id
-         JOIN dorify.dori_site s ON s.site_id = q.site_id
-         JOIN dorify.dori_operator_session os
-           ON os.queue_id = c.queue_id AND os.user_id = $2
-          AND os.disconnected_at IS NULL AND os.mode = 'active'
-         WHERE q.site_id = $1 AND c.queue_id = ANY($4::uuid[])
-           AND c.business_date = ($3::timestamptz AT TIME ZONE s.timezone)::date
-           AND c.status = 'waiting' AND c.is_active = TRUE
-           AND (c.entry_type = 'walkin' OR
-             (c.appointment_status = 'checked_in' AND c.scheduled_time <= $3))
-         ORDER BY score DESC, c.priority_reference_time ASC, c.registration_id ASC
+        `SELECT c.registration_id,c.queue_id,os.session_id,ranked.score,ranked.called_early
+         FROM dorify.queue_operational_ranking($4::uuid[],$3) ranked
+         JOIN dorify.dori_registration c ON c.registration_id=ranked.registration_id
+         JOIN dorify.dori_queue q ON q.queue_id=c.queue_id JOIN dorify.dori_site s ON s.site_id=q.site_id
+         JOIN dorify.dori_operator_session os ON os.queue_id=c.queue_id AND os.user_id=$2
+           AND os.disconnected_at IS NULL AND os.mode='active'
+         WHERE q.site_id=$1 AND c.status='waiting' AND c.is_active AND ranked.business_date=($3::timestamptz AT TIME ZONE s.timezone)::date
+         ORDER BY ranked.called_early,ranked.score DESC,ranked.call_sort_time,c.registration_id
          FOR UPDATE OF c SKIP LOCKED LIMIT 1`,
         [input.siteId, input.userId, input.now, queueIds],
       );
-      let calledEarly = false;
-      if (!selected.length) {
-        selected = await manager.query(
-          `SELECT c.registration_id, c.queue_id, os.session_id, 0 AS score
-           FROM dorify.dori_registration c
-           JOIN dorify.dori_queue q ON q.queue_id = c.queue_id
-           JOIN dorify.dori_site s ON s.site_id = q.site_id
-           JOIN dorify.dori_operator_session os
-             ON os.queue_id = c.queue_id AND os.user_id = $2
-            AND os.disconnected_at IS NULL AND os.mode = 'active'
-           WHERE q.site_id = $1 AND c.queue_id = ANY($4::uuid[])
-             AND c.business_date = ($3::timestamptz AT TIME ZONE s.timezone)::date
-             AND c.status = 'waiting' AND c.is_active = TRUE
-             AND c.entry_type = 'appointment'
-             AND c.appointment_status = 'checked_in' AND c.scheduled_time > $3
-           ORDER BY c.scheduled_time ASC, c.registration_id ASC
-           FOR UPDATE OF c SKIP LOCKED LIMIT 1`,
-          [input.siteId, input.userId, input.now, queueIds],
-        );
-        calledEarly = selected.length > 0;
-      }
       if (!selected.length) return { outcome: 'empty' };
 
       const candidate = selected[0];
@@ -777,7 +689,7 @@ export class QueueEngineRepository {
         outcome: 'called',
         candidate: Object.assign(details[0], {
           score: Number(candidate.score || 0),
-          called_early: calledEarly,
+          called_early: candidate.called_early,
         }),
       };
     });
@@ -882,42 +794,16 @@ export class QueueEngineRepository {
     now: Date,
     limit: number,
   ): Promise<PreviewCandidateRow[]> {
-    const eligible: PreviewCandidateRow[] = await this.dataSource.query(
-      `SELECT c.registration_id, c.ticket_number, c.entry_type, c.scheduled_time,
-              c.queue_id, q.queue_code, q.queue_name, s.site_name,
-              p.person_id, p.first_name, p.last_name,
-              ROUND((CASE WHEN c.entry_type = 'appointment'
-                THEN COALESCE(q.base_weight_appointment, s.default_base_weight_appointment, 60)
-                  + EXTRACT(EPOCH FROM ($2 - c.priority_reference_time))/60
-                    * COALESCE(q.escalation_rate_appointment, s.default_escalation_rate_appointment, 1)
-                ELSE COALESCE(q.base_weight_walkin, s.default_base_weight_walkin, 0)
-                  + EXTRACT(EPOCH FROM ($2 - c.priority_reference_time))/60
-                    * COALESCE(q.escalation_rate_walkin, s.default_escalation_rate_walkin, 1)
-              END)::numeric, 2) AS score, FALSE AS called_early
-       FROM dorify.dori_registration c JOIN dorify.dori_queue q ON q.queue_id = c.queue_id
-       JOIN dorify.dori_site s ON s.site_id = q.site_id JOIN dorify.dori_person p ON p.person_id = c.person_id
-       WHERE c.queue_id = ANY($1::uuid[]) AND c.status = 'waiting' AND c.is_active = TRUE
-         AND c.business_date = ($2::timestamptz AT TIME ZONE s.timezone)::date
-         AND (c.entry_type = 'walkin' OR
-           (c.appointment_status = 'checked_in' AND c.scheduled_time <= $2))
-       ORDER BY score DESC, c.registration_id ASC LIMIT $3`,
+    return this.dataSource.query<PreviewCandidateRow[]>(
+      `SELECT c.registration_id,c.ticket_number,c.entry_type,c.scheduled_time,c.queue_id,
+        q.queue_code,q.queue_name,s.site_name,p.person_id,p.first_name,p.last_name,ranked.score,ranked.called_early
+       FROM dorify.queue_operational_ranking($1::uuid[],$2) ranked
+       JOIN dorify.dori_registration c ON c.registration_id=ranked.registration_id
+       JOIN dorify.dori_queue q ON q.queue_id=c.queue_id JOIN dorify.dori_site s ON s.site_id=q.site_id
+       JOIN dorify.dori_person p ON p.person_id=c.person_id
+       WHERE ranked.business_date=($2::timestamptz AT TIME ZONE s.timezone)::date
+       ORDER BY ranked.called_early,ranked.score DESC,ranked.call_sort_time,c.registration_id LIMIT $3`,
       [queueIds, now, limit],
     );
-    if (eligible.length >= limit) return eligible;
-    const queueIdsWithEligibleCandidate = eligible.map((row) => row.queue_id);
-    const early: PreviewCandidateRow[] = await this.dataSource.query(
-      `SELECT c.registration_id, c.ticket_number, c.entry_type, c.scheduled_time,
-              c.queue_id, q.queue_code, q.queue_name, s.site_name,
-              p.person_id, p.first_name, p.last_name, 0 AS score, TRUE AS called_early
-       FROM dorify.dori_registration c JOIN dorify.dori_queue q ON q.queue_id = c.queue_id
-       JOIN dorify.dori_site s ON s.site_id = q.site_id JOIN dorify.dori_person p ON p.person_id = c.person_id
-       WHERE c.queue_id = ANY($1::uuid[]) AND c.status = 'waiting' AND c.is_active = TRUE
-         AND c.business_date = ($2::timestamptz AT TIME ZONE s.timezone)::date
-         AND c.entry_type = 'appointment' AND c.appointment_status = 'checked_in'
-         AND c.scheduled_time > $2 AND c.queue_id <> ALL($3::uuid[])
-       ORDER BY c.scheduled_time ASC, c.registration_id ASC LIMIT $4`,
-      [queueIds, now, queueIdsWithEligibleCandidate, limit - eligible.length],
-    );
-    return [...eligible, ...early];
   }
 }

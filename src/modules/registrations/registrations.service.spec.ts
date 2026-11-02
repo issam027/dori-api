@@ -271,6 +271,8 @@ describe('RegistrationsService reschedule ticket numbering', () => {
         getOrThrow: jest.fn().mockReturnValue(1440),
       } as unknown as ConfigService,
       {} as NotificationTemplateService,
+
+      canonicalEstimatorMock,
     );
     const result = await service.createRegistration(
       {
@@ -337,6 +339,8 @@ describe('RegistrationsService reschedule ticket numbering', () => {
         getOrThrow: jest.fn().mockReturnValue(1440),
       } as unknown as ConfigService,
       {} as NotificationTemplateService,
+
+      canonicalEstimatorMock,
     );
 
     await expect(
@@ -409,6 +413,8 @@ describe('RegistrationsService reschedule ticket numbering', () => {
         getOrThrow: jest.fn().mockReturnValue(1440),
       } as unknown as ConfigService,
       {} as NotificationTemplateService,
+
+      canonicalEstimatorMock,
     );
 
     await service.reschedule(
@@ -458,6 +464,8 @@ describe('RegistrationsService public position', () => {
         getOrThrow: jest.fn(() => 60),
       } as unknown as ConfigService,
       {} as NotificationTemplateService,
+
+      canonicalEstimatorMock,
     );
 
     await expect(
@@ -484,7 +492,6 @@ describe('RegistrationsService public position', () => {
         queue_id: '00000000-0000-4000-8000-000000000001',
         queue_name: 'Accueil',
       }),
-      countWaitingBefore: jest.fn().mockResolvedValue(2),
     };
     const service = new RegistrationsService(
       repository as unknown as RegistrationsRepository,
@@ -496,6 +503,8 @@ describe('RegistrationsService public position', () => {
       {} as PersonsService,
       { getOrThrow: jest.fn(() => 60) } as unknown as ConfigService,
       {} as NotificationTemplateService,
+
+      canonicalEstimatorMock,
     );
 
     await expect(
@@ -534,6 +543,8 @@ describe('RegistrationsService public position', () => {
         {} as PersonsService,
         { getOrThrow: jest.fn(() => 60) } as unknown as ConfigService,
         {} as NotificationTemplateService,
+
+        canonicalEstimatorMock,
       );
 
       const response = await service.getPublicPosition(
@@ -569,6 +580,8 @@ describe('RegistrationsService public position', () => {
       {} as PersonsService,
       { getOrThrow: jest.fn(() => 60) } as unknown as ConfigService,
       {} as NotificationTemplateService,
+
+      canonicalEstimatorMock,
     );
 
     const response = await service.getPublicPosition(
@@ -625,6 +638,7 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
     };
     const repository = {
       transaction: jest.fn((work: (value: typeof tx) => unknown) => work(tx)),
+      findById: jest.fn().mockResolvedValue(null),
     };
     const clock = {
       now: jest.fn(() => new Date('2026-10-14T10:00:00Z')),
@@ -650,7 +664,7 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
         buildTrackingUrl: jest.fn(),
         render: jest.fn(),
       } as unknown as NotificationTemplateService,
-      undefined,
+      canonicalEstimatorMock,
     );
 
     const response = await service.createRegistration(
@@ -718,6 +732,8 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
         {} as PersonsService,
         { getOrThrow: jest.fn() } as unknown as ConfigService,
         {} as NotificationTemplateService,
+
+        canonicalEstimatorMock,
       );
 
       const result = await service.getAvailability(
@@ -783,6 +799,8 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
         {} as PersonsService,
         { getOrThrow: jest.fn() } as unknown as ConfigService,
         {} as NotificationTemplateService,
+
+        canonicalEstimatorMock,
       );
 
       const result = await service.getAvailability(
@@ -826,6 +844,8 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
         {} as PersonsService,
         { getOrThrow: jest.fn() } as unknown as ConfigService,
         {} as NotificationTemplateService,
+
+        canonicalEstimatorMock,
       );
 
       // 2026-09-06 is Sunday (isoDay 7)
@@ -889,7 +909,7 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
         getOrThrow: jest.fn().mockReturnValue(1440),
       } as unknown as ConfigService,
       {} as NotificationTemplateService,
-      undefined,
+      canonicalEstimatorMock,
     );
 
     await service.checkIn(registrationId, user);
@@ -897,3 +917,15 @@ describe('RegistrationsService ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ�
     expect(repository.checkIn).toHaveBeenCalledWith(registrationId, now);
   });
 });
+
+const canonicalEstimatorMock = {
+  estimate: jest.fn().mockImplementation((registration: { status?: string }) =>
+    Promise.resolve({
+      position: registration.status === 'in_progress' ? 0 : 3,
+      estimatedWaitMinutes: registration.status === 'in_progress' ? 0 : null,
+      method: 'unavailable',
+      isReliable: false,
+      calculatedAt: new Date('2026-10-15T10:00:00Z'),
+    }),
+  ),
+} as unknown as QueueWaitEstimationService;

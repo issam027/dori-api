@@ -100,7 +100,10 @@ export class MonitoringService {
 
   async live(siteId: string, user: AuthenticatedUser) {
     await this.scopeService.checkSiteAccess(user, siteId);
-    const snapshot = await this.repository.liveSnapshot(siteId);
+    const snapshot = await this.repository.liveSnapshot(
+      siteId,
+      this.clockService.now(),
+    );
     if (!snapshot.site) throw new DoriException('SITE_NOT_FOUND', { siteId });
     const queues: Array<{
       queueId: string;

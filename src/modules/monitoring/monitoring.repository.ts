@@ -44,7 +44,7 @@ export class MonitoringRepository {
     };
   }
 
-  async liveSnapshot(siteId: string) {
+  async liveSnapshot(siteId: string, now: Date) {
     const [siteRows, queues, operators] = await Promise.all([
       this.dataSource.query(
         `SELECT site_id, timezone FROM dorify.dori_site
@@ -52,21 +52,22 @@ export class MonitoringRepository {
         [siteId],
       ),
       this.dataSource.query(
-        `SELECT q.queue_id, q.queue_name, q.average_wait_time AS estimated_wait_minutes,
-          COUNT(r.registration_id) FILTER (WHERE r.status='waiting')::int AS waiting,
-          COUNT(r.registration_id) FILTER (WHERE r.status='in_progress')::int AS in_progress,
+        `SELECT q.queue_id, q.queue_name, e.estimated_wait_minutes,
+          e.waiting_count AS waiting,
+          COUNT(DISTINCT r.registration_id) FILTER (WHERE r.status='in_progress')::int AS in_progress,
           COUNT(DISTINCT os.session_id) FILTER (WHERE os.mode='active')::int AS open_desks,
           COUNT(DISTINCT os.user_id) FILTER (WHERE os.mode='active')::int AS active_operators,
-          ROUND(MAX(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP-r.priority_reference_time))/60)
+          ROUND(MAX(EXTRACT(EPOCH FROM ($2::timestamptz-r.priority_reference_time))/60)
             FILTER (WHERE r.status='waiting')::numeric, 2) AS longest_wait_minutes
          FROM dorify.dori_queue q
+         JOIN LATERAL dorify.queue_wait_context(ARRAY[q.queue_id],$2::timestamptz) e ON TRUE
          LEFT JOIN dorify.dori_registration r ON r.queue_id=q.queue_id AND r.is_active=TRUE
-           AND r.status IN ('waiting','in_progress')
+           AND r.status IN ('waiting','in_progress') AND r.business_date=e.business_date
          LEFT JOIN dorify.dori_operator_session os ON os.queue_id=q.queue_id
            AND os.disconnected_at IS NULL
          WHERE q.site_id=$1 AND q.is_active=TRUE AND q.deleted_at IS NULL
-         GROUP BY q.queue_id,q.queue_name,q.average_wait_time ORDER BY q.queue_id`,
-        [siteId],
+         GROUP BY q.queue_id,q.queue_name,e.estimated_wait_minutes,e.waiting_count ORDER BY q.queue_id`,
+        [siteId, now],
       ),
       this.dataSource.query(
         `SELECT os.session_id,os.user_id,os.queue_id,os.counter_name,os.thread_number,

@@ -45,7 +45,7 @@ export class RegistrationsService {
     private readonly personsService: PersonsService,
     private readonly configService: ConfigService,
     private readonly notificationTemplateService: NotificationTemplateService,
-    private readonly waitEstimationService?: QueueWaitEstimationService,
+    private readonly waitEstimationService: QueueWaitEstimationService,
   ) {}
 
   private formatTicketNumber(queueCode: string, lastNumber: number): string {
@@ -281,7 +281,6 @@ export class RegistrationsService {
       },
     );
     if (dto.entryType !== 'walkin') return result;
-    if (!this.waitEstimationService) return result;
     const registration = await this.registrationsRepository.findById(
       result.registrationId,
     );
@@ -485,7 +484,7 @@ export class RegistrationsService {
     await this.registrationsRepository.checkIn(registrationId, now);
     const checkedIn =
       await this.registrationsRepository.findById(registrationId);
-    if (!checkedIn || !this.waitEstimationService) return checkedIn;
+    if (!checkedIn) return checkedIn;
     const estimate = await this.waitEstimationService.estimate(checkedIn, now);
     return {
       ...checkedIn,
@@ -747,7 +746,7 @@ export class RegistrationsService {
     }
 
     await this.scopeService.checkQueueAccess(user, reg.queue_id);
-    if (!this.waitEstimationService || reg.status !== 'waiting') return reg;
+    if (reg.status !== 'waiting') return reg;
     const estimate = await this.waitEstimationService.estimate(
       reg,
       this.clockService.now(),
@@ -858,12 +857,13 @@ export class RegistrationsService {
     }
 
     if (reg.status === 'in_progress') {
+      const estimate = await this.waitEstimationService.estimate(reg, now);
       return {
         ticketNumber: reg.ticket_number,
         status: 'in_progress',
         registrationStatus: reg.status,
-        position: 0,
-        estimatedWaitMinutes: 0,
+        position: estimate.position,
+        estimatedWaitMinutes: estimate.estimatedWaitMinutes,
         counterNumber: reg.thread_number,
         counterName: reg.counter_name,
         calledAt: reg.called_at,
@@ -873,16 +873,7 @@ export class RegistrationsService {
     }
 
     if (reg.status === 'waiting') {
-      const estimate = this.waitEstimationService
-        ? await this.waitEstimationService.estimate(reg, now)
-        : {
-            position:
-              (await this.registrationsRepository.countWaitingBefore(reg)) + 1,
-            estimatedWaitMinutes: null,
-            method: 'unavailable',
-            isReliable: false,
-            calculatedAt: now,
-          };
+      const estimate = await this.waitEstimationService.estimate(reg, now);
 
       return {
         ticketNumber: reg.ticket_number,

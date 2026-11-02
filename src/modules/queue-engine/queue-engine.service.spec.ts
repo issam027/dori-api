@@ -275,10 +275,6 @@ describe('QueueEngineService recall and empty queue', () => {
         },
         config: {
           timezone: 'Europe/Berlin',
-          baseWalkin: 0,
-          baseAppointment: 60,
-          rateWalkin: 1,
-          rateAppointment: 1,
         },
       }),
       callNext: jest.fn().mockResolvedValue(null),
@@ -327,7 +323,7 @@ describe('QueueEngineService cockpit', () => {
             waiting_count: 3,
             remaining_appointments_count: 1,
             occupied_threads_count: 1,
-            average_wait_time: 10,
+            estimated_wait_minutes: 30,
           },
         ],
         sessions: [

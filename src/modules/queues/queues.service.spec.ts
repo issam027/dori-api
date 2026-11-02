@@ -342,6 +342,7 @@ describe('QueuesService ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢Ãƒ�
       { checkQueueAccess: jest.fn() } as unknown as ScopeService,
       {
         todayInTimezone: jest.fn(() => '2026-10-26'),
+        now: jest.fn(() => new Date('2026-10-26T10:00:00Z')),
       } as unknown as ClockService,
       {} as QueueWaitEstimationService,
     );
