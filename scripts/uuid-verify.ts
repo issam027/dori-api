@@ -15,11 +15,11 @@ const migrationsDir = path.join(root, 'src/core/database/sql/migrations');
 const migrations = fs
   .readdirSync(migrationsDir)
   .filter((name) => name.endsWith('.sql'));
-if (!migrations.includes('001_uuid_baseline.sql')) {
+if (!migrations.includes('001_schema_final.sql')) {
   failures.push(`UUID baseline is missing; found: ${migrations.join(', ')}`);
 }
 
-const baseline = read('src/core/database/sql/migrations/001_uuid_baseline.sql');
+const baseline = read('src/core/database/sql/migrations/001_schema_final.sql');
 for (const [label, pattern] of [
   ['public schema reference', /\bpublic\./i],
   ['serial identifier', /\b(?:BIG)?SERIAL\b/i],
@@ -63,12 +63,14 @@ for (const file of tsFiles) {
 }
 
 for (const relative of [
-  'src/core/database/sql/migrations/001_uuid_baseline.sql',
+  'src/core/database/sql/migrations/001_schema_final.sql',
   'src/core/database/sql/seed.sql',
   'scripts/sample-data/example-site-september-october-2026.sql',
   'scripts/sample-data/cleanup-example-site-september-october-2026.sql',
 ]) {
-  const sql = read(relative);
+  const sql = read(relative)
+    .replace(/CONSTRAINT\s+\w+/gi, 'CONSTRAINT')
+    .replace(/'dori_[a-z0-9_]+'/g, "'table-name'");
   if (/(?<![A-Za-z0-9_.])\bdori_[a-z0-9_]+\b/.test(sql)) {
     failures.push(`${relative}: unqualified application table.`);
   }

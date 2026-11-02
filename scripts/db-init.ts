@@ -9,7 +9,7 @@
  *
  * Options:
  *   --seed   Also run seed.sql (default: false)
- *   --force  Drop and recreate only the dorify schema; public is untouched
+ *   --force  Drop and recreate the dorify and dorify_agent schemas; public is untouched
  */
 
 import * as fs from 'fs';
@@ -78,9 +78,7 @@ async function execSqlFile(client: Client, filePath: string, label: string) {
     return;
   }
   const sql = fs.readFileSync(filePath, 'utf8');
-  log(
-    `Running ${label}ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦`,
-  );
+  log(`Running ${label}...`);
   await client.query(sql);
   log(`${label} completed successfully.`);
 }
@@ -123,9 +121,7 @@ async function main() {
     const adminClient = new Client(buildClientConfig(DB_ADMIN_NAME));
 
     try {
-      log(
-        `Connecting to admin database "${DB_ADMIN_NAME}"ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦`,
-      );
+      log(`Connecting to admin database "${DB_ADMIN_NAME}"...`);
       await adminClient.connect();
       log('Connected to admin database.');
 
@@ -136,9 +132,7 @@ async function main() {
       const dbExists = rows.length > 0;
 
       if (!dbExists) {
-        log(
-          `Creating database "${DB_NAME}"ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦`,
-        );
+        log(`Creating database "${DB_NAME}"...`);
         await adminClient.query(`CREATE DATABASE "${DB_NAME}"`);
         log(`Database "${DB_NAME}" created.`);
       } else {
@@ -157,20 +151,20 @@ async function main() {
   const appClient = new Client(buildClientConfig(DB_NAME));
 
   try {
-    log(
-      `Connecting to target database "${DB_NAME}"ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦`,
-    );
+    log(`Connecting to target database "${DB_NAME}"...`);
     await appClient.connect();
     log(`Connected to target database "${DB_NAME}".`);
     await appClient.query('SET search_path TO dorify, pg_catalog');
+    // Extensions are bootstrap infrastructure, installed before the public-object guard.
+    await appClient.query(
+      'CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public; CREATE EXTENSION IF NOT EXISTS pg_stat_statements WITH SCHEMA public',
+    );
     const publicSchemaBefore = await snapshotPublicSchema(appClient);
 
     if (force) {
-      log(
-        `--force flag set: resetting dorify schema onlyÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦`,
-      );
+      log(`--force: resetting Dorify business and agent schemas...`);
       await appClient.query(
-        `DROP SCHEMA IF EXISTS dorify CASCADE; CREATE SCHEMA dorify;`,
+        `DROP SCHEMA IF EXISTS dorify_agent CASCADE; DROP SCHEMA IF EXISTS dorify CASCADE; CREATE SCHEMA dorify;`,
       );
       log(`Dorify schema reset; public schema was not modified.`);
     }

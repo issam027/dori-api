@@ -11,15 +11,7 @@ async function main(): Promise<void> {
     const migrations = await client.query<{ filename: string }>(`
       SELECT filename
       FROM dorify.dori_schema_migration
-      WHERE filename IN (
-        '008_edge_agent_storage.sql',
-        '009_edge_control_plane.sql',
-        '010_edge_installation_permission.sql',
-        '011_grant_edge_permission_to_admin.sql',
-        '012_edge_installation_deployment_status.sql',
-        '013_edge_installation_revocation.sql',
-        '014_unified_notification_tracking.sql'
-      )
+      WHERE filename = '001_schema_final.sql'
       ORDER BY filename
     `);
     const permissions = await client.query<{ role_name: string }>(`
@@ -76,7 +68,7 @@ async function main(): Promise<void> {
       schema: schema.rows[0],
     };
     const valid =
-      result.migrations.length === 7 &&
+      result.migrations.length === 1 &&
       result.permissionRoles.includes('root') &&
       result.permissionRoles.includes('admin') &&
       result.schema.deployment_type &&
