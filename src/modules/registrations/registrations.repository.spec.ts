@@ -6,6 +6,27 @@ import {
 import { NotificationTemplateService } from '../../core/notifications/notification-template.service';
 import { ConfigService } from '@nestjs/config';
 
+describe('appointment check-in database results', () => {
+  it.each(['flat', 'tuple'])(
+    'publishes both realtime events with the queue ID for %s results',
+    async (shape) => {
+      const row = { registration_id: 'registration', queue_id: 'queue' };
+      const query = jest.fn().mockResolvedValue([]);
+      query.mockResolvedValueOnce(shape === 'tuple' ? [[row], 1] : [row]);
+      const repository = new RegistrationsRepository({
+        transaction: (work: (manager: EntityManager) => Promise<unknown>) =>
+          work({ query } as unknown as EntityManager),
+      } as unknown as DataSource);
+      await expect(
+        repository.checkIn('registration', new Date()),
+      ).resolves.toEqual(row);
+      expect(query).toHaveBeenCalledTimes(3);
+      expect(query.mock.calls[1][1][0]).toBe('queue');
+      expect(query.mock.calls[2][1][0]).toBe('queue');
+    },
+  );
+});
+
 describe('RegistrationsTransaction reschedule result', () => {
   it('normalizes the installed TypeORM UPDATE result and updates tracking in the same statement', async () => {
     const row = { registration_id: 'registration', ticket_number: 'A002' };

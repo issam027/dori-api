@@ -361,7 +361,7 @@ export class RegistrationsRepository {
          checked_in_at=$1,updated_at=$1 WHERE registration_id=$2 RETURNING ${REGISTRATION_COLUMNS}`,
         [now, registrationId],
       );
-      const registration = rows[0];
+      const registration = returningRows<RegistrationRow>(rows)[0];
       if (!registration) return null;
       await enqueueRealtimeEvent(
         manager,
