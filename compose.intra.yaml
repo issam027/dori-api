@@ -23,6 +23,7 @@ services:
       CORS_ORIGINS: http://localhost:3001,http://localhost:5173
       PUBLIC_WEB_URL: ${PUBLIC_TRACKING_URL:-http://localhost:58080}
       DORIFY_DEPLOYMENT_MODE: intra
+      AUTH_REFRESH_COOKIE_NAME: refreshToken_intra
       SWAGGER_SERVERS: http://localhost:13000
       AUTO_RUN_MIGRATIONS: 'false'
     ports:

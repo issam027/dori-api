@@ -21,6 +21,12 @@ export function isVercelRuntime(): boolean {
 export function validateEnvironment(
   environment: Record<string, unknown>,
 ): Record<string, unknown> {
+  if (
+    environment.AUTH_REFRESH_COOKIE_NAME !== undefined &&
+    !/^[A-Za-z0-9_-]{1,80}$/.test(String(environment.AUTH_REFRESH_COOKIE_NAME))
+  ) {
+    throw new Error('AUTH_REFRESH_COOKIE_NAME must be a valid cookie name');
+  }
   const jwtSecret = String(environment.JWT_SECRET ?? '');
   if (
     environment.DORIFY_DEPLOYMENT_MODE !== undefined &&
@@ -150,6 +156,7 @@ export default () => {
     },
 
     jwt: {
+      refreshCookieName: process.env.AUTH_REFRESH_COOKIE_NAME ?? 'refreshToken',
       privateKey: normalizePem(process.env.JWT_PRIVATE_KEY),
       publicKey: normalizePem(process.env.JWT_PUBLIC_KEY),
       secret: process.env.JWT_SECRET,

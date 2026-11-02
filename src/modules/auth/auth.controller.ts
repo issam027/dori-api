@@ -40,6 +40,12 @@ export class AuthController {
     private readonly configService: ConfigService,
   ) {}
 
+  private getRefreshCookieName(): string {
+    return (
+      this.configService.get<string>('jwt.refreshCookieName') ?? 'refreshToken'
+    );
+  }
+
   private getRefreshCookieOptions() {
     const refreshTokenExpiresInDays =
       this.configService.get<number>('jwt.refreshTokenExpiresInDays') ?? 30;
@@ -86,7 +92,7 @@ export class AuthController {
     const result = await this.authService.login(loginDto, ipAddress, userAgent);
 
     res.cookie(
-      'refreshToken',
+      this.getRefreshCookieName(),
       result.refreshToken,
       this.getRefreshCookieOptions(),
     );
@@ -126,16 +132,19 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const token = refreshDto.refreshToken || req.cookies?.refreshToken;
+    const cookieName = this.getRefreshCookieName();
+    const currentCookie = req.cookies?.[cookieName];
+    const legacyCookie =
+      cookieName !== 'refreshToken' ? req.cookies?.refreshToken : undefined;
+    const token = refreshDto.refreshToken || currentCookie || legacyCookie;
     const ipAddress = req.ip || req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
     const result = await this.authService.refresh(token, ipAddress, userAgent);
+    if (!refreshDto.refreshToken && !currentCookie && legacyCookie) {
+      res.clearCookie('refreshToken');
+    }
 
-    res.cookie(
-      'refreshToken',
-      result.refreshToken,
-      this.getRefreshCookieOptions(),
-    );
+    res.cookie(cookieName, result.refreshToken, this.getRefreshCookieOptions());
 
     return result;
   }
@@ -162,7 +171,7 @@ export class AuthController {
     @Body() logoutDto: LogoutDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    res.clearCookie('refreshToken');
+    res.clearCookie(this.getRefreshCookieName());
     return this.authService.logout(user, logoutDto);
   }
 
