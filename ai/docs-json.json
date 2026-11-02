@@ -10165,6 +10165,91 @@
         ]
       }
     },
+    "/api/v1/realtime/tracking": {
+      "get": {
+        "operationId": "subscribeReplicatedTrackingEvents",
+        "summary": "Suivre un ticket intra répliqué dans le cloud",
+        "description": "Flux tracking_changed avec instantané public initial et mises à jour. Le jeton reste dans un en-tête ; aucun identifiant de file cloud n’est nécessaire.",
+        "parameters": [
+          {
+            "name": "X-Registration-Token",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Valeur du paramètre « x-registration-token »."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Instantanés publics du ticket intra",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "Flux SSE persistant. Chaque événement indique que le client doit rafraîchir les données via REST.",
+                  "example": "event: tracking_changed\ndata: {\"status\":\"waiting\",\"registrationStatus\":\"waiting\",\"position\":3,\"estimatedWaitMinutes\":6,\"sourceConnectivity\":\"online\"}\n\n"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié — token manquant ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Jeton de suivi expiré ou inscription inactive",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Realtime"
+        ]
+      }
+    },
     "/api/v1/sites/{siteId}/next-preview": {
       "get": {
         "operationId": "QueueEngineController_nextPreview",

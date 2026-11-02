@@ -7,6 +7,20 @@ export interface TrackingRegistrationRow {
   is_active: boolean;
 }
 
+export interface ReplicatedTrackingRow {
+  sequence: string | number;
+  expires_at: Date | string;
+  observed_at: Date | string;
+  deployment_status: string;
+  source_connectivity: 'online' | 'offline';
+  ticket_number: string | null;
+  registration_status: string;
+  position: number | null;
+  estimated_wait_minutes: number | null;
+  counter_name: string | null;
+  queue_public_name: string | null;
+}
+
 export interface RealtimeOutboxRow {
   event_id: string;
   queue_id: string;
@@ -46,6 +60,23 @@ export async function enqueueRealtimeEvent(
 @Injectable()
 export class RealtimeRepository {
   constructor(private readonly dataSource: DataSource) {}
+
+  async findReplicatedTracking(
+    hash: string,
+  ): Promise<ReplicatedTrackingRow | null> {
+    const rows = await this.dataSource.query<ReplicatedTrackingRow[]>(
+      `SELECT t.sequence, t.expires_at, t.observed_at, t.ticket_number,
+              t.registration_status, t.position, t.estimated_wait_minutes,
+              t.counter_name, t.queue_public_name, e.deployment_status,
+              CASE WHEN e.last_seen_at >= CURRENT_TIMESTAMP - INTERVAL '2 minutes'
+                   THEN 'online' ELSE 'offline' END AS source_connectivity
+       FROM dorify.dori_public_tracking_state t
+       JOIN dorify.dori_edge_installation e ON e.installation_id=t.source_installation_id
+       WHERE t.tracking_token_hash=$1`,
+      [hash],
+    );
+    return rows[0] ?? null;
+  }
 
   async findTopicState(
     queueId: string,

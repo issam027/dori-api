@@ -450,3 +450,51 @@ Détection des déclarations DTO par AST ; contrôle des frontières de features
 <!-- CHECKPOINT id="ckpt_mvxy44bh_pa8tal" time="2026-11-01T14:49:05.501Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
 
 <!-- CHECKPOINT id="ckpt_mvxygz9v_osf1yu" time="2026-11-01T14:59:05.491Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvycjy2e_4czu8i" time="2026-11-01T21:33:18.518Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvycwt17_rjvdn6" time="2026-11-01T21:43:18.523Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvydi2qx_fr88ws" time="2026-11-01T21:59:50.889Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvyduxpr_1swskf" time="2026-11-01T22:09:50.895Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvyepzxk_ogmcll" time="2026-11-01T22:34:00.104Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvyf2uwl_1iy5ar" time="2026-11-01T22:44:00.117Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvyffpv6_y144lu" time="2026-11-01T22:54:00.114Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvyfskuf_t69d98" time="2026-11-01T23:04:00.135Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvyg5fti_z7f16u" time="2026-11-01T23:14:00.150Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvygiask_5igq6w" time="2026-11-01T23:24:00.164Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvygv5vc_0zoj6v" time="2026-11-01T23:34:00.312Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvyh81cn_ewqp62" time="2026-11-01T23:44:00.983Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvyiokcd_8lzh9t" time="2026-11-02T00:24:51.709Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvyq02y6_az16e5" time="2026-11-02T03:49:46.350Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvyvxpud_tzy74i" time="2026-11-02T06:35:53.749Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvywaktc_42iad9" time="2026-11-02T06:45:53.760Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvyy1kwa_kfybqq" time="2026-11-02T07:34:53.194Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvyyz4ta_idw17o" time="2026-11-02T08:00:58.654Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvyzbzs9_q0cn7u" time="2026-11-02T08:10:58.665Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvyzsr40_eq61yz" time="2026-11-02T08:24:00.576Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvz05m2x_781sz5" time="2026-11-02T08:34:00.585Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvz0iplf_jqkd3i" time="2026-11-02T08:44:11.667Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvz257fn_otcc8y" time="2026-11-02T09:29:40.835Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mvz2i2eo_h6r0np" time="2026-11-02T09:39:40.848Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
