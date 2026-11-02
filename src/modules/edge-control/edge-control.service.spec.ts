@@ -23,6 +23,17 @@ describe('EdgeControlService', () => {
 
   beforeEach(() => jest.clearAllMocks());
 
+  it('rejects acknowledgment of an expired or terminal command', async () => {
+    repository.acknowledgeCommand.mockResolvedValue(false);
+    await expect(
+      service.acknowledge('installation', 'command'),
+    ).rejects.toMatchObject({ status: 409 });
+    repository.acknowledgeCommand.mockResolvedValue(true);
+    await expect(
+      service.acknowledge('installation', 'command'),
+    ).resolves.toBeUndefined();
+  });
+
   it('returns an empty list when no installation is registered', async () => {
     repository.listInstallations.mockResolvedValue([]);
     await expect(service.listInstallations()).resolves.toEqual([]);

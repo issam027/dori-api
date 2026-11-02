@@ -16794,7 +16794,10 @@
         ],
         "responses": {
           "204": {
-            "description": ""
+            "description": "Command is still actionable and its receipt is acknowledged."
+          },
+          "409": {
+            "description": "Command is timedOut, terminal or unavailable; the agent must not execute it."
           }
         },
         "tags": [
@@ -25536,6 +25539,13 @@
           },
           "status": {
             "type": "string",
+            "enum": [
+              "pending",
+              "acknowledged",
+              "succeeded",
+              "failed",
+              "timedOut"
+            ],
             "description": "Valeur du champ « status »."
           },
           "createdAt": {

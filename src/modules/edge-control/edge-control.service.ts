@@ -7,6 +7,7 @@ import {
   CreateEdgeCommandDto,
   EdgeDeploymentStatus,
   EdgeCommandResultDto,
+  EdgeCommandResultStatus,
   EdgeHeartbeatDto,
   EdgeRelayNotificationDto,
   EdgeTrackingProjectionDto,
@@ -95,7 +96,11 @@ export class EdgeControlService {
   }
 
   async acknowledge(installationId: string, commandId: string): Promise<void> {
-    await this.repository.acknowledgeCommand(installationId, commandId);
+    const accepted = await this.repository.acknowledgeCommand(
+      installationId,
+      commandId,
+    );
+    if (!accepted) throw new DoriException('CONFLICT');
   }
 
   async complete(
@@ -107,7 +112,9 @@ export class EdgeControlService {
     await this.repository.completeCommand(
       installationId,
       commandId,
-      body.status.toLowerCase(),
+      body.status === EdgeCommandResultStatus.Expired
+        ? 'timedOut'
+        : body.status.toLowerCase(),
       body.output ?? null,
       body.error ?? null,
       body.completedAt,

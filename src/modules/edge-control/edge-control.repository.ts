@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { returningRows } from '../../core/database/returning-rows';
 import { EdgeCommandType } from './dto/edge-control.dto';
 import {
   EdgeRelayNotificationDto,
@@ -30,6 +31,7 @@ export class EdgeControlRepository {
   }
 
   async installationRoomSignature(): Promise<string> {
+    await this.expireCommands();
     const rows = await this.database.query<{ signature: string }[]>(
       `SELECT md5(
          COALESCE((
@@ -167,12 +169,15 @@ export class EdgeControlRepository {
     return rows.length;
   }
 
-  listCommands(installationId: string, after: string | null) {
+  async listCommands(installationId: string, after: string | null) {
+    await this.expireCommands(installationId);
     return this.database.query(
       `SELECT command_id, installation_id, command_type, payload, command_status,
               result, error_message, created_at, expires_at
        FROM dorify.dori_edge_command
        WHERE installation_id=$1
+         AND command_status IN ('pending','acknowledged')
+         AND expires_at > CURRENT_TIMESTAMP
          AND ($2::uuid IS NULL OR (created_at, command_id) > (
            SELECT created_at, command_id FROM dorify.dori_edge_command WHERE command_id=$2
          ))
@@ -181,7 +186,8 @@ export class EdgeControlRepository {
     );
   }
 
-  listRecentCommands(installationId: string) {
+  async listRecentCommands(installationId: string) {
+    await this.expireCommands(installationId);
     return this.database.query(
       `SELECT command_id, installation_id, command_type, payload, command_status,
               result, error_message, created_at, expires_at
@@ -208,17 +214,33 @@ export class EdgeControlRepository {
     return rows[0];
   }
 
-  acknowledgeCommand(installationId: string, commandId: string) {
-    return this.database.query(
+  async expireCommands(installationId: string | null = null): Promise<void> {
+    await this.database.query(
       `UPDATE dorify.dori_edge_command
-       SET command_status=CASE WHEN command_status='pending' THEN 'acknowledged' ELSE command_status END,
-           acknowledged_at=COALESCE(acknowledged_at,CURRENT_TIMESTAMP)
-       WHERE installation_id=$1 AND command_id=$2`,
-      [installationId, commandId],
+       SET command_status='timedOut', completed_at=expires_at
+       WHERE command_status IN ('pending','acknowledged')
+         AND expires_at <= CURRENT_TIMESTAMP
+         AND ($1::uuid IS NULL OR installation_id=$1)`,
+      [installationId],
     );
   }
 
-  completeCommand(
+  async acknowledgeCommand(installationId: string, commandId: string) {
+    await this.expireCommands(installationId);
+    const raw = await this.database.query(
+      `UPDATE dorify.dori_edge_command
+       SET command_status=CASE WHEN command_status='pending' THEN 'acknowledged' ELSE command_status END,
+           acknowledged_at=COALESCE(acknowledged_at,CURRENT_TIMESTAMP)
+       WHERE installation_id=$1 AND command_id=$2
+         AND command_status IN ('pending','acknowledged')
+         AND expires_at > CURRENT_TIMESTAMP
+       RETURNING command_id`,
+      [installationId, commandId],
+    );
+    return returningRows(raw).length > 0;
+  }
+
+  async completeCommand(
     installationId: string,
     commandId: string,
     status: string,
@@ -226,11 +248,13 @@ export class EdgeControlRepository {
     error: string | null,
     completedAt: string,
   ) {
+    await this.expireCommands(installationId);
     return this.database.query(
       `UPDATE dorify.dori_edge_command
        SET command_status=$3, result=$4, error_message=$5, completed_at=$6
        WHERE installation_id=$1 AND command_id=$2
-         AND command_status IN ('pending','acknowledged')`,
+         AND command_status IN ('pending','acknowledged')
+         AND expires_at > CURRENT_TIMESTAMP`,
       [installationId, commandId, status, result, error, completedAt],
     );
   }

@@ -10,7 +10,13 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import {
+  ApiConflictResponse,
+  ApiNoContentResponse,
+  ApiOperation,
+  ApiSecurity,
+  ApiTags,
+} from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { Public } from '../../core/auth/decorators/public.decorator';
 import { SkipResponseEnvelope } from '../../core/response/response.interceptor';
@@ -93,6 +99,13 @@ export class EdgeAgentController {
   @SkipThrottle({ strict: true, auth: true })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Acknowledge durable local command receipt' })
+  @ApiNoContentResponse({
+    description: 'Command is still actionable and its receipt is acknowledged.',
+  })
+  @ApiConflictResponse({
+    description:
+      'Command is timedOut, terminal or unavailable; the agent must not execute it.',
+  })
   async acknowledge(
     @Headers('x-dorify-installation-id') installationId: string,
     @Headers('authorization') authorization: string | undefined,

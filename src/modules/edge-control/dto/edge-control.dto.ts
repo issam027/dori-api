@@ -189,7 +189,10 @@ export class EdgeCommandResponseDto {
   @ApiProperty({ format: 'uuid' }) installationId!: string;
   @ApiProperty({ enum: EdgeCommandType }) type!: EdgeCommandType;
   @ApiProperty({ type: Object }) payload!: Record<string, unknown>;
-  @ApiProperty() status!: string;
+  @ApiProperty({
+    enum: ['pending', 'acknowledged', 'succeeded', 'failed', 'timedOut'],
+  })
+  status!: string;
   @ApiProperty({ format: 'date-time' }) createdAt!: string;
   @ApiProperty({ format: 'date-time' }) expiresAt!: string;
   @ApiPropertyOptional({ type: Object }) result?: Record<
