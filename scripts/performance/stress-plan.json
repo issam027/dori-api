@@ -1,0 +1,30 @@
+{
+  "purpose": "Exploratory capacity test with ordinary local Dorify containers stopped; not a production SLA",
+  "fixture": {
+    "historicalRegistrationsPerDatabase": 100000,
+    "distinctLiveTickets": 8000
+  },
+  "apiPerRole": { "cpu": 2, "memoryMiB": 768, "sqlPoolMax": 10 },
+  "generator": { "cpu": 2, "memoryMiB": 512, "rssStopMiB": 460 },
+  "sseStages": [2000, 4000, 6000, 8000],
+  "sseBurstSnapshotP95TargetMs": 10000,
+  "sustained": {
+    "simultaneousSse": 2000,
+    "arrivalRatesPerSecond": [20, 50, 100, 200],
+    "stageDurationSeconds": 60,
+    "inFlightLimit": 256,
+    "p95TargetMs": 5000
+  },
+  "httpErrorRateTarget": 0.01,
+  "heartbeatFreshnessMs": 45000,
+  "stopEscalatingOn": [
+    "generator memory guard",
+    "generator event loop p99 above 100 ms in sustained test",
+    "sustained p95 above 5000 ms",
+    "sustained errors above 1 percent",
+    "sustained concurrency cap reached",
+    "SSE setup/fanout timeout",
+    "SSE snapshot failures above 5 percent"
+  ],
+  "ordinaryEnvironmentAfterTest": "left stopped to preserve machine memory"
+}

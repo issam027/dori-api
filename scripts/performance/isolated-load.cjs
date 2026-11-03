@@ -23,6 +23,13 @@ const base = dockerRunner
     };
 const agent = new http.Agent({ keepAlive: true, maxSockets: Infinity });
 const tokens = {};
+const generatorMemoryMB = Number(process.env.PERF_GENERATOR_MAX_RSS_MB ?? 230);
+if (
+  !Number.isFinite(generatorMemoryMB) ||
+  generatorMemoryMB < 128 ||
+  generatorMemoryMB > 460
+)
+  throw new Error('Generator RSS guard must be between 128 and 460 MiB');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const db = (kind) =>
   new Client({
@@ -54,6 +61,11 @@ function distribution(values) {
     p99Ms: +at(0.99).toFixed(2),
     maxMs: +(sorted.at(-1) ?? 0).toFixed(2),
   };
+}
+function counterDelta(after, before, name) {
+  return typeof after[name] === 'number'
+    ? after[name] - (before[name] ?? 0)
+    : null;
 }
 async function request(kind, endpoint, options = {}) {
   const started = performance.now();
@@ -142,6 +154,7 @@ class Stream {
   }
   connect() {
     if (this.stopped) return;
+    this.connected = false;
     const endpoint =
       this.kind === 'cloud'
         ? 'realtime/tracking'
@@ -164,6 +177,7 @@ class Stream {
           return;
         }
         this.opened = true;
+        this.connected = true;
         this.openMs ??= performance.now() - this.started;
         let pending = '';
         response.setEncoding('utf8');
@@ -191,11 +205,18 @@ class Stream {
             }
           }
         });
-        response.on('error', () => this.retry());
-        response.on('close', () => this.retry());
+        response.on('error', () => {
+          this.connected = false;
+          this.retry();
+        });
+        response.on('close', () => {
+          this.connected = false;
+          this.retry();
+        });
       },
     );
     this.req.on('error', (error) => {
+      this.connected = false;
       this.errors[error.code ?? 'connection'] =
         (this.errors[error.code ?? 'connection'] ?? 0) + 1;
       this.retry();
@@ -288,6 +309,7 @@ async function bookings() {
 }
 async function sse() {
   await login();
+  const refetchEnabled = process.env.PERF_SSE_REFETCH !== 'false';
   const connection = db('intra');
   await connection.connect();
   const loop = monitorEventLoopDelay({ resolution: 20 });
@@ -299,7 +321,11 @@ async function sse() {
       .map(Number);
     if (
       !targets.length ||
-      targets.some((target) => ![100, 500, 1000, 2000].includes(target))
+      targets.some(
+        (target) =>
+          ![100, 500, 1000, 2000, 4000, 6000, 8000].includes(target) ||
+          target > fixture.intra.registrations.length,
+      )
     )
       throw new Error('PERF_SSE_TARGETS must select supported load stages');
     for (const target of targets) {
@@ -318,19 +344,18 @@ async function sse() {
                 if (
                   trigger &&
                   type === 'queue_position_changed' &&
-                  value.nonce === trigger.nonce
+                  value.nonce === trigger.nonce &&
+                  !client.delivered
                 ) {
+                  client.delivered = true;
                   latency.push(performance.now() - trigger.start);
-                  if (!client.refreshing) {
-                    client.refreshing = true;
+                  if (refetchEnabled) {
                     refetches.push(
                       request('intra', 'public/registrations/position', {
                         headers: {
                           'X-Registration-Token':
                             client.ticket.registration_tracking_token,
                         },
-                      }).finally(() => {
-                        client.refreshing = false;
                       }),
                     );
                   }
@@ -339,14 +364,14 @@ async function sse() {
             ),
           );
           if ((index + 1) % 50 === 0) {
-            if (process.memoryUsage().rss > 220 * 1048576)
+            if (process.memoryUsage().rss > (generatorMemoryMB - 10) * 1048576)
               throw new Error('Generator memory guard');
             await sleep(100);
           }
         }
         await until(
-          () => streams.every((s) => s.opened),
-          45000,
+          () => streams.every((s) => s.connected),
+          90000,
           'SSE ' + target + ' open',
         );
         await until(
@@ -375,7 +400,11 @@ async function sse() {
           'fanout ' + target,
         );
         const snapshots = await Promise.all(refetches);
-        const afterBurst = await metrics('intra');
+        let metricsUnavailable = false;
+        const afterBurst = await metrics('intra').catch(() => {
+          metricsUnavailable = true;
+          return {};
+        });
         const failures = snapshots.filter((r) => r.status !== 200).length;
         const resource = dockerRunner
           ? 'Recorded by the external Docker sampler'
@@ -393,22 +422,55 @@ async function sse() {
               ],
               { encoding: 'utf8' },
             ).trim();
-        if (process.memoryUsage().rss > 230 * 1048576)
-          throw new Error('Load generator exceeded its 230 MB memory guard');
+        if (process.memoryUsage().rss > generatorMemoryMB * 1048576)
+          throw new Error('Load generator exceeded its RSS memory guard');
         const result = {
           target,
+          snapshotMode: refetchEnabled
+            ? 'REST after SSE invalidation'
+            : 'transport only, no REST refetch',
           opened: streams.filter((s) => s.opened).length,
           heartbeatClients: streams.filter((s) => s.heartbeats > 0).length,
           openLatency: distribution(streams.map((s) => s.openMs)),
           eventLatency: distribution(latency),
           browserSnapshotReads: distribution(snapshots.map((r) => r.ms)),
           snapshotFailures: failures,
-          estimateSqlQueries:
-            (afterBurst.queueTicketEstimateQueriesTotal ?? 0) -
-            (idleAfter.intra.queueTicketEstimateQueriesTotal ?? 0),
-          estimatedTickets:
-            (afterBurst.queueTicketEstimateTicketsTotal ?? 0) -
-            (idleAfter.intra.queueTicketEstimateTicketsTotal ?? 0),
+          metricsUnavailable,
+          successfulSnapshotReads: distribution(
+            snapshots
+              .filter((record) => record.status === 200)
+              .map((record) => record.ms),
+          ),
+          snapshotClientErrors: snapshots
+            .filter((record) => record.status === 0)
+            .reduce((counts, record) => {
+              const name = record.error ?? 'unknown';
+              counts[name] = (counts[name] ?? 0) + 1;
+              return counts;
+            }, {}),
+          snapshotApiCodes: snapshots.reduce((counts, record) => {
+            const name = record.code ?? 'unavailable';
+            counts[name] = (counts[name] ?? 0) + 1;
+            return counts;
+          }, {}),
+          snapshotStatuses: snapshots.reduce((counts, item) => {
+            counts[item.status] = (counts[item.status] ?? 0) + 1;
+            return counts;
+          }, {}),
+          connected: streams.filter((s) => s.connected).length,
+          freshHeartbeatClients: streams.filter(
+            (s) => Date.now() - (s.lastHeartbeat ?? 0) < 45000,
+          ).length,
+          estimateSqlQueries: counterDelta(
+            afterBurst,
+            idleAfter.intra,
+            'queueTicketEstimateQueriesTotal',
+          ),
+          estimatedTickets: counterDelta(
+            afterBurst,
+            idleAfter.intra,
+            'queueTicketEstimateTicketsTotal',
+          ),
           idle16sTopicReads:
             (idleAfter.intra.sseTopicReadsTotal ?? 0) -
             (idleBefore.intra.sseTopicReadsTotal ?? 0),
@@ -419,7 +481,12 @@ async function sse() {
           generatorRssMB: Math.round(process.memoryUsage().rss / 1048576),
           resources: resource,
           passed: failures === 0 && latency.length === target / 2,
+          latencyThresholdPassed:
+            !refetchEnabled ||
+            distribution(snapshots.map((record) => record.ms)).p95Ms < 10000,
         };
+        if (!result.passed || !result.latencyThresholdPassed)
+          process.exitCode = 1;
         results.push(result);
         save('sse-ramp', results);
         if (failures > target * 0.05) break;
@@ -437,6 +504,7 @@ async function sse() {
           passed: false,
         });
         save('sse-ramp', results);
+        process.exitCode = 1;
         break;
       } finally {
         streams.forEach((s) => s.close());
@@ -446,6 +514,139 @@ async function sse() {
   } finally {
     loop.disable();
     await connection.end();
+  }
+}
+async function sustained() {
+  await login();
+  const streams = [],
+    results = [];
+  const rates = (process.env.PERF_RATES ?? '20,50,100,200')
+    .split(',')
+    .map(Number);
+  if (rates.some((rate) => ![20, 50, 100, 200].includes(rate)))
+    throw new Error('Unsupported arrival rate');
+  const duration = Number(process.env.PERF_STAGE_MS ?? 60000);
+  if (!Number.isFinite(duration) || duration < 10000 || duration > 300000)
+    throw new Error('Invalid stage duration');
+  const loop = monitorEventLoopDelay({ resolution: 20 });
+  loop.enable();
+  try {
+    for (let index = 0; index < 2000; index++) {
+      streams.push(
+        new Stream(
+          index % 2 ? 'intra' : 'cloud',
+          fixture.intra.registrations[index],
+        ),
+      );
+      if ((index + 1) % 50 === 0) await sleep(100);
+    }
+    await until(
+      () =>
+        streams.every((stream) => stream.connected && stream.heartbeats > 0),
+      90000,
+      'sustained SSE ready',
+    );
+    for (const rate of rates) {
+      const pending = new Set(),
+        records = [];
+      let arrivals = 0,
+        dropped = 0,
+        guardHit = false;
+      loop.reset();
+      const before = await metrics('intra');
+      const started = performance.now();
+      while (performance.now() - started < duration) {
+        const due = Math.min(
+          Math.floor(((performance.now() - started) * rate) / 1000),
+          Math.floor((duration * rate) / 1000),
+        );
+        while (arrivals < due) {
+          const ticket =
+            fixture.intra.registrations[
+              arrivals++ % fixture.intra.registrations.length
+            ];
+          if (pending.size >= 256) {
+            dropped++;
+            continue;
+          }
+          const work = request('intra', 'public/registrations/position', {
+            headers: {
+              'X-Registration-Token': ticket.registration_tracking_token,
+            },
+          })
+            .then((record) =>
+              records.push({ ...record, completedAt: performance.now() }),
+            )
+            .finally(() => pending.delete(work));
+          pending.add(work);
+        }
+        if (process.memoryUsage.rss() > generatorMemoryMB * 1048576) {
+          guardHit = true;
+          break;
+        }
+        await sleep(10);
+      }
+      const windowEnd = performance.now();
+      await Promise.all([...pending]);
+      const after = await metrics('intra');
+      const statuses = {};
+      records.forEach((record) => {
+        statuses[record.status] = (statuses[record.status] ?? 0) + 1;
+      });
+      const errors = records.filter((record) => record.status !== 200).length;
+      const latency = distribution(records.map((record) => record.ms));
+      const result = {
+        targetRps: rate,
+        plannedWindowMs: duration,
+        actualWindowMs: +(windowEnd - started).toFixed(2),
+        arrivals,
+        completed: records.length,
+        achievedRps: +(
+          records.filter((record) => record.completedAt <= windowEnd).length /
+          ((windowEnd - started) / 1000)
+        ).toFixed(2),
+        drainMs: +(performance.now() - windowEnd).toFixed(2),
+        droppedAtConcurrencyCap: dropped,
+        statuses,
+        errors,
+        latency,
+        estimateSqlQueries:
+          (after.queueTicketEstimateQueriesTotal ?? 0) -
+          (before.queueTicketEstimateQueriesTotal ?? 0),
+        estimatedTickets:
+          (after.queueTicketEstimateTicketsTotal ?? 0) -
+          (before.queueTicketEstimateTicketsTotal ?? 0),
+        connectedSse: streams.filter((stream) => stream.connected).length,
+        freshHeartbeatClients: streams.filter(
+          (stream) => Date.now() - (stream.lastHeartbeat ?? 0) < 45000,
+        ).length,
+        generatorLoopP99Ms: +(loop.percentile(99) / 1e6).toFixed(2),
+        generatorRssMB: Math.round(process.memoryUsage.rss() / 1048576),
+        generatorMemoryGuard: guardHit,
+        passed:
+          !guardHit &&
+          dropped === 0 &&
+          errors === 0 &&
+          streams.every((stream) => stream.connected),
+        latencyThresholdPassed: latency.p95Ms < 5000,
+      };
+      results.push(result);
+      save('sustained-position', results);
+      if (!result.passed || !result.latencyThresholdPassed)
+        process.exitCode = 1;
+      if (
+        guardHit ||
+        dropped > 0 ||
+        errors > records.length * 0.01 ||
+        latency.p95Ms > 5000 ||
+        result.generatorLoopP99Ms > 100
+      )
+        break;
+      await sleep(2000);
+    }
+  } finally {
+    loop.disable();
+    streams.forEach((stream) => stream.close());
   }
 }
 async function mixed() {
@@ -734,6 +935,7 @@ const modes = {
   protection,
   bookings,
   sse,
+  sustained,
   mixed,
   outage,
   cloudFanout,
@@ -741,7 +943,7 @@ const modes = {
 };
 if (!modes[process.argv[2]])
   throw new Error(
-    'Use protection|bookings|sse|mixed|outage|cloudFanout|environment',
+    'Use protection|bookings|sse|sustained|mixed|outage|cloudFanout|environment',
   );
 modes[process.argv[2]]()
   .catch((error) => {

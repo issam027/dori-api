@@ -1,0 +1,13 @@
+# Generator headroom only: API CPU, memory and SQL pools remain unchanged.
+services:
+  loadgen:
+    entrypoint:
+      [
+        'node',
+        '--max-old-space-size=384',
+        '/bench/scripts/performance/isolated-load.cjs',
+      ]
+    mem_limit: 512m
+    cpus: 2
+    environment:
+      PERF_GENERATOR_MAX_RSS_MB: 460

@@ -11,6 +11,10 @@ const identity = JSON.parse(
   fs.readFileSync(path.join(directory, 'identity.json'), 'utf8'),
 );
 const tierId = '72f4df8f-557c-4409-9057-c20c7998579e';
+const liveTickets = Number(process.env.PERF_LIVE_TICKETS ?? 2000);
+if (!Number.isInteger(liveTickets) || liveTickets < 2000 || liveTickets > 10000)
+  throw new Error('PERF_LIVE_TICKETS must be between 2000 and 10000');
+const peopleCount = Math.max(3000, liveTickets);
 const dbUrl = (kind) =>
   `postgresql://perf:perf_local_only@127.0.0.1:${kind === 'intra' ? 25432 : 65432}/dorify_perf`;
 async function fixture(kind) {
@@ -78,8 +82,8 @@ async function fixture(kind) {
     }
     const people = (
       await client.query(
-        "INSERT INTO dorify.dori_person(site_id,first_name,last_name,phone_number) SELECT $1,'Client','PERF-'||g,'+2165'||lpad(g::text,7,'0') FROM generate_series(1,3000) g RETURNING person_id",
-        [site],
+        "INSERT INTO dorify.dori_person(site_id,first_name,last_name,phone_number) SELECT $1,'Client','PERF-'||g,'+2165'||lpad(g::text,7,'0') FROM generate_series(1,$2::int) g RETURNING person_id",
+        [site, peopleCount],
       )
     ).rows.map((row) => row.person_id);
     const session = (
@@ -103,8 +107,8 @@ async function fixture(kind) {
         await client.query(
           `INSERT INTO dorify.dori_registration(person_id,queue_id,tier_id,business_date,ticket_number,entry_type,status,checked_in_at,priority_reference_time,registration_tracking_token_valid_until,language_preference)
         SELECT ($1::uuid[])[g],$2,$3,(CURRENT_TIMESTAMP AT TIME ZONE 'Africa/Tunis')::date,'L'||lpad(g::text,8,'0'),'walkin','waiting',CURRENT_TIMESTAMP-INTERVAL '10 minutes',CURRENT_TIMESTAMP-INTERVAL '10 minutes',CURRENT_TIMESTAMP+INTERVAL '8 hours','fr'
-        FROM generate_series(1,2000) g RETURNING registration_id,registration_tracking_token`,
-          [people, queues.live, tierId],
+        FROM generate_series(1,$4::int) g RETURNING registration_id,registration_tracking_token`,
+          [people, queues.live, tierId, liveTickets],
         )
       ).rows;
       await client.query(

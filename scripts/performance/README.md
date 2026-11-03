@@ -87,3 +87,31 @@ docker compose --env-file .tmp-consolidation/performance/runtime.env -f compose.
 Pour une nouvelle fixture, archiver les résultats puis retirer seulement le
 `fixture.json` de ce banc après suppression de ses bases. Ne jamais publier les
 fichiers privés d'identité ou d'environnement.
+
+## Campagne renforcée
+
+Le plan exploratoire est versionné dans `stress-plan.json`. Arrêter les
+environnements habituels libère les ressources avant cette campagne ; ils
+restent arrêtés après les essais. Les volumes habituels ne sont pas supprimés.
+
+Sur un banc neuf, préparer la fixture avec `PERF_LIVE_TICKETS=8000` et utiliser
+`-f compose.performance.yaml -f compose.performance.stress.yaml` pour les phases
+Docker. Le second fichier réserve 2 CPU et 512 Mio au générateur ; les API gardent
+2 CPU, 768 Mio et leur pool de 10 connexions. Les protections mémoire restent actives.
+
+- `run --rm -e PERF_SSE_TARGETS=2000,4000,6000,8000 loadgen sse` : montée avec rafale
+  de relectures ; arrêt des paliers après dépassement du seuil d'erreurs.
+- `run --rm -e PERF_SSE_TARGETS=8000 -e PERF_SSE_REFETCH=false loadgen sse` : transport
+  seul. Les distributions de relectures vides ne représentent aucune mesure REST.
+- `run --rm loadgen sustained` : 2 000 SSE maintenus, arrivées imposées de 20, 50,
+  100 puis 200 lectures/s, une minute par palier, avec au plus 256 requêtes en vol.
+  Les demandes abandonnées au plafond de concurrence sont comptées ; un palier
+  lent ne réduit pas silencieusement le débit demandé. Arrêt de la montée au
+  dépassement des seuils de latence, d'erreurs ou de ressources du générateur.
+
+Archiver chaque `sse-ramp.json` avant le mode suivant. Pour une comparaison avec
+l'ancien code, changer uniquement l'image de l'API intra sur le même jeu de
+données, redémarrer son proxy et rejouer un palier identique sans autre charge.
+Remettre ensuite l'image optimisée avant de poursuivre. Les erreurs client
+`status=0` se distinguent des réponses HTTP 5xx. Une mesure sans compteur disponible
+est marquée `null`, jamais interprétée comme une absence de requêtes SQL.
