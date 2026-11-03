@@ -1,0 +1,48 @@
+{
+  "info": {
+    "name": "Dorify isolated readiness reads",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": { "exec": ["setTimeout(function () {}, 100);"] }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "exec": [
+          "pm.test('HTTP success', function () { pm.response.to.have.status(200); });",
+          "pm.test('Successful API envelope', function () { pm.expect(pm.response.json()).to.have.property('data'); });"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Queue status",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/queues/{{queueId}}/status"
+      }
+    },
+    {
+      "name": "Live supervision",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/monitoring/live?siteId={{siteId}}"
+      }
+    },
+    {
+      "name": "Queue listing",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/queues?siteId={{siteId}}&page=1&pageSize=100"
+      }
+    }
+  ]
+}
