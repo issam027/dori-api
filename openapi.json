@@ -1060,9 +1060,10 @@
       "get": {
         "operationId": "SitesController_findSites",
         "x-required-permissions": {
-          "mode": "all",
+          "mode": "any",
           "permissions": [
-            "site_view"
+            "site_view",
+            "session_operate"
           ]
         },
         "summary": "Lister les sites",
@@ -1404,9 +1405,10 @@
       "get": {
         "operationId": "SitesController_findSite",
         "x-required-permissions": {
-          "mode": "all",
+          "mode": "any",
           "permissions": [
-            "site_view"
+            "site_view",
+            "session_operate"
           ]
         },
         "summary": "Détails d'un site",
@@ -18296,6 +18298,11 @@
             ],
             "description": "Type de compte"
           },
+          "languagePreference": {
+            "type": "string",
+            "example": "fr",
+            "description": "Preferred interface language"
+          },
           "roles": {
             "example": [
               "admin"
@@ -18510,6 +18517,11 @@
             ],
             "description": "Type de compte"
           },
+          "languagePreference": {
+            "type": "string",
+            "example": "fr",
+            "description": "Preferred interface language"
+          },
           "roles": {
             "example": [
               "admin"
@@ -18536,11 +18548,6 @@
             "type": "boolean",
             "example": false,
             "description": "Changement de mot de passe obligatoire"
-          },
-          "languagePreference": {
-            "type": "string",
-            "example": "fr",
-            "description": "Valeur du champ « language preference »."
           },
           "lastLogin": {
             "type": "object",
@@ -21795,6 +21802,11 @@
       "RegistrationPositionResponseDto": {
         "type": "object",
         "properties": {
+          "languagePreference": {
+            "type": "string",
+            "example": "ar-TN",
+            "description": "Language selected for this registration"
+          },
           "ticketNumber": {
             "type": "string",
             "example": "A-012",

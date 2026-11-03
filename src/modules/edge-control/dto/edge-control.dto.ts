@@ -64,6 +64,8 @@ export class EdgeRelayNotificationDto {
 }
 
 export class EdgeTrackingProjectionDto {
+  @IsOptional() @IsString() @MaxLength(10) languagePreference?: string;
+
   @Matches(/^[0-9a-f]{64}$/i) tokenHash!: string;
   @IsUUID() registrationId!: string;
   @IsInt() @Min(1) sequence!: number;

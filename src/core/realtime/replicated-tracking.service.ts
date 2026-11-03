@@ -65,7 +65,12 @@ export class ReplicatedTrackingService {
       defer(() => this.topic(hash)),
     ).pipe(
       exhaustMap((row) => {
-        const next = String(row.sequence) + ':' + row.source_connectivity;
+        const next =
+          String(row.sequence) +
+          ':' +
+          row.source_connectivity +
+          ':' +
+          (row.language_preference ?? '');
         if (next === version) return EMPTY;
         version = next;
         return of({
@@ -73,6 +78,7 @@ export class ReplicatedTrackingService {
           type: 'tracking_changed',
           retry: 3000,
           data: {
+            languagePreference: row.language_preference ?? 'fr',
             ticketNumber: row.ticket_number,
             status: row.registration_status,
             registrationStatus: row.registration_status,

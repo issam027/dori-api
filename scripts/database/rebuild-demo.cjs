@@ -119,6 +119,22 @@ async function main() {
             createHash('sha256').update(baseline).digest('hex'),
           ],
         );
+        for (const filename of fs
+          .readdirSync('src/core/database/sql/migrations')
+          .filter(
+            (file) => file.endsWith('.sql') && file !== '001_schema_final.sql',
+          )
+          .sort()) {
+          const sql = fs.readFileSync(
+            path.join('src/core/database/sql/migrations', filename),
+            'utf8',
+          );
+          await client.query(sql);
+          await client.query(
+            'INSERT INTO dorify.dori_schema_migration(filename,checksum) VALUES ($1,$2)',
+            [filename, createHash('sha256').update(sql).digest('hex')],
+          );
+        }
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -161,7 +177,10 @@ async function main() {
         throw new Error(`Demo integrity failed: ${JSON.stringify(checks)}`);
       if (
         Number(counts.sites) !== (target === 'intra' ? 1 : 10) ||
-        Number(counts.migrations) !== 1
+        Number(counts.migrations) !==
+          fs
+            .readdirSync('src/core/database/sql/migrations')
+            .filter((file) => file.endsWith('.sql')).length
       )
         throw new Error('Unexpected site or migration count');
       const results = await client.query(

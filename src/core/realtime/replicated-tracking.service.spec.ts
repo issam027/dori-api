@@ -27,6 +27,27 @@ describe('ReplicatedTrackingService', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
 
+  it('emits a language backfill even when a legacy snapshot keeps the same sequence', async () => {
+    const read = jest
+      .fn()
+      .mockResolvedValue({ ...row, language_preference: null });
+    const service = new ReplicatedTrackingService(
+      { findReplicatedTracking: read } as unknown as RealtimeRepository,
+      clock,
+    );
+    const events: MessageEvent[] = [];
+    const subscription = (await service.stream(token)).subscribe((event) =>
+      events.push(event),
+    );
+    read.mockResolvedValue({ ...row, language_preference: 'ar-TN' });
+    await jest.advanceTimersByTimeAsync(2000);
+    expect(events).toHaveLength(2);
+    expect(events[1].data).toEqual(
+      expect.objectContaining({ languagePreference: 'ar-TN' }),
+    );
+    subscription.unsubscribe();
+  });
+
   it('authorizes by hash, emits initial state and new versions, and closes on revocation', async () => {
     const read = jest.fn().mockResolvedValue({ ...row });
     const service = new ReplicatedTrackingService(

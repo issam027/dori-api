@@ -799,6 +799,7 @@ export class RegistrationsService {
         throw new DoriException('TOKEN_EXPIRED');
       }
       return {
+        languagePreference: projection.language_preference ?? 'fr',
         ticketNumber: projection.ticket_number,
         status: projection.registration_status,
         registrationStatus: projection.registration_status,
@@ -826,6 +827,8 @@ export class RegistrationsService {
           60_000
     ) {
       return {
+        languagePreference:
+          reg.tracking_locale ?? reg.language_preference ?? 'fr',
         status: 'closed',
         registrationStatus: reg.status,
       };
@@ -834,6 +837,8 @@ export class RegistrationsService {
     if (reg.status === 'in_progress') {
       const estimate = await this.waitEstimationService.estimate(reg, now);
       return {
+        languagePreference:
+          reg.tracking_locale ?? reg.language_preference ?? 'fr',
         ticketNumber: reg.ticket_number,
         status: 'in_progress',
         registrationStatus: reg.status,
@@ -851,6 +856,8 @@ export class RegistrationsService {
       const estimate = await this.waitEstimationService.estimate(reg, now);
 
       return {
+        languagePreference:
+          reg.tracking_locale ?? reg.language_preference ?? 'fr',
         ticketNumber: reg.ticket_number,
         status: 'waiting',
         registrationStatus: reg.status,
@@ -867,6 +874,8 @@ export class RegistrationsService {
     }
 
     return {
+      languagePreference:
+        reg.tracking_locale ?? reg.language_preference ?? 'fr',
       ticketNumber: reg.ticket_number,
       status: reg.status,
       registrationStatus: reg.status,

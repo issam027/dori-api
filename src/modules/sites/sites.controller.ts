@@ -40,7 +40,10 @@ import {
 } from './dto/site-response.dto';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
-import { RequirePermission } from '../../core/rbac/decorators/require-permission.decorator';
+import {
+  RequireAnyPermission,
+  RequirePermission,
+} from '../../core/rbac/decorators/require-permission.decorator';
 import { AuditEvent } from '../../core/audit/audit-event.decorator';
 
 @ApiTags('Sites')
@@ -51,7 +54,7 @@ export class SitesController {
   constructor(private readonly sitesService: SitesService) {}
 
   @Get()
-  @RequirePermission('site_view')
+  @RequireAnyPermission('site_view', 'session_operate')
   @ApiOperation({
     summary: 'Lister les sites',
     description:
@@ -87,7 +90,7 @@ export class SitesController {
   }
 
   @Get(':siteId')
-  @RequirePermission('site_view')
+  @RequireAnyPermission('site_view', 'session_operate')
   @ApiOperation({
     summary: "Détails d'un site",
     description: "Retourne la configuration complète d'un site spécifique.",

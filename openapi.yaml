@@ -588,9 +588,10 @@ paths:
     get:
       operationId: SitesController_findSites
       x-required-permissions:
-        mode: all
+        mode: any
         permissions:
           - site_view
+          - session_operate
       summary: Lister les sites
       description: >-
         Retourne la liste paginée de tous les sites d'accueil accessibles. Sans isActive, seules les ressources actives
@@ -773,9 +774,10 @@ paths:
     get:
       operationId: SitesController_findSite
       x-required-permissions:
-        mode: all
+        mode: any
         permissions:
           - site_view
+          - session_operate
       summary: Détails d'un site
       description: >-
         Retourne la configuration complète d'un site spécifique. L’accès direct par identifiant reste possible quel que
@@ -8809,6 +8811,10 @@ components:
             - human
             - kiosk
           description: Type de compte
+        languagePreference:
+          type: string
+          example: fr
+          description: Preferred interface language
         roles:
           example: &ref_125
             - admin
@@ -8964,6 +8970,10 @@ components:
           example: human
           enum: *ref_124
           description: Type de compte
+        languagePreference:
+          type: string
+          example: fr
+          description: Preferred interface language
         roles:
           example: *ref_125
           description: Rôles attribués
@@ -8980,10 +8990,6 @@ components:
           type: boolean
           example: false
           description: Changement de mot de passe obligatoire
-        languagePreference:
-          type: string
-          example: fr
-          description: Valeur du champ « language preference ».
         lastLogin:
           type: object
           format: date-time
@@ -11519,6 +11525,10 @@ components:
     RegistrationPositionResponseDto:
       type: object
       properties:
+        languagePreference:
+          type: string
+          example: ar-TN
+          description: Language selected for this registration
         ticketNumber:
           type: string
           example: A-012

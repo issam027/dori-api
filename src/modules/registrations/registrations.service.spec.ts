@@ -489,6 +489,8 @@ describe('RegistrationsService public position', () => {
         ),
         ticket_number: 'A-012',
         status: 'waiting',
+        languagePreference: 'ar-TN',
+        tracking_locale: 'ar-TN',
         queue_id: '00000000-0000-4000-8000-000000000001',
         queue_name: 'Accueil',
       }),
@@ -589,6 +591,7 @@ describe('RegistrationsService public position', () => {
     );
 
     expect(response).toEqual({
+      languagePreference: 'fr',
       status: 'closed',
       registrationStatus: 'served',
     });

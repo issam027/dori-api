@@ -19,6 +19,7 @@ export interface ReplicatedTrackingRow {
   estimated_wait_minutes: number | null;
   counter_name: string | null;
   queue_public_name: string | null;
+  language_preference?: string | null;
 }
 
 export interface RealtimeOutboxRow {
@@ -67,7 +68,7 @@ export class RealtimeRepository {
     const rows = await this.dataSource.query<ReplicatedTrackingRow[]>(
       `SELECT t.sequence, t.expires_at, t.observed_at, t.ticket_number,
               t.registration_status, t.position, t.estimated_wait_minutes,
-              t.counter_name, t.queue_public_name, e.deployment_status,
+              t.counter_name, t.queue_public_name, t.language_preference, e.deployment_status,
               CASE WHEN e.last_seen_at >= CURRENT_TIMESTAMP - INTERVAL '2 minutes'
                    THEN 'online' ELSE 'offline' END AS source_connectivity
        FROM dorify.dori_public_tracking_state t

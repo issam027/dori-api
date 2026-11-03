@@ -25,6 +25,12 @@ export class AuthUserDto {
   })
   userType: string;
 
+  @ApiPropertyOptional({
+    example: 'fr',
+    description: 'Preferred interface language',
+  })
+  languagePreference?: string;
+
   @ApiProperty({
     example: ['admin'],
     type: [String],

@@ -12,7 +12,7 @@ describe('consolidated database contract', () => {
   it('installs one complete baseline without historical column alterations', () => {
     expect(
       fs.readdirSync(directory).filter((file) => file.endsWith('.sql')),
-    ).toEqual(['001_schema_final.sql']);
+    ).toEqual(['001_schema_final.sql', '002_tracking_language.sql']);
     expect(sql).not.toMatch(/^\s*ALTER TABLE/gim);
     expect(sql.match(/^CREATE TABLE /gm)).toHaveLength(36);
     expect(sql.match(/^CREATE FUNCTION /gm)).toHaveLength(18);

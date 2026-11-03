@@ -131,14 +131,14 @@ export class EdgeControlRepository {
       `INSERT INTO dorify.dori_public_tracking_state
        (tracking_token_hash, registration_id, source_installation_id, source_registration_id,
         sequence, cloud_synced_sequence, ticket_number, registration_status, position,
-        estimated_wait_minutes, counter_name, queue_public_name, observed_at, expires_at, updated_at)
+        estimated_wait_minutes, counter_name, queue_public_name, language_preference, observed_at, expires_at, updated_at)
        SELECT x.token_hash, NULL, $2, x.registration_id, x.sequence, x.sequence,
               x.ticket_number, x.registration_status, x.position, x.estimated_wait_minutes,
-              x.counter_name, x.queue_name, x.observed_at, x.expires_at, CURRENT_TIMESTAMP
+              x.counter_name, x.queue_name, x.language_preference, x.observed_at, x.expires_at, CURRENT_TIMESTAMP
        FROM jsonb_to_recordset($1::jsonb) AS x(
          token_hash char(64), registration_id uuid, sequence bigint, ticket_number varchar,
          registration_status varchar, position int, estimated_wait_minutes int,
-         counter_name varchar, queue_name varchar, observed_at timestamptz, expires_at timestamptz)
+         counter_name varchar, queue_name varchar, language_preference varchar, observed_at timestamptz, expires_at timestamptz)
        ON CONFLICT (tracking_token_hash) DO UPDATE SET
          source_installation_id=EXCLUDED.source_installation_id,
          source_registration_id=EXCLUDED.source_registration_id,
@@ -146,8 +146,14 @@ export class EdgeControlRepository {
          ticket_number=EXCLUDED.ticket_number, registration_status=EXCLUDED.registration_status,
          position=EXCLUDED.position, estimated_wait_minutes=EXCLUDED.estimated_wait_minutes,
          counter_name=EXCLUDED.counter_name, queue_public_name=EXCLUDED.queue_public_name,
+         language_preference=COALESCE(EXCLUDED.language_preference,dorify.dori_public_tracking_state.language_preference),
          observed_at=EXCLUDED.observed_at, expires_at=EXCLUDED.expires_at, updated_at=CURRENT_TIMESTAMP
        WHERE EXCLUDED.sequence > dorify.dori_public_tracking_state.sequence
+          OR (EXCLUDED.sequence = dorify.dori_public_tracking_state.sequence
+            AND dorify.dori_public_tracking_state.language_preference IS NULL
+            AND EXCLUDED.language_preference IS NOT NULL
+            AND dorify.dori_public_tracking_state.source_installation_id=EXCLUDED.source_installation_id
+            AND dorify.dori_public_tracking_state.source_registration_id=EXCLUDED.source_registration_id)
        RETURNING tracking_token_hash`,
       [
         JSON.stringify(
@@ -161,6 +167,7 @@ export class EdgeControlRepository {
             estimated_wait_minutes: item.estimatedWaitMinutes ?? null,
             counter_name: item.counterName ?? null,
             queue_name: item.queueName,
+            language_preference: item.languagePreference ?? null,
             observed_at: item.observedAt,
             expires_at: item.expiresAt,
           })),

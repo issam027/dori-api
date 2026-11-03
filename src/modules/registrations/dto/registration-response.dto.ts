@@ -234,6 +234,12 @@ export class RegistrationAvailabilityResponseDto {
 }
 
 export class RegistrationPositionResponseDto {
+  @ApiPropertyOptional({
+    example: 'ar-TN',
+    description: 'Language selected for this registration',
+  })
+  languagePreference?: string;
+
   @ApiPropertyOptional({ example: 'A-012', description: 'Numéro de ticket' })
   ticketNumber?: string;
 

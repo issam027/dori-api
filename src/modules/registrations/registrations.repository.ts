@@ -590,12 +590,15 @@ export class RegistrationsRepository {
   async findByTrackingToken(token: string) {
     const rows = await this.dataSource.query(
       `SELECT ${registrationColumns('r')}, q.queue_name,
+              COALESCE(r.language_preference,p.language_preference,s.default_locale,'fr') AS tracking_locale,
               q.site_id,
               os.thread_number, os.counter_name
        FROM dorify.dori_registration r
        JOIN dorify.dori_queue q ON q.queue_id = r.queue_id
        LEFT JOIN dorify.dori_operator_session os
          ON os.session_id = r.served_by_session_id
+       JOIN dorify.dori_person p ON p.person_id=r.person_id
+       JOIN dorify.dori_site s ON s.site_id=q.site_id
        WHERE r.registration_tracking_token = $1`,
       [token],
     );
