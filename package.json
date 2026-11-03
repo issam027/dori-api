@@ -46,7 +46,9 @@
     "db:demo:backup": "node scripts/database/rebuild-demo.cjs backup",
     "db:demo:rebuild": "node scripts/database/rebuild-demo.cjs rebuild",
     "db:demo:verify": "node scripts/database/rebuild-demo.cjs verify",
-    "test:database-tools": "node --test scripts/database/*.test.cjs"
+    "test:database-tools": "node --test scripts/database/*.test.cjs",
+    "db:verify:report-periods": "ts-node -r tsconfig-paths/register scripts/verify-report-periods.ts",
+    "db:verify:inactive-service": "ts-node -r tsconfig-paths/register scripts/verify-inactive-service.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
