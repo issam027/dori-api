@@ -1,3 +1,4 @@
+import { appointmentSlotTimes } from './appointment-slots';
 import { Injectable } from '@nestjs/common';
 import {
   CreateRegistrationDto,
@@ -345,21 +346,13 @@ export class RegistrationsService {
       );
     }
 
-    // Generate the slot template once, then apply all bookings loaded by one query.
-    const [startH, startM] = startStr.split(':').map(Number);
-    const [endH, endM] = endStr.split(':').map(Number);
-
-    const firstSlotMinutes = startH * 60 + startM;
-    const endMinutes = endH * 60 + endM;
-
-    let breakStartMinutes = -1;
-    let breakEndMinutes = -1;
-    if (breakStartStr && breakEndStr) {
-      const [bsh, bsm] = breakStartStr.split(':').map(Number);
-      const [beh, bem] = breakEndStr.split(':').map(Number);
-      breakStartMinutes = bsh * 60 + bsm;
-      breakEndMinutes = beh * 60 + bem;
-    }
+    const slotTimes = appointmentSlotTimes(
+      startStr,
+      endStr,
+      slotDuration,
+      breakStartStr,
+      breakEndStr,
+    );
 
     // Count existing bookings for this date and queue
     const bookedCounts =
@@ -375,12 +368,6 @@ export class RegistrationsService {
         const slotIso = this.clockService.parse(b.scheduled_time).toISOString();
         const count = Number(b.count) || 0;
         bookingMap.set(slotIso, count);
-
-        const dateStr =
-          typeof b.business_date === 'string'
-            ? b.business_date
-            : this.clockService.dateInTimezone(b.scheduled_time, q.timezone);
-        bookingMap.set(`${dateStr}|${slotIso}`, count);
       }
     }
 
@@ -404,42 +391,30 @@ export class RegistrationsService {
         };
       }
 
-      const slots: SlotAvailabilityItemDto[] = [];
-      let currentMinutes = firstSlotMinutes;
-      while (currentMinutes + slotDuration <= endMinutes) {
-        if (
-          breakStartMinutes !== -1 &&
-          currentMinutes >= breakStartMinutes &&
-          currentMinutes < breakEndMinutes
-        ) {
-          currentMinutes += slotDuration;
-          continue;
-        }
-        const h = Math.floor(currentMinutes / 60);
-        const m = currentMinutes % 60;
-        const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
+      const slots: SlotAvailabilityItemDto[] | undefined = queryDto.summaryOnly
+        ? undefined
+        : [];
+      let bookedTotal = 0;
+      for (const time of slotTimes) {
         const slotIso = this.clockService
           .fromZonedTime(`${businessDate}T${time}`, q.timezone)
           .toISOString();
-        const booked =
-          bookingMap.get(slotIso) ??
-          bookingMap.get(`${businessDate}|${slotIso}`) ??
-          0;
+        const booked = bookingMap.get(slotIso) ?? 0;
+        bookedTotal += booked;
         const available = Math.max(0, slotCapacity - booked);
-        slots.push({
+        slots?.push({
           time: slotIso,
           capacity: slotCapacity,
           booked,
           available,
           isAvailable: available > 0,
         });
-        currentMinutes += slotDuration;
       }
-      const booked = slots.reduce((sum, slot) => sum + slot.booked, 0);
-      const capacity = slots.reduce((sum, slot) => sum + slot.capacity, 0);
+      const booked = bookedTotal;
+      const capacity = slotTimes.length * slotCapacity;
       return {
         businessDate,
-        isOpen: slots.length > 0,
+        isOpen: slotTimes.length > 0,
         capacity,
         booked,
         available: Math.max(0, capacity - booked),
