@@ -10,6 +10,35 @@ export interface MonitoringSeriesInput {
   timezone: string;
 }
 
+// Keep wait and service event attribution separate without duplicating every input row.
+function durationAverages(
+  bucket: MonitoringSeriesInput['bucket'],
+  byQueue: boolean,
+) {
+  const aggregate = (
+    kind: 'wait' | 'service',
+    event: string,
+    duration: string,
+  ) => `${kind}_averages AS (
+    SELECT ${byQueue ? 'r.queue_id,' : ''} date_trunc('${bucket}', r.${event} AT TIME ZONE $8) AS period_start,
+      ROUND(AVG(${duration})::numeric,2) AS average_${kind}_minutes,
+      ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ${duration})::numeric,2) AS median_${kind}_minutes,
+      ROUND(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY ${duration})::numeric,2) AS p90_${kind}_minutes
+    FROM scoped r WHERE r.${event} >= $2::timestamptz AND r.${event} < $3::timestamptz
+    GROUP BY ${byQueue ? 'r.queue_id,' : ''} period_start
+  )`;
+  return `${aggregate('wait', 'called_at', 'EXTRACT(EPOCH FROM (r.called_at-r.checked_in_at))/60')},
+    ${aggregate('service', 'served_at', 'EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60')},
+    averages AS (
+      SELECT ${byQueue ? 'COALESCE(w.queue_id,s.queue_id) AS queue_id,' : ''}
+        COALESCE(w.period_start,s.period_start) AS period_start,
+        w.average_wait_minutes,w.median_wait_minutes,w.p90_wait_minutes,
+        s.average_service_minutes,s.median_service_minutes,s.p90_service_minutes
+      FROM wait_averages w FULL JOIN service_averages s ON w.period_start=s.period_start
+        ${byQueue ? 'AND w.queue_id=s.queue_id' : ''}
+    )`;
+}
+
 export function monitoringSeriesQueries(input: MonitoringSeriesInput) {
   const scopedParams = [
     input.queueIds,
@@ -31,6 +60,7 @@ export function monitoringSeriesQueries(input: MonitoringSeriesInput) {
         AND ($6::text[] IS NULL OR r.status = ANY($6))
         AND ($7::text[] IS NULL OR r.entry_type = ANY($7))
         AND (r.created_at >= $2::timestamptz AND r.created_at < $3::timestamptz
+          OR r.called_at >= $2::timestamptz AND r.called_at < $3::timestamptz
           OR r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz
           OR r.closed_at >= $2::timestamptz AND r.closed_at < $3::timestamptz)
     )`;
@@ -92,19 +122,8 @@ export function monitoringSeriesQueries(input: MonitoringSeriesInput) {
             FROM events
             WHERE event_at >= $2::timestamptz AND event_at < $3::timestamptz
             GROUP BY 1
-          ), averages AS (
-            SELECT date_trunc('${input.bucket}', COALESCE(r.served_at, r.called_at) AT TIME ZONE $8) AS period_start,
-              ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at - r.checked_in_at))/60)::numeric, 2) AS average_wait_minutes,
-              ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (r.called_at-r.checked_in_at))/60)::numeric, 2) AS median_wait_minutes,
-              ROUND(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (r.called_at-r.checked_in_at))/60)::numeric, 2) AS p90_wait_minutes,
-              ROUND(AVG(EXTRACT(EPOCH FROM (r.served_at - r.called_at))/60)::numeric, 2) AS average_service_minutes,
-              ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60)::numeric, 2) AS median_service_minutes,
-              ROUND(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60)::numeric, 2) AS p90_service_minutes
-            FROM scoped r
-            WHERE r.called_at IS NOT NULL
-            GROUP BY 1
-          )
-          SELECT p.period_start,
+          ), ${durationAverages(input.bucket, false)}
+          SELECT p.period_start AT TIME ZONE 'UTC' AS period_start,
             COALESCE(c.registered, 0) AS registered,
             COALESCE(c.served, 0) AS served,
             COALESCE(c.no_show, 0) AS no_show,
@@ -142,25 +161,16 @@ export function monitoringSeriesQueries(input: MonitoringSeriesInput) {
             FROM events
             WHERE event_at >= $2::timestamptz AND event_at < $3::timestamptz
             GROUP BY queue_id, period_start
-          ), averages AS (
-            SELECT queue_id,
-              date_trunc('${input.bucket}', COALESCE(served_at, called_at) AT TIME ZONE $8) AS period_start,
-              ROUND(AVG(EXTRACT(EPOCH FROM (called_at - checked_in_at))/60)::numeric, 2) AS average_wait_minutes,
-              ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (called_at-checked_in_at))/60)::numeric, 2) AS median_wait_minutes,
-              ROUND(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (called_at-checked_in_at))/60)::numeric, 2) AS p90_wait_minutes,
-              ROUND(AVG(EXTRACT(EPOCH FROM (served_at - called_at))/60)::numeric, 2) AS average_service_minutes,
-              ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (served_at-called_at))/60)::numeric, 2) AS median_service_minutes,
-              ROUND(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (served_at-called_at))/60)::numeric, 2) AS p90_service_minutes
-            FROM scoped
-            WHERE called_at IS NOT NULL
-            GROUP BY queue_id, period_start
-          )
-          SELECT c.queue_id, c.period_start, c.registered, c.served, c.no_show, c.cancelled,
+          ), ${durationAverages(input.bucket, true)}
+          SELECT COALESCE(c.queue_id,a.queue_id) AS queue_id,
+            COALESCE(c.period_start,a.period_start) AT TIME ZONE 'UTC' AS period_start,
+            COALESCE(c.registered,0) AS registered, COALESCE(c.served,0) AS served,
+            COALESCE(c.no_show,0) AS no_show, COALESCE(c.cancelled,0) AS cancelled,
             a.average_wait_minutes, a.median_wait_minutes, a.p90_wait_minutes,
             a.average_service_minutes, a.median_service_minutes, a.p90_service_minutes
           FROM counts c
-          LEFT JOIN averages a ON a.queue_id=c.queue_id AND a.period_start=c.period_start
-          ORDER BY c.queue_id, c.period_start`,
+          FULL JOIN averages a ON a.queue_id=c.queue_id AND a.period_start=c.period_start
+          ORDER BY queue_id, period_start`,
       seriesParams,
     ),
     statement(
