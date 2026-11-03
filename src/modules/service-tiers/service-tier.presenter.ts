@@ -19,7 +19,7 @@ export function presentQueueTier(row: QueueTierRow): QueueTierResponseDto {
       tierName: row.tier_name,
       description: row.tier_description ?? row.description,
       isSystem: row.is_system,
-      isActive: row.is_active,
+      isActive: row.tier_is_active ?? row.is_active,
     },
   };
 }

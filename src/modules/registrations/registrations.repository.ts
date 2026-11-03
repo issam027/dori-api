@@ -94,7 +94,8 @@ export class RegistrationsTransaction {
        JOIN dorify.dori_service_tier t ON t.tier_id = qt.tier_id
        JOIN dorify.dori_queue q ON q.queue_id = qt.queue_id
        JOIN dorify.dori_site s ON s.site_id = q.site_id
-       WHERE qt.queue_id = $1 AND qt.tier_id = $2 AND qt.is_active = TRUE`,
+       WHERE qt.queue_id = $1 AND qt.tier_id = $2 AND qt.is_active = TRUE
+         AND qt.deleted_at IS NULL AND t.is_active = TRUE AND t.deleted_at IS NULL`,
       [queueId, tierId],
     );
     return rows[0] ?? null;

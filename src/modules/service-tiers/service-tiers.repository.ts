@@ -30,6 +30,7 @@ export type QueueTierRow = Record<string, unknown> & {
   tier_code: string;
   tier_name: string;
   tier_description?: string;
+  tier_is_active?: boolean;
   description?: string;
   is_system: boolean;
 };
@@ -157,7 +158,7 @@ export class ServiceTiersRepository {
               CASE WHEN qt.currency IS NOT NULL THEN 'association'
                    WHEN q.currency IS NOT NULL THEN 'queue' ELSE 'site' END AS currency_origin,
               qt.is_active, qt.is_default, qt.display_order,
-              t.tier_code, t.tier_name, t.description, t.is_system
+              t.tier_code, t.tier_name, t.description, t.is_system, t.is_active AS tier_is_active
        FROM dorify.dori_queue_service_tier qt
        JOIN dorify.dori_service_tier t ON t.tier_id = qt.tier_id
        JOIN dorify.dori_queue q ON q.queue_id = qt.queue_id
@@ -176,8 +177,10 @@ export class ServiceTiersRepository {
     offset: number;
   }) {
     const counts: Array<{ total: number }> = await this.dataSource.query(
-      `SELECT COUNT(*)::int AS total FROM dorify.dori_queue_service_tier
-       WHERE queue_id = $1 AND is_active = TRUE`,
+      `SELECT COUNT(*)::int AS total FROM dorify.dori_queue_service_tier qt
+       JOIN dorify.dori_service_tier t ON t.tier_id=qt.tier_id
+       WHERE qt.queue_id = $1 AND qt.is_active = TRUE AND qt.deleted_at IS NULL
+         AND t.is_active = TRUE AND t.deleted_at IS NULL`,
       [input.queueId],
     );
     const items: QueueTierRow[] = await this.dataSource.query(
@@ -187,12 +190,13 @@ export class ServiceTiersRepository {
               COALESCE(qt.currency, q.currency, s.default_currency) AS currency,
               CASE WHEN qt.currency IS NOT NULL THEN 'association'
                    WHEN q.currency IS NOT NULL THEN 'queue' ELSE 'site' END AS currency_origin,
-              t.tier_code, t.tier_name, t.description AS tier_description, t.is_system
+              t.tier_code, t.tier_name, t.description AS tier_description, t.is_system, t.is_active AS tier_is_active
        FROM dorify.dori_queue_service_tier qt
        JOIN dorify.dori_service_tier t ON t.tier_id = qt.tier_id
        JOIN dorify.dori_queue q ON q.queue_id = qt.queue_id
        JOIN dorify.dori_site s ON s.site_id = q.site_id
-       WHERE qt.queue_id = $1 AND qt.is_active = TRUE
+       WHERE qt.queue_id = $1 AND qt.is_active = TRUE AND qt.deleted_at IS NULL
+         AND t.is_active = TRUE AND t.deleted_at IS NULL
        ORDER BY qt.${input.sortField} ${input.sortOrder}, qt.tier_id ASC LIMIT $2 OFFSET $3`,
       [input.queueId, input.pageSize, input.offset],
     );
