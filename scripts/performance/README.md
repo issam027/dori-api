@@ -56,6 +56,18 @@ langue servent à suivre des mises à jour réelles de projections et sont resta
 Les pannes utilisent Docker depuis l'hôte. Attendre le retour des projections
 en français avant d'enchaîner deux phases de panne.
 
+Pour comparer deux versions, les variables `PERF_API_IMAGE` et `PERF_AGENT_IMAGE`
+permettent de sélectionner des images dédiées dans le fichier privé `runtime.env`.
+Recréer les API puis redémarrer les proxies nginx après un changement d'image.
+Conserver les résultats de référence avant de rejouer un mode qui les remplace.
+Le scénario SSE relève aussi le nombre de requêtes SQL d'estimation et le nombre
+de tickets traités, lorsque l'image API expose ces compteurs.
+
+`docker compose ... run --rm -e PERF_SSE_TARGETS=500,2000 loadgen sse` permet de
+rejouer seulement ces paliers. Les autres valeurs admises sont 100 et 1 000.
+Le générateur de synthèse accepte un chemin de sortie en argument pour conserver
+la référence : `node scripts/performance/summarize-readiness.cjs reports/performance/readiness-optimized-2026-11-03.json`.
+
 Les fichiers JSON sont des observations, pas une certification de capacité.
 `passed` contrôle les invariants fonctionnels ; il ne valide aucun SLA de latence.
 Consulter séparément p95, erreurs, ressources et configuration des limites.

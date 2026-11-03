@@ -59,7 +59,7 @@ services:
     image: redis:7-alpine
     networks: [cloud]
   intra-api:
-    image: dorify/engine:dev
+    image: ${PERF_API_IMAGE:-dorify/engine:dev}
     init: true
     mem_limit: 768m
     cpus: 2
@@ -77,7 +77,7 @@ services:
     networks:
       intra: { aliases: [engine] }
   cloud-api:
-    image: dorify/engine:dev
+    image: ${PERF_API_IMAGE:-dorify/engine:dev}
     init: true
     mem_limit: 768m
     cpus: 2
@@ -105,7 +105,7 @@ services:
     depends_on: [cloud-api]
     networks: [cloud]
   agent:
-    image: dorify/agent:dev
+    image: ${PERF_AGENT_IMAGE:-dorify/agent:dev}
     init: true
     mem_limit: 256m
     environment:

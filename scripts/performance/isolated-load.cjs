@@ -294,7 +294,15 @@ async function sse() {
   loop.enable();
   const results = [];
   try {
-    for (const target of [100, 500, 1000, 2000]) {
+    const targets = (process.env.PERF_SSE_TARGETS ?? '100,500,1000,2000')
+      .split(',')
+      .map(Number);
+    if (
+      !targets.length ||
+      targets.some((target) => ![100, 500, 1000, 2000].includes(target))
+    )
+      throw new Error('PERF_SSE_TARGETS must select supported load stages');
+    for (const target of targets) {
       const streams = [],
         refetches = [],
         latency = [];
@@ -367,6 +375,7 @@ async function sse() {
           'fanout ' + target,
         );
         const snapshots = await Promise.all(refetches);
+        const afterBurst = await metrics('intra');
         const failures = snapshots.filter((r) => r.status !== 200).length;
         const resource = dockerRunner
           ? 'Recorded by the external Docker sampler'
@@ -394,6 +403,12 @@ async function sse() {
           eventLatency: distribution(latency),
           browserSnapshotReads: distribution(snapshots.map((r) => r.ms)),
           snapshotFailures: failures,
+          estimateSqlQueries:
+            (afterBurst.queueTicketEstimateQueriesTotal ?? 0) -
+            (idleAfter.intra.queueTicketEstimateQueriesTotal ?? 0),
+          estimatedTickets:
+            (afterBurst.queueTicketEstimateTicketsTotal ?? 0) -
+            (idleAfter.intra.queueTicketEstimateTicketsTotal ?? 0),
           idle16sTopicReads:
             (idleAfter.intra.sseTopicReadsTotal ?? 0) -
             (idleBefore.intra.sseTopicReadsTotal ?? 0),

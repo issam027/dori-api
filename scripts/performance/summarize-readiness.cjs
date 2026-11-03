@@ -57,13 +57,14 @@ const result = {
   caveats: [
     'Capacity phases override rate limits only on the isolated bench.',
     'passed means functional invariants, not latency SLA.',
-    'Postman run aborted by host memory protection; not a completed capacity result.',
-    'Three-minute mixed run is not a long-duration soak.',
+    'The reference Postman run aborted by host memory protection; not a completed capacity result.',
+    'A three-minute mixed run, when included, is not a long-duration soak.',
   ],
   observations,
   sampledResources: resources,
 };
 fs.mkdirSync('reports/performance', { recursive: true });
-const destination = 'reports/performance/readiness-2026-11-03.json';
+const destination =
+  process.argv[2] ?? 'reports/performance/readiness-2026-11-03.json';
 fs.writeFileSync(destination, JSON.stringify(result, null, 2) + '\n');
 console.log('Sanitized observations exported to ' + destination);
