@@ -1,0 +1,429 @@
+{
+  "generatedAt": "2026-11-03T21:53:32.052Z",
+  "scope": "Isolated local Docker, one API per role, HTTP through nginx; not production certification",
+  "caveats": [
+    "Capacity phases override rate limits only on the isolated bench.",
+    "passed means functional invariants, not latency SLA.",
+    "Any Postman run aborted by system protections is incomplete and cannot establish API capacity.",
+    "A three-minute mixed run, when included, is not a long-duration soak."
+  ],
+  "observations": {
+    "default-protection": {
+      "notCompleted": true
+    },
+    "booking-contention": {
+      "notCompleted": true
+    },
+    "sse-ramp": {
+      "notCompleted": true
+    },
+    "sse-burst-stress": [
+      {
+        "target": 2000,
+        "opened": 2000,
+        "heartbeatClients": 2000,
+        "openLatency": {
+          "count": 2000,
+          "p50Ms": 2919.95,
+          "p95Ms": 4882.16,
+          "p99Ms": 5071.71,
+          "maxMs": 5129.85
+        },
+        "eventLatency": {
+          "count": 1000,
+          "p50Ms": 748.55,
+          "p95Ms": 1080.25,
+          "p99Ms": 1103.43,
+          "maxMs": 1123.18
+        },
+        "browserSnapshotReads": {
+          "count": 1000,
+          "p50Ms": 2493.26,
+          "p95Ms": 7408.48,
+          "p99Ms": 7751.63,
+          "maxMs": 7824.21
+        },
+        "snapshotFailures": 0,
+        "snapshotStatuses": {
+          "200": 1000
+        },
+        "connected": 2000,
+        "freshHeartbeatClients": 2000,
+        "estimateSqlQueries": 170,
+        "estimatedTickets": 1000,
+        "idle16sTopicReads": 0,
+        "idle16sReplicatedReads": 0,
+        "generatorLoopP99Ms": 43.19,
+        "generatorRssMB": 108,
+        "resources": "Recorded by the external Docker sampler",
+        "passed": true
+      },
+      {
+        "target": 4000,
+        "opened": 4000,
+        "heartbeatClients": 4000,
+        "openLatency": {
+          "count": 4000,
+          "p50Ms": 4693.15,
+          "p95Ms": 9715.28,
+          "p99Ms": 11949.26,
+          "maxMs": 14644.07
+        },
+        "eventLatency": {
+          "count": 2000,
+          "p50Ms": 2582.29,
+          "p95Ms": 3668.69,
+          "p99Ms": 3831.07,
+          "maxMs": 3930.56
+        },
+        "browserSnapshotReads": {
+          "count": 2000,
+          "p50Ms": 15082.53,
+          "p95Ms": 15475.9,
+          "p99Ms": 15523.87,
+          "maxMs": 15525.47
+        },
+        "snapshotFailures": 1123,
+        "snapshotStatuses": {
+          "0": 1114,
+          "200": 877,
+          "502": 9
+        },
+        "connected": 4000,
+        "freshHeartbeatClients": 4000,
+        "estimateSqlQueries": 397,
+        "estimatedTickets": 1811,
+        "idle16sTopicReads": 0,
+        "idle16sReplicatedReads": 0,
+        "generatorLoopP99Ms": 77.07,
+        "generatorRssMB": 143,
+        "resources": "Recorded by the external Docker sampler",
+        "passed": false
+      }
+    ],
+    "sse-transport-stress": [
+      {
+        "target": 8000,
+        "snapshotMode": "transport only, no REST refetch",
+        "opened": 8000,
+        "heartbeatClients": 8000,
+        "openLatency": {
+          "count": 8000,
+          "p50Ms": 2633.37,
+          "p95Ms": 8559.98,
+          "p99Ms": 11272.16,
+          "maxMs": 15393.64
+        },
+        "eventLatency": {
+          "count": 4000,
+          "p50Ms": 2544.62,
+          "p95Ms": 4774.83,
+          "p99Ms": 4952.82,
+          "maxMs": 4994.27
+        },
+        "browserSnapshotReads": {
+          "count": 0,
+          "p50Ms": 0,
+          "p95Ms": 0,
+          "p99Ms": 0,
+          "maxMs": 0
+        },
+        "snapshotFailures": 0,
+        "metricsUnavailable": false,
+        "successfulSnapshotReads": {
+          "count": 0,
+          "p50Ms": 0,
+          "p95Ms": 0,
+          "p99Ms": 0,
+          "maxMs": 0
+        },
+        "snapshotClientErrors": {},
+        "snapshotStatuses": {},
+        "connected": 8000,
+        "freshHeartbeatClients": 8000,
+        "estimateSqlQueries": 0,
+        "estimatedTickets": 0,
+        "idle16sTopicReads": 0,
+        "idle16sReplicatedReads": 4000,
+        "generatorLoopP99Ms": 55.35,
+        "generatorRssMB": 165,
+        "resources": "Recorded by the external Docker sampler",
+        "passed": true
+      }
+    ],
+    "sse-baseline-stress": [
+      {
+        "target": 2000,
+        "snapshotMode": "REST after SSE invalidation",
+        "opened": 2000,
+        "heartbeatClients": 2000,
+        "openLatency": {
+          "count": 2000,
+          "p50Ms": 203.63,
+          "p95Ms": 997.6,
+          "p99Ms": 1065.88,
+          "maxMs": 1096.15
+        },
+        "eventLatency": {
+          "count": 1000,
+          "p50Ms": 778.95,
+          "p95Ms": 1130.85,
+          "p99Ms": 1149.84,
+          "maxMs": 1166.97
+        },
+        "browserSnapshotReads": {
+          "count": 1000,
+          "p50Ms": 7272.07,
+          "p95Ms": 8608.68,
+          "p99Ms": 9642.79,
+          "maxMs": 9949.69
+        },
+        "snapshotFailures": 428,
+        "metricsUnavailable": false,
+        "successfulSnapshotReads": {
+          "count": 572,
+          "p50Ms": 4355,
+          "p95Ms": 9016.87,
+          "p99Ms": 9765.8,
+          "maxMs": 9949.69
+        },
+        "snapshotClientErrors": {},
+        "snapshotStatuses": {
+          "200": 572,
+          "500": 428
+        },
+        "connected": 2000,
+        "freshHeartbeatClients": 2000,
+        "estimateSqlQueries": null,
+        "estimatedTickets": null,
+        "idle16sTopicReads": 0,
+        "idle16sReplicatedReads": 0,
+        "generatorLoopP99Ms": 32.54,
+        "generatorRssMB": 108,
+        "resources": "Recorded by the external Docker sampler",
+        "passed": false,
+        "latencyThresholdPassed": true
+      }
+    ],
+    "sustained-position": [
+      {
+        "targetRps": 20,
+        "plannedWindowMs": 60000,
+        "actualWindowMs": 60006.07,
+        "arrivals": 1199,
+        "completed": 1199,
+        "achievedRps": 19.96,
+        "drainMs": 33.7,
+        "droppedAtConcurrencyCap": 0,
+        "statuses": {
+          "200": 1199
+        },
+        "errors": 0,
+        "latency": {
+          "count": 1199,
+          "p50Ms": 129.45,
+          "p95Ms": 464.94,
+          "p99Ms": 1106.31,
+          "maxMs": 1586.95
+        },
+        "estimateSqlQueries": 1135,
+        "estimatedTickets": 1199,
+        "connectedSse": 2000,
+        "freshHeartbeatClients": 2000,
+        "generatorLoopP99Ms": 30.7,
+        "generatorRssMB": 98,
+        "generatorMemoryGuard": false,
+        "passed": true,
+        "latencyThresholdPassed": true
+      },
+      {
+        "targetRps": 50,
+        "plannedWindowMs": 60000,
+        "actualWindowMs": 60006.29,
+        "arrivals": 2999,
+        "completed": 2999,
+        "achievedRps": 49.91,
+        "drainMs": 58.78,
+        "droppedAtConcurrencyCap": 0,
+        "statuses": {
+          "200": 2999
+        },
+        "errors": 0,
+        "latency": {
+          "count": 2999,
+          "p50Ms": 153.58,
+          "p95Ms": 280.9,
+          "p99Ms": 363.62,
+          "maxMs": 536.25
+        },
+        "estimateSqlQueries": 1521,
+        "estimatedTickets": 2999,
+        "connectedSse": 2000,
+        "freshHeartbeatClients": 2000,
+        "generatorLoopP99Ms": 22.87,
+        "generatorRssMB": 101,
+        "generatorMemoryGuard": false,
+        "passed": true,
+        "latencyThresholdPassed": true
+      },
+      {
+        "targetRps": 100,
+        "plannedWindowMs": 60000,
+        "actualWindowMs": 60008.93,
+        "arrivals": 5999,
+        "completed": 5999,
+        "achievedRps": 98.57,
+        "drainMs": 379.97,
+        "droppedAtConcurrencyCap": 0,
+        "statuses": {
+          "200": 5999
+        },
+        "errors": 0,
+        "latency": {
+          "count": 5999,
+          "p50Ms": 222.88,
+          "p95Ms": 1150.35,
+          "p99Ms": 1896.79,
+          "maxMs": 2205.33
+        },
+        "estimateSqlQueries": 1655,
+        "estimatedTickets": 5999,
+        "connectedSse": 2000,
+        "freshHeartbeatClients": 2000,
+        "generatorLoopP99Ms": 36.31,
+        "generatorRssMB": 104,
+        "generatorMemoryGuard": false,
+        "passed": true,
+        "latencyThresholdPassed": true
+      },
+      {
+        "targetRps": 200,
+        "plannedWindowMs": 60000,
+        "actualWindowMs": 60009.75,
+        "arrivals": 11999,
+        "completed": 8029,
+        "achievedRps": 129.55,
+        "drainMs": 1399.06,
+        "droppedAtConcurrencyCap": 3970,
+        "statuses": {
+          "200": 8029
+        },
+        "errors": 0,
+        "latency": {
+          "count": 8029,
+          "p50Ms": 1642.02,
+          "p95Ms": 3458.57,
+          "p99Ms": 4148.28,
+          "maxMs": 4449.19
+        },
+        "estimateSqlQueries": 1505,
+        "estimatedTickets": 8029,
+        "connectedSse": 2000,
+        "freshHeartbeatClients": 2000,
+        "generatorLoopP99Ms": 44.17,
+        "generatorRssMB": 109,
+        "generatorMemoryGuard": false,
+        "passed": false,
+        "latencyThresholdPassed": true
+      }
+    ],
+    "postman-stress": {
+      "runner": "Postman local",
+      "virtualUsers": 16,
+      "requestedDurationSeconds": 60,
+      "completed": false,
+      "observed": {
+        "elapsedSeconds": 23,
+        "requests": 900,
+        "errors": 0,
+        "averageResponseTimeMs": 222,
+        "rps": 39.130434782608695
+      },
+      "abort": {
+        "code": "PERFORMANCE_TEST_FAILED",
+        "metric": "host CPU",
+        "value": 97.8
+      },
+      "thresholdVerdict": "incomplete; not an API capacity result"
+    },
+    "mixed-soak": {
+      "notCompleted": true
+    },
+    "cloud-fanout": {
+      "notCompleted": true
+    },
+    "cloud-outage": {
+      "notCompleted": true
+    },
+    "network-partition": {
+      "notCompleted": true
+    }
+  },
+  "sampledResources": {
+    "dorify-perf-cloud-ui-1": {
+      "samples": 176,
+      "cpuPercentMax": 55.16,
+      "memoryMiBMax": 139.1
+    },
+    "dorify-perf-agent-1": {
+      "samples": 176,
+      "cpuPercentMax": 15.51,
+      "memoryMiBMax": 30.75
+    },
+    "dorify-perf-intra-ui-1": {
+      "samples": 176,
+      "cpuPercentMax": 96.19,
+      "memoryMiBMax": 140.1
+    },
+    "dorify-perf-cloud-api-1": {
+      "samples": 176,
+      "cpuPercentMax": 181.56,
+      "memoryMiBMax": 400.6
+    },
+    "dorify-perf-intra-api-1": {
+      "samples": 176,
+      "cpuPercentMax": 177.52,
+      "memoryMiBMax": 329.9
+    },
+    "dorify-perf-intra-db-1": {
+      "samples": 176,
+      "cpuPercentMax": 828.05,
+      "memoryMiBMax": 191.3
+    },
+    "dorify-perf-intra-redis-1": {
+      "samples": 176,
+      "cpuPercentMax": 23.17,
+      "memoryMiBMax": 10.16
+    },
+    "dorify-perf-cloud-db-1": {
+      "samples": 176,
+      "cpuPercentMax": 137.56,
+      "memoryMiBMax": 408
+    },
+    "dorify-perf-cloud-redis-1": {
+      "samples": 176,
+      "cpuPercentMax": 20.12,
+      "memoryMiBMax": 5.41
+    },
+    "dorify-perf-loadgen-run-28b3de1d5b2e": {
+      "samples": 22,
+      "cpuPercentMax": 140.5,
+      "memoryMiBMax": 124.8
+    },
+    "dorify-perf-loadgen-run-7db2d9fa2bfd": {
+      "samples": 13,
+      "cpuPercentMax": 132.11,
+      "memoryMiBMax": 151.8
+    },
+    "dorify-perf-loadgen-run-41098fe101aa": {
+      "samples": 46,
+      "cpuPercentMax": 55.21,
+      "memoryMiBMax": 72.95
+    },
+    "dorify-perf-loadgen-run-9505fb4be458": {
+      "samples": 9,
+      "cpuPercentMax": 43.34,
+      "memoryMiBMax": 71.29
+    }
+  }
+}
