@@ -1,3 +1,4 @@
+import { Subject } from 'rxjs';
 import { RealtimeAuthorizationService } from './realtime-authorization.service';
 import { RealtimeController } from './realtime.controller';
 import { RealtimeService } from './realtime.service';
@@ -40,7 +41,12 @@ describe('Realtime authorization lifecycle', () => {
     };
     const scope = { checkQueueAccess: jest.fn().mockResolvedValue(undefined) };
     const clock = new ClockService();
-    const service = new RealtimeService(clock, repository as never);
+    const changes = new Subject<unknown>();
+    const service = new RealtimeService(
+      clock,
+      repository as never,
+      { connected: true, changes: () => changes } as never,
+    );
     const controller = new RealtimeController(
       service,
       new RealtimeAuthorizationService(
@@ -50,13 +56,13 @@ describe('Realtime authorization lifecycle', () => {
         repository as never,
       ),
     );
-    return { controller, repository, sessions, scope };
+    return { controller, repository, sessions, scope, changes };
   }
 
   it.each(['session', 'scope'])(
     'closes an open display stream after %s revocation',
     async (revocation) => {
-      const { controller, sessions, scope } = setup();
+      const { controller, sessions, scope, changes } = setup();
       const stream = await controller.display(queueId, user);
       const complete = jest.fn();
       stream.subscribe({ complete });
@@ -66,7 +72,9 @@ describe('Realtime authorization lifecycle', () => {
         scope.checkQueueAccess.mockRejectedValue(
           new DoriException('QUEUE_NOT_FOUND'),
         );
-      await jest.advanceTimersByTimeAsync(2000);
+      await jest.advanceTimersByTimeAsync(0);
+      changes.next({ key: 'authorization' });
+      await jest.advanceTimersByTimeAsync(0);
       expect(complete).toHaveBeenCalledTimes(1);
       expect(scope.checkQueueAccess).toHaveBeenCalledWith(user, queueId, {
         fresh: true,
@@ -89,7 +97,7 @@ describe('Realtime authorization lifecycle', () => {
   it.each(['removed', 'inactive', 'different-queue'])(
     'closes tracking when its registration becomes %s',
     async (change) => {
-      const { controller, repository } = setup();
+      const { controller, repository, changes } = setup();
       const stream = await controller.tracking(queueId, 'token');
       const complete = jest.fn();
       stream.subscribe({ complete });
@@ -103,7 +111,9 @@ describe('Realtime authorization lifecycle', () => {
             now.getTime() + 60000,
           ),
         });
-      await jest.advanceTimersByTimeAsync(2000);
+      await jest.advanceTimersByTimeAsync(0);
+      changes.next({ key: 'authorization' });
+      await jest.advanceTimersByTimeAsync(0);
       expect(complete).toHaveBeenCalledTimes(1);
     },
   );

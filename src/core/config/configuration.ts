@@ -1,4 +1,8 @@
 import { postgresConnectionSettings } from '../database/postgres-connection';
+import {
+  databaseListenUrl,
+  databaseRuntimeSettings,
+} from '../database/database-runtime-settings';
 
 export const DEFAULT_TIMEZONE = 'Africa/Tunis';
 
@@ -77,6 +81,8 @@ export function validateEnvironment(
   }
 
   postgresConnectionSettings(environment as NodeJS.ProcessEnv);
+  databaseRuntimeSettings(environment as NodeJS.ProcessEnv);
+  databaseListenUrl(environment as NodeJS.ProcessEnv);
 
   if (environment.PUBLIC_WEB_URL) {
     try {
@@ -139,9 +145,10 @@ export default () => {
     },
 
     database: {
+      ...databaseRuntimeSettings(),
       url: databaseConnection.url,
       ssl: databaseConnection.ssl,
-      poolMax: parseInteger('DB_POOL_MAX', process.env.DB_POOL_MAX, 10),
+      listenUrl: databaseListenUrl(),
     },
 
     redis: {

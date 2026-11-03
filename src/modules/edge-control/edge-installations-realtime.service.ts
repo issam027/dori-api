@@ -1,13 +1,14 @@
-import { Injectable, Logger, MessageEvent } from '@nestjs/common';
+﻿import { Injectable, MessageEvent } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import {
   EMPTY,
   Observable,
+  auditTime,
   catchError,
   concatMap,
   defer,
-  exhaustMap,
-  from,
+  filter,
+  ignoreElements,
   interval,
   map,
   merge,
@@ -15,71 +16,62 @@ import {
   timer,
 } from 'rxjs';
 import { ClockService } from '../../core/clock/clock.service';
-import { safeErrorName } from '../../core/logging/safe-error';
+import { DatabaseEventsService } from '../../core/database/database-events.service';
+import { readOnChange } from '../../core/realtime/read-on-change';
 import { StreamAuthorization } from '../../core/realtime/realtime.service';
-import { EdgeControlRepository } from './edge-control.repository';
 
 @Injectable()
 export class EdgeInstallationsRealtimeService {
-  private readonly logger = new Logger(EdgeInstallationsRealtimeService.name);
-
   constructor(
-    private readonly repository: EdgeControlRepository,
     private readonly clock: ClockService,
+    private readonly databaseEvents: DatabaseEventsService,
   ) {}
 
   async stream(
     authorization: StreamAuthorization,
   ): Promise<Observable<MessageEvent>> {
-    let signature = await this.repository.installationRoomSignature();
     const authorize = async () => {
       if (authorization.expiresAt <= this.clock.now())
         throw new Error('Stream authorization expired');
       await authorization.authorize();
     };
-    const changes = interval(2_000).pipe(
-      exhaustMap(() =>
-        from(authorize()).pipe(
-          concatMap(() => from(this.repository.installationRoomSignature())),
-          exhaustMap((nextSignature) => {
-            if (nextSignature === signature) return EMPTY;
-            signature = nextSignature;
-            return from<MessageEvent[]>([
-              {
-                id: randomUUID(),
-                type: 'edge_installations_changed',
-                retry: 3_000,
-                data: {
-                  room: 'edge-installations',
-                  timestamp: this.clock.now().toISOString(),
-                },
-              },
-            ]);
-          }),
-          catchError((error: unknown) => {
-            this.logger.warn(
-              `Edge installation room polling failed type=${safeErrorName(error)}`,
-            );
-            return EMPTY;
-          }),
-        ),
-      ),
+    const changes = this.databaseEvents.changes(['edge-installations']).pipe(
+      auditTime(100),
+      concatMap(async () => {
+        await authorize();
+        return {
+          id: randomUUID(),
+          type: 'edge_installations_changed',
+          retry: 3000,
+          data: {
+            room: 'edge-installations',
+            timestamp: this.clock.now().toISOString(),
+          },
+        };
+      }),
     );
-    const heartbeat = interval(15_000).pipe(
-      exhaustMap(() => from(authorize())),
+    const security = readOnChange(
+      this.databaseEvents.changes(['authorization']),
+      authorize,
+    ).pipe(ignoreElements());
+    const heartbeat = interval(15000).pipe(
+      filter(() => this.databaseEvents.connected),
       map(() => ({
         type: 'heartbeat',
         data: { timestamp: this.clock.now().toISOString() },
       })),
     );
-    return merge(changes, heartbeat).pipe(
+    return merge(changes, heartbeat, security).pipe(
       catchError(() => EMPTY),
       takeUntil(
         defer(() =>
           timer(
             Math.max(
               0,
-              authorization.expiresAt.getTime() - this.clock.now().getTime(),
+              Math.min(
+                2147483647,
+                authorization.expiresAt.getTime() - this.clock.now().getTime(),
+              ),
             ),
           ),
         ),

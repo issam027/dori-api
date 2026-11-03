@@ -21,6 +21,7 @@ async function createApp(): Promise<NestExpressApplication> {
   });
 
   const configService = app.get(ConfigService);
+  app.enableShutdownHooks();
   app.use(cookieParser());
 
   app.use(

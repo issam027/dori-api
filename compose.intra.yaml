@@ -17,6 +17,17 @@ services:
       PORT: 3000
       DATABASE_URL: postgresql://dori:dori_password@postgres:5432/dori
       DB_POOL_MAX: 10
+      DB_MAX_CONNECTIONS: 100
+      DB_RESERVED_CONNECTIONS: 20
+      DB_API_INSTANCES: 1
+      DB_AGENT_INSTANCES: 1
+      DB_AGENT_POOL_MAX: 3
+      DB_WORKER_CONNECTIONS: 0
+      DB_CONNECTION_TIMEOUT_MS: 5000
+      DB_STATEMENT_TIMEOUT_MS: 30000
+      DB_LOCK_TIMEOUT_MS: 3000
+      DB_IDLE_TRANSACTION_TIMEOUT_MS: 15000
+      REALTIME_SAFETY_REFRESH_MS: 300000
       REDIS_URL: redis://redis:6379
       REDIS_ENABLED: 'true'
       JWT_SECRET: docker-local-development-secret-change-me
@@ -48,7 +59,14 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    command: ['postgres', '-c', 'shared_preload_libraries=pg_stat_statements', '-c', 'pg_stat_statements.track=top']
+    command:
+      [
+        'postgres',
+        '-c',
+        'shared_preload_libraries=pg_stat_statements',
+        '-c',
+        'pg_stat_statements.track=top',
+      ]
     restart: unless-stopped
     environment:
       POSTGRES_DB: dori

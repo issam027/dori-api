@@ -1,188 +1,124 @@
-import { firstValueFrom } from 'rxjs';
+﻿import { MessageEvent } from '@nestjs/common';
+import { Subject, filter } from 'rxjs';
 import { ClockService } from '../clock/clock.service';
+import { DatabaseChange } from '../database/database-events.service';
 import { RealtimeService } from './realtime.service';
 
-describe('RealtimeService', () => {
-  const now = new Date('2026-10-25T14:00:00.000Z');
-  const queueId = '00000000-0000-4000-8000-000000000001';
-  const clock = { now: jest.fn(() => now) } as unknown as ClockService;
-
-  beforeEach(() => jest.useFakeTimers());
+describe('event-driven queue SSE', () => {
+  const now = new Date('2026-11-03T10:00:00Z');
+  beforeEach(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(now);
+  });
   afterEach(() => jest.useRealTimers());
-
-  it('emits when the display topic version changes', async () => {
-    const initial = {
-      version: '1',
-      event_id: '00000000-0000-4000-8000-000000000010',
-      event_type: 'queue_display_changed',
-      queue_id: queueId,
-      payload: { queueId },
+  function setup() {
+    const changes = new Subject<DatabaseChange>();
+    const bus = {
+      connected: true,
+      changes: (keys: string[]) =>
+        changes.pipe(
+          filter((e) => e.key === 'recovery' || keys.includes(e.key)),
+        ),
     };
-    const changed = {
-      ...initial,
-      version: '2',
-      event_id: '00000000-0000-4000-8000-000000000011',
-      payload: { queueId, reason: 'registration_called' },
-    };
-    const repository = {
-      findTopicState: jest
-        .fn()
-        .mockResolvedValueOnce(initial)
-        .mockResolvedValue(changed),
-    };
-    const service = new RealtimeService(clock, repository as never);
-    const stream = await service.streamDisplay(queueId);
-    const eventPromise = firstValueFrom(stream);
-
-    await jest.advanceTimersByTimeAsync(2000);
-
-    await expect(eventPromise).resolves.toEqual({
-      id: changed.event_id,
-      type: changed.event_type,
-      retry: 3000,
-      data: changed.payload,
-    });
-  });
-
-  it('emits the current topic immediately after an EventSource reconnection', async () => {
     const current = {
-      version: '3',
-      event_id: '00000000-0000-4000-8000-000000000012',
-      event_type: 'queue_position_changed',
-      queue_id: queueId,
-      payload: { queueId },
+      event_id: 'one',
+      queue_id: 'queue',
+      event_type: 'queue_display_changed',
+      payload: { queueId: 'queue' },
+      version: 1,
     };
     const repository = { findTopicState: jest.fn().mockResolvedValue(current) };
-    const service = new RealtimeService(clock, repository as never);
-    const stream = await service.streamTracking(
-      queueId,
-      '00000000-0000-4000-8000-000000000011',
-    );
-    const eventPromise = firstValueFrom(stream);
-
-    await jest.advanceTimersByTimeAsync(2000);
-
-    await expect(eventPromise).resolves.toMatchObject({ id: current.event_id });
-  });
-
-  it('does not emit a business event while the topic is unchanged', async () => {
-    const current = {
-      version: '1',
-      event_id: '00000000-0000-4000-8000-000000000013',
-      event_type: 'queue_display_changed',
-      queue_id: queueId,
-      payload: { queueId },
-    };
-    const repository = { findTopicState: jest.fn().mockResolvedValue(current) };
-    const service = new RealtimeService(clock, repository as never);
-    const stream = await service.streamDisplay(queueId);
-    const eventPromise = firstValueFrom(stream);
-
-    await jest.advanceTimersByTimeAsync(15000);
-
-    await expect(eventPromise).resolves.toEqual({
-      type: 'heartbeat',
-      data: { timestamp: now.toISOString() },
-    });
-  });
-
-  it.each(['streamDisplay', 'streamTracking'] as const)(
-    'closes %s at credential expiration even without business events',
-    async (method) => {
-      const repository = { findTopicState: jest.fn().mockResolvedValue(null) };
-      const authorize = jest.fn().mockResolvedValue(undefined);
-      const stream = await new RealtimeService(clock, repository as never)[
-        method
-      ](queueId, undefined, {
-        authorize,
-        expiresAt: new Date(now.getTime() + 3500),
-      });
-      const complete = jest.fn();
-      const next = jest.fn();
-      stream.subscribe({ next, complete });
-      await jest.advanceTimersByTimeAsync(3500);
-      expect(complete).toHaveBeenCalledTimes(1);
-      expect(next).not.toHaveBeenCalled();
-      expect(authorize).toHaveBeenCalledTimes(1);
-      await jest.advanceTimersByTimeAsync(20000);
-      expect(repository.findTopicState).toHaveBeenCalledTimes(2);
-    },
-  );
-
-  it.each(['streamDisplay', 'streamTracking'] as const)(
-    'closes %s on revocation and cancels polling and heartbeats',
-    async (method) => {
-      const repository = { findTopicState: jest.fn().mockResolvedValue(null) };
-      const authorize = jest
-        .fn()
-        .mockResolvedValueOnce(undefined)
-        .mockRejectedValue(new Error('revoked'));
-      const stream = await new RealtimeService(clock, repository as never)[
-        method
-      ](queueId, undefined, {
-        authorize,
-        expiresAt: new Date(now.getTime() + 60000),
-      });
-      const complete = jest.fn();
-      const next = jest.fn();
-      const error = jest.fn();
-      stream.subscribe({ next, complete, error });
-      await jest.advanceTimersByTimeAsync(20000);
-      expect(complete).toHaveBeenCalledTimes(1);
-      expect(error).not.toHaveBeenCalled();
-      expect(next).not.toHaveBeenCalled();
-      expect(authorize).toHaveBeenCalledTimes(2);
-      expect(repository.findTopicState).toHaveBeenCalledTimes(3);
-    },
-  );
-
-  it('stops all checks when the client disconnects', async () => {
-    const repository = { findTopicState: jest.fn().mockResolvedValue(null) };
-    const authorize = jest.fn().mockResolvedValue(undefined);
-    const stream = await new RealtimeService(
-      clock,
+    const service = new RealtimeService(
+      new ClockService(),
       repository as never,
-    ).streamDisplay(queueId, undefined, {
-      authorize,
-      expiresAt: new Date(now.getTime() + 60000),
-    });
-    const subscription = stream.subscribe();
-    await jest.advanceTimersByTimeAsync(2000);
-    subscription.unsubscribe();
-    await jest.advanceTimersByTimeAsync(20000);
-    expect(authorize).toHaveBeenCalledTimes(1);
-    expect(repository.findTopicState).toHaveBeenCalledTimes(2);
-  });
-  it('shares topic reads across clients while keeping per-client revocation and teardown', async () => {
-    const repository = { findTopicState: jest.fn().mockResolvedValue(null) };
-    const service = new RealtimeService(clock, repository as never);
-    const authorizers = Array.from({ length: 50 }, () =>
-      jest.fn().mockResolvedValue(undefined),
+      bus as never,
     );
-    authorizers[0]
-      .mockResolvedValueOnce(undefined)
-      .mockRejectedValue(new Error('revoked'));
+    return { service, repository, current, changes, bus };
+  }
+  it('reads on changes, never on idle heartbeats', async () => {
+    const { service, repository, current, changes } = setup();
+    const events: MessageEvent[] = [];
+    const subscription = (await service.streamDisplay('queue')).subscribe((e) =>
+      events.push(e),
+    );
+    await jest.advanceTimersByTimeAsync(0);
+    const calls = repository.findTopicState.mock.calls.length;
+    await jest.advanceTimersByTimeAsync(30_000);
+    expect(repository.findTopicState).toHaveBeenCalledTimes(calls);
+    expect(events.filter((e) => e.type === 'heartbeat')).toHaveLength(2);
+    repository.findTopicState.mockResolvedValue({
+      ...current,
+      event_id: 'two',
+    });
+    changes.next({ key: 'queue:queue:queue_display_changed' });
+    await jest.advanceTimersByTimeAsync(0);
+    expect(events.at(-1)).toMatchObject({
+      id: 'two',
+      type: 'queue_display_changed',
+    });
+    expect(repository.findTopicState).toHaveBeenCalledTimes(calls + 1);
+    subscription.unsubscribe();
+  });
+  it('shares one read across fifty clients and recovers missed events on listener reconnect', async () => {
+    const { service, repository, current, changes } = setup();
     const streams = await Promise.all(
-      authorizers.map((authorize) =>
-        service.streamTracking(queueId, undefined, {
+      Array.from({ length: 50 }, () => service.streamDisplay('queue')),
+    );
+    const next = jest.fn();
+    const subscriptions = streams.map((s) => s.subscribe(next));
+    await jest.advanceTimersByTimeAsync(0);
+    const calls = repository.findTopicState.mock.calls.length;
+    repository.findTopicState.mockResolvedValue({
+      ...current,
+      event_id: 'two',
+    });
+    changes.next({ key: 'recovery' });
+    await jest.advanceTimersByTimeAsync(0);
+    expect(repository.findTopicState).toHaveBeenCalledTimes(calls + 1);
+    expect(next).toHaveBeenCalledTimes(50);
+    subscriptions.forEach((s) => s.unsubscribe());
+    changes.next({ key: 'recovery' });
+    await jest.advanceTimersByTimeAsync(0);
+    expect(repository.findTopicState).toHaveBeenCalledTimes(calls + 1);
+  });
+  it.each(['streamDisplay', 'streamTracking'] as const)(
+    'closes %s on revocation and exact expiry',
+    async (method) => {
+      const { service, changes } = setup();
+      const authorize = jest.fn().mockResolvedValue(undefined);
+      const complete = jest.fn();
+      (
+        await service[method]('queue', undefined, {
           authorize,
           expiresAt: new Date(now.getTime() + 60_000),
-        }),
-      ),
-    );
-    const closed = jest.fn();
-    const subscriptions = streams.map((stream, index) =>
-      stream.subscribe({
-        complete: index === 0 ? closed : undefined,
-      }),
-    );
-    expect(repository.findTopicState).toHaveBeenCalledTimes(50);
-    await jest.advanceTimersByTimeAsync(4000);
-    expect(repository.findTopicState).toHaveBeenCalledTimes(52);
-    expect(closed).toHaveBeenCalledTimes(1);
-    expect(authorizers[1]).toHaveBeenCalledTimes(2);
-    subscriptions.forEach((subscription) => subscription.unsubscribe());
-    await jest.advanceTimersByTimeAsync(10_000);
-    expect(repository.findTopicState).toHaveBeenCalledTimes(52);
+        })
+      ).subscribe({ complete });
+      await jest.advanceTimersByTimeAsync(0);
+      const calls = authorize.mock.calls.length;
+      await jest.advanceTimersByTimeAsync(15_000);
+      expect(authorize).toHaveBeenCalledTimes(calls);
+      authorize.mockRejectedValue(new Error('revoked'));
+      changes.next({ key: 'authorization' });
+      await jest.advanceTimersByTimeAsync(0);
+      expect(complete).toHaveBeenCalledTimes(1);
+      const expired = jest.fn();
+      (
+        await service[method]('queue', undefined, {
+          authorize: async () => undefined,
+          expiresAt: new Date(now.getTime() + 17_000),
+        })
+      ).subscribe({ complete: expired });
+      await jest.advanceTimersByTimeAsync(2000);
+      expect(expired).toHaveBeenCalledTimes(1);
+    },
+  );
+  it('suppresses healthy heartbeats while the database listener is disconnected', async () => {
+    const { service, bus } = setup();
+    bus.connected = false;
+    const next = jest.fn();
+    const subscription = (await service.streamDisplay('queue')).subscribe(next);
+    await jest.advanceTimersByTimeAsync(30_000);
+    expect(next).not.toHaveBeenCalled();
+    subscription.unsubscribe();
   });
 });

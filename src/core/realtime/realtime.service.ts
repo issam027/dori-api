@@ -1,3 +1,5 @@
+import { DatabaseEventsService } from '../database/database-events.service';
+import { readOnChange } from './read-on-change';
 import { runtimeMetrics } from '../observability/runtime-metrics';
 import { Injectable, Logger, MessageEvent } from '@nestjs/common';
 import {
@@ -6,7 +8,8 @@ import {
   catchError,
   concatMap,
   defer,
-  exhaustMap,
+  filter,
+  ignoreElements,
   from,
   interval,
   map,
@@ -27,7 +30,6 @@ import {
 
 export const QUEUE_DISPLAY_CHANGED = 'queue_display_changed';
 export const QUEUE_POSITION_CHANGED = 'queue_position_changed';
-const TOPIC_POLL_INTERVAL_MS = 2000;
 
 export interface StreamAuthorization {
   authorize: () => Promise<void>;
@@ -45,6 +47,7 @@ export class RealtimeService {
   constructor(
     private readonly clockService: ClockService,
     private readonly repository: RealtimeRepository,
+    private readonly databaseEvents: DatabaseEventsService,
   ) {}
 
   async streamDisplay(
@@ -93,7 +96,7 @@ export class RealtimeService {
       await authorization.authorize();
     };
     const events = defer(() => this.sharedTopic(queueId, eventName)).pipe(
-      exhaustMap((state) =>
+      concatMap((state) =>
         from(authorize()).pipe(
           concatMap(() => {
             if (!state || state.event_id === currentEventId) return EMPTY;
@@ -104,7 +107,7 @@ export class RealtimeService {
       ),
     );
     const heartbeat = interval(15000).pipe(
-      exhaustMap(() => from(authorize())),
+      filter(() => this.databaseEvents.connected),
       map(() => ({
         type: 'heartbeat',
         data: { timestamp: this.clockService.now().toISOString() },
@@ -112,7 +115,11 @@ export class RealtimeService {
     );
     const stream = defer(() => {
       runtimeMetrics.add('sse_connections_active');
-      return merge(events, heartbeat).pipe(
+      const security = readOnChange(
+        this.databaseEvents.changes(['authorization']),
+        authorize,
+      ).pipe(ignoreElements());
+      return merge(events, heartbeat, security).pipe(
         finalize(() => {
           runtimeMetrics.add('sse_connections_active', -1);
         }),
@@ -154,25 +161,18 @@ export class RealtimeService {
     const key = queueId + ':' + eventName;
     const existing = this.topics.get(key);
     if (existing) return existing;
-    const topic = interval(TOPIC_POLL_INTERVAL_MS).pipe(
-      exhaustMap(() => {
+    const topic = readOnChange(
+      this.databaseEvents.changes(['queue:' + key]),
+      async () => {
         runtimeMetrics.add('sse_topic_reads_total');
         const started = performance.now();
-        return from(this.repository.findTopicState(queueId, eventName)).pipe(
-          finalize(() =>
-            runtimeMetrics.observe(
-              'sse_topic_read',
-              performance.now() - started,
-            ),
-          ),
-          catchError((error: unknown) => {
-            this.logger.warn(
-              `Realtime topic polling failed type=${safeErrorName(error)}`,
-            );
-            return of(null);
-          }),
-        );
-      }),
+        try {
+          return await this.repository.findTopicState(queueId, eventName);
+        } finally {
+          runtimeMetrics.observe('sse_topic_read', performance.now() - started);
+        }
+      },
+    ).pipe(
       finalize(() => this.topics.delete(key)),
       shareReplay({ bufferSize: 1, refCount: true }),
     );

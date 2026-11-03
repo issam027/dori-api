@@ -8,6 +8,8 @@ export interface TrackingRegistrationRow {
 }
 
 export interface ReplicatedTrackingRow {
+  source_installation_id?: string;
+  source_last_seen_at?: Date | string | null;
   sequence: string | number;
   expires_at: Date | string;
   observed_at: Date | string;
@@ -66,7 +68,8 @@ export class RealtimeRepository {
     hash: string,
   ): Promise<ReplicatedTrackingRow | null> {
     const rows = await this.dataSource.query<ReplicatedTrackingRow[]>(
-      `SELECT t.sequence, t.expires_at, t.observed_at, t.ticket_number,
+      `SELECT t.source_installation_id, e.last_seen_at AS source_last_seen_at,
+              t.sequence, t.expires_at, t.observed_at, t.ticket_number,
               t.registration_status, t.position, t.estimated_wait_minutes,
               t.counter_name, t.queue_public_name, t.language_preference, e.deployment_status,
               CASE WHEN e.last_seen_at >= CURRENT_TIMESTAMP - INTERVAL '2 minutes'
