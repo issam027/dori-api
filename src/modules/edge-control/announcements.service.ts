@@ -44,11 +44,33 @@ export class AnnouncementsService {
       Date.parse(query.dateFrom) > Date.parse(query.dateTo)
     )
       throw new DoriException('VALIDATION_ERROR');
-    const allowed = await this.access(query.scope, user);
-    if (query.targetId && allowed && !allowed.includes(query.targetId))
+    const root = user.roles.includes('root');
+    const scopes: AnnouncementScope[] = query.scope
+      ? [query.scope]
+      : [
+          ...(root || user.permissions.includes('site_edit')
+            ? ['sites' as const]
+            : []),
+          ...(this.config.get<string>('deployment.mode') === 'cloud' &&
+          (root || user.permissions.includes('edge_installation_manage'))
+            ? ['installations' as const]
+            : []),
+        ];
+    if (!scopes.length) throw new DoriException('FORBIDDEN_PERMISSION');
+    let allowed: string[] | undefined;
+    for (const scope of scopes) {
+      const access = await this.access(scope, user);
+      if (scope === 'sites') allowed = access;
+    }
+    if (
+      scopes.every((scope) => scope === 'sites') &&
+      query.targetId &&
+      allowed &&
+      !allowed.includes(query.targetId)
+    )
       throw new DoriException('RESOURCE_NOT_FOUND');
     return this.repository.list(
-      query.scope,
+      query.scope ?? scopes,
       query.page,
       query.pageSize,
       this.clock.now(),
@@ -99,7 +121,7 @@ export class AnnouncementsService {
       record.targets.every((target) => allowed.includes(target.targetId));
     return {
       ...record,
-      canWithdraw: canManage,
+      canWithdraw: canManage && record.status !== 'withdrawn',
       canEdit: canManage && record.status !== 'withdrawn',
       targets: allowed
         ? record.targets.filter((target) => allowed.includes(target.targetId))
@@ -120,10 +142,6 @@ export class AnnouncementsService {
       now,
     );
     return this.repository.update(id, body, now, allowed);
-  }
-  async remove(id: string, user: AuthenticatedUser) {
-    const { allowed } = await this.record(id, user, true);
-    return this.repository.remove(id, this.clock.now(), allowed);
   }
   async withdraw(id: string, user: AuthenticatedUser) {
     const record = await this.repository.find(id, this.clock.now());

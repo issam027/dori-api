@@ -72,3 +72,22 @@ Validation de cette évolution : 56 tests API ciblés réussis ; 37 tests front 
 Avant la migration 006, nouvelles sauvegardes privées des bases Docker ; après migration, comptages inchangés : cloud 216 611 inscriptions et 10 sites, intra 118 020 inscriptions et 2 sites.
 
 Contrôle complémentaire du front cloud : publication à deux installations, en-tête du tableau aligné, modification conservant exactement l’instant de début et suppression réussies. API et fronts cloud/intra déployés ; listing filtré vérifié sur l’intra déployé, snapshots et SSE vérifiés derrière les deux proxys. Les neuf conteneurs habituels sont sains et les conteneurs temporaires ont été supprimés. L’agent reste compatible sans modification supplémentaire.
+
+## Retrait consultable et tableau cloud commun
+
+Cette correction remplace le comportement de suppression décrit dans la section précédente.
+
+- L’action utilisateur est **Retirer l’annonce**, avec confirmation précisant que l’historique reste consultable. Elle renseigne `withdrawn_at` et enlève uniquement la diffusion publique. Aucune suppression physique d’annonce n’est effectuée.
+- Les annonces retirées restent présentes dans le listing et accessibles par identifiant, avec l’état `withdrawn`. Elles ne proposent plus de modification ni de second bouton de retrait. Le filtre d’état permet de consulter spécifiquement cet historique.
+- Les annonces masquées par l’ancienne suppression logique redeviennent consultables : les lectures ne filtrent plus sur l’ancien marqueur `deleted_at`. Aucun effacement ni rejeu des données n’est nécessaire.
+- `DELETE /api/v1/announcements/:id` est conservé comme alias de retrait pour compatibilité ; il conserve aussi l’accès au listing et à la fiche. Le front utilise `POST /api/v1/announcements/:id/withdraw`. Le code de suppression distinct est retiré.
+- Sur cloud, le listing sans `scope` réunit les natures autorisées dans une seule requête, un seul total et une seule pagination. Les droits sur les installations et le périmètre des sites sont appliqués indépendamment, y compris lorsqu’un utilisateur possède les deux permissions.
+- Aucun switch de nature ne figure dans le tableau ou ses filtres. La nature est présentée par ligne ; le filtre de destinataires regroupe sites et installations.
+- La nature se choisit dans la fenêtre de création cloud. Un changement de nature vide les destinataires sélectionnés et conserve le texte en cours de saisie. La nature d’une annonce existante reste immuable. En intra, la création reste limitée aux sites locaux.
+- Swagger décrit le listing mixte par défaut ; le critère `scope` explicite reste disponible aux consommateurs API.
+
+Validation : 55 tests API ciblés et 37 tests front de traductions/audit réussis. Sept scénarios sur API réelles temporaires vérifient listing mixte, pagination, destinataires, retrait consultable, compatibilité DELETE, historique ancien et droits indépendants. Edge aux largeurs 390, 1 024 et 1 440 px : absence de switch hors création, création des deux natures, remise à zéro des destinataires, retrait puis consultation de l’historique. Création de site local intra également vérifiée. Les essais n’écrivent que dans les bases temporaires.
+
+Contrôle complémentaire : édition d’une installation depuis le listing mixte avec les bons destinataires, conservation exacte du début d’affichage, retrait et consultation réussis. Les actions desktop sont compactes, avec libellés accessibles et infobulles ; le tableau final tient dans sa largeur disponible à 1 440 px (aucun défilement horizontal mesuré). Aucune migration supplémentaire ni modification des données existantes n’est requise pour cette correction.
+
+Correction déployée sur les API et fronts Docker cloud/intra. Santé, snapshots publics et SSE vérifiés derrière les deux proxys ; listing filtré et accès à l’administration sans site sélectionné également vérifiés sur l’intra déployé. Les neuf conteneurs habituels sont sains ; l’environnement temporaire a été supprimé.

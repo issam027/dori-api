@@ -17997,15 +17997,14 @@
             "name": "scope",
             "required": false,
             "in": "query",
+            "description": "Omit to list both authorized announcement natures on cloud; intra lists local site announcements.",
             "schema": {
-              "default": "sites",
               "enum": [
                 "installations",
                 "sites"
               ],
               "type": "string"
-            },
-            "description": "Valeur du paramètre « scope »."
+            }
           },
           {
             "name": "page",
@@ -18599,7 +18598,7 @@
       },
       "delete": {
         "operationId": "AnnouncementsController_remove",
-        "summary": "Soft-delete an announcement from administration and display while preserving its audit history",
+        "summary": "Withdraw an announcement from display while keeping it available in the listing and detail",
         "parameters": [
           {
             "name": "announcementId",

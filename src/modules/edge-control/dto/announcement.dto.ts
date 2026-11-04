@@ -128,10 +128,14 @@ export class AnnouncementQueryDto {
   @IsOptional()
   @IsIn(announcementSorts)
   sort: AnnouncementSort = 'createdAt:desc';
-  @ApiPropertyOptional({ enum: ['installations', 'sites'], default: 'sites' })
+  @ApiPropertyOptional({
+    enum: ['installations', 'sites'],
+    description:
+      'Omit to list both authorized announcement natures on cloud; intra lists local site announcements.',
+  })
   @IsOptional()
   @IsIn(['installations', 'sites'])
-  scope: AnnouncementScope = 'sites';
+  scope?: AnnouncementScope;
   @ApiPropertyOptional({ default: 1 })
   @IsOptional()
   @Type(() => Number)

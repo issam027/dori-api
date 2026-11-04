@@ -47,12 +47,15 @@ function adminAnnouncement(
   allowedSiteIds?: string[],
 ): AnnouncementResponseDto {
   const permitted =
-    allowedSiteIds === undefined ? undefined : new Set(allowedSiteIds);
+    row.scope !== 'sites' || allowedSiteIds === undefined
+      ? undefined
+      : new Set(allowedSiteIds);
   return {
     ...publicAnnouncement(row),
     scope: row.scope,
     canWithdraw:
-      !permitted || row.targets.every((t) => permitted.has(t.targetId)),
+      !row.withdrawn_at &&
+      (!permitted || row.targets.every((t) => permitted.has(t.targetId))),
     canEdit:
       !row.withdrawn_at &&
       (!permitted || row.targets.every((t) => permitted.has(t.targetId))),
@@ -136,7 +139,7 @@ export class AnnouncementsRepository {
     if (targets.length !== body.targetIds.length)
       throw new DoriException('RESOURCE_NOT_FOUND');
     const full = (await transaction.query(
-      `SELECT t.${id} FROM ${relation} t JOIN dorify.dori_announcement a USING(announcement_id) WHERE t.${id}=ANY($1::uuid[]) AND a.withdrawn_at IS NULL AND a.deleted_at IS NULL AND a.ends_at>$2 AND ($3::uuid IS NULL OR a.announcement_id<>$3) GROUP BY t.${id} HAVING count(*)>=50`,
+      `SELECT t.${id} FROM ${relation} t JOIN dorify.dori_announcement a USING(announcement_id) WHERE t.${id}=ANY($1::uuid[]) AND a.withdrawn_at IS NULL AND a.ends_at>$2 AND ($3::uuid IS NULL OR a.announcement_id<>$3) GROUP BY t.${id} HAVING count(*)>=50`,
       [body.targetIds, now, excludingId ?? null],
     )) as object[];
     if (full.length) throw new DoriException('CONFLICT');
@@ -144,15 +147,18 @@ export class AnnouncementsRepository {
     return { relation, id };
   }
   async list(
-    scope: AnnouncementScope,
+    scope: AnnouncementScope | AnnouncementScope[],
     page: number,
     pageSize: number,
     now: Date,
     allowedSiteIds?: string[],
     query: Partial<AnnouncementQueryDto> = {},
   ) {
-    let predicate = `a.deleted_at IS NULL AND a.scope=$1 AND ($2::uuid[] IS NULL OR EXISTS(SELECT 1 FROM dorify.dori_announcement_site t WHERE t.announcement_id=a.announcement_id AND t.site_id=ANY($2::uuid[])))`;
-    const params: unknown[] = [scope, allowedSiteIds ?? null];
+    let predicate = `a.scope=ANY($1::varchar[]) AND (a.scope='installations' OR $2::uuid[] IS NULL OR EXISTS(SELECT 1 FROM dorify.dori_announcement_site t WHERE t.announcement_id=a.announcement_id AND t.site_id=ANY($2::uuid[])))`;
+    const params: unknown[] = [
+      typeof scope === 'string' ? [scope] : scope,
+      allowedSiteIds ?? null,
+    ];
     const add = (value: unknown) => {
       params.push(value);
       return '$' + params.length;
@@ -165,12 +171,8 @@ export class AnnouncementsRepository {
     }
     if (query.severity) predicate += ' AND a.severity=' + add(query.severity);
     if (query.targetId) {
-      const relation =
-        scope === 'sites'
-          ? 'dorify.dori_announcement_site'
-          : 'dorify.dori_announcement_installation';
-      const id = scope === 'sites' ? 'site_id' : 'installation_id';
-      predicate += ` AND EXISTS(SELECT 1 FROM ${relation} ft WHERE ft.announcement_id=a.announcement_id AND ft.${id}=${add(query.targetId)})`;
+      const target = add(query.targetId);
+      predicate += ` AND ((a.scope='sites' AND EXISTS(SELECT 1 FROM dorify.dori_announcement_site ft WHERE ft.announcement_id=a.announcement_id AND ft.site_id=${target})) OR (a.scope='installations' AND EXISTS(SELECT 1 FROM dorify.dori_announcement_installation ft WHERE ft.announcement_id=a.announcement_id AND ft.installation_id=${target})))`;
     }
     if (query.dateFrom) predicate += ' AND a.ends_at>=' + add(query.dateFrom);
     if (query.dateTo) predicate += ' AND a.starts_at<=' + add(query.dateTo);
@@ -214,7 +216,7 @@ export class AnnouncementsRepository {
     allowedSiteIds?: string[],
   ) {
     const [row] = (await database.query(
-      `SELECT ${fields} FROM dorify.dori_announcement a WHERE a.announcement_id=$1 AND a.deleted_at IS NULL`,
+      `SELECT ${fields} FROM dorify.dori_announcement a WHERE a.announcement_id=$1`,
       [id],
     )) as AnnouncementRow[];
     return row ? adminAnnouncement(row, now, allowedSiteIds) : null;
@@ -229,7 +231,7 @@ export class AnnouncementsRepository {
       return (
         returningRows(
           await transaction.query(
-            `UPDATE dorify.dori_announcement SET withdrawn_at=COALESCE(withdrawn_at,$2),updated_at=$2 WHERE announcement_id=$1 AND deleted_at IS NULL RETURNING announcement_id`,
+            `UPDATE dorify.dori_announcement SET withdrawn_at=COALESCE(withdrawn_at,$2),updated_at=$2 WHERE announcement_id=$1 RETURNING announcement_id`,
             [id, now],
           ),
         ).length > 0
@@ -306,21 +308,11 @@ export class AnnouncementsRepository {
       return (await this.find(announcementId, now, transaction))!;
     });
   }
-  async remove(announcementId: string, now: Date, allowedSiteIds?: string[]) {
-    return this.database.transaction(async (transaction) => {
-      await this.locked(transaction, announcementId, now, allowedSiteIds);
-      await transaction.query(
-        'UPDATE dorify.dori_announcement SET deleted_at=$2,withdrawn_at=COALESCE(withdrawn_at,$2),updated_at=$2 WHERE announcement_id=$1',
-        [announcementId, now],
-      );
-      return { announcementId };
-    });
-  }
   async nextBoundary(now: Date): Promise<number | undefined> {
     const [row] = (await this.database.query(
       `SELECT min(boundary) AS boundary FROM (
-        SELECT starts_at AS boundary FROM dorify.dori_announcement WHERE deleted_at IS NULL AND withdrawn_at IS NULL AND starts_at>$1
-        UNION ALL SELECT ends_at FROM dorify.dori_announcement WHERE deleted_at IS NULL AND withdrawn_at IS NULL AND ends_at>$1
+        SELECT starts_at AS boundary FROM dorify.dori_announcement WHERE withdrawn_at IS NULL AND starts_at>$1
+        UNION ALL SELECT ends_at FROM dorify.dori_announcement WHERE withdrawn_at IS NULL AND ends_at>$1
       ) periods`,
       [now],
     )) as Array<{ boundary: Date | null }>;
@@ -331,14 +323,14 @@ export class AnnouncementsRepository {
     now: Date,
   ): Promise<AnnouncementItemDto[]> {
     const rows = (await this.database.query(
-      `SELECT a.* FROM dorify.dori_announcement a JOIN dorify.dori_announcement_installation t USING(announcement_id) WHERE a.scope='installations' AND t.installation_id=$1 AND a.withdrawn_at IS NULL AND a.deleted_at IS NULL AND a.ends_at>$2 ORDER BY a.created_at,a.announcement_id LIMIT 50`,
+      `SELECT a.* FROM dorify.dori_announcement a JOIN dorify.dori_announcement_installation t USING(announcement_id) WHERE a.scope='installations' AND t.installation_id=$1 AND a.withdrawn_at IS NULL AND a.ends_at>$2 ORDER BY a.created_at,a.announcement_id LIMIT 50`,
       [installationId, now],
     )) as AnnouncementRow[];
     return rows.map(publicAnnouncement);
   }
   async forSite(siteId: string, now: Date): Promise<AnnouncementItemDto[]> {
     const rows = (await this.database.query(
-      `SELECT a.* FROM dorify.dori_announcement a JOIN dorify.dori_announcement_site t USING(announcement_id) JOIN dorify.dori_site s ON s.site_id=t.site_id WHERE a.scope='sites' AND t.site_id=$1 AND s.is_active=TRUE AND a.withdrawn_at IS NULL AND a.deleted_at IS NULL AND a.ends_at>$2 ORDER BY a.created_at,a.announcement_id LIMIT 50`,
+      `SELECT a.* FROM dorify.dori_announcement a JOIN dorify.dori_announcement_site t USING(announcement_id) JOIN dorify.dori_site s ON s.site_id=t.site_id WHERE a.scope='sites' AND t.site_id=$1 AND s.is_active=TRUE AND a.withdrawn_at IS NULL AND a.ends_at>$2 ORDER BY a.created_at,a.announcement_id LIMIT 50`,
       [siteId, now],
     )) as AnnouncementRow[];
     return rows.map(publicAnnouncement);

@@ -98,11 +98,11 @@ export class AnnouncementsController {
   @Delete(':announcementId')
   @ApiOperation({
     summary:
-      'Soft-delete an announcement from administration and display while preserving its audit history',
+      'Withdraw an announcement from display while keeping it available in the listing and detail',
   })
   @ApiDoriOkResponse(WithdrawAnnouncementResponseDto)
   @AuditEvent({
-    action: 'announcement.delete',
+    action: 'announcement.withdraw',
     targetType: 'announcement',
     targetParam: 'announcementId',
   })
@@ -110,7 +110,7 @@ export class AnnouncementsController {
     @Param('announcementId', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.service.remove(id, user);
+    return this.service.withdraw(id, user);
   }
   @Post(':announcementId/withdraw')
   @HttpCode(200)

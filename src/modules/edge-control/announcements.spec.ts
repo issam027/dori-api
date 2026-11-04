@@ -60,7 +60,6 @@ describe('announcement administration boundaries', () => {
       find: jest.fn(),
       withdraw: jest.fn(),
       update: jest.fn(),
-      remove: jest.fn(),
     };
     const scope = {
       getUserScope: jest.fn(async () => ({
@@ -151,6 +150,54 @@ describe('announcement administration boundaries', () => {
       query,
     );
   });
+  it('lists both authorized natures on cloud while limiting site rows to the fresh site scope', async () => {
+    const h = setup();
+    const operator = {
+      ...user,
+      permissions: ['site_edit', 'edge_installation_manage'],
+    };
+    const query = new AnnouncementQueryDto();
+    await h.service.list(query, operator);
+    expect(h.repository.list).toHaveBeenCalledWith(
+      ['sites', 'installations'],
+      1,
+      10,
+      instant,
+      [one],
+      query,
+    );
+  });
+  it.each(['cloud', 'intra'])(
+    'lists only authorized site announcements for a site manager on %s',
+    async (mode) => {
+      const h = setup(mode),
+        query = new AnnouncementQueryDto();
+      await h.service.list(query, user);
+      expect(h.repository.list).toHaveBeenCalledWith(
+        ['sites'],
+        1,
+        10,
+        instant,
+        [one],
+        query,
+      );
+    },
+  );
+  it('keeps withdrawn announcements readable and disables their mutation actions', async () => {
+    const h = setup();
+    h.repository.find.mockResolvedValue({
+      ...notice(one),
+      scope: 'sites',
+      status: 'withdrawn',
+      targets: [{ targetId: one, name: 'Allowed' }],
+    });
+    expect(await h.service.detail(one, user)).toMatchObject({
+      message: 'Service notice',
+      status: 'withdrawn',
+      canEdit: false,
+      canWithdraw: false,
+    });
+  });
   it('redacts shared announcement details and forbids editing or deleting outside the complete scope', async () => {
     const h = setup();
     h.repository.find.mockResolvedValue({
@@ -170,11 +217,11 @@ describe('announcement administration boundaries', () => {
     await expect(h.service.update(one, body(), user)).rejects.toMatchObject({
       status: 404,
     });
-    await expect(h.service.remove(one, user)).rejects.toMatchObject({
+    await expect(h.service.withdraw(one, user)).rejects.toMatchObject({
       status: 404,
     });
     expect(h.repository.update).not.toHaveBeenCalled();
-    expect(h.repository.remove).not.toHaveBeenCalled();
+    expect(h.repository.withdraw).not.toHaveBeenCalled();
   });
   it('preserves the original start when editing content and rejects withdrawn records', async () => {
     const h = setup();
@@ -386,4 +433,74 @@ it('redacts inaccessible site names in administration and exposes withdrawal as 
     canWithdraw: false,
   });
   expect(JSON.stringify(result)).not.toContain('Private');
+});
+
+it('keeps installation targets visible in a mixed listing and returns withdrawn history without management actions', async () => {
+  const base = {
+    announcement_id: one,
+    title: 'Notice',
+    message: 'Message',
+    severity: 'info',
+    starts_at: instant,
+    ends_at: new Date(instant.getTime() + 60000),
+    created_at: instant,
+    updated_at: instant,
+    withdrawn_at: null,
+  };
+  const database = {
+    query: jest
+      .fn()
+      .mockResolvedValueOnce([
+        {
+          ...base,
+          scope: 'sites',
+          targets: [
+            { targetId: one, name: 'Allowed' },
+            { targetId: two, name: 'Private' },
+          ],
+        },
+        {
+          ...base,
+          scope: 'installations',
+          targets: [{ targetId: two, name: 'Installation' }],
+        },
+        {
+          ...base,
+          scope: 'sites',
+          withdrawn_at: instant,
+          deleted_at: instant,
+          targets: [{ targetId: one, name: 'Allowed' }],
+        },
+      ])
+      .mockResolvedValueOnce([{ total: 3 }]),
+  };
+  const repository = new AnnouncementsRepository(
+    database as unknown as DataSource,
+  );
+  const result = await repository.list(
+    ['sites', 'installations'],
+    1,
+    10,
+    instant,
+    [one],
+  );
+  expect(result.items[0]).toMatchObject({
+    canWithdraw: false,
+    targets: [{ targetId: one, name: 'Allowed' }],
+  });
+  expect(result.items[1]).toMatchObject({
+    canWithdraw: true,
+    canEdit: true,
+    targets: [{ targetId: two, name: 'Installation' }],
+  });
+  expect(result.items[2]).toMatchObject({
+    status: 'withdrawn',
+    canWithdraw: false,
+    canEdit: false,
+  });
+  expect(database.query.mock.calls[0][0]).not.toContain('deleted_at');
+  expect(database.query.mock.calls[0][1][0]).toEqual([
+    'sites',
+    'installations',
+  ]);
 });
