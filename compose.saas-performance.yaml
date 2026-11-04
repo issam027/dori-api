@@ -1,0 +1,25 @@
+# Temporary capacity profile for the persistent intra dataset.
+# Recreate engine with compose.intra.yaml alone after the campaign.
+services:
+  engine:
+    environment:
+      THROTTLE_DEFAULT_LIMIT: 100000
+      THROTTLE_STRICT_LIMIT: 100000
+      THROTTLE_AUTH_LIMIT: 100000
+  staff-load:
+    image: dorify/engine:dev
+    entrypoint:
+      [
+        'node',
+        '--max-old-space-size=384',
+        '/bench/scripts/performance/saas-load.cjs',
+      ]
+    working_dir: /bench
+    volumes: ['.:/bench']
+    mem_limit: 512m
+    cpus: 2
+    environment:
+      PERF_RUNNER_NETWORK: docker
+      NODE_PATH: /app/node_modules
+    networks: [default]
+    profiles: [tools]

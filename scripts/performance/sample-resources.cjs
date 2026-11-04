@@ -1,10 +1,10 @@
 const fs = require('node:fs');
 const { execFile } = require('node:child_process');
-const output = '.tmp-consolidation/performance/resources.ndjson';
-fs.writeFileSync(
-  '.tmp-consolidation/performance/sampler.pid',
-  String(process.pid),
-);
+const directory =
+  process.env.PERF_RESOURCE_DIRECTORY ?? '.tmp-consolidation/performance';
+const prefix = process.env.PERF_CONTAINER_PREFIX ?? 'dorify-perf-';
+const output = directory + '/resources.ndjson';
+fs.writeFileSync(directory + '/sampler.pid', String(process.pid));
 const until = Date.now() + 20 * 60 * 1000;
 function sample() {
   execFile(
@@ -16,7 +16,7 @@ function sample() {
         for (const line of text.trim().split('\n')) {
           try {
             const row = JSON.parse(line);
-            if (row.Name.startsWith('dorify-perf-'))
+            if (row.Name.startsWith(prefix))
               fs.appendFileSync(
                 output,
                 JSON.stringify({ at: new Date().toISOString(), ...row }) + '\n',
