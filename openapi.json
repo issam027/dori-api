@@ -17811,6 +17811,95 @@
         ]
       }
     },
+    "/api/v1/edge/local-status/events": {
+      "get": {
+        "operationId": "subscribeEdgeLocalStatus",
+        "summary": "Receive local agent status snapshots and heartbeats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Initial local status and subsequent persisted changes",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "Flux SSE persistant. Chaque événement indique que le client doit rafraîchir les données via REST.",
+                  "example": "event: edge_local_status\ndata: {\"configured\":true,\"deploymentStatus\":\"active\",\"cloudReachability\":\"connected\",\"lastCloudSuccessAt\":\"2026-11-04T10:00:00.000Z\",\"lastCloudError\":null}\n\n"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié — token manquant ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (doublon, slot plein, compte verrouillé…)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entité non traitable — règle métier enfreinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Edge local status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/edge/installations/realtime/events": {
       "get": {
         "operationId": "subscribeEdgeInstallationEvents",

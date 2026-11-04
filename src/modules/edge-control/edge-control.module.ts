@@ -12,6 +12,7 @@ import { EdgeDeploymentGuard } from './edge-deployment.guard';
 import { EdgeInstallationsRealtimeController } from './edge-installations-realtime.controller';
 import { EdgeInstallationsRealtimeService } from './edge-installations-realtime.service';
 import { RealtimeModule } from '../../core/realtime/realtime.module';
+import { EdgeLocalRealtimeService } from './edge-local-realtime.service';
 
 @Module({
   imports: [ConfigModule, DatabaseModule, ClockModule, RealtimeModule],
@@ -25,6 +26,7 @@ import { RealtimeModule } from '../../core/realtime/realtime.module';
     EdgeControlRepository,
     EdgeControlService,
     EdgeLocalStatusService,
+    EdgeLocalRealtimeService,
     EdgeDeploymentGuard,
     EdgeInstallationsRealtimeService,
   ],

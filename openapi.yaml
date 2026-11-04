@@ -8386,46 +8386,73 @@ paths:
                   - translationKey
                   - translationParams
                   - data
-        '400':
+        '400': &ref_123
           description: Données invalides (validation échouée)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '401':
+        '401': &ref_124
           description: Non authentifié — token manquant ou expiré
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '409':
+        '409': &ref_125
           description: Conflit métier (doublon, slot plein, compte verrouillé…)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '422':
+        '422': &ref_126
           description: Entité non traitable — règle métier enfreinte
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '429':
+        '429': &ref_127
           description: Trop de requêtes — limite de débit atteinte
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-        '500':
+        '500': &ref_128
           description: Erreur interne sans exposition de détails techniques
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
-      tags:
+      tags: &ref_129
         - Edge local status
-      security:
+      security: &ref_130
         - bearer: []
+  /api/v1/edge/local-status/events:
+    get:
+      operationId: subscribeEdgeLocalStatus
+      summary: Receive local agent status snapshots and heartbeats
+      parameters: []
+      responses:
+        '200':
+          description: Initial local status and subsequent persisted changes
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: Flux SSE persistant. Chaque événement indique que le client doit rafraîchir les données via REST.
+                example: >+
+                  event: edge_local_status
+
+                  data:
+                  {"configured":true,"deploymentStatus":"active","cloudReachability":"connected","lastCloudSuccessAt":"2026-11-04T10:00:00.000Z","lastCloudError":null}
+
+        '400': *ref_123
+        '401': *ref_124
+        '409': *ref_125
+        '422': *ref_126
+        '429': *ref_127
+        '500': *ref_128
+      tags: *ref_129
+      security: *ref_130
   /api/v1/edge/installations/realtime/events:
     get:
       operationId: subscribeEdgeInstallationEvents
@@ -8648,7 +8675,7 @@ components:
           description: Valeur du champ « site scope display name ».
         outcome:
           type: string
-          enum: &ref_123
+          enum: &ref_131
             - success
             - failure
           description: Valeur du champ « outcome ».
@@ -8771,7 +8798,7 @@ components:
           description: Valeur du champ « site scope display name ».
         outcome:
           type: string
-          enum: *ref_123
+          enum: *ref_131
           description: Valeur du champ « outcome ».
         correlationId:
           type: string
@@ -8873,7 +8900,7 @@ components:
         userType:
           type: string
           example: human
-          enum: &ref_124
+          enum: &ref_132
             - human
             - kiosk
           description: Type de compte
@@ -8882,14 +8909,14 @@ components:
           example: fr
           description: Preferred interface language
         roles:
-          example: &ref_125
+          example: &ref_133
             - admin
           description: Rôles attribués
           type: array
           items:
             type: string
         permissions:
-          example: &ref_126
+          example: &ref_134
             - site_view
             - queue_view
             - session_operate
@@ -9034,20 +9061,20 @@ components:
         userType:
           type: string
           example: human
-          enum: *ref_124
+          enum: *ref_132
           description: Type de compte
         languagePreference:
           type: string
           example: fr
           description: Preferred interface language
         roles:
-          example: *ref_125
+          example: *ref_133
           description: Rôles attribués
           type: array
           items:
             type: string
         permissions:
-          example: *ref_126
+          example: *ref_134
           description: Permissions effectives
           type: array
           items:
@@ -9288,7 +9315,7 @@ components:
           description: URL du logo
         siteType:
           type: string
-          enum: &ref_127
+          enum: &ref_135
             - public
             - private
           example: public
@@ -9334,7 +9361,7 @@ components:
           example: 60
           description: Tolérance retard RDV (minutes)
         defaultWorkingDays:
-          example: &ref_128
+          example: &ref_136
             - 1
             - 2
             - 3
@@ -9366,7 +9393,7 @@ components:
           description: Reporter les clients en attente au lendemain
         defaultDailyResetMode:
           type: string
-          enum: &ref_129
+          enum: &ref_137
             - close_all
             - carry_over_open
           example: close_all
@@ -9399,7 +9426,7 @@ components:
           description: URL du logo
         siteType:
           type: string
-          enum: *ref_127
+          enum: *ref_135
           example: public
           description: Valeur du champ « site type ».
         timezone:
@@ -9443,7 +9470,7 @@ components:
           example: 60
           description: Tolérance retard RDV (minutes)
         defaultWorkingDays:
-          example: *ref_128
+          example: *ref_136
           description: Jours ouvrés par défaut du site (1=Lundi ... 7=Dimanche)
           type: array
           items:
@@ -9470,7 +9497,7 @@ components:
           description: Reporter les clients en attente au lendemain
         defaultDailyResetMode:
           type: string
-          enum: *ref_129
+          enum: *ref_137
           example: close_all
           description: Valeur du champ « default daily reset mode ».
         defaultDailyResetTime:
@@ -9991,7 +10018,7 @@ components:
           example: 60
           description: Tolérance retard RDV (minutes)
         workingDays:
-          example: &ref_130
+          example: &ref_138
             - 1
             - 2
             - 3
@@ -10024,7 +10051,7 @@ components:
           description: Valeur du champ « carry over waiting ».
         dailyResetMode:
           type: string
-          enum: &ref_131
+          enum: &ref_139
             - close_all
             - carry_over_open
           example: close_all
@@ -10098,7 +10125,7 @@ components:
           example: 60
           description: Tolérance retard RDV (minutes)
         workingDays:
-          example: *ref_130
+          example: *ref_138
           nullable: true
           description: Surcharge des jours ouvrés de la file (1=Lundi ... 7=Dimanche) ; null ou absence = héritage du site
           type: array
@@ -10126,7 +10153,7 @@ components:
           description: Valeur du champ « carry over waiting ».
         dailyResetMode:
           type: string
-          enum: *ref_131
+          enum: *ref_139
           example: close_all
           description: Valeur du champ « daily reset mode ».
         dailyResetTime:
@@ -12437,7 +12464,7 @@ components:
           description: Valeur du champ « ticket number ».
         entryType:
           type: string
-          enum: &ref_132
+          enum: &ref_140
             - walkin
             - appointment
           description: Valeur du champ « entry type ».
@@ -12514,7 +12541,7 @@ components:
           description: Valeur du champ « ticket number ».
         entryType:
           type: string
-          enum: *ref_132
+          enum: *ref_140
           description: Valeur du champ « entry type ».
         scheduledTime:
           type: string
@@ -14336,18 +14363,18 @@ components:
           description: Valeur du champ « name ».
         deploymentType:
           type: string
-          enum: &ref_133
+          enum: &ref_141
             - intra
           description: Valeur du champ « deployment type ».
         deploymentStatus:
           type: string
-          enum: &ref_134
+          enum: &ref_142
             - active
             - revoked
           description: Valeur du champ « deployment status ».
         status:
           type: string
-          enum: &ref_135
+          enum: &ref_143
             - online
             - offline
             - never_connected
@@ -14384,15 +14411,15 @@ components:
           description: Valeur du champ « name ».
         deploymentType:
           type: string
-          enum: *ref_133
+          enum: *ref_141
           description: Valeur du champ « deployment type ».
         deploymentStatus:
           type: string
-          enum: *ref_134
+          enum: *ref_142
           description: Valeur du champ « deployment status ».
         status:
           type: string
-          enum: *ref_135
+          enum: *ref_143
           description: Valeur du champ « status ».
         lastSeenAt:
           type: object
@@ -14503,15 +14530,15 @@ components:
           description: Valeur du champ « name ».
         deploymentType:
           type: string
-          enum: *ref_133
+          enum: *ref_141
           description: Valeur du champ « deployment type ».
         deploymentStatus:
           type: string
-          enum: *ref_134
+          enum: *ref_142
           description: Valeur du champ « deployment status ».
         status:
           type: string
-          enum: *ref_135
+          enum: *ref_143
           description: Valeur du champ « status ».
         lastSeenAt:
           type: object
