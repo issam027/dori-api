@@ -5,6 +5,7 @@ import {
   MessageEvent,
   Param,
   ParseUUIDPipe,
+  Query,
   Sse,
 } from '@nestjs/common';
 import {
@@ -16,7 +17,8 @@ import {
   ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
-import { Observable } from 'rxjs';
+import { Observable, merge, map } from 'rxjs';
+import { QueueDisplaySubscriptionDto } from './queue-display-subscription.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
@@ -35,6 +37,54 @@ export class RealtimeController {
     private readonly realtimeService: RealtimeService,
     private readonly authorization: RealtimeAuthorizationService,
   ) {}
+
+  @Sse('display')
+  @SkipResponseEnvelope()
+  @ApiBearerAuth('bearer')
+  @ApiProduces('text/event-stream')
+  @ApiOperation({
+    operationId: 'subscribeQueuesDisplayEvents',
+    summary:
+      'Multiplex authorized queue display events over one SSE connection',
+  })
+  @ApiDoriSseResponse(
+    'Multiplexed queue invalidations with queue-labelled heartbeats',
+    'queue_display_changed',
+    {
+      queueId: '550e8400-e29b-41d4-a716-446655440000',
+      reason: 'registration_called',
+      timestamp: '2026-11-03T12:00:00.000Z',
+    },
+  )
+  @ApiDoriErrorResponses({ omit409: true, omit422: true })
+  async displayMany(
+    @Query() query: QueueDisplaySubscriptionDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<Observable<MessageEvent>> {
+    // Authorize the complete subscription before sending any SSE headers.
+    for (const queueId of query.queueIds)
+      await this.authorization.verifyDisplay(user, queueId);
+    const streams = await Promise.all(
+      query.queueIds.map(async (queueId) => {
+        const source = await this.realtimeService.streamDisplay(
+          queueId,
+          undefined,
+          {
+            authorize: () => this.authorization.verifyDisplay(user, queueId),
+            expiresAt: new Date(user.accessTokenExpiresAt! * 1000),
+          },
+        );
+        return source.pipe(
+          map((event) =>
+            event.type === 'heartbeat'
+              ? { ...event, data: { ...(event.data as object), queueId } }
+              : event,
+          ),
+        );
+      }),
+    );
+    return merge(...streams);
+  }
 
   @Sse(':queueId/display')
   @SkipResponseEnvelope()
