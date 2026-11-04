@@ -17900,6 +17900,118 @@
         ]
       }
     },
+    "/api/v1/realtime/events": {
+      "post": {
+        "operationId": "subscribeRealtimeSession",
+        "summary": "One SSE connection for all subscriptions in a browser tab",
+        "parameters": [
+          {
+            "name": "X-Registration-Token",
+            "in": "header",
+            "description": "Required only for a tracking subscription; never placed in the URL or body",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RealtimeSessionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Queue events, local status, installation events, optional ticket tracking and one heartbeat",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "Flux SSE persistant. Chaque événement indique que le client doit rafraîchir les données via REST.",
+                  "example": "event: heartbeat\ndata: {\"timestamp\":\"2026-11-04T10:00:00.000Z\"}\n\n"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié — token manquant ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Accès interdit — permission insuffisante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The requested tracking token has expired"
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Realtime"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/edge/installations/realtime/events": {
       "get": {
         "operationId": "subscribeEdgeInstallationEvents",
@@ -25911,6 +26023,45 @@
           "deploymentStatus",
           "cloudReachability"
         ]
+      },
+      "RealtimeSessionDto": {
+        "type": "object",
+        "properties": {
+          "queueIds": {
+            "maxItems": 1000,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Valeur du champ « queue ids »."
+          },
+          "localStatus": {
+            "type": "object",
+            "default": false,
+            "description": "Valeur du champ « local status »."
+          },
+          "installations": {
+            "type": "object",
+            "default": false,
+            "description": "Valeur du champ « installations »."
+          },
+          "tracking": {
+            "type": "string",
+            "enum": [
+              "none",
+              "direct",
+              "replicated"
+            ],
+            "default": "none",
+            "description": "Valeur du champ « tracking »."
+          },
+          "trackingQueueId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Valeur du champ « tracking queue id »."
+          }
+        }
       }
     }
   }

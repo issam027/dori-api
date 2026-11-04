@@ -22,6 +22,10 @@ import { ReplicatedTrackingGuard } from './replicated-tracking.guard';
     ReplicatedTrackingService,
     ReplicatedTrackingGuard,
   ],
-  exports: [RealtimeService, RealtimeAuthorizationService],
+  exports: [
+    RealtimeService,
+    RealtimeAuthorizationService,
+    ReplicatedTrackingService,
+  ],
 })
 export class RealtimeModule {}

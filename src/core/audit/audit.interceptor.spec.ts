@@ -14,6 +14,7 @@ describe('AuditInterceptor', () => {
     secondaryTargetParam: 'roleId',
   };
   const reflector = {
+    get: jest.fn().mockReturnValue(false),
     getAllAndOverride: jest.fn().mockReturnValue(definition),
   } as unknown as Reflector;
   const request = {
@@ -42,6 +43,17 @@ describe('AuditInterceptor', () => {
   beforeEach(() => {
     append.mockClear();
     (reflector.getAllAndOverride as jest.Mock).mockReturnValue(definition);
+  });
+
+  it('does not audit individual events from a POST SSE subscription', async () => {
+    (reflector.get as jest.Mock).mockReturnValueOnce(true);
+    const interceptor = new AuditInterceptor(reflector, repository);
+    await lastValueFrom(
+      interceptor.intercept(context, {
+        handle: () => of({ type: 'edge_local_status' }, { type: 'heartbeat' }),
+      }),
+    );
+    expect(append).not.toHaveBeenCalled();
   });
 
   it('records a successful sensitive action without body or PII', async () => {

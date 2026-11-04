@@ -1,0 +1,133 @@
+{
+  "passed": true,
+  "validations": [
+    {
+      "name": "anonymous",
+      "status": 401,
+      "eventStream": false
+    },
+    {
+      "name": "invalid-boolean",
+      "status": 400,
+      "eventStream": false
+    },
+    {
+      "name": "token-in-body",
+      "status": 400,
+      "eventStream": false
+    },
+    {
+      "name": "empty-selection",
+      "status": 400,
+      "eventStream": false
+    },
+    {
+      "name": "foreign-queue",
+      "status": 404,
+      "eventStream": false
+    },
+    {
+      "name": "expired-tracking",
+      "status": 410,
+      "eventStream": false
+    }
+  ],
+  "protocols": ["http/1.1"],
+  "desk": {
+    "active": 1,
+    "maxActive": 1,
+    "requests": 2,
+    "events": {
+      "edge_local_status": 2,
+      "heartbeat": 1
+    },
+    "plans": [
+      {
+        "queues": 0,
+        "localStatus": true,
+        "installations": false,
+        "tracking": "none"
+      },
+      {
+        "queues": 6,
+        "localStatus": true,
+        "installations": false,
+        "tracking": "none"
+      }
+    ],
+    "failures": []
+  },
+  "health": {
+    "active": 1,
+    "maxActive": 1,
+    "requests": 3,
+    "events": {
+      "edge_local_status": 2,
+      "heartbeat": 1
+    },
+    "plans": [
+      {
+        "queues": 0,
+        "localStatus": true,
+        "installations": false,
+        "tracking": "none"
+      },
+      {
+        "queues": 6,
+        "localStatus": true,
+        "installations": false,
+        "tracking": "none"
+      },
+      {
+        "queues": 0,
+        "localStatus": true,
+        "installations": false,
+        "tracking": "none"
+      }
+    ],
+    "failures": []
+  },
+  "preview": {
+    "active": 1,
+    "maxActive": 1,
+    "requests": 5,
+    "events": {
+      "edge_local_status": 8,
+      "heartbeat": 2
+    },
+    "plans": [
+      {
+        "queues": 0,
+        "localStatus": true,
+        "installations": false,
+        "tracking": "none"
+      },
+      {
+        "queues": 6,
+        "localStatus": true,
+        "installations": false,
+        "tracking": "none"
+      },
+      {
+        "queues": 0,
+        "localStatus": true,
+        "installations": false,
+        "tracking": "none"
+      },
+      {
+        "queues": 0,
+        "localStatus": true,
+        "installations": false,
+        "tracking": "none"
+      },
+      {
+        "queues": 0,
+        "localStatus": true,
+        "installations": false,
+        "tracking": "direct"
+      }
+    ],
+    "failures": []
+  },
+  "publicStreams": 1
+}

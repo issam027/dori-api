@@ -13,6 +13,9 @@ import { EdgeInstallationsRealtimeController } from './edge-installations-realti
 import { EdgeInstallationsRealtimeService } from './edge-installations-realtime.service';
 import { RealtimeModule } from '../../core/realtime/realtime.module';
 import { EdgeLocalRealtimeService } from './edge-local-realtime.service';
+import { RealtimeSessionController } from './realtime-session.controller';
+import { RealtimeSessionService } from './realtime-session.service';
+import { RealtimeSessionGuard } from './realtime-session.guard';
 
 @Module({
   imports: [ConfigModule, DatabaseModule, ClockModule, RealtimeModule],
@@ -20,6 +23,7 @@ import { EdgeLocalRealtimeService } from './edge-local-realtime.service';
     EdgeAgentController,
     EdgeAdminController,
     EdgeLocalController,
+    RealtimeSessionController,
     EdgeInstallationsRealtimeController,
   ],
   providers: [
@@ -27,6 +31,8 @@ import { EdgeLocalRealtimeService } from './edge-local-realtime.service';
     EdgeControlService,
     EdgeLocalStatusService,
     EdgeLocalRealtimeService,
+    RealtimeSessionService,
+    RealtimeSessionGuard,
     EdgeDeploymentGuard,
     EdgeInstallationsRealtimeService,
   ],

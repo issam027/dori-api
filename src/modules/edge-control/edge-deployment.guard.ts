@@ -7,6 +7,7 @@ import { EdgeLocalStatusService } from './edge-local-status.service';
 const ALLOWED_WHEN_REVOKED = [
   '/api/v1/auth',
   '/api/v1/edge/local-status',
+  '/api/v1/realtime/events',
   '/api/v1/monitoring/health',
   '/api/edge/v1',
 ];

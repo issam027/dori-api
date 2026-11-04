@@ -6,6 +6,7 @@ import {
   NestInterceptor,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { SSE_METADATA } from '@nestjs/common/constants';
 import { Request } from 'express';
 import { Observable, catchError, concatMap, from, of, throwError } from 'rxjs';
 import { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
@@ -26,6 +27,10 @@ export class AuditInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     if (context.getType() !== 'http') return next.handle();
+    // SSE subscriptions are reads, including POST streams with a JSON selection.
+    // Never append a business audit record for each heartbeat or pushed message.
+    if (this.reflector.get<boolean>(SSE_METADATA, context.getHandler()))
+      return next.handle();
 
     const request = context.switchToHttp().getRequest<AuditedRequest>();
     const method = request.method.toUpperCase();
