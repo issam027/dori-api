@@ -710,7 +710,7 @@ export class QueueEngineRepository {
     return rows.map((row) => String(row.queue_id));
   }
 
-  getCockpitData(input: {
+  async getCockpitData(input: {
     siteId: string;
     queueIds: string[];
     userId: string;
@@ -718,6 +718,14 @@ export class QueueEngineRepository {
     previewLimit: number;
     recentLimit: number;
   }): Promise<CockpitData> {
+    // Statistics refresh can write revision rows. Keep it outside the coherent
+    // read snapshot so concurrent calls cannot cause a serialization failure.
+    if (input.queueIds.length) {
+      await this.dataSource.query(
+        'SELECT queue_id FROM dorify.queue_wait_context($1::uuid[],$2)',
+        [input.queueIds, input.now],
+      );
+    }
     return this.dataSource.transaction('REPEATABLE READ', async (manager) => {
       const sites = await manager.query(cockpitReadQueries.sites, [
         input.siteId,

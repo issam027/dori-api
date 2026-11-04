@@ -6,7 +6,7 @@ export const cockpitReadQueries = {
   operators: `SELECT user_id, username, full_name
          FROM dorify.dori_user
          WHERE user_id = $1 AND is_active = TRUE AND deleted_at IS NULL`,
-  queues: `WITH estimates AS MATERIALIZED (SELECT * FROM dorify.queue_wait_context($2::uuid[],$3))
+  queues: `WITH estimates AS MATERIALIZED (SELECT * FROM dorify.queue_wait_context($2::uuid[],$3,NULL::date,FALSE))
     SELECT q.queue_id,q.queue_code,q.queue_name,q.thread_count,
       e.waiting_count,e.active_threads AS occupied_threads_count,e.estimated_wait_minutes,
       (SELECT COUNT(*)::int FROM dorify.dori_registration r
