@@ -13,6 +13,7 @@ import {
   EdgeTrackingProjectionDto,
 } from './dto/edge-control.dto';
 import { EdgeControlRepository } from './edge-control.repository';
+import { AnnouncementsRepository } from './announcements.repository';
 
 type Row = Record<string, unknown>;
 
@@ -21,6 +22,7 @@ export class EdgeControlService {
   constructor(
     private readonly repository: EdgeControlRepository,
     private readonly clock: ClockService,
+    private readonly announcements: AnnouncementsRepository,
   ) {}
 
   async authenticate(
@@ -86,6 +88,10 @@ export class EdgeControlService {
       installationId,
       deploymentStatus: row.deployment_status as EdgeDeploymentStatus,
       checkedAt: this.clock.now().toISOString(),
+      announcements: await this.announcements.forAgent(
+        installationId,
+        this.clock.now(),
+      ),
     };
   }
 

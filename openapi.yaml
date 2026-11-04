@@ -8453,6 +8453,342 @@ paths:
         '500': *ref_128
       tags: *ref_129
       security: *ref_130
+  /api/v1/announcements:
+    get:
+      operationId: AnnouncementsController_list
+      summary: List operational announcements and their explicit target installations or local sites
+      parameters:
+        - name: scope
+          required: false
+          in: query
+          schema:
+            default: sites
+            enum:
+              - installations
+              - sites
+            type: string
+          description: Valeur du paramètre « scope ».
+        - name: page
+          required: false
+          in: query
+          schema:
+            default: 1
+            type: number
+          description: Numéro de page, à partir de 1.
+        - name: pageSize
+          required: false
+          in: query
+          schema:
+            maximum: 50
+            default: 10
+            type: number
+          description: Nombre d'éléments par page, entre 1 et 100.
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                properties:
+                  code:
+                    type: string
+                    example: OK
+                    description: Code applicatif du résultat
+                  translationKey:
+                    type: string
+                    nullable: true
+                    example: null
+                    description: Clé de traduction du message (null si aucun message)
+                  translationParams:
+                    type: object
+                    additionalProperties: true
+                    example: {}
+                    description: Paramètres de traduction
+                  data:
+                    $ref: '#/components/schemas/PaginatedAnnouncementResponseDto'
+                required:
+                  - code
+                  - translationKey
+                  - translationParams
+                  - data
+        '400': &ref_131
+          description: Données invalides (validation échouée)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '401': &ref_132
+          description: Non authentifié — token manquant ou expiré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '403': &ref_133
+          description: Accès interdit — permission insuffisante
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '404': &ref_134
+          description: Ressource introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '409': &ref_135
+          description: Conflit métier (doublon, slot plein, compte verrouillé…)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '422': &ref_136
+          description: Entité non traitable — règle métier enfreinte
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '429': &ref_137
+          description: Trop de requêtes — limite de débit atteinte
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '500': &ref_138
+          description: Erreur interne sans exposition de détails techniques
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+      tags: &ref_139
+        - Announcements
+      security: &ref_140
+        - bearer: []
+    post:
+      operationId: AnnouncementsController_create
+      summary: Publish a time-bounded notice to one or more installations or local sites
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAnnouncementDto'
+      responses:
+        '201':
+          description: Créé avec succès
+          content:
+            application/json:
+              schema:
+                properties:
+                  code:
+                    type: string
+                    example: OK
+                    description: Code applicatif du résultat
+                  translationKey:
+                    type: string
+                    nullable: true
+                    example: null
+                    description: Clé de traduction du message (null si aucun message)
+                  translationParams:
+                    type: object
+                    additionalProperties: true
+                    example: {}
+                    description: Paramètres de traduction
+                  data:
+                    $ref: '#/components/schemas/AnnouncementResponseDto'
+                required:
+                  - code
+                  - translationKey
+                  - translationParams
+                  - data
+        '400': *ref_131
+        '401': *ref_132
+        '403': *ref_133
+        '404': *ref_134
+        '409': *ref_135
+        '422': *ref_136
+        '429': *ref_137
+        '500': *ref_138
+      tags: *ref_139
+      security: *ref_140
+  /api/v1/announcements/{announcementId}:
+    delete:
+      operationId: AnnouncementsController_withdraw
+      summary: Withdraw an announcement while preserving its audit history
+      parameters:
+        - name: announcementId
+          required: true
+          in: path
+          schema:
+            type: string
+            format: uuid
+          description: Valeur du paramètre « announcement id ».
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                properties:
+                  code:
+                    type: string
+                    example: OK
+                    description: Code applicatif du résultat
+                  translationKey:
+                    type: string
+                    nullable: true
+                    example: null
+                    description: Clé de traduction du message (null si aucun message)
+                  translationParams:
+                    type: object
+                    additionalProperties: true
+                    example: {}
+                    description: Paramètres de traduction
+                  data:
+                    $ref: '#/components/schemas/WithdrawAnnouncementResponseDto'
+                required:
+                  - code
+                  - translationKey
+                  - translationParams
+                  - data
+        '400': *ref_131
+        '401': *ref_132
+        '403': *ref_133
+        '404': *ref_134
+        '409': *ref_135
+        '422': *ref_136
+        '429': *ref_137
+        '500': *ref_138
+      tags: *ref_139
+      security: *ref_140
+  /api/v1/public/announcements:
+    get:
+      operationId: LocalAnnouncementsController_list
+      summary: Read only the currently visible operational notices for this local installation
+      parameters:
+        - name: siteId
+          required: false
+          in: query
+          schema:
+            format: uuid
+            type: string
+          description: Identifiant du site.
+        - name: queueId
+          required: false
+          in: query
+          schema:
+            format: uuid
+            type: string
+          description: Identifiant de la file.
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                properties:
+                  code:
+                    type: string
+                    example: OK
+                    description: Code applicatif du résultat
+                  translationKey:
+                    type: string
+                    nullable: true
+                    example: null
+                    description: Clé de traduction du message (null si aucun message)
+                  translationParams:
+                    type: object
+                    additionalProperties: true
+                    example: {}
+                    description: Paramètres de traduction
+                  data:
+                    $ref: '#/components/schemas/LocalAnnouncementsResponseDto'
+                required:
+                  - code
+                  - translationKey
+                  - translationParams
+                  - data
+        '400':
+          description: Données invalides (validation échouée)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '429':
+          description: Trop de requêtes — limite de débit atteinte
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '500':
+          description: Erreur interne sans exposition de détails techniques
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+      tags:
+        - Public announcements
+  /api/v1/public/realtime/events:
+    post:
+      operationId: subscribePublicRealtimeSession
+      summary: Share one public SSE connection for local announcements and optional ticket tracking
+      parameters:
+        - name: X-Registration-Token
+          in: header
+          description: Required only when following a ticket
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicRealtimeSessionDto'
+      responses:
+        '200':
+          description: Active announcements, optional tracking and one heartbeat
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: Flux SSE persistant. Chaque événement indique que le client doit rafraîchir les données via REST.
+                example: |+
+                  event: announcements
+                  data: {"items":[]}
+
+        '400':
+          description: Données invalides (validation échouée)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '401':
+          description: Non authentifié — token manquant ou expiré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '410':
+          description: Jeton de suivi expiré ou inscription inactive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '429':
+          description: Trop de requêtes — limite de débit atteinte
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '500':
+          description: Erreur interne sans exposition de détails techniques
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+      tags:
+        - Realtime
   /api/v1/realtime/events:
     post:
       operationId: subscribeRealtimeSession
@@ -8507,7 +8843,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '410':
-          description: The requested tracking token has expired
+          description: Jeton de suivi expiré ou inscription inactive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
         '429':
           description: Trop de requêtes — limite de débit atteinte
           content:
@@ -8746,7 +9086,7 @@ components:
           description: Valeur du champ « site scope display name ».
         outcome:
           type: string
-          enum: &ref_131
+          enum: &ref_141
             - success
             - failure
           description: Valeur du champ « outcome ».
@@ -8869,7 +9209,7 @@ components:
           description: Valeur du champ « site scope display name ».
         outcome:
           type: string
-          enum: *ref_131
+          enum: *ref_141
           description: Valeur du champ « outcome ».
         correlationId:
           type: string
@@ -8971,7 +9311,7 @@ components:
         userType:
           type: string
           example: human
-          enum: &ref_132
+          enum: &ref_142
             - human
             - kiosk
           description: Type de compte
@@ -8980,14 +9320,14 @@ components:
           example: fr
           description: Preferred interface language
         roles:
-          example: &ref_133
+          example: &ref_143
             - admin
           description: Rôles attribués
           type: array
           items:
             type: string
         permissions:
-          example: &ref_134
+          example: &ref_144
             - site_view
             - queue_view
             - session_operate
@@ -9132,20 +9472,20 @@ components:
         userType:
           type: string
           example: human
-          enum: *ref_132
+          enum: *ref_142
           description: Type de compte
         languagePreference:
           type: string
           example: fr
           description: Preferred interface language
         roles:
-          example: *ref_133
+          example: *ref_143
           description: Rôles attribués
           type: array
           items:
             type: string
         permissions:
-          example: *ref_134
+          example: *ref_144
           description: Permissions effectives
           type: array
           items:
@@ -9386,7 +9726,7 @@ components:
           description: URL du logo
         siteType:
           type: string
-          enum: &ref_135
+          enum: &ref_145
             - public
             - private
           example: public
@@ -9432,7 +9772,7 @@ components:
           example: 60
           description: Tolérance retard RDV (minutes)
         defaultWorkingDays:
-          example: &ref_136
+          example: &ref_146
             - 1
             - 2
             - 3
@@ -9464,7 +9804,7 @@ components:
           description: Reporter les clients en attente au lendemain
         defaultDailyResetMode:
           type: string
-          enum: &ref_137
+          enum: &ref_147
             - close_all
             - carry_over_open
           example: close_all
@@ -9497,7 +9837,7 @@ components:
           description: URL du logo
         siteType:
           type: string
-          enum: *ref_135
+          enum: *ref_145
           example: public
           description: Valeur du champ « site type ».
         timezone:
@@ -9541,7 +9881,7 @@ components:
           example: 60
           description: Tolérance retard RDV (minutes)
         defaultWorkingDays:
-          example: *ref_136
+          example: *ref_146
           description: Jours ouvrés par défaut du site (1=Lundi ... 7=Dimanche)
           type: array
           items:
@@ -9568,7 +9908,7 @@ components:
           description: Reporter les clients en attente au lendemain
         defaultDailyResetMode:
           type: string
-          enum: *ref_137
+          enum: *ref_147
           example: close_all
           description: Valeur du champ « default daily reset mode ».
         defaultDailyResetTime:
@@ -10089,7 +10429,7 @@ components:
           example: 60
           description: Tolérance retard RDV (minutes)
         workingDays:
-          example: &ref_138
+          example: &ref_148
             - 1
             - 2
             - 3
@@ -10122,7 +10462,7 @@ components:
           description: Valeur du champ « carry over waiting ».
         dailyResetMode:
           type: string
-          enum: &ref_139
+          enum: &ref_149
             - close_all
             - carry_over_open
           example: close_all
@@ -10196,7 +10536,7 @@ components:
           example: 60
           description: Tolérance retard RDV (minutes)
         workingDays:
-          example: *ref_138
+          example: *ref_148
           nullable: true
           description: Surcharge des jours ouvrés de la file (1=Lundi ... 7=Dimanche) ; null ou absence = héritage du site
           type: array
@@ -10224,7 +10564,7 @@ components:
           description: Valeur du champ « carry over waiting ».
         dailyResetMode:
           type: string
-          enum: *ref_139
+          enum: *ref_149
           example: close_all
           description: Valeur du champ « daily reset mode ».
         dailyResetTime:
@@ -12535,7 +12875,7 @@ components:
           description: Valeur du champ « ticket number ».
         entryType:
           type: string
-          enum: &ref_140
+          enum: &ref_150
             - walkin
             - appointment
           description: Valeur du champ « entry type ».
@@ -12612,7 +12952,7 @@ components:
           description: Valeur du champ « ticket number ».
         entryType:
           type: string
-          enum: *ref_140
+          enum: *ref_150
           description: Valeur du champ « entry type ».
         scheduledTime:
           type: string
@@ -14434,18 +14774,18 @@ components:
           description: Valeur du champ « name ».
         deploymentType:
           type: string
-          enum: &ref_141
+          enum: &ref_151
             - intra
           description: Valeur du champ « deployment type ».
         deploymentStatus:
           type: string
-          enum: &ref_142
+          enum: &ref_152
             - active
             - revoked
           description: Valeur du champ « deployment status ».
         status:
           type: string
-          enum: &ref_143
+          enum: &ref_153
             - online
             - offline
             - never_connected
@@ -14482,15 +14822,15 @@ components:
           description: Valeur du champ « name ».
         deploymentType:
           type: string
-          enum: *ref_141
+          enum: *ref_151
           description: Valeur du champ « deployment type ».
         deploymentStatus:
           type: string
-          enum: *ref_142
+          enum: *ref_152
           description: Valeur du champ « deployment status ».
         status:
           type: string
-          enum: *ref_143
+          enum: *ref_153
           description: Valeur du champ « status ».
         lastSeenAt:
           type: object
@@ -14601,15 +14941,15 @@ components:
           description: Valeur du champ « name ».
         deploymentType:
           type: string
-          enum: *ref_141
+          enum: *ref_151
           description: Valeur du champ « deployment type ».
         deploymentStatus:
           type: string
-          enum: *ref_142
+          enum: *ref_152
           description: Valeur du champ « deployment status ».
         status:
           type: string
-          enum: *ref_143
+          enum: *ref_153
           description: Valeur du champ « status ».
         lastSeenAt:
           type: object
@@ -14684,9 +15024,251 @@ components:
         - configured
         - deploymentStatus
         - cloudReachability
+    AnnouncementTargetItemDto:
+      type: object
+      properties:
+        targetId:
+          type: string
+          format: uuid
+          description: Valeur du champ « target id ».
+        name:
+          type: string
+          description: Valeur du champ « name ».
+      required:
+        - targetId
+        - name
+    AnnouncementResponseDto:
+      type: object
+      properties:
+        announcementId:
+          type: string
+          format: uuid
+          description: Valeur du champ « announcement id ».
+        title:
+          type: string
+          description: Valeur du champ « title ».
+        message:
+          type: string
+          description: Valeur du champ « message ».
+        severity:
+          type: string
+          enum: &ref_154
+            - info
+            - warning
+            - critical
+          description: Valeur du champ « severity ».
+        startsAt:
+          type: string
+          format: date-time
+          description: Valeur du champ « starts at ».
+        endsAt:
+          type: string
+          format: date-time
+          description: Valeur du champ « ends at ».
+        scope:
+          type: string
+          enum:
+            - installations
+            - sites
+          description: Valeur du champ « scope ».
+        canWithdraw:
+          type: boolean
+          description: Valeur du champ « can withdraw ».
+        targets:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnnouncementTargetItemDto'
+          description: Valeur du champ « targets ».
+        status:
+          type: string
+          enum:
+            - scheduled
+            - active
+            - expired
+            - withdrawn
+          description: Valeur du champ « status ».
+        createdAt:
+          type: string
+          format: date-time
+          description: Date de création.
+      required:
+        - announcementId
+        - title
+        - message
+        - severity
+        - startsAt
+        - endsAt
+        - scope
+        - canWithdraw
+        - targets
+        - status
+        - createdAt
+    PaginatedAnnouncementResponseDto:
+      type: object
+      properties:
+        observedAt:
+          type: string
+          format: date-time
+          description: Valeur du champ « observed at ».
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnnouncementResponseDto'
+          description: Valeur du champ « items ».
+        total:
+          type: number
+          description: Nombre total d'éléments.
+        page:
+          type: number
+          description: Numéro de la page courante.
+        pageSize:
+          type: number
+          description: Nombre d'éléments par page.
+      required:
+        - observedAt
+        - items
+        - total
+        - page
+        - pageSize
+    CreateAnnouncementDto:
+      type: object
+      properties:
+        scope:
+          type: string
+          enum:
+            - installations
+            - sites
+          description: Valeur du champ « scope ».
+        targetIds:
+          maxItems: 1000
+          type: array
+          items:
+            type: string
+          description: Valeur du champ « target ids ».
+        title:
+          type: string
+          maxLength: 120
+          description: Valeur du champ « title ».
+        message:
+          type: string
+          maxLength: 2000
+          description: Valeur du champ « message ».
+        severity:
+          type: string
+          enum:
+            - info
+            - warning
+            - critical
+          description: Valeur du champ « severity ».
+        startsAt:
+          type: string
+          format: date-time
+          description: UTC or offset date; defaults to now
+        endsAt:
+          type: string
+          format: date-time
+          description: Valeur du champ « ends at ».
+      required:
+        - scope
+        - targetIds
+        - title
+        - message
+        - severity
+        - endsAt
+    WithdrawAnnouncementResponseDto:
+      type: object
+      properties:
+        announcementId:
+          type: string
+          format: uuid
+          description: Valeur du champ « announcement id ».
+      required:
+        - announcementId
+    AnnouncementItemDto:
+      type: object
+      properties:
+        announcementId:
+          type: string
+          format: uuid
+          description: Valeur du champ « announcement id ».
+        title:
+          type: string
+          description: Valeur du champ « title ».
+        message:
+          type: string
+          description: Valeur du champ « message ».
+        severity:
+          type: string
+          enum: *ref_154
+          description: Valeur du champ « severity ».
+        startsAt:
+          type: string
+          format: date-time
+          description: Valeur du champ « starts at ».
+        endsAt:
+          type: string
+          format: date-time
+          description: Valeur du champ « ends at ».
+      required:
+        - announcementId
+        - title
+        - message
+        - severity
+        - startsAt
+        - endsAt
+    LocalAnnouncementsResponseDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnnouncementItemDto'
+          description: Valeur du champ « items ».
+        observedAt:
+          type: string
+          format: date-time
+          description: Valeur du champ « observed at ».
+      required:
+        - items
+        - observedAt
+    PublicRealtimeSessionDto:
+      type: object
+      properties:
+        announcements:
+          type: boolean
+          default: false
+          description: Valeur du champ « announcements ».
+        announcementSiteId:
+          type: string
+          format: uuid
+          description: Valeur du champ « announcement site id ».
+        tracking:
+          type: string
+          enum: &ref_155
+            - none
+            - direct
+            - replicated
+          default: none
+          description: Valeur du champ « tracking ».
+        trackingQueueId:
+          type: string
+          format: uuid
+          description: Valeur du champ « tracking queue id ».
     RealtimeSessionDto:
       type: object
       properties:
+        announcements:
+          type: boolean
+          default: false
+          description: Valeur du champ « announcements ».
+        announcementSiteId:
+          type: string
+          format: uuid
+          description: Valeur du champ « announcement site id ».
+        announcementAdministration:
+          type: boolean
+          default: false
+          description: Valeur du champ « announcement administration ».
         queueIds:
           maxItems: 1000
           type: array
@@ -14695,19 +15277,16 @@ components:
             format: uuid
           description: Valeur du champ « queue ids ».
         localStatus:
-          type: object
+          type: boolean
           default: false
           description: Valeur du champ « local status ».
         installations:
-          type: object
+          type: boolean
           default: false
           description: Valeur du champ « installations ».
         tracking:
           type: string
-          enum:
-            - none
-            - direct
-            - replicated
+          enum: *ref_155
           default: none
           description: Valeur du champ « tracking ».
         trackingQueueId:

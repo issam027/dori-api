@@ -16,6 +16,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { AnnouncementItemDto } from './announcement.dto';
 
 export enum EdgeCommandType {
   RunHealthCheck = 'RUN_HEALTH_CHECK',
@@ -164,6 +165,8 @@ export class EdgeAgentInstallationStatusResponseDto {
   @ApiProperty({ enum: EdgeDeploymentStatus })
   deploymentStatus!: EdgeDeploymentStatus;
   @ApiProperty({ format: 'date-time' }) checkedAt!: string;
+  @ApiProperty({ type: [AnnouncementItemDto] })
+  announcements!: AnnouncementItemDto[];
 }
 
 export class EdgeLocalStatusResponseDto {

@@ -1,3 +1,4 @@
+import { LocalAnnouncementsService } from './local-announcements.service';
 import { MessageEvent, RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, SSE_METADATA } from '@nestjs/common/constants';
 import { plainToInstance } from 'class-transformer';
@@ -58,6 +59,7 @@ function setup() {
     status as unknown as EdgeLocalStatusService,
     events as DatabaseEventsService,
     { now: () => new Date() } as ClockService,
+    { stream: () => local } as unknown as LocalAnnouncementsService,
   );
   const user = {
     roles: ['root'],

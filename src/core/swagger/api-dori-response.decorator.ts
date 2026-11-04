@@ -94,6 +94,7 @@ export function ApiDoriErrorResponses(
     omit404?: boolean;
     omit409?: boolean;
     omit422?: boolean;
+    include410?: boolean;
   } = {},
 ) {
   opts.omit404 ??= false;
@@ -159,6 +160,16 @@ export function ApiDoriErrorResponses(
     );
   }
 
+  if (opts.include410) {
+    decorators.push(
+      ApiResponse({
+        status: 410,
+        description: 'Jeton de suivi expiré ou inscription inactive',
+        content: errorContent(),
+      }),
+    );
+  }
+
   decorators.push(
     ApiResponse({
       status: 429,
@@ -194,17 +205,9 @@ export function ApiDoriPublicErrorResponses(
       omit404: opts.omit404,
       omit409: opts.omit409,
       omit422: opts.omit422,
+      include410: opts.include410,
     }),
   ];
-  if (opts.include410) {
-    decorators.push(
-      ApiResponse({
-        status: 410,
-        description: 'Jeton de suivi expiré ou inscription inactive',
-        content: errorContent(),
-      }),
-    );
-  }
   return applyDecorators(...decorators);
 }
 

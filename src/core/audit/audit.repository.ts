@@ -68,6 +68,7 @@ export const AUDIT_EVENT_READ_MODEL = `(
       WHEN 'queue' THEN COALESCE(NULLIF(BTRIM(target_queue.queue_name), ''), target_queue.queue_code, 'File #' || ae.target_id)
       WHEN 'person' THEN COALESCE(NULLIF(BTRIM(CONCAT_WS(' ', target_person.first_name, target_person.last_name)), ''), 'Personne #' || ae.target_id)
       WHEN 'registration' THEN COALESCE(target_registration.ticket_number, 'registration #' || ae.target_id)
+      WHEN 'announcement' THEN COALESCE(target_announcement.title, 'Annonce #' || ae.target_id)
       WHEN 'role' THEN COALESCE(target_role.role_name, 'Rôle #' || ae.target_id)
       WHEN 'audit_event' THEN COALESCE('Événement ' || ae.target_id, 'Journal d’audit')
       ELSE CASE WHEN ae.target_id IS NULL THEN ae.target_type ELSE ae.target_type || ' #' || ae.target_id END
@@ -92,6 +93,7 @@ export const AUDIT_EVENT_READ_MODEL = `(
       WHEN 'queue' THEN target_queue.is_active
       WHEN 'person' THEN target_person.is_active
       WHEN 'role' THEN target_role.is_active
+      WHEN 'announcement' THEN target_announcement.withdrawn_at IS NULL
       ELSE NULL
     END AS target_is_active,
     CASE
@@ -121,6 +123,8 @@ export const AUDIT_EVENT_READ_MODEL = `(
     AND target_registration.registration_id = CASE WHEN ae.target_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN ae.target_id::uuid END
   LEFT JOIN dorify.dori_role target_role ON ae.target_type = 'role'
     AND target_role.role_id = CASE WHEN ae.target_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN ae.target_id::uuid END
+  LEFT JOIN dorify.dori_announcement target_announcement ON ae.target_type = 'announcement'
+    AND target_announcement.announcement_id = CASE WHEN ae.target_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN ae.target_id::uuid END
   LEFT JOIN dorify.dori_role secondary_role ON ae.action IN ('user.role.assign', 'user.role.remove')
     AND secondary_role.role_id = CASE WHEN ae.secondary_target_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN ae.secondary_target_id::uuid END
   LEFT JOIN dorify.dori_user secondary_user

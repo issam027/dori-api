@@ -11,6 +11,18 @@ import {
 } from 'class-validator';
 
 export class RealtimeSessionDto {
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  announcements: boolean = false;
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID('4')
+  announcementSiteId?: string;
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  announcementAdministration: boolean = false;
   @ApiPropertyOptional({ type: [String], format: 'uuid', maxItems: 1000 })
   @IsOptional()
   @IsArray()
@@ -22,12 +34,12 @@ export class RealtimeSessionDto {
   @ApiPropertyOptional({ default: false })
   @IsOptional()
   @IsBoolean()
-  localStatus = false;
+  localStatus: boolean = false;
 
   @ApiPropertyOptional({ default: false })
   @IsOptional()
   @IsBoolean()
-  installations = false;
+  installations: boolean = false;
 
   @ApiPropertyOptional({
     enum: ['none', 'direct', 'replicated'],

@@ -14,7 +14,6 @@ import {
   ApiHeader,
   ApiOperation,
   ApiProduces,
-  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { EMPTY, Observable, fromEvent, takeUntil } from 'rxjs';
@@ -51,11 +50,7 @@ export class RealtimeSessionController {
     operationId: 'subscribeRealtimeSession',
     summary: 'One SSE connection for all subscriptions in a browser tab',
   })
-  @ApiDoriErrorResponses({ omit409: true, omit422: true })
-  @ApiResponse({
-    status: 410,
-    description: 'The requested tracking token has expired',
-  })
+  @ApiDoriErrorResponses({ omit409: true, omit422: true, include410: true })
   @ApiDoriSseResponse(
     'Queue events, local status, installation events, optional ticket tracking and one heartbeat',
     'heartbeat',

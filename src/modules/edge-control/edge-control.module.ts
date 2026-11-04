@@ -1,3 +1,4 @@
+import { RbacModule } from '../../core/rbac/rbac.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ClockModule } from '../../core/clock/clock.module';
@@ -16,13 +17,31 @@ import { EdgeLocalRealtimeService } from './edge-local-realtime.service';
 import { RealtimeSessionController } from './realtime-session.controller';
 import { RealtimeSessionService } from './realtime-session.service';
 import { RealtimeSessionGuard } from './realtime-session.guard';
+import { AnnouncementsController } from './announcements.controller';
+import { AnnouncementsService } from './announcements.service';
+import { AnnouncementsRepository } from './announcements.repository';
+import { LocalAnnouncementsService } from './local-announcements.service';
+import { LocalAnnouncementsController } from './local-announcements.controller';
+import {
+  PublicRealtimeSessionController,
+  PublicRealtimeSessionGuard,
+} from './public-realtime-session.controller';
 
 @Module({
-  imports: [ConfigModule, DatabaseModule, ClockModule, RealtimeModule],
+  imports: [
+    ConfigModule,
+    DatabaseModule,
+    ClockModule,
+    RealtimeModule,
+    RbacModule,
+  ],
   controllers: [
     EdgeAgentController,
     EdgeAdminController,
     EdgeLocalController,
+    AnnouncementsController,
+    LocalAnnouncementsController,
+    PublicRealtimeSessionController,
     RealtimeSessionController,
     EdgeInstallationsRealtimeController,
   ],
@@ -30,6 +49,10 @@ import { RealtimeSessionGuard } from './realtime-session.guard';
     EdgeControlRepository,
     EdgeControlService,
     EdgeLocalStatusService,
+    AnnouncementsService,
+    AnnouncementsRepository,
+    LocalAnnouncementsService,
+    PublicRealtimeSessionGuard,
     EdgeLocalRealtimeService,
     RealtimeSessionService,
     RealtimeSessionGuard,

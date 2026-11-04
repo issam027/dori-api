@@ -1,20 +1,6 @@
 import { Injectable, MessageEvent } from '@nestjs/common';
-import {
-  EMPTY,
-  Observable,
-  catchError,
-  concatWith,
-  defer,
-  filter,
-  ignoreElements,
-  interval,
-  map,
-  merge,
-  takeUntil,
-  throwError,
-  timer,
-} from 'rxjs';
-import { readOnChange } from '../../core/realtime/read-on-change';
+import { Observable } from 'rxjs';
+import { sessionEvents } from '../../core/realtime/session-events';
 import { AuthenticatedUser } from '../../core/auth/interfaces/jwt-payload.interface';
 import { ClockService } from '../../core/clock/clock.service';
 import { DatabaseEventsService } from '../../core/database/database-events.service';
@@ -26,6 +12,7 @@ import { EdgeLocalStatusService } from './edge-local-status.service';
 import { EdgeLocalRealtimeService } from './edge-local-realtime.service';
 import { EdgeInstallationsRealtimeService } from './edge-installations-realtime.service';
 import { RealtimeSessionDto } from './dto/realtime-session.dto';
+import { LocalAnnouncementsService } from './local-announcements.service';
 
 @Injectable()
 export class RealtimeSessionService {
@@ -38,6 +25,7 @@ export class RealtimeSessionService {
     private readonly status: EdgeLocalStatusService,
     private readonly events: DatabaseEventsService,
     private readonly clock: ClockService,
+    private readonly announcements: LocalAnnouncementsService,
   ) {}
 
   async stream(
@@ -49,6 +37,8 @@ export class RealtimeSessionService {
     if (
       !queueIds.length &&
       !query.localStatus &&
+      !query.announcements &&
+      !query.announcementAdministration &&
       !query.installations &&
       query.tracking === 'none'
     )
@@ -67,6 +57,15 @@ export class RealtimeSessionService {
       )
         throw new DoriException('FORBIDDEN_PERMISSION');
     };
+    const verifyAnnouncementAdministration = async () => {
+      await verifySession();
+      if (
+        !user.roles.includes('root') &&
+        !user.permissions.includes('site_edit') &&
+        !user.permissions.includes('edge_installation_manage')
+      )
+        throw new DoriException('FORBIDDEN_PERMISSION');
+    };
     // Validate the complete subscription before exposing even the local-status snapshot.
     await verifySession();
     if (queueIds.length || query.installations || query.tracking !== 'none')
@@ -74,6 +73,8 @@ export class RealtimeSessionService {
     for (const queueId of queueIds)
       await this.authorization.verifyDisplay(user, queueId);
     if (query.installations) await verifyInstallations();
+    if (query.announcementAdministration)
+      await verifyAnnouncementAdministration();
     if (query.tracking === 'direct')
       await this.authorization.verifyTracking(
         query.trackingQueueId!,
@@ -83,6 +84,21 @@ export class RealtimeSessionService {
       await this.tracking.authorize(trackingToken);
     const expiresAt = new Date((user.accessTokenExpiresAt ?? 0) * 1000);
     const sources: Observable<MessageEvent>[] = [];
+    if (query.announcements) {
+      const siteId =
+        query.tracking === 'replicated'
+          ? undefined
+          : query.tracking === 'direct'
+            ? await this.announcements.siteForQueue(query.trackingQueueId!)
+            : query.announcementSiteId;
+      sources.push(this.announcements.stream(siteId));
+    }
+    if (query.announcementAdministration)
+      sources.push(
+        this.announcements.streamAdministration(
+          verifyAnnouncementAdministration,
+        ),
+      );
     if (query.localStatus)
       sources.push(this.local.stream({ authorize: verifySession, expiresAt }));
     if (query.installations)
@@ -123,45 +139,9 @@ export class RealtimeSessionService {
     }
     if (query.tracking === 'replicated')
       sources.push(await this.tracking.stream(trackingToken));
-    const heartbeat = interval(15000).pipe(
-      filter(() => this.events.connected),
-      map(() => ({
-        type: 'heartbeat',
-        data: { timestamp: this.clock.now().toISOString() },
-      })),
-    );
-    // If any topic loses authorization, close the whole connection: never advertise
-    // healthy heartbeats for a silently terminated subscription.
-    const security = readOnChange(
-      this.events.changes(['authorization']),
-      verifySession,
-    ).pipe(ignoreElements());
-    return merge(
-      heartbeat,
-      security,
-      ...sources.map((source) =>
-        source.pipe(
-          filter((event) => event.type !== 'heartbeat'),
-          concatWith(
-            throwError(() => new Error('Realtime subscription ended')),
-          ),
-        ),
-      ),
-    ).pipe(
-      catchError(() => EMPTY),
-      takeUntil(
-        defer(() =>
-          timer(
-            Math.max(
-              0,
-              Math.min(
-                2147483647,
-                expiresAt.getTime() - this.clock.now().getTime(),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    return sessionEvents(sources, this.events, this.clock, {
+      authorize: verifySession,
+      expiresAt,
+    });
   }
 }

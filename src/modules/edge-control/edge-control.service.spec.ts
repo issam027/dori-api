@@ -1,3 +1,4 @@
+import { AnnouncementsRepository } from './announcements.repository';
 import { ClockService } from '../../core/clock/clock.service';
 import { EdgeControlRepository } from './edge-control.repository';
 import { EdgeControlService } from './edge-control.service';
@@ -19,6 +20,9 @@ describe('EdgeControlService', () => {
   const service = new EdgeControlService(
     repository as unknown as EdgeControlRepository,
     clock as unknown as ClockService,
+    {
+      forAgent: jest.fn(async () => []),
+    } as unknown as AnnouncementsRepository,
   );
 
   beforeEach(() => jest.clearAllMocks());
@@ -89,6 +93,7 @@ describe('EdgeControlService', () => {
       installationId: '00000000-0000-4000-8000-000000000001',
       deploymentStatus: 'revoked',
       checkedAt: '2026-10-30T08:00:00.000Z',
+      announcements: [],
     });
   });
 });
