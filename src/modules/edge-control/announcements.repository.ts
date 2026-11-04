@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { DoriException } from '../../core/errors/dori.exception';
 import { returningRows } from '../../core/database/returning-rows';
 import {
@@ -7,6 +7,8 @@ import {
   AnnouncementResponseDto,
   AnnouncementItemDto,
   AnnouncementScope,
+  AnnouncementQueryDto,
+  UpdateAnnouncementDto,
 } from './dto/announcement.dto';
 
 type AnnouncementRow = {
@@ -18,6 +20,7 @@ type AnnouncementRow = {
   starts_at: Date | string;
   ends_at: Date | string;
   created_at: Date | string;
+  updated_at: Date | string;
   withdrawn_at: Date | string | null;
   targets: AnnouncementResponseDto['targets'];
 };
@@ -26,7 +29,7 @@ const fields = `a.*,CASE a.scope WHEN 'installations' THEN COALESCE((SELECT json
 export function publicAnnouncement(
   row: Omit<
     AnnouncementRow,
-    'scope' | 'targets' | 'created_at' | 'withdrawn_at'
+    'scope' | 'targets' | 'created_at' | 'updated_at' | 'withdrawn_at'
   >,
 ): AnnouncementItemDto {
   return {
@@ -50,6 +53,10 @@ function adminAnnouncement(
     scope: row.scope,
     canWithdraw:
       !permitted || row.targets.every((t) => permitted.has(t.targetId)),
+    canEdit:
+      !row.withdrawn_at &&
+      (!permitted || row.targets.every((t) => permitted.has(t.targetId))),
+    updatedAt: new Date(row.updated_at ?? row.created_at).toISOString(),
     targets: permitted
       ? row.targets.filter((t) => permitted.has(t.targetId))
       : row.targets,
@@ -77,28 +84,11 @@ export class AnnouncementsRepository {
       await transaction.query(
         "SELECT pg_advisory_xact_lock(hashtext('dorify:announcements'))",
       );
-      const installation = body.scope === 'installations';
-      const relation = installation
-        ? 'dorify.dori_announcement_installation'
-        : 'dorify.dori_announcement_site';
-      const id = installation ? 'installation_id' : 'site_id';
-      const entity = installation
-        ? 'dorify.dori_edge_installation'
-        : 'dorify.dori_site';
-      const active = installation
-        ? "credential_status='active'"
-        : 'is_active=TRUE';
-      const targets = (await transaction.query(
-        `SELECT ${id} FROM ${entity} WHERE ${id}=ANY($1::uuid[]) AND ${active} FOR KEY SHARE`,
-        [body.targetIds],
-      )) as object[];
-      if (targets.length !== body.targetIds.length)
-        throw new DoriException('RESOURCE_NOT_FOUND');
-      const full = (await transaction.query(
-        `SELECT t.${id} FROM ${relation} t JOIN dorify.dori_announcement a USING(announcement_id) WHERE t.${id}=ANY($1::uuid[]) AND a.withdrawn_at IS NULL AND a.ends_at>$2 GROUP BY t.${id} HAVING count(*)>=50`,
-        [body.targetIds, now],
-      )) as object[];
-      if (full.length) throw new DoriException('CONFLICT');
+      const { relation, id } = await this.validateTargets(
+        transaction,
+        body,
+        now,
+      );
       const [created] = (await transaction.query(
         `INSERT INTO dorify.dori_announcement(scope,title,message,severity,starts_at,ends_at,created_by_user_id) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING announcement_id`,
         [
@@ -122,21 +112,91 @@ export class AnnouncementsRepository {
       return adminAnnouncement(row, now);
     });
   }
+  private async validateTargets(
+    transaction: EntityManager,
+    body: Pick<CreateAnnouncementDto, 'scope' | 'targetIds'>,
+    now: Date,
+    excludingId?: string,
+  ) {
+    const installation = body.scope === 'installations';
+    const relation = installation
+      ? 'dorify.dori_announcement_installation'
+      : 'dorify.dori_announcement_site';
+    const id = installation ? 'installation_id' : 'site_id';
+    const entity = installation
+      ? 'dorify.dori_edge_installation'
+      : 'dorify.dori_site';
+    const active = installation
+      ? "credential_status='active'"
+      : 'is_active=TRUE';
+    const targets = (await transaction.query(
+      `SELECT ${id} FROM ${entity} WHERE ${id}=ANY($1::uuid[]) AND ${active} FOR KEY SHARE`,
+      [body.targetIds],
+    )) as object[];
+    if (targets.length !== body.targetIds.length)
+      throw new DoriException('RESOURCE_NOT_FOUND');
+    const full = (await transaction.query(
+      `SELECT t.${id} FROM ${relation} t JOIN dorify.dori_announcement a USING(announcement_id) WHERE t.${id}=ANY($1::uuid[]) AND a.withdrawn_at IS NULL AND a.deleted_at IS NULL AND a.ends_at>$2 AND ($3::uuid IS NULL OR a.announcement_id<>$3) GROUP BY t.${id} HAVING count(*)>=50`,
+      [body.targetIds, now, excludingId ?? null],
+    )) as object[];
+    if (full.length) throw new DoriException('CONFLICT');
+
+    return { relation, id };
+  }
   async list(
     scope: AnnouncementScope,
     page: number,
     pageSize: number,
     now: Date,
     allowedSiteIds?: string[],
+    query: Partial<AnnouncementQueryDto> = {},
   ) {
-    const predicate = `a.scope=$1 AND ($2::uuid[] IS NULL OR EXISTS(SELECT 1 FROM dorify.dori_announcement_site t WHERE t.announcement_id=a.announcement_id AND t.site_id=ANY($2::uuid[])))`;
+    let predicate = `a.deleted_at IS NULL AND a.scope=$1 AND ($2::uuid[] IS NULL OR EXISTS(SELECT 1 FROM dorify.dori_announcement_site t WHERE t.announcement_id=a.announcement_id AND t.site_id=ANY($2::uuid[])))`;
+    const params: unknown[] = [scope, allowedSiteIds ?? null];
+    const add = (value: unknown) => {
+      params.push(value);
+      return '$' + params.length;
+    };
+    if (query.search) {
+      const parameter = add(
+        '%' + query.search.replace(/[\\%_]/g, '\\$&') + '%',
+      );
+      predicate += ` AND (a.title ILIKE ${parameter} OR a.message ILIKE ${parameter})`;
+    }
+    if (query.severity) predicate += ' AND a.severity=' + add(query.severity);
+    if (query.targetId) {
+      const relation =
+        scope === 'sites'
+          ? 'dorify.dori_announcement_site'
+          : 'dorify.dori_announcement_installation';
+      const id = scope === 'sites' ? 'site_id' : 'installation_id';
+      predicate += ` AND EXISTS(SELECT 1 FROM ${relation} ft WHERE ft.announcement_id=a.announcement_id AND ft.${id}=${add(query.targetId)})`;
+    }
+    if (query.dateFrom) predicate += ' AND a.ends_at>=' + add(query.dateFrom);
+    if (query.dateTo) predicate += ' AND a.starts_at<=' + add(query.dateTo);
+    if (query.status) {
+      const timestamp = add(now);
+      predicate += ` AND (CASE WHEN a.withdrawn_at IS NOT NULL THEN 'withdrawn' WHEN a.ends_at<=${timestamp} THEN 'expired' WHEN a.starts_at>${timestamp} THEN 'scheduled' ELSE 'active' END)=${add(query.status)}`;
+    }
+    const sorts: Record<string, string> = {
+      'createdAt:desc': 'a.created_at DESC',
+      'createdAt:asc': 'a.created_at ASC',
+      'title:asc': 'a.title ASC',
+      'title:desc': 'a.title DESC',
+      'startsAt:asc': 'a.starts_at ASC',
+      'startsAt:desc': 'a.starts_at DESC',
+      'endsAt:asc': 'a.ends_at ASC',
+      'endsAt:desc': 'a.ends_at DESC',
+    };
+    const order =
+      sorts[query.sort ?? 'createdAt:desc'] ?? sorts['createdAt:desc'];
     const rows = (await this.database.query(
-      `SELECT ${fields} FROM dorify.dori_announcement a WHERE ${predicate} ORDER BY a.created_at DESC,a.announcement_id DESC LIMIT $3 OFFSET $4`,
-      [scope, allowedSiteIds ?? null, pageSize, (page - 1) * pageSize],
+      `SELECT ${fields} FROM dorify.dori_announcement a WHERE ${predicate} ORDER BY ${order},a.announcement_id DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, pageSize, (page - 1) * pageSize],
     )) as AnnouncementRow[];
     const [count] = (await this.database.query(
       `SELECT count(*)::int AS total FROM dorify.dori_announcement a WHERE ${predicate}`,
-      [scope, allowedSiteIds ?? null],
+      params,
     )) as Array<{ total: number }>;
     return {
       items: rows.map((row) => adminAnnouncement(row, now, allowedSiteIds)),
@@ -144,38 +204,141 @@ export class AnnouncementsRepository {
       observedAt: now.toISOString(),
       page,
       pageSize,
+      totalPages: Math.ceil(count.total / pageSize),
     };
   }
-  async find(id: string, now: Date) {
-    const [row] = (await this.database.query(
-      `SELECT ${fields} FROM dorify.dori_announcement a WHERE a.announcement_id=$1`,
+  async find(
+    id: string,
+    now: Date,
+    database: Pick<DataSource, 'query'> = this.database,
+    allowedSiteIds?: string[],
+  ) {
+    const [row] = (await database.query(
+      `SELECT ${fields} FROM dorify.dori_announcement a WHERE a.announcement_id=$1 AND a.deleted_at IS NULL`,
       [id],
     )) as AnnouncementRow[];
-    return row ? adminAnnouncement(row, now) : null;
+    return row ? adminAnnouncement(row, now, allowedSiteIds) : null;
   }
-  async withdraw(id: string, now: Date): Promise<boolean> {
-    return (
-      returningRows(
-        await this.database.query(
-          `UPDATE dorify.dori_announcement SET withdrawn_at=COALESCE(withdrawn_at,$2),updated_at=$2 WHERE announcement_id=$1 RETURNING announcement_id`,
-          [id, now],
-        ),
-      ).length > 0
+  async withdraw(
+    id: string,
+    now: Date,
+    allowedSiteIds?: string[],
+  ): Promise<boolean> {
+    return this.database.transaction(async (transaction) => {
+      await this.locked(transaction, id, now, allowedSiteIds);
+      return (
+        returningRows(
+          await transaction.query(
+            `UPDATE dorify.dori_announcement SET withdrawn_at=COALESCE(withdrawn_at,$2),updated_at=$2 WHERE announcement_id=$1 AND deleted_at IS NULL RETURNING announcement_id`,
+            [id, now],
+          ),
+        ).length > 0
+      );
+    });
+  }
+  private async locked(
+    transaction: EntityManager,
+    announcementId: string,
+    now: Date,
+    allowedSiteIds?: string[],
+  ) {
+    await transaction.query(
+      "SELECT pg_advisory_xact_lock(hashtext('dorify:announcements'))",
     );
+    await transaction.query(
+      'SELECT announcement_id FROM dorify.dori_announcement WHERE announcement_id=$1 FOR UPDATE',
+      [announcementId],
+    );
+    const current = await this.find(announcementId, now, transaction);
+    if (
+      !current ||
+      (allowedSiteIds &&
+        current.targets.some((t) => !allowedSiteIds.includes(t.targetId)))
+    )
+      throw new DoriException('RESOURCE_NOT_FOUND');
+    return current;
+  }
+  async update(
+    announcementId: string,
+    body: UpdateAnnouncementDto,
+    now: Date,
+    allowedSiteIds?: string[],
+  ) {
+    return this.database.transaction(async (transaction) => {
+      const current = await this.locked(
+        transaction,
+        announcementId,
+        now,
+        allowedSiteIds,
+      );
+      if (current.status === 'withdrawn') throw new DoriException('CONFLICT');
+      if (
+        allowedSiteIds &&
+        body.targetIds.some((id) => !allowedSiteIds.includes(id))
+      )
+        throw new DoriException('RESOURCE_NOT_FOUND');
+      const { relation, id } = await this.validateTargets(
+        transaction,
+        { scope: current.scope, targetIds: body.targetIds },
+        now,
+        announcementId,
+      );
+      await transaction.query(
+        'UPDATE dorify.dori_announcement SET title=$2,message=$3,severity=$4,starts_at=$5,ends_at=$6,updated_at=$7 WHERE announcement_id=$1',
+        [
+          announcementId,
+          body.title,
+          body.message,
+          body.severity,
+          body.startsAt ?? current.startsAt,
+          body.endsAt,
+          now,
+        ],
+      );
+      await transaction.query(
+        `DELETE FROM ${relation} WHERE announcement_id=$1`,
+        [announcementId],
+      );
+      await transaction.query(
+        `INSERT INTO ${relation}(announcement_id,${id}) SELECT $1,unnest($2::uuid[])`,
+        [announcementId, body.targetIds],
+      );
+      return (await this.find(announcementId, now, transaction))!;
+    });
+  }
+  async remove(announcementId: string, now: Date, allowedSiteIds?: string[]) {
+    return this.database.transaction(async (transaction) => {
+      await this.locked(transaction, announcementId, now, allowedSiteIds);
+      await transaction.query(
+        'UPDATE dorify.dori_announcement SET deleted_at=$2,withdrawn_at=COALESCE(withdrawn_at,$2),updated_at=$2 WHERE announcement_id=$1',
+        [announcementId, now],
+      );
+      return { announcementId };
+    });
+  }
+  async nextBoundary(now: Date): Promise<number | undefined> {
+    const [row] = (await this.database.query(
+      `SELECT min(boundary) AS boundary FROM (
+        SELECT starts_at AS boundary FROM dorify.dori_announcement WHERE deleted_at IS NULL AND withdrawn_at IS NULL AND starts_at>$1
+        UNION ALL SELECT ends_at FROM dorify.dori_announcement WHERE deleted_at IS NULL AND withdrawn_at IS NULL AND ends_at>$1
+      ) periods`,
+      [now],
+    )) as Array<{ boundary: Date | null }>;
+    return row.boundary ? new Date(row.boundary).getTime() : undefined;
   }
   async forAgent(
     installationId: string,
     now: Date,
   ): Promise<AnnouncementItemDto[]> {
     const rows = (await this.database.query(
-      `SELECT a.* FROM dorify.dori_announcement a JOIN dorify.dori_announcement_installation t USING(announcement_id) WHERE a.scope='installations' AND t.installation_id=$1 AND a.withdrawn_at IS NULL AND a.ends_at>$2 ORDER BY a.created_at,a.announcement_id LIMIT 50`,
+      `SELECT a.* FROM dorify.dori_announcement a JOIN dorify.dori_announcement_installation t USING(announcement_id) WHERE a.scope='installations' AND t.installation_id=$1 AND a.withdrawn_at IS NULL AND a.deleted_at IS NULL AND a.ends_at>$2 ORDER BY a.created_at,a.announcement_id LIMIT 50`,
       [installationId, now],
     )) as AnnouncementRow[];
     return rows.map(publicAnnouncement);
   }
   async forSite(siteId: string, now: Date): Promise<AnnouncementItemDto[]> {
     const rows = (await this.database.query(
-      `SELECT a.* FROM dorify.dori_announcement a JOIN dorify.dori_announcement_site t USING(announcement_id) JOIN dorify.dori_site s ON s.site_id=t.site_id WHERE a.scope='sites' AND t.site_id=$1 AND s.is_active=TRUE AND a.withdrawn_at IS NULL AND a.ends_at>$2 ORDER BY a.created_at,a.announcement_id LIMIT 50`,
+      `SELECT a.* FROM dorify.dori_announcement a JOIN dorify.dori_announcement_site t USING(announcement_id) JOIN dorify.dori_site s ON s.site_id=t.site_id WHERE a.scope='sites' AND t.site_id=$1 AND s.is_active=TRUE AND a.withdrawn_at IS NULL AND a.deleted_at IS NULL AND a.ends_at>$2 ORDER BY a.created_at,a.announcement_id LIMIT 50`,
       [siteId, now],
     )) as AnnouncementRow[];
     return rows.map(publicAnnouncement);

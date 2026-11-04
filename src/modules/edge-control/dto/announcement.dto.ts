@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -20,6 +20,17 @@ import {
 
 export type AnnouncementSeverity = 'info' | 'warning' | 'critical';
 export type AnnouncementScope = 'installations' | 'sites';
+export const announcementSorts = [
+  'createdAt:desc',
+  'createdAt:asc',
+  'title:asc',
+  'title:desc',
+  'startsAt:asc',
+  'startsAt:desc',
+  'endsAt:asc',
+  'endsAt:desc',
+] as const;
+export type AnnouncementSort = (typeof announcementSorts)[number];
 export class CreateAnnouncementDto {
   @ApiProperty({ enum: ['installations', 'sites'] })
   @IsIn(['installations', 'sites'])
@@ -63,7 +74,60 @@ export class CreateAnnouncementDto {
   @Matches(/(?:Z|[+-]\d{2}:\d{2})$/)
   endsAt!: string;
 }
+export class UpdateAnnouncementDto extends OmitType(CreateAnnouncementDto, [
+  'scope',
+] as const) {}
 export class AnnouncementQueryDto {
+  @ApiPropertyOptional({
+    maxLength: 200,
+    description: 'Search in the title and message (literal, case-insensitive)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  search?: string;
+  @ApiPropertyOptional({
+    enum: ['scheduled', 'active', 'expired', 'withdrawn'],
+  })
+  @IsOptional()
+  @IsIn(['scheduled', 'active', 'expired', 'withdrawn'])
+  status?: 'scheduled' | 'active' | 'expired' | 'withdrawn';
+  @ApiPropertyOptional({ enum: ['info', 'warning', 'critical'] })
+  @IsOptional()
+  @IsIn(['info', 'warning', 'critical'])
+  severity?: AnnouncementSeverity;
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description: 'Target site or installation in the selected scope',
+  })
+  @IsOptional()
+  @IsUUID('4')
+  targetId?: string;
+  @ApiPropertyOptional({
+    format: 'date-time',
+    description:
+      'Include announcements whose display period ends on or after this instant (timezone required)',
+  })
+  @IsOptional()
+  @IsDateString({ strict: true })
+  @Matches(/(?:Z|[+-]\d{2}:\d{2})$/)
+  dateFrom?: string;
+  @ApiPropertyOptional({
+    format: 'date-time',
+    description:
+      'Include announcements whose display period starts on or before this instant (timezone required)',
+  })
+  @IsOptional()
+  @IsDateString({ strict: true })
+  @Matches(/(?:Z|[+-]\d{2}:\d{2})$/)
+  dateTo?: string;
+  @ApiPropertyOptional({ enum: announcementSorts, default: 'createdAt:desc' })
+  @IsOptional()
+  @IsIn(announcementSorts)
+  sort: AnnouncementSort = 'createdAt:desc';
   @ApiPropertyOptional({ enum: ['installations', 'sites'], default: 'sites' })
   @IsOptional()
   @IsIn(['installations', 'sites'])
@@ -98,6 +162,8 @@ export class AnnouncementTargetItemDto {
 export class AnnouncementResponseDto extends AnnouncementItemDto {
   @ApiProperty({ enum: ['installations', 'sites'] }) scope!: AnnouncementScope;
   @ApiProperty() canWithdraw!: boolean;
+  @ApiProperty() canEdit!: boolean;
+  @ApiProperty({ format: 'date-time' }) updatedAt!: string;
   @ApiProperty({ type: [AnnouncementTargetItemDto] })
   targets!: AnnouncementTargetItemDto[];
   @ApiProperty({ enum: ['scheduled', 'active', 'expired', 'withdrawn'] })
@@ -111,6 +177,7 @@ export class PaginatedAnnouncementResponseDto {
   @ApiProperty() total!: number;
   @ApiProperty() page!: number;
   @ApiProperty() pageSize!: number;
+  @ApiProperty() totalPages!: number;
 }
 export class LocalAnnouncementsResponseDto {
   @ApiProperty({ type: [AnnouncementItemDto] })

@@ -148,6 +148,7 @@ export function normalizeOpenApiDocument(
   const inactiveDirectPath =
     /^\/api\/v1\/(sites|queues|registrations|persons|users|translations)\/\{[^}]+\}(?:\/notes\/\{[^}]+\})?$/;
   const sortFields: Record<string, string[]> = {
+    AnnouncementsController_list: ['createdAt', 'title', 'startsAt', 'endsAt'],
     PersonsController_findPersons: [
       'personId',
       'firstName',
@@ -275,6 +276,7 @@ export function normalizeOpenApiDocument(
       }
       if (
         property.type === 'string' &&
+        property.format !== 'date-time' &&
         /^(businessDate|birthDate|dateFrom|dateTo|date)$/.test(name)
       ) {
         property.format ??= 'date';
@@ -331,6 +333,9 @@ export function normalizeOpenApiDocument(
           }
           if (
             parameter.in === 'query' &&
+            (!parameter.schema ||
+              !('format' in parameter.schema) ||
+              parameter.schema.format !== 'date-time') &&
             /^(businessDate|dateFrom|dateTo|date)$/.test(parameter.name)
           ) {
             parameter.schema = {

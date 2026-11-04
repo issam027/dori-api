@@ -170,3 +170,52 @@ describe('normalizeOpenApiDocument', () => {
     expect(operation.responses['403']).toBeUndefined();
   });
 });
+
+it('preserves explicit timestamp filters and documents announcement sorting', () => {
+  const document = {
+    openapi: '3.0.0',
+    info: { title: 'test', version: '1' },
+    paths: {
+      '/announcements': {
+        get: {
+          operationId: 'AnnouncementsController_list',
+          responses: {},
+          parameters: [
+            { name: 'sort', in: 'query', schema: { type: 'string' } },
+            {
+              name: 'dateFrom',
+              in: 'query',
+              schema: { type: 'string', format: 'date-time' },
+            },
+          ],
+        },
+      },
+    },
+    components: {
+      schemas: {
+        Query: {
+          type: 'object',
+          properties: { dateFrom: { type: 'string', format: 'date-time' } },
+        },
+      },
+    },
+  } as OpenAPIObject;
+  normalizeOpenApiDocument(document);
+  const parameters = document.paths['/announcements'].get!
+    .parameters! as ParameterObject[];
+  expect(
+    parameters.find((item) => item.name === 'dateFrom')!.schema,
+  ).toMatchObject({ format: 'date-time' });
+  expect(
+    parameters.find((item) => item.name === 'dateFrom')!.schema,
+  ).not.toHaveProperty('pattern');
+  expect(parameters.find((item) => item.name === 'sort')!.schema).toMatchObject(
+    { enum: expect.arrayContaining(['title:asc', 'endsAt:desc']) },
+  );
+  expect(document.components!.schemas!.Query).toMatchObject({
+    properties: { dateFrom: { format: 'date-time' } },
+  });
+  expect(document.components!.schemas!.Query).not.toMatchObject({
+    properties: { dateFrom: { pattern: expect.anything() } },
+  });
+});

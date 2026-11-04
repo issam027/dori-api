@@ -16,6 +16,7 @@ import { LocalAnnouncementsService } from './local-announcements.service';
 import {
   AnnouncementItemDto,
   CreateAnnouncementDto,
+  AnnouncementQueryDto,
 } from './dto/announcement.dto';
 
 const one = '550e8400-e29b-41d4-a716-446655440000',
@@ -58,6 +59,8 @@ describe('announcement administration boundaries', () => {
       list: jest.fn(),
       find: jest.fn(),
       withdraw: jest.fn(),
+      update: jest.fn(),
+      remove: jest.fn(),
     };
     const scope = {
       getUserScope: jest.fn(async () => ({
@@ -131,11 +134,100 @@ describe('announcement administration boundaries', () => {
   });
   it('filters the administration listing to the current fresh site scope', async () => {
     const h = setup();
-    await h.service.list({ scope: 'sites', page: 1, pageSize: 10 }, user);
+    const query = {
+      scope: 'sites' as const,
+      page: 1,
+      pageSize: 10,
+      sort: 'createdAt:desc' as const,
+    };
+    await h.service.list(query, user);
     expect(h.scope.getUserScope).toHaveBeenCalledWith(user, { fresh: true });
-    expect(h.repository.list).toHaveBeenCalledWith('sites', 1, 10, instant, [
+    expect(h.repository.list).toHaveBeenCalledWith(
+      'sites',
+      1,
+      10,
+      instant,
+      [one],
+      query,
+    );
+  });
+  it('redacts shared announcement details and forbids editing or deleting outside the complete scope', async () => {
+    const h = setup();
+    h.repository.find.mockResolvedValue({
+      ...notice(one),
+      scope: 'sites',
+      status: 'active',
+      targets: [
+        { targetId: one, name: 'Allowed' },
+        { targetId: two, name: 'Private' },
+      ],
+    });
+    expect(await h.service.detail(one, user)).toMatchObject({
+      canEdit: false,
+      canWithdraw: false,
+      targets: [{ targetId: one, name: 'Allowed' }],
+    });
+    await expect(h.service.update(one, body(), user)).rejects.toMatchObject({
+      status: 404,
+    });
+    await expect(h.service.remove(one, user)).rejects.toMatchObject({
+      status: 404,
+    });
+    expect(h.repository.update).not.toHaveBeenCalled();
+    expect(h.repository.remove).not.toHaveBeenCalled();
+  });
+  it('preserves the original start when editing content and rejects withdrawn records', async () => {
+    const h = setup();
+    h.repository.find.mockResolvedValue({
+      ...notice(one),
+      scope: 'sites',
+      status: 'active',
+      targets: [{ targetId: one, name: 'Allowed' }],
+    });
+    await h.service.update(one, body(), user);
+    expect(h.repository.update).toHaveBeenCalledWith(one, body(), instant, [
       one,
     ]);
+    h.repository.find.mockResolvedValue({
+      ...notice(one),
+      scope: 'sites',
+      status: 'withdrawn',
+      targets: [{ targetId: one, name: 'Allowed' }],
+    });
+    await expect(h.service.update(one, body(), user)).rejects.toMatchObject({
+      status: 409,
+    });
+  });
+  it('rejects inverted periods and inaccessible destination filters', async () => {
+    const h = setup();
+    await expect(
+      h.service.list(
+        Object.assign(new AnnouncementQueryDto(), {
+          dateFrom: '2026-11-05T00:00:00Z',
+          dateTo: '2026-11-04T00:00:00Z',
+        }),
+        user,
+      ),
+    ).rejects.toMatchObject({ status: 400 });
+    await expect(
+      h.service.list(
+        Object.assign(new AnnouncementQueryDto(), { targetId: two }),
+        user,
+      ),
+    ).rejects.toMatchObject({ status: 404 });
+    expect(h.repository.list).not.toHaveBeenCalled();
+  });
+  it.each([
+    { sort: 'title;DROP TABLE' },
+    { status: 'unknown' },
+    { severity: 'fatal' },
+    { targetId: 'invalid' },
+    { dateFrom: '2026-11-04' },
+    { search: 'x'.repeat(201) },
+  ])('validates listing criteria %j', async (data) => {
+    expect(
+      await validate(plainToInstance(AnnouncementQueryDto, data)),
+    ).not.toHaveLength(0);
   });
   it.each([
     { targetIds: [] },
@@ -171,6 +263,9 @@ describe('local announcement source of truth', () => {
       ]),
     };
     const repository = {
+      nextBoundary: jest.fn<Promise<number | undefined>, []>(
+        async () => undefined,
+      ),
       forSite: jest.fn(async (id: string) =>
         id === one
           ? [notice(two, instant.getTime() + 1000, instant.getTime() + 2000)]
@@ -210,6 +305,25 @@ describe('local announcement source of truth', () => {
     h.changes.next({ key: 'announcements' });
     await jest.advanceTimersByTimeAsync(60000);
     expect(h.database.query).toHaveBeenCalledTimes(reads);
+  });
+  it('invalidates filtered administration lists at time boundaries without polling, sharing the timer', async () => {
+    const h = setup('cloud');
+    h.repository.nextBoundary
+      .mockResolvedValueOnce(instant.getTime() + 1000)
+      .mockResolvedValue(undefined);
+    const authorize = jest.fn(async () => undefined),
+      received = jest.fn();
+    const first = h.service.streamAdministration(authorize).subscribe(received);
+    const second = h.service.streamAdministration(authorize).subscribe();
+    await jest.advanceTimersByTimeAsync(110);
+    expect(h.repository.nextBoundary).toHaveBeenCalledTimes(1);
+    await jest.advanceTimersByTimeAsync(1100);
+    expect(received).toHaveBeenCalledTimes(2);
+    expect(h.repository.nextBoundary).toHaveBeenCalledTimes(2);
+    first.unsubscribe();
+    second.unsubscribe();
+    await jest.advanceTimersByTimeAsync(60000);
+    expect(h.repository.nextBoundary).toHaveBeenCalledTimes(2);
   });
   it('does not read or expose the intra installation cache in the cloud', async () => {
     const h = setup('cloud');

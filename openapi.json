@@ -17906,6 +17906,94 @@
         "summary": "List operational announcements and their explicit target installations or local sites",
         "parameters": [
           {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search in the title and message (literal, case-insensitive)",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "scheduled",
+                "active",
+                "expired",
+                "withdrawn"
+              ],
+              "type": "string"
+            },
+            "description": "Valeur du paramètre « status »."
+          },
+          {
+            "name": "severity",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "info",
+                "warning",
+                "critical"
+              ],
+              "type": "string"
+            },
+            "description": "Valeur du paramètre « severity »."
+          },
+          {
+            "name": "targetId",
+            "required": false,
+            "in": "query",
+            "description": "Target site or installation in the selected scope",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "description": "Include announcements whose display period ends on or after this instant (timezone required)",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "description": "Include announcements whose display period starts on or before this instant (timezone required)",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "createdAt:asc",
+                "createdAt:desc",
+                "title:asc",
+                "title:desc",
+                "startsAt:asc",
+                "startsAt:desc",
+                "endsAt:asc",
+                "endsAt:desc"
+              ]
+            },
+            "description": "Valeur du paramètre « sort »."
+          },
+          {
             "name": "scope",
             "required": false,
             "in": "query",
@@ -18213,7 +18301,448 @@
       }
     },
     "/api/v1/announcements/{announcementId}": {
+      "get": {
+        "operationId": "AnnouncementsController_detail",
+        "summary": "Consult an announcement within the current user scope",
+        "parameters": [
+          {
+            "name": "announcementId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Valeur du paramètre « announcement id »."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "OK",
+                      "description": "Code applicatif du résultat"
+                    },
+                    "translationKey": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": null,
+                      "description": "Clé de traduction du message (null si aucun message)"
+                    },
+                    "translationParams": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "example": {},
+                      "description": "Paramètres de traduction"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AnnouncementResponseDto"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "translationKey",
+                    "translationParams",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié — token manquant ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Accès interdit — permission insuffisante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (doublon, slot plein, compte verrouillé…)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entité non traitable — règle métier enfreinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Announcements"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "AnnouncementsController_update",
+        "summary": "Update announcement content, recipients and display period; scope is immutable",
+        "parameters": [
+          {
+            "name": "announcementId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Valeur du paramètre « announcement id »."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAnnouncementDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "OK",
+                      "description": "Code applicatif du résultat"
+                    },
+                    "translationKey": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": null,
+                      "description": "Clé de traduction du message (null si aucun message)"
+                    },
+                    "translationParams": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "example": {},
+                      "description": "Paramètres de traduction"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AnnouncementResponseDto"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "translationKey",
+                    "translationParams",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié — token manquant ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Accès interdit — permission insuffisante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (doublon, slot plein, compte verrouillé…)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entité non traitable — règle métier enfreinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Announcements"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
       "delete": {
+        "operationId": "AnnouncementsController_remove",
+        "summary": "Soft-delete an announcement from administration and display while preserving its audit history",
+        "parameters": [
+          {
+            "name": "announcementId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Valeur du paramètre « announcement id »."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "OK",
+                      "description": "Code applicatif du résultat"
+                    },
+                    "translationKey": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": null,
+                      "description": "Clé de traduction du message (null si aucun message)"
+                    },
+                    "translationParams": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "example": {},
+                      "description": "Paramètres de traduction"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WithdrawAnnouncementResponseDto"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "translationKey",
+                    "translationParams",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides (validation échouée)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié — token manquant ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Accès interdit — permission insuffisante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (doublon, slot plein, compte verrouillé…)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entité non traitable — règle métier enfreinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes — limite de débit atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne sans exposition de détails techniques",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Announcements"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/announcements/{announcementId}/withdraw": {
+      "post": {
         "operationId": "AnnouncementsController_withdraw",
         "summary": "Withdraw an announcement while preserving its audit history",
         "parameters": [
@@ -26747,6 +27276,15 @@
             "type": "boolean",
             "description": "Valeur du champ « can withdraw »."
           },
+          "canEdit": {
+            "type": "boolean",
+            "description": "Valeur du champ « can edit »."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de dernière modification."
+          },
           "targets": {
             "type": "array",
             "items": {
@@ -26779,6 +27317,8 @@
           "endsAt",
           "scope",
           "canWithdraw",
+          "canEdit",
+          "updatedAt",
           "targets",
           "status",
           "createdAt"
@@ -26810,6 +27350,10 @@
           "pageSize": {
             "type": "number",
             "description": "Nombre d'éléments par page."
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "Nombre total de pages."
           }
         },
         "required": [
@@ -26817,7 +27361,8 @@
           "items",
           "total",
           "page",
-          "pageSize"
+          "pageSize",
+          "totalPages"
         ]
       },
       "CreateAnnouncementDto": {
@@ -26871,6 +27416,55 @@
         },
         "required": [
           "scope",
+          "targetIds",
+          "title",
+          "message",
+          "severity",
+          "endsAt"
+        ]
+      },
+      "UpdateAnnouncementDto": {
+        "type": "object",
+        "properties": {
+          "targetIds": {
+            "maxItems": 1000,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Valeur du champ « target ids »."
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "Valeur du champ « title »."
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Valeur du champ « message »."
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "info",
+              "warning",
+              "critical"
+            ],
+            "description": "Valeur du champ « severity »."
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "UTC or offset date; defaults to now"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Valeur du champ « ends at »."
+          }
+        },
+        "required": [
           "targetIds",
           "title",
           "message",

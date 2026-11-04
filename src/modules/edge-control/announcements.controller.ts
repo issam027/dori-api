@@ -3,9 +3,11 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Param,
   ParseUUIDPipe,
   Post,
+  Put,
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -24,6 +26,7 @@ import {
   WithdrawAnnouncementResponseDto,
   PaginatedAnnouncementResponseDto,
   AnnouncementQueryDto,
+  UpdateAnnouncementDto,
 } from './dto/announcement.dto';
 import { AnnouncementsService } from './announcements.service';
 
@@ -63,7 +66,54 @@ export class AnnouncementsController {
   ) {
     return this.service.create(body, user);
   }
+  @Get(':announcementId')
+  @ApiOperation({
+    summary: 'Consult an announcement within the current user scope',
+  })
+  @ApiDoriOkResponse(AnnouncementResponseDto)
+  detail(
+    @Param('announcementId', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.detail(id, user);
+  }
+  @Put(':announcementId')
+  @ApiOperation({
+    summary:
+      'Update announcement content, recipients and display period; scope is immutable',
+  })
+  @ApiDoriOkResponse(AnnouncementResponseDto)
+  @AuditEvent({
+    action: 'announcement.update',
+    targetType: 'announcement',
+    targetParam: 'announcementId',
+  })
+  update(
+    @Param('announcementId', ParseUUIDPipe) id: string,
+    @Body() body: UpdateAnnouncementDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.update(id, body, user);
+  }
   @Delete(':announcementId')
+  @ApiOperation({
+    summary:
+      'Soft-delete an announcement from administration and display while preserving its audit history',
+  })
+  @ApiDoriOkResponse(WithdrawAnnouncementResponseDto)
+  @AuditEvent({
+    action: 'announcement.delete',
+    targetType: 'announcement',
+    targetParam: 'announcementId',
+  })
+  remove(
+    @Param('announcementId', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.remove(id, user);
+  }
+  @Post(':announcementId/withdraw')
+  @HttpCode(200)
   @ApiOperation({
     summary: 'Withdraw an announcement while preserving its audit history',
   })

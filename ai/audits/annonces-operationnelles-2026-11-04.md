@@ -53,3 +53,22 @@ Neon n’a pas été modifié dans cette livraison.
 ## Déploiement vérifié
 
 Les API, les deux fronts et l’agent intra ont été reconstruits et déployés dans les Docker locaux. Contrôles réels derrière les proxys web cloud et intra : santé HTTP 200, snapshot public et premier événement SSE `announcements` reçus. Accès à l’administration des annonces vérifié dans le front intra déployé sans site sélectionné. Les neuf conteneurs habituels sont sains. L’environnement Docker temporaire de validation est supprimé après les essais.
+
+## Harmonisation avec l’annuaire
+
+- Page reconstruite avec les composants communs `FilterPanel`, `DataTable`, cartes mobiles, menu d’actions mobile, pagination et fenêtres de consultation/édition.
+- Tableau synthétique : titre, importance, état, destinataires résumés et fin d’affichage. Le texte complet et la liste des destinataires se consultent dans une fiche dédiée. Les libellés longs sont tronqués dans le tableau.
+- Actions : consulter, modifier et supprimer avec confirmation. La modification conserve les instants de début et de fin si seuls le texte ou les destinataires changent. Le périmètre sites/installations d’une annonce reste immuable.
+- Recherche et filtres côté serveur : `search`, `scope`, `status`, `severity`, `targetId`, `dateFrom`, `dateTo`, `sort`, `page`, `pageSize`. Recherche littérale insensible à la casse dans le titre et le message. La période filtre le chevauchement avec la période d’affichage, bornes incluses ; les instants ISO doivent préciser leur fuseau. Le front transforme les dates locales choisies en bornes ISO.
+- Tri autorisé : `createdAt`, `title`, `startsAt`, `endsAt`, ascendant ou descendant. Ordre stable avec identifiant comme critère de départage. Le total et les résultats utilisent les mêmes prédicats, y compris le périmètre d’accès.
+- Contrat Swagger et client front régénérés. La normalisation Swagger conserve les formats `date-time` explicitement déclarés et documente les tris du listing des annonces.
+- Nouvelles opérations : `GET /api/v1/announcements/:id`, `PUT /api/v1/announcements/:id`, `DELETE /api/v1/announcements/:id`. Le DELETE effectue désormais une suppression logique, masquée des listings, des consultations directes et des écrans publics. Le retrait sans suppression de l’historique administratif reste disponible via `POST /api/v1/announcements/:id/withdraw`.
+- Migration additive `006_announcement_management.sql`. La cible de l’audit est conservée. Les nouvelles actions d’audit sont traduites dans les quatre langues.
+- Les mutations verrouillent l’annonce et revérifient tous ses destinataires avant écriture. Une consultation partagée n’accorde pas de droit de modification ou de suppression aux responsables d’un sous-ensemble des sites.
+- Les listes filtrées sont invalidées par SSE aux échéances de début/fin, même si aucun résultat courant n’indique la prochaine échéance. Un minuteur est partagé par processus ; aucun polling fréquent n’est ajouté.
+
+Validation de cette évolution : 56 tests API ciblés réussis ; 37 tests front de catalogues et d’audit réussis ; types, lint et architecture vérifiés. Huit scénarios sur de véritables API temporaires valident les filtres SQL, les caractères littéraux `%` et `_`, le tri, la pagination, les droits, l’édition et la suppression, leur diffusion SSE et le relais par l’agent. Edge aux largeurs 390, 1 024 et 1 440 px : filtres et parcours consulter → modifier → supprimer réussis, sans débordement horizontal. Les données de vérification restent exclusivement dans les environnements temporaires.
+
+Avant la migration 006, nouvelles sauvegardes privées des bases Docker ; après migration, comptages inchangés : cloud 216 611 inscriptions et 10 sites, intra 118 020 inscriptions et 2 sites.
+
+Contrôle complémentaire du front cloud : publication à deux installations, en-tête du tableau aligné, modification conservant exactement l’instant de début et suppression réussies. API et fronts cloud/intra déployés ; listing filtré vérifié sur l’intra déployé, snapshots et SSE vérifiés derrière les deux proxys. Les neuf conteneurs habituels sont sains et les conteneurs temporaires ont été supprimés. L’agent reste compatible sans modification supplémentaire.

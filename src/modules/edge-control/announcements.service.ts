@@ -8,6 +8,7 @@ import {
   CreateAnnouncementDto,
   AnnouncementQueryDto,
   AnnouncementScope,
+  UpdateAnnouncementDto,
 } from './dto/announcement.dto';
 import { AnnouncementsRepository } from './announcements.repository';
 @Injectable()
@@ -37,13 +38,22 @@ export class AnnouncementsService {
     return scope.isGlobal ? undefined : scope.siteIds;
   }
   async list(query: AnnouncementQueryDto, user: AuthenticatedUser) {
+    if (
+      query.dateFrom &&
+      query.dateTo &&
+      Date.parse(query.dateFrom) > Date.parse(query.dateTo)
+    )
+      throw new DoriException('VALIDATION_ERROR');
     const allowed = await this.access(query.scope, user);
+    if (query.targetId && allowed && !allowed.includes(query.targetId))
+      throw new DoriException('RESOURCE_NOT_FOUND');
     return this.repository.list(
       query.scope,
       query.page,
       query.pageSize,
       this.clock.now(),
       allowed,
+      query,
     );
   }
   async create(body: CreateAnnouncementDto, user: AuthenticatedUser) {
@@ -53,6 +63,10 @@ export class AnnouncementsService {
     const now = this.clock.now(),
       startsAt = body.startsAt ? this.clock.parse(body.startsAt) : now,
       endsAt = this.clock.parse(body.endsAt);
+    this.validatePeriod(startsAt, endsAt, now);
+    return this.repository.create(body, user.userId, startsAt, endsAt, now);
+  }
+  private validatePeriod(startsAt: Date, endsAt: Date, now: Date) {
     if (
       endsAt <= now ||
       endsAt <= startsAt ||
@@ -64,7 +78,52 @@ export class AnnouncementsService {
           'The announcement period must be in the future, last at most 30 days and start within 90 days.',
         ],
       });
-    return this.repository.create(body, user.userId, startsAt, endsAt, now);
+  }
+  private async record(id: string, user: AuthenticatedUser, write: boolean) {
+    const record = await this.repository.find(id, this.clock.now());
+    if (!record) throw new DoriException('RESOURCE_NOT_FOUND');
+    const allowed = await this.access(record.scope, user);
+    if (
+      allowed &&
+      (write
+        ? record.targets.some((target) => !allowed.includes(target.targetId))
+        : !record.targets.some((target) => allowed.includes(target.targetId)))
+    )
+      throw new DoriException('RESOURCE_NOT_FOUND');
+    return { record, allowed };
+  }
+  async detail(id: string, user: AuthenticatedUser) {
+    const { record, allowed } = await this.record(id, user, false);
+    const canManage =
+      !allowed ||
+      record.targets.every((target) => allowed.includes(target.targetId));
+    return {
+      ...record,
+      canWithdraw: canManage,
+      canEdit: canManage && record.status !== 'withdrawn',
+      targets: allowed
+        ? record.targets.filter((target) => allowed.includes(target.targetId))
+        : record.targets,
+    };
+  }
+  async update(
+    id: string,
+    body: UpdateAnnouncementDto,
+    user: AuthenticatedUser,
+  ) {
+    const { record, allowed } = await this.record(id, user, true);
+    if (record.status === 'withdrawn') throw new DoriException('CONFLICT');
+    const now = this.clock.now();
+    this.validatePeriod(
+      this.clock.parse(body.startsAt ?? record.startsAt),
+      this.clock.parse(body.endsAt),
+      now,
+    );
+    return this.repository.update(id, body, now, allowed);
+  }
+  async remove(id: string, user: AuthenticatedUser) {
+    const { allowed } = await this.record(id, user, true);
+    return this.repository.remove(id, this.clock.now(), allowed);
   }
   async withdraw(id: string, user: AuthenticatedUser) {
     const record = await this.repository.find(id, this.clock.now());
@@ -75,7 +134,7 @@ export class AnnouncementsService {
       record.targets.some((target) => !allowed.includes(target.targetId))
     )
       throw new DoriException('RESOURCE_NOT_FOUND');
-    if (!(await this.repository.withdraw(id, this.clock.now())))
+    if (!(await this.repository.withdraw(id, this.clock.now(), allowed)))
       throw new DoriException('RESOURCE_NOT_FOUND');
     return { announcementId: id };
   }

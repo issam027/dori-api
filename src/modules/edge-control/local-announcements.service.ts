@@ -61,6 +61,7 @@ function parseAnnouncements(value: unknown): AnnouncementItemDto[] {
 
 @Injectable()
 export class LocalAnnouncementsService {
+  private administration?: Observable<void>;
   private readonly topics = new Map<
     string,
     Observable<{ items: AnnouncementItemDto[]; observedAt: string }>
@@ -171,7 +172,46 @@ export class LocalAnnouncementsService {
   streamAdministration(
     authorize: () => Promise<void>,
   ): Observable<MessageEvent> {
-    return this.events.changes(['announcements']).pipe(
+    if (!this.administration) {
+      this.administration = new Observable<void>((subscriber) => {
+        const deadlines = new Subject<void>();
+        let timer: NodeJS.Timeout | undefined;
+        const subscription = readOnChange(
+          merge(this.events.changes(['announcements']), deadlines),
+          () => this.repository.nextBoundary(this.clock.now()),
+        ).subscribe({
+          next: (boundary) => {
+            if (timer) clearTimeout(timer);
+            if (boundary !== undefined) {
+              timer = setTimeout(
+                () => deadlines.next(),
+                Math.max(
+                  10,
+                  Math.min(
+                    2147483647,
+                    boundary - this.clock.now().getTime() + 10,
+                  ),
+                ),
+              );
+              timer.unref();
+            }
+            subscriber.next();
+          },
+          error: (error: unknown) => subscriber.error(error),
+        });
+        return () => {
+          subscription.unsubscribe();
+          if (timer) clearTimeout(timer);
+          deadlines.complete();
+        };
+      }).pipe(
+        finalize(() => {
+          this.administration = undefined;
+        }),
+        shareReplay({ bufferSize: 1, refCount: true }),
+      );
+    }
+    return this.administration.pipe(
       auditTime(100),
       concatMap(async () => {
         await authorize();
