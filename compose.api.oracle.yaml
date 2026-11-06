@@ -1,0 +1,95 @@
+name: cloud-dorify
+
+services:
+  engine:
+    image: ${API_IMAGE:?Set API_IMAGE to a versioned image}
+    init: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL using host postgres}
+      DB_POOL_MAX: 5
+      DB_MAX_CONNECTIONS: 100
+      DB_RESERVED_CONNECTIONS: 20
+      DB_API_INSTANCES: 1
+      DB_AGENT_INSTANCES: 0
+      DB_AGENT_POOL_MAX: 3
+      DB_WORKER_CONNECTIONS: 0
+      DB_CONNECTION_TIMEOUT_MS: 5000
+      DB_STATEMENT_TIMEOUT_MS: 30000
+      DB_LOCK_TIMEOUT_MS: 3000
+      DB_IDLE_TRANSACTION_TIMEOUT_MS: 15000
+      REALTIME_SAFETY_REFRESH_MS: 300000
+      REDIS_URL: redis://redis:6379
+      REDIS_ENABLED: 'true'
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      CORS_ORIGINS: https://app.dorify.fr
+      PUBLIC_WEB_URL: https://app.dorify.fr
+      DORIFY_DEPLOYMENT_MODE: cloud
+      AUTH_REFRESH_COOKIE_NAME: refreshToken_cloud
+      SWAGGER_SERVERS: https://api.dorify.fr
+      AUTO_RUN_MIGRATIONS: ${AUTO_RUN_MIGRATIONS:-false}
+    ports:
+      - '127.0.0.1:9090:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3000/api/v1/monitoring/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    command: ['postgres', '-c', 'shared_preload_libraries=pg_stat_statements', '-c', 'pg_stat_statements.track=top']
+    environment:
+      POSTGRES_DB: dori
+      POSTGRES_USER: dori
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U dori -d dori']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+
+volumes:
+  postgres_data:
+    external: true
+    name: dorify-cloud-postgres-data
+  redis_data:
+    external: true
+    name: dorify-cloud-redis-data
+
+networks:
+  default:
+    name: dorify-cloud-network

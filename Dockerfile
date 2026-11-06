@@ -7,6 +7,13 @@ COPY nest-cli.json tsconfig.json tsconfig.build.json ./
 COPY src ./src
 RUN npm run build
 
+# Explicit maintenance image; never used as the API runtime image.
+FROM build AS dbtools
+COPY scripts ./scripts
+ENV DB_SKIP_CREATE=true
+ENTRYPOINT ["npm", "run"]
+CMD ["db:init"]
+
 FROM node:22.22.0-alpine AS runtime
 
 ENV NODE_ENV=production

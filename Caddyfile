@@ -1,0 +1,25 @@
+dorify.fr {
+    redir https://www.dorify.fr{uri} permanent
+}
+
+www.dorify.fr {
+    reverse_proxy 127.0.0.1:8081
+}
+
+app.dorify.fr {
+    # REST and SSE use the same origin in the current production web bundle.
+    handle /api/* {
+        reverse_proxy 127.0.0.1:9090 {
+            flush_interval -1
+        }
+    }
+    handle {
+        reverse_proxy 127.0.0.1:8080
+    }
+}
+
+api.dorify.fr {
+    reverse_proxy 127.0.0.1:9090 {
+        flush_interval -1
+    }
+}
