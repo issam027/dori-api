@@ -14,6 +14,8 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
+      SITE_REQUESTS_URL: http://site:8080/internal/requests
+      SITE_REQUESTS_SECRET: ${SITE_REQUESTS_SECRET:-}
       PORT: 3000
       DATABASE_URL: postgresql://dori:dori_cloud_password@postgres:5432/dori
       DB_POOL_MAX: 10

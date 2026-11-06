@@ -1,5 +1,45 @@
 # Livraison Oracle Cloud
 
+## Emails du site
+
+Les nouvelles demandes du site declenchent une notification commerciale a
+ijoober@gmail.com et une confirmation au demandeur, depuis noreply@dorify.fr.
+Le fournisseur est selectionne par EMAIL_PROVIDER (resend ou disabled).
+La cle RESEND_API_KEY est uniquement dans le fichier prive du site
+dori-site/.env.oracle.local et dans le .env distant ; jamais dans une image.
+Le script Oracle du site transfere sa configuration privee et complete les
+valeurs manquantes sans ecraser celles deja renseignees sur la VM.
+
+La demande JSON est conservee meme en cas de panne d'envoi. Une file persistante
+reprend les erreurs temporaires et suit les acceptations du fournisseur ;
+elle ne renvoie pas les anciennes demandes. Voir dori-site/MAIL.md pour les
+tentatives, les limites d'idempotence et les etats stockes dans le volume.
+Les donnees des messages en attente suivent la retention de leur demande.
+
+Pour livrer localement le site avec sa configuration mail :
+`docker compose --env-file .env.oracle.local -f compose.site.cloud.yaml up -d --build --wait`
+depuis dori-site. Pour Oracle : `.\deploy-oracle.ps1` depuis ce meme depot.
+
+## Demandes du site (cloud)
+
+Le pied de page du site propose Administration, vers
+https://app.dorify.fr/admin/site-requests. La connexion est celle de Dorify ;
+la consultation est reservee strictement au role root, sans nouvelle permission.
+La page permet recherche, pagination et consultation du detail, sans modification
+des demandes. Le formulaire explique site/file et recueille le total des files
+et le volume estime de personnes par jour, tous sites confondus (facultatifs).
+
+Les demandes restent en JSON dans dorify-site-requests, avec retention de 90 jours
+par defaut. Les anciens fichiers sans quantites restent compatibles.
+L'API appelle http://site:8080/internal/requests sur le reseau Docker partage.
+SITE_REQUESTS_SECRET doit etre identique dans les environnements API et site ;
+il est conserve uniquement cote serveur. Le Compose API Oracle exige sa presence.
+L'ajouter dans .env.oracle.local avant livraison API pour completer le .env distant.
+Les Compose locaux attendent egalement cette variable pour permettre la lecture.
+Caddy bloque /internal et /internal/* sur www ; ne pas publier cette interface.
+Pour cette evolution, livrer API avec -DeployProxy, puis site et web, sans migration
+BDD ni reset. Les fichiers des demandes existantes sont conserves.
+
 ## Scripts PowerShell locaux
 
 Chaque depot contient `deploy-oracle.ps1`. Executer depuis PowerShell avec
@@ -93,11 +133,13 @@ nouveau repertoire de livraison sur la VM. Fusionner les valeurs des trois
 Utiliser des tags de livraison uniques ou des digests, disponibles via un
 registre ou `docker load`. Les trois images doivent cibler linux/amd64.
 
-L'image web doit etre construite en mode cloud avec VITE_APP_ENV=production,
+Pour une production definitive, l'image web doit etre construite en mode cloud avec VITE_APP_ENV=production,
 VITE_DORIFY_DEPLOYMENT_MODE=cloud et
 VITE_PUBLIC_TRACKING_URL=https://app.dorify.fr. Ses mentions legales VITE_LEGAL_*
-doivent etre renseignees dans l'environnement de build Vite : le Dockerfile
-actuel ne les expose pas comme arguments. Ces valeurs sont figees au build ;
+doivent etre renseignees dans le fichier de build : le Dockerfile les expose
+desormais comme arguments. Le script web lit son .env.oracle.local ou le fichier
+passe avec -BuildEnvFile. Seules les variables publiques VITE_* prevues sont
+transmises au build. Ces valeurs sont figees au build ;
 un environment Compose au runtime ne les change pas.
 
 Le client web de production utilise des URL /api sur sa propre origine.
@@ -152,3 +194,15 @@ Verifier ensuite les etats Compose, les journaux Caddy (certificats), les quatre
 domaines, la connexion utilisateur, les appels REST et la reception SSE.
 La validation statique ne prouve ni la compatibilite des images choisies avec
 la base actuelle, ni la configuration DNS/pare-feu, ni le fonctionnement HTTPS.
+
+<!-- CHECKPOINT id="ckpt_mw4b1vdx_ahwk0e" time="2026-11-06T01:37:52.677Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mw4beqcj_86ndn7" time="2026-11-06T01:47:52.675Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mw4brlbf_rz0mm2" time="2026-11-06T01:57:52.683Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mw4c4gac_r7c14z" time="2026-11-06T02:07:52.692Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mw4chb99_3gopwq" time="2026-11-06T02:17:52.701Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->
+
+<!-- CHECKPOINT id="ckpt_mw4cu683_k7k3bb" time="2026-11-06T02:27:52.707Z" note="auto" fixes=0 questions=0 highlights=0 sections="" -->

@@ -38,6 +38,7 @@ import { AuditInterceptor } from './core/audit/audit.interceptor';
 import { CronModule } from './cron-handlers/cron.module';
 import { EdgeControlModule } from './modules/edge-control/edge-control.module';
 import { EdgeDeploymentGuard } from './modules/edge-control/edge-deployment.guard';
+import { SiteRequestsModule } from './modules/site-requests/site-requests.controller';
 
 const isVercel = isVercelRuntime();
 
@@ -90,6 +91,7 @@ const isVercel = isVercelRuntime();
     CronModule,
     MonitoringModule,
     EdgeControlModule,
+    SiteRequestsModule,
   ],
   providers: [
     {

@@ -10,6 +10,8 @@ services:
     cap_drop: [ALL]
     environment:
       NODE_ENV: production
+      SITE_REQUESTS_URL: http://site:8080/internal/requests
+      SITE_REQUESTS_SECRET: ${SITE_REQUESTS_SECRET:?Set SITE_REQUESTS_SECRET}
       PORT: 3000
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL using host postgres}
       DB_POOL_MAX: 5
