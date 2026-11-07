@@ -57,8 +57,8 @@ export class MonitoringRepository {
           COUNT(DISTINCT r.registration_id) FILTER (WHERE r.status='in_progress')::int AS in_progress,
           COUNT(DISTINCT os.session_id) FILTER (WHERE os.mode='active')::int AS open_desks,
           COUNT(DISTINCT os.user_id) FILTER (WHERE os.mode='active')::int AS active_operators,
-          ROUND(MAX(EXTRACT(EPOCH FROM ($2::timestamptz-r.priority_reference_time))/60)
-            FILTER (WHERE r.status='waiting')::numeric, 2) AS longest_wait_minutes
+          ROUND(MAX(EXTRACT(EPOCH FROM ($2::timestamptz-r.checked_in_at))/60)
+            FILTER (WHERE r.status='waiting' AND r.checked_in_at IS NOT NULL)::numeric, 2) AS longest_wait_minutes
          FROM dorify.dori_queue q
          JOIN LATERAL dorify.queue_wait_context(ARRAY[q.queue_id],$2::timestamptz) e ON TRUE
          LEFT JOIN dorify.dori_registration r ON r.queue_id=q.queue_id AND r.is_active=TRUE
