@@ -19,6 +19,7 @@ describe('consolidated database contract', () => {
       '004_installation_room_notifications.sql',
       '005_operational_announcements.sql',
       '006_announcement_management.sql',
+      '007_progressive_wait_rounding.sql',
     ]);
     expect(sql).not.toMatch(/^\s*ALTER TABLE/gim);
     expect(sql.match(/^CREATE TABLE /gm)).toHaveLength(36);
