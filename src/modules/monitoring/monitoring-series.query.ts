@@ -21,9 +21,9 @@ function durationAverages(
     duration: string,
   ) => `${kind}_averages AS (
     SELECT ${byQueue ? 'r.queue_id,' : ''} date_trunc('${bucket}', r.${event} AT TIME ZONE $8) AS period_start,
-      ROUND(AVG(${duration})::numeric,2) AS average_${kind}_minutes,
-      ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ${duration})::numeric,2) AS median_${kind}_minutes,
-      ROUND(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY ${duration})::numeric,2) AS p90_${kind}_minutes
+      ROUND(AVG(${duration}))::int AS average_${kind}_minutes,
+      ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ${duration}))::int AS median_${kind}_minutes,
+      ROUND(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY ${duration}))::int AS p90_${kind}_minutes
     FROM scoped r WHERE r.${event} >= $2::timestamptz AND r.${event} < $3::timestamptz
     GROUP BY ${byQueue ? 'r.queue_id,' : ''} period_start
   )`;
@@ -71,22 +71,22 @@ export function monitoringSeriesQueries(input: MonitoringSeriesInput) {
       COUNT(*) FILTER (WHERE r.status = 'cancelled' AND r.closed_at >= $2::timestamptz AND r.closed_at < $3::timestamptz)::int AS cancelled,
       ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at - r.checked_in_at))/60)
         FILTER (WHERE r.called_at >= $2::timestamptz AND r.called_at < $3::timestamptz
-          AND r.checked_in_at IS NOT NULL)::numeric, 2) AS average_wait_minutes,
+          AND r.checked_in_at IS NOT NULL))::int AS average_wait_minutes,
       ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (r.called_at-r.checked_in_at))/60)
         FILTER (WHERE r.called_at >= $2::timestamptz AND r.called_at < $3::timestamptz
-          AND r.checked_in_at IS NOT NULL)::numeric, 2) AS median_wait_minutes,
+          AND r.checked_in_at IS NOT NULL))::int AS median_wait_minutes,
       ROUND(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (r.called_at-r.checked_in_at))/60)
         FILTER (WHERE r.called_at >= $2::timestamptz AND r.called_at < $3::timestamptz
-          AND r.checked_in_at IS NOT NULL)::numeric, 2) AS p90_wait_minutes,
+          AND r.checked_in_at IS NOT NULL))::int AS p90_wait_minutes,
       ROUND(AVG(EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60)
         FILTER (WHERE r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz
-          AND r.called_at IS NOT NULL)::numeric, 2) AS average_service_minutes,
+          AND r.called_at IS NOT NULL))::int AS average_service_minutes,
       ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60)
         FILTER (WHERE r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz
-          AND r.called_at IS NOT NULL)::numeric, 2) AS median_service_minutes,
+          AND r.called_at IS NOT NULL))::int AS median_service_minutes,
       ROUND(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60)
         FILTER (WHERE r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz
-          AND r.called_at IS NOT NULL)::numeric, 2) AS p90_service_minutes`;
+          AND r.called_at IS NOT NULL))::int AS p90_service_minutes`;
   const bucketExpression = `date_trunc('${input.bucket}', event_at AT TIME ZONE $8)`;
 
   const statement = (sql: string, parameters: unknown[]) => ({
@@ -178,7 +178,7 @@ export function monitoringSeriesQueries(input: MonitoringSeriesInput) {
            COUNT(*) FILTER (WHERE r.created_at >= $2::timestamptz AND r.created_at < $3::timestamptz)::int AS registered,
            COUNT(*) FILTER (WHERE r.status='served' AND r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz)::int AS served,
            COUNT(*) FILTER (WHERE r.status='no_show' AND r.closed_at >= $2::timestamptz AND r.closed_at < $3::timestamptz)::int AS no_show,
-           ROUND(AVG(EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60) FILTER (WHERE r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz AND r.called_at IS NOT NULL)::numeric,2) AS average_service_minutes
+           ROUND(AVG(EXTRACT(EPOCH FROM (r.served_at-r.called_at))/60) FILTER (WHERE r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz AND r.called_at IS NOT NULL))::int AS average_service_minutes
            FROM scoped r JOIN dorify.dori_user u ON u.user_id=r.served_by_user_id
            GROUP BY u.user_id,u.full_name,u.username ORDER BY u.user_id`,
       scopedParams,
@@ -188,7 +188,7 @@ export function monitoringSeriesQueries(input: MonitoringSeriesInput) {
            COUNT(*) FILTER (WHERE r.created_at >= $2::timestamptz AND r.created_at < $3::timestamptz)::int AS registered,
            COUNT(*) FILTER (WHERE r.status='served' AND r.served_at >= $2::timestamptz AND r.served_at < $3::timestamptz)::int AS served,
            COUNT(*) FILTER (WHERE r.status='no_show' AND r.closed_at >= $2::timestamptz AND r.closed_at < $3::timestamptz)::int AS no_show,
-           ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at-r.checked_in_at))/60) FILTER (WHERE r.called_at >= $2::timestamptz AND r.called_at < $3::timestamptz)::numeric,2) AS average_wait_minutes
+           ROUND(AVG(EXTRACT(EPOCH FROM (r.called_at-r.checked_in_at))/60) FILTER (WHERE r.called_at >= $2::timestamptz AND r.called_at < $3::timestamptz))::int AS average_wait_minutes
            FROM scoped r JOIN dorify.dori_service_tier t ON t.tier_id=r.tier_id
            GROUP BY t.tier_id,t.tier_code,t.tier_name ORDER BY t.tier_id`,
       scopedParams,
